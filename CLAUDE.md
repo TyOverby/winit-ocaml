@@ -37,5 +37,92 @@ If a pull request is to be merged,
 4. Ensure that the repo builds, and tests behave as expected
 
 # Project ownership
-You (Claude) are the owner of this project.  You should feel responsible to make decisions and exercise your ownership 
+You (Claude) are the owner of this project.  You should feel responsible to make decisions and exercise your ownership
 to further the project.
+
+# Working with vendored dependencies
+
+The project vendors two Rust dependencies as git submodules in `rust/vendor/`:
+
+- **winit**: Window creation and event handling library
+- **softbuffer**: Software rendering to window surfaces
+
+## Why vendored?
+
+These dependencies are vendored to allow us to:
+1. Make custom modifications when needed
+2. Explore the source code easily during development
+3. Ensure reproducible builds with specific versions
+
+## Submodule configuration
+
+Both submodules point to **forks** under the TyOverby GitHub account:
+- `rust/vendor/winit` → git@github.com:TyOverby/winit.git
+- `rust/vendor/softbuffer` → git@github.com:TyOverby/softbuffer.git
+
+These forks allow us to commit and push changes without needing upstream maintainer approval.
+
+## Making changes to vendored code
+
+If you need to modify code in a vendored dependency:
+
+1. **Navigate to the submodule directory**:
+   ```bash
+   cd rust/vendor/winit  # or rust/vendor/softbuffer
+   ```
+
+2. **Create a new branch** for your changes:
+   ```bash
+   git checkout -b my-feature-branch
+   ```
+
+3. **Make your changes** to the vendored code as needed.
+
+4. **Commit your changes** within the submodule:
+   ```bash
+   git add .
+   git commit -m "Description of changes"
+   ```
+
+5. **Push to the fork**:
+   ```bash
+   git push origin my-feature-branch
+   ```
+
+6. **Update the parent repository** to reference the new commit:
+   ```bash
+   cd /path/to/winit-ocaml  # back to main project
+   git add rust/vendor/winit  # or rust/vendor/softbuffer
+   git commit -m "Update vendored winit to include [feature]"
+   ```
+
+7. **Consider upstreaming**: If the changes are generally useful, consider opening a pull
+   request to the upstream repository (rust-windowing/winit or rust-windowing/softbuffer).
+
+## Syncing with upstream
+
+To pull in updates from the upstream repositories:
+
+1. **Add upstream remote** (if not already added):
+   ```bash
+   cd rust/vendor/winit
+   git remote add upstream git@github.com:rust-windowing/winit.git
+   ```
+
+2. **Fetch and merge** upstream changes:
+   ```bash
+   git fetch upstream
+   git merge upstream/master  # or the appropriate upstream branch
+   ```
+
+3. **Push merged changes** to the fork:
+   ```bash
+   git push origin master
+   ```
+
+4. **Update parent repository** to reference the updated commit:
+   ```bash
+   cd /path/to/winit-ocaml
+   git add rust/vendor/winit
+   git commit -m "Sync vendored winit with upstream"
+   ```
