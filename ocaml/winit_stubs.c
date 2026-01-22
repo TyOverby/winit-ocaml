@@ -18,20 +18,31 @@ extern int winit_test_version(void);
 typedef enum {
     EVENT_NO_EVENT = 0,
     EVENT_CLOSE_REQUESTED = 1,
-    EVENT_RESIZED = 2,
+    EVENT_SURFACE_RESIZED = 2,
     EVENT_REDRAW_REQUESTED = 3,
     EVENT_KEY_PRESSED = 4,
     EVENT_KEY_RELEASED = 5,
-    EVENT_MOUSE_MOVED = 6,
-    EVENT_MOUSE_BUTTON_PRESSED = 7,
-    EVENT_MOUSE_BUTTON_RELEASED = 8
+    EVENT_POINTER_MOVED = 6,
+    EVENT_POINTER_BUTTON_PRESSED = 7,
+    EVENT_POINTER_BUTTON_RELEASED = 8,
+    EVENT_POINTER_ENTERED = 9,
+    EVENT_POINTER_LEFT = 10,
+    EVENT_MOUSE_WHEEL = 11,
+    EVENT_FOCUSED = 12,
+    EVENT_UNFOCUSED = 13,
+    EVENT_WINDOW_MOVED = 14,
+    EVENT_MODIFIERS_CHANGED = 15,
+    EVENT_DESTROYED = 16,
+    EVENT_OCCLUDED = 17,
+    EVENT_UNOCCLUDED = 18,
+    EVENT_THEME_CHANGED = 19,
+    EVENT_SCALE_FACTOR_CHANGED = 20
 } EventType;
 
 // Event structure (must match Rust)
 typedef struct {
     EventType event_type;
-    int data1;
-    int data2;
+    int data[16];
 } Event;
 
 // Custom block for app handle
@@ -82,7 +93,7 @@ CAMLprim value caml_winit_create(value unit) {
 // OCaml: external winit_pump_events : app -> event array = "caml_winit_pump_events"
 CAMLprim value caml_winit_pump_events(value app_val) {
     CAMLparam1(app_val);
-    CAMLlocal1(result);
+    CAMLlocal3(result, event_tuple, data_array);
 
     void* app = winit_app_val(app_val);
 
@@ -99,10 +110,19 @@ CAMLprim value caml_winit_pump_events(value app_val) {
     // Convert events to OCaml array
     result = caml_alloc(count, 0);
     for (int i = 0; i < count; i++) {
-        value event_tuple = caml_alloc_tuple(3);
+        // Create tuple (event_type, data_array)
+        event_tuple = caml_alloc_tuple(2);
+
+        // Store event type
         Store_field(event_tuple, 0, Val_int(events[i].event_type));
-        Store_field(event_tuple, 1, Val_int(events[i].data1));
-        Store_field(event_tuple, 2, Val_int(events[i].data2));
+
+        // Create data array
+        data_array = caml_alloc(16, 0);
+        for (int j = 0; j < 16; j++) {
+            Store_field(data_array, j, Val_int(events[i].data[j]));
+        }
+        Store_field(event_tuple, 1, data_array);
+
         Store_field(result, i, event_tuple);
     }
 

@@ -4,43 +4,136 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use winit::application::ApplicationHandler;
-use winit::event::{ButtonSource, MouseButton, WindowEvent};
+use winit::event::{ButtonSource, MouseButton, MouseScrollDelta, TouchPhase, WindowEvent};
 use winit::event_loop::pump_events::{EventLoopExtPumpEvents, PumpStatus};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::window::{Window, WindowAttributes, WindowId};
+use winit::keyboard::{ModifiersKeyState, PhysicalKey};
+use winit::window::{Theme, Window, WindowAttributes, WindowId};
 
-// Simple C-compatible event type
+// C-compatible event type
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub enum EventType {
     NoEvent = 0,
     CloseRequested = 1,
-    Resized = 2,
+    SurfaceResized = 2,
     RedrawRequested = 3,
     KeyPressed = 4,
     KeyReleased = 5,
-    MouseMoved = 6,
-    MouseButtonPressed = 7,
-    MouseButtonReleased = 8,
+    PointerMoved = 6,
+    PointerButtonPressed = 7,
+    PointerButtonReleased = 8,
+    PointerEntered = 9,
+    PointerLeft = 10,
+    MouseWheel = 11,
+    Focused = 12,
+    Unfocused = 13,
+    WindowMoved = 14,
+    ModifiersChanged = 15,
+    Destroyed = 16,
+    Occluded = 17,
+    Unoccluded = 18,
+    ThemeChanged = 19,
+    ScaleFactorChanged = 20,
 }
 
-// Event data structure
+// Event data structure with extended data buffer
+// Field usage is documented per-event-type below
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Event {
     pub event_type: EventType,
-    pub data1: i32, // For width, x, key_code, etc.
-    pub data2: i32, // For height, y, button, etc.
+    pub data: [i32; 16],
 }
+
+// Event field documentation:
+//
+// CloseRequested: (no data)
+//
+// SurfaceResized:
+//   data[0]: width (u32 as i32)
+//   data[1]: height (u32 as i32)
+//
+// RedrawRequested: (no data)
+//
+// KeyPressed/KeyReleased:
+//   data[0]: physical_key_code (scancode)
+//   data[1]: key_location (0=Standard, 1=Left, 2=Right, 3=Numpad)
+//   data[2]: repeat (0=first press, 1=auto-repeat)
+//
+// ModifiersChanged:
+//   data[0]: shift_key (0=up, 1=left down, 2=right down, 3=both down)
+//   data[1]: control_key (same encoding)
+//   data[2]: alt_key (same encoding)
+//   data[3]: super_key (same encoding)
+//
+// PointerMoved:
+//   data[0]: x position in pixels (f64 bits 0-31)
+//   data[1]: x position in pixels (f64 bits 32-63)
+//   data[2]: y position in pixels (f64 bits 0-31)
+//   data[3]: y position in pixels (f64 bits 32-63)
+//   data[4]: primary pointer (0=no, 1=yes)
+//   data[5]: source (0=mouse, 1=touch, 2=tablet, 3=unknown)
+//
+// PointerEntered/PointerLeft:
+//   data[0]: x position (f64 bits 0-31)
+//   data[1]: x position (f64 bits 32-63)
+//   data[2]: y position (f64 bits 0-31)
+//   data[3]: y position (f64 bits 32-63)
+//   data[4]: primary pointer (0=no, 1=yes)
+//   data[5]: source (0=mouse, 1=touch, 2=tablet, 3=unknown)
+//
+// PointerButtonPressed/PointerButtonReleased:
+//   data[0]: button id (1=Left, 2=Right, 3=Middle, 4=Back, 5=Forward, >5=Other)
+//   data[1]: x position (f64 bits 0-31)
+//   data[2]: x position (f64 bits 32-63)
+//   data[3]: y position (f64 bits 0-31)
+//   data[4]: y position (f64 bits 32-63)
+//   data[5]: primary pointer (0=no, 1=yes)
+//
+// MouseWheel:
+//   data[0]: delta type (0=line, 1=pixel)
+//   data[1]: x delta (f32 bits as i32)
+//   data[2]: y delta (f32 bits as i32)
+//   data[3]: phase (0=Started, 1=Moved, 2=Ended, 3=Cancelled)
+//
+// Focused/Unfocused: (no data)
+//
+// WindowMoved:
+//   data[0]: x position in screen coordinates (i32)
+//   data[1]: y position in screen coordinates (i32)
+//
+// Destroyed: (no data)
+//
+// Occluded/Unoccluded: (no data)
+//
+// ThemeChanged:
+//   data[0]: theme (0=Light, 1=Dark)
+//
+// ScaleFactorChanged:
+//   data[0]: scale_factor (f64 bits 0-31)
+//   data[1]: scale_factor (f64 bits 32-63)
 
 impl Default for Event {
     fn default() -> Self {
         Event {
             event_type: EventType::NoEvent,
-            data1: 0,
-            data2: 0,
+            data: [0; 16],
         }
     }
+}
+
+// Helper functions for encoding f64 into two i32s
+fn encode_f64(value: f64) -> (i32, i32) {
+    let bits = value.to_bits();
+    let low = (bits & 0xFFFFFFFF) as i32;
+    let high = ((bits >> 32) & 0xFFFFFFFF) as i32;
+    (low, high)
+}
+
+// Helper function for encoding f32 into i32
+fn encode_f32(value: f32) -> i32 {
+    value.to_bits() as i32
 }
 
 // Event collector for winit
@@ -97,67 +190,311 @@ impl ApplicationHandler for EventCollector {
             WindowEvent::CloseRequested => {
                 self.events.push(Event {
                     event_type: EventType::CloseRequested,
-                    data1: 0,
-                    data2: 0,
+                    ..Default::default()
                 });
                 self.should_exit = true;
                 event_loop.exit();
             }
+
             WindowEvent::SurfaceResized(size) => {
+                let mut data = [0i32; 16];
+                data[0] = size.width as i32;
+                data[1] = size.height as i32;
                 self.events.push(Event {
-                    event_type: EventType::Resized,
-                    data1: size.width as i32,
-                    data2: size.height as i32,
+                    event_type: EventType::SurfaceResized,
+                    data,
                 });
             }
+
             WindowEvent::RedrawRequested => {
                 self.events.push(Event {
                     event_type: EventType::RedrawRequested,
-                    data1: 0,
-                    data2: 0,
+                    ..Default::default()
                 });
             }
-            WindowEvent::KeyboardInput { event, .. } => {
-                let event_type = if event.state.is_pressed() {
+
+            WindowEvent::KeyboardInput {
+                event: key_event, ..
+            } => {
+                let event_type = if key_event.state.is_pressed() {
                     EventType::KeyPressed
                 } else {
                     EventType::KeyReleased
                 };
-                self.events.push(Event {
-                    event_type,
-                    data1: 0, // Could add key code here
-                    data2: 0,
-                });
+
+                let mut data = [0i32; 16];
+
+                // data[0]: physical key code (scancode)
+                if let PhysicalKey::Code(code) = key_event.physical_key {
+                    data[0] = code as i32;
+                }
+
+                // data[1]: key location
+                data[1] = key_event.location as i32;
+
+                // data[2]: repeat
+                data[2] = if key_event.repeat { 1 } else { 0 };
+
+                self.events.push(Event { event_type, data });
             }
-            WindowEvent::PointerMoved { position, .. } => {
-                self.events.push(Event {
-                    event_type: EventType::MouseMoved,
-                    data1: position.x as i32,
-                    data2: position.y as i32,
-                });
-            }
-            WindowEvent::PointerButton { button, state, .. } => {
-                let event_type = if state.is_pressed() {
-                    EventType::MouseButtonPressed
-                } else {
-                    EventType::MouseButtonReleased
+
+            WindowEvent::ModifiersChanged(modifiers) => {
+                let mut data = [0i32; 16];
+
+                // Encode modifier states: 0=unknown, 1=left, 2=right, 3=both
+                data[0] = match (modifiers.lshift_state(), modifiers.rshift_state()) {
+                    (ModifiersKeyState::Unknown, ModifiersKeyState::Unknown) => 0,
+                    (ModifiersKeyState::Pressed, ModifiersKeyState::Unknown) => 1,
+                    (ModifiersKeyState::Unknown, ModifiersKeyState::Pressed) => 2,
+                    (ModifiersKeyState::Pressed, ModifiersKeyState::Pressed) => 3,
+                    _ => 0,
                 };
+
+                data[1] = match (modifiers.lcontrol_state(), modifiers.rcontrol_state()) {
+                    (ModifiersKeyState::Unknown, ModifiersKeyState::Unknown) => 0,
+                    (ModifiersKeyState::Pressed, ModifiersKeyState::Unknown) => 1,
+                    (ModifiersKeyState::Unknown, ModifiersKeyState::Pressed) => 2,
+                    (ModifiersKeyState::Pressed, ModifiersKeyState::Pressed) => 3,
+                    _ => 0,
+                };
+
+                data[2] = match (modifiers.lalt_state(), modifiers.ralt_state()) {
+                    (ModifiersKeyState::Unknown, ModifiersKeyState::Unknown) => 0,
+                    (ModifiersKeyState::Pressed, ModifiersKeyState::Unknown) => 1,
+                    (ModifiersKeyState::Unknown, ModifiersKeyState::Pressed) => 2,
+                    (ModifiersKeyState::Pressed, ModifiersKeyState::Pressed) => 3,
+                    _ => 0,
+                };
+
+                data[3] = match (modifiers.lsuper_state(), modifiers.rsuper_state()) {
+                    (ModifiersKeyState::Unknown, ModifiersKeyState::Unknown) => 0,
+                    (ModifiersKeyState::Pressed, ModifiersKeyState::Unknown) => 1,
+                    (ModifiersKeyState::Unknown, ModifiersKeyState::Pressed) => 2,
+                    (ModifiersKeyState::Pressed, ModifiersKeyState::Pressed) => 3,
+                    _ => 0,
+                };
+
+                self.events.push(Event {
+                    event_type: EventType::ModifiersChanged,
+                    data,
+                });
+            }
+
+            WindowEvent::PointerMoved {
+                position,
+                primary,
+                source,
+                ..
+            } => {
+                let mut data = [0i32; 16];
+                let (x_low, x_high) = encode_f64(position.x);
+                let (y_low, y_high) = encode_f64(position.y);
+                data[0] = x_low;
+                data[1] = x_high;
+                data[2] = y_low;
+                data[3] = y_high;
+                data[4] = if primary { 1 } else { 0 };
+                data[5] = match source {
+                    winit::event::PointerSource::Mouse => 0,
+                    winit::event::PointerSource::Touch { .. } => 1,
+                    winit::event::PointerSource::TabletTool { .. } => 2,
+                    winit::event::PointerSource::Unknown => 3,
+                };
+
+                self.events.push(Event {
+                    event_type: EventType::PointerMoved,
+                    data,
+                });
+            }
+
+            WindowEvent::PointerEntered {
+                position,
+                primary,
+                kind,
+                ..
+            } => {
+                let mut data = [0i32; 16];
+                let (x_low, x_high) = encode_f64(position.x);
+                let (y_low, y_high) = encode_f64(position.y);
+                data[0] = x_low;
+                data[1] = x_high;
+                data[2] = y_low;
+                data[3] = y_high;
+                data[4] = if primary { 1 } else { 0 };
+                data[5] = match kind {
+                    winit::event::PointerKind::Mouse => 0,
+                    winit::event::PointerKind::Touch(_) => 1,
+                    winit::event::PointerKind::TabletTool(_) => 2,
+                    winit::event::PointerKind::Unknown => 3,
+                };
+
+                self.events.push(Event {
+                    event_type: EventType::PointerEntered,
+                    data,
+                });
+            }
+
+            WindowEvent::PointerLeft {
+                position,
+                primary,
+                kind,
+                ..
+            } => {
+                let mut data = [0i32; 16];
+                if let Some(pos) = position {
+                    let (x_low, x_high) = encode_f64(pos.x);
+                    let (y_low, y_high) = encode_f64(pos.y);
+                    data[0] = x_low;
+                    data[1] = x_high;
+                    data[2] = y_low;
+                    data[3] = y_high;
+                }
+                data[4] = if primary { 1 } else { 0 };
+                data[5] = match kind {
+                    winit::event::PointerKind::Mouse => 0,
+                    winit::event::PointerKind::Touch(_) => 1,
+                    winit::event::PointerKind::TabletTool(_) => 2,
+                    winit::event::PointerKind::Unknown => 3,
+                };
+
+                self.events.push(Event {
+                    event_type: EventType::PointerLeft,
+                    data,
+                });
+            }
+
+            WindowEvent::PointerButton {
+                button,
+                state,
+                position,
+                primary,
+                ..
+            } => {
+                let event_type = if state.is_pressed() {
+                    EventType::PointerButtonPressed
+                } else {
+                    EventType::PointerButtonReleased
+                };
+
                 let button_id = match button {
                     ButtonSource::Mouse(MouseButton::Left) => 1,
                     ButtonSource::Mouse(MouseButton::Right) => 2,
                     ButtonSource::Mouse(MouseButton::Middle) => 3,
                     ButtonSource::Mouse(MouseButton::Back) => 4,
                     ButtonSource::Mouse(MouseButton::Forward) => 5,
+                    ButtonSource::Mouse(MouseButton::Button6) => 6,
+                    ButtonSource::Mouse(MouseButton::Button7) => 7,
+                    ButtonSource::Mouse(MouseButton::Button8) => 8,
                     _ => 0,
                 };
+
+                let mut data = [0i32; 16];
+                data[0] = button_id;
+                let (x_low, x_high) = encode_f64(position.x);
+                let (y_low, y_high) = encode_f64(position.y);
+                data[1] = x_low;
+                data[2] = x_high;
+                data[3] = y_low;
+                data[4] = y_high;
+                data[5] = if primary { 1 } else { 0 };
+
+                self.events.push(Event { event_type, data });
+            }
+
+            WindowEvent::MouseWheel { delta, phase, .. } => {
+                let mut data = [0i32; 16];
+
+                match delta {
+                    MouseScrollDelta::LineDelta(x, y) => {
+                        data[0] = 0; // line delta
+                        data[1] = encode_f32(x);
+                        data[2] = encode_f32(y);
+                    }
+                    MouseScrollDelta::PixelDelta(pos) => {
+                        data[0] = 1; // pixel delta
+                        data[1] = encode_f32(pos.x as f32);
+                        data[2] = encode_f32(pos.y as f32);
+                    }
+                }
+
+                data[3] = match phase {
+                    TouchPhase::Started => 0,
+                    TouchPhase::Moved => 1,
+                    TouchPhase::Ended => 2,
+                    TouchPhase::Cancelled => 3,
+                };
+
                 self.events.push(Event {
-                    event_type,
-                    data1: button_id,
-                    data2: 0,
+                    event_type: EventType::MouseWheel,
+                    data,
                 });
             }
-            other => {
-                println!("{:?}", other)
+
+            WindowEvent::Focused(focused) => {
+                self.events.push(Event {
+                    event_type: if focused {
+                        EventType::Focused
+                    } else {
+                        EventType::Unfocused
+                    },
+                    ..Default::default()
+                });
+            }
+
+            WindowEvent::Moved(position) => {
+                let mut data = [0i32; 16];
+                data[0] = position.x;
+                data[1] = position.y;
+                self.events.push(Event {
+                    event_type: EventType::WindowMoved,
+                    data,
+                });
+            }
+
+            WindowEvent::Destroyed => {
+                self.events.push(Event {
+                    event_type: EventType::Destroyed,
+                    ..Default::default()
+                });
+            }
+
+            WindowEvent::Occluded(occluded) => {
+                self.events.push(Event {
+                    event_type: if occluded {
+                        EventType::Occluded
+                    } else {
+                        EventType::Unoccluded
+                    },
+                    ..Default::default()
+                });
+            }
+
+            WindowEvent::ThemeChanged(theme) => {
+                let mut data = [0i32; 16];
+                data[0] = match theme {
+                    Theme::Light => 0,
+                    Theme::Dark => 1,
+                };
+                self.events.push(Event {
+                    event_type: EventType::ThemeChanged,
+                    data,
+                });
+            }
+
+            WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
+                let mut data = [0i32; 16];
+                let (low, high) = encode_f64(scale_factor);
+                data[0] = low;
+                data[1] = high;
+                self.events.push(Event {
+                    event_type: EventType::ScaleFactorChanged,
+                    data,
+                });
+            }
+
+            _other => {
+                // Silently ignore unhandled events
+                // (Previously we printed them, but that's noisy)
             }
         }
     }
@@ -264,9 +601,9 @@ impl WinitOcamlApp {
 
         // Handle resize events
         for event in &events[..count] {
-            if let EventType::Resized = event.event_type {
+            if let EventType::SurfaceResized = event.event_type {
                 if let Some(graphics) = &mut self.graphics {
-                    let _ = graphics.resize(event.data1 as u32, event.data2 as u32);
+                    let _ = graphics.resize(event.data[0] as u32, event.data[1] as u32);
                 }
             }
         }
