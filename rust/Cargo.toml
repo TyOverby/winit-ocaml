@@ -7,8 +7,8 @@ edition = "2021"
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-softbuffer = { path = "../vendor/softbuffer" }
-winit = { path = "../vendor/winit/winit" }
+softbuffer = { path = "./vendor/softbuffer" }
+winit = { path = "./vendor/winit/winit" }
 raw-window-handle = "0.6"
 tracing = "0.1"
 tracing-subscriber = "0.3"

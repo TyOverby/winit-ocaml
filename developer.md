@@ -505,8 +505,8 @@ pacman -S libxcb libx11 libxkbcommon wayland
 ### Building Examples
 
 ```bash
-./opam exec -- dune build examples/hello_window.exe
-./opam exec -- dune exec examples/hello_window.exe
+./opam exec -- dune build ocaml/examples/hello_window.exe
+./opam exec -- dune exec ocaml/examples/hello_window.exe
 ```
 
 ### Build Order
@@ -616,7 +616,7 @@ pacman -S libxcb libx11 libxkbcommon wayland
 Test individual components in isolation:
 
 ```ocaml
-(* examples/test_ffi.ml *)
+(* ocaml/examples/test_ffi.ml *)
 let test_version () =
   let v = Winit_softbuffer.test_version () in
   assert (v = 100);
@@ -641,7 +641,7 @@ Xvfb :99 -screen 0 800x600x24 &
 export DISPLAY=:99
 
 # Run visual test
-./opam exec -- dune exec examples/hello_window.exe &
+./opam exec -- dune exec ocaml/examples/hello_window.exe &
 sleep 1
 
 # Capture screenshot
@@ -654,13 +654,13 @@ import -window root screenshot.png
 
 ```bash
 # FFI smoke test (works without display)
-./opam exec -- dune exec examples/test_ffi.exe
+./opam exec -- dune exec ocaml/examples/test_ffi.exe
 
 # Full graphical test (requires display)
-./opam exec -- dune exec examples/hello_window.exe
+./opam exec -- dune exec ocaml/examples/hello_window.exe
 
 # With Xvfb (headless)
-Xvfb :99 & DISPLAY=:99 ./opam exec -- dune exec examples/hello_window.exe
+Xvfb :99 & DISPLAY=:99 ./opam exec -- dune exec ocaml/examples/hello_window.exe
 ```
 
 ### Memory Testing
@@ -669,7 +669,7 @@ Check for leaks with valgrind:
 
 ```bash
 valgrind --leak-check=full --show-leak-kinds=all \
-  ./opam exec -- dune exec examples/hello_window.exe
+  ./opam exec -- dune exec ocaml/examples/hello_window.exe
 ```
 
 Expected output: No leaks from our code (may see leaks from X11 drivers).
@@ -679,7 +679,7 @@ Expected output: No leaks from our code (may see leaks from X11 drivers).
 The `test_ffi.exe` example verifies the FFI chain works:
 
 ```bash
-./opam exec -- dune exec examples/test_ffi.exe
+./opam exec -- dune exec ocaml/examples/test_ffi.exe
 ```
 
 Output:
@@ -734,29 +734,33 @@ Test 2: Event type handling... [lists all event types]
 
 ```
 winit-ocaml/
+├── Cargo.toml               # Rust workspace configuration
 ├── rust/
-│   ├── Cargo.toml           # Rust dependencies and config
-│   └── src/
-│       └── lib.rs           # Rust FFI implementation
+│   ├── Cargo.toml           # Rust FFI library dependencies
+│   ├── src/
+│   │   └── lib.rs           # Rust FFI implementation
+│   ├── prototype/
+│   │   ├── Cargo.toml       # Prototype binaries
+│   │   └── src/             # Prototype source code
+│   └── vendor/
+│       ├── winit/           # Vendored winit library
+│       └── softbuffer/      # Vendored softbuffer library
 ├── ocaml/
 │   ├── dune                 # OCaml build configuration
 │   ├── winit_stubs.c        # C FFI bridge
 │   ├── winit_softbuffer.mli # Public API interface
-│   └── winit_softbuffer.ml  # OCaml implementation
-├── examples/
-│   ├── dune                 # Example build config
-│   ├── hello_window.ml      # Graphical demo
-│   └── test_ffi.ml          # FFI test
-├── vendor/
-│   ├── winit/               # Vendored winit library
-│   └── softbuffer/          # Vendored softbuffer library
+│   ├── winit_softbuffer.ml  # OCaml implementation
+│   └── examples/
+│       ├── dune             # Example build config
+│       ├── hello_window.ml  # Graphical demo
+│       └── test_ffi.ml      # FFI test
 ├── docs/                    # Design documentation
-├── dune-project            # Top-level Dune config
-├── readme.md               # User-facing documentation
-└── developer.md            # This file
+├── issues/                  # Project issue tracking
+├── dune-project             # Top-level Dune config
+├── readme.md                # User-facing documentation
+└── developer.md             # This file
 ```
 
-The `vendor` directory contains git submodule vendored copies of the `winit`
-and `softbuffer` codebase.  The project should build against these versions,
-and also make it easy for you to explore the dependencies and even make changes
-if necessary.
+The `rust/vendor` directory contains git submodule vendored copies of the `winit`
+and `softbuffer` codebase. The project uses a Cargo workspace at the root to manage
+all Rust crates, making it easy to explore the dependencies and make changes if necessary.

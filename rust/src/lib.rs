@@ -165,6 +165,8 @@ impl ApplicationHandler for EventCollector {
 
 // Graphics state
 struct GraphicsState {
+    // Context must be kept alive for the surface to remain valid
+    #[allow(dead_code)]
     context: softbuffer::Context<Arc<Box<dyn Window>>>,
     surface: softbuffer::Surface<Arc<Box<dyn Window>>, Arc<Box<dyn Window>>>,
     width: u32,
