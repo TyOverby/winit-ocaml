@@ -141,7 +141,7 @@ let decode_f64 low high =
 (* Helper to decode f32 from i32 *)
 let decode_f32 bits = Int32.float_of_bits (Int32.of_int bits)
 
-let key_location_of_int = function
+let key_location_of_int : int -> key_location = function
   | 0 -> Standard
   | 1 -> Left
   | 2 -> Right
@@ -149,7 +149,7 @@ let key_location_of_int = function
   | _ -> Standard
 ;;
 
-let modifier_key_state_of_int = function
+let modifier_key_state_of_int : int -> modifier_key_state = function
   | 0 -> Unknown
   | 1 -> LeftPressed
   | 2 -> RightPressed
@@ -157,7 +157,7 @@ let modifier_key_state_of_int = function
   | _ -> Unknown
 ;;
 
-let pointer_source_of_int = function
+let pointer_source_of_int : int -> pointer_source = function
   | 0 -> Mouse
   | 1 -> Touch
   | 2 -> Tablet
