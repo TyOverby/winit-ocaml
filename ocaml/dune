@@ -6,4 +6,9 @@
   (language c)
   (names winit_stubs)
   (flags :standard -I../rust/target/release))
- (c_library_flags :standard /home/tyoverby/workspace/rust/winit-ocaml/rust/target/release/libwinit_ocaml_ffi.a -lpthread -ldl -lm))
+ (c_library_flags
+  :standard
+  /home/tyoverby/workspace/rust/winit-ocaml/rust/target/release/libwinit_ocaml_ffi.a
+  -lpthread
+  -ldl
+  -lm))
