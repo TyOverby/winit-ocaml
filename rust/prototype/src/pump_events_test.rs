@@ -1,5 +1,5 @@
 use std::num::NonZeroU32;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -10,9 +10,9 @@ use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowAttributes, WindowId};
 
 struct App {
-    window: Option<Rc<dyn Window>>,
-    context: Option<softbuffer::Context<Rc<dyn Window>>>,
-    surface: Option<softbuffer::Surface<Rc<dyn Window>, Rc<dyn Window>>>,
+    window: Option<Arc<Box<dyn Window>>>,
+    context: Option<softbuffer::Context<Arc<Box<dyn Window>>>>,
+    surface: Option<softbuffer::Surface<Arc<Box<dyn Window>>, Arc<Box<dyn Window>>>>,
     frame_count: u32,
 }
 
@@ -70,7 +70,7 @@ impl ApplicationHandler for App {
 
         match event_loop.create_window(window_attributes) {
             Ok(window) => {
-                let window = Rc::new(window);
+                let window = Arc::new(window);
                 println!("Window created successfully");
 
                 // Create softbuffer context
@@ -160,7 +160,7 @@ fn main() {
     let mut event_loop = EventLoop::new().unwrap();
     let mut app = App::new();
 
-    let mut should_draw = true;
+    let should_draw = true;
     let mut last_draw_time = std::time::Instant::now();
     let target_frame_time = Duration::from_millis(16); // ~60 FPS
 

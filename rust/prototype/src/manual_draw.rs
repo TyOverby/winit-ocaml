@@ -8,7 +8,7 @@
 // happens inside the RedrawRequested callback.
 
 use std::num::NonZeroU32;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -29,7 +29,7 @@ enum SimpleEvent {
 }
 
 struct EventCollector {
-    window: Option<Rc<dyn Window>>,
+    window: Option<Arc<Box<dyn Window>>>,
     events: Vec<SimpleEvent>,
     should_exit: bool,
 }
@@ -57,7 +57,7 @@ impl ApplicationHandler for EventCollector {
         match event_loop.create_window(window_attributes) {
             Ok(window) => {
                 println!("Window created");
-                self.window = Some(Rc::new(window));
+                self.window = Some(Arc::new(window));
             }
             Err(e) => eprintln!("Failed to create window: {:?}", e),
         }
@@ -109,13 +109,15 @@ impl ApplicationHandler for EventCollector {
 }
 
 struct GraphicsState {
-    context: softbuffer::Context<Rc<dyn Window>>,
-    surface: softbuffer::Surface<Rc<dyn Window>, Rc<dyn Window>>,
+    // Context must be kept alive for the surface to remain valid
+    #[allow(dead_code)]
+    context: softbuffer::Context<Arc<Box<dyn Window>>>,
+    surface: softbuffer::Surface<Arc<Box<dyn Window>>, Arc<Box<dyn Window>>>,
     color_offset: u32,
 }
 
 impl GraphicsState {
-    fn new(window: Rc<dyn Window>) -> Result<Self, softbuffer::SoftBufferError> {
+    fn new(window: Arc<Box<dyn Window>>) -> Result<Self, softbuffer::SoftBufferError> {
         let context = softbuffer::Context::new(window.clone())?;
         let mut surface = softbuffer::Surface::new(&context, window.clone())?;
 
@@ -267,10 +269,6 @@ fn main() {
         // Exit after 180 frames (~3 seconds) if not closed by user
         if frame >= 180 && !collector.should_exit {
             println!("\nReached frame limit, exiting");
-            if let Some(window) = &collector.window {
-                // Trigger exit
-                drop(window);
-            }
             break;
         }
     }
