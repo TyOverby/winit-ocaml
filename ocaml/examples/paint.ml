@@ -8,6 +8,9 @@ type paint_state =
   ; mutable canvas_height : int
   ; mutable is_drawing : bool
   ; mutable dirty_regions : Winit_softbuffer.damage_rect list
+  ; mutable last_x : float option
+  ; mutable last_y : float option
+  ; mutable last_radius : float option
   }
 
 let create_state () =
@@ -16,6 +19,9 @@ let create_state () =
   ; canvas_height = 0
   ; is_drawing = false
   ; dirty_regions = []
+  ; last_x = None
+  ; last_y = None
+  ; last_radius = None
   }
 ;;
 
@@ -34,6 +40,69 @@ let ensure_canvas_size state width height =
     state.canvas_buffer <- Some buffer;
     state.canvas_width <- width;
     state.canvas_height <- height)
+;;
+
+(* Helper: Check if a point is inside a quadrilateral using cross products *)
+let point_in_quad px py (x0, y0) (x1, y1) (x2, y2) (x3, y3) =
+  (* Check if point is on the same side of each edge *)
+  let cross (ax, ay) (bx, by) (cx, cy) =
+    ((bx -. ax) *. (cy -. ay)) -. ((by -. ay) *. (cx -. ax))
+  in
+  let s0 = cross (x0, y0) (x1, y1) (px, py) in
+  let s1 = cross (x1, y1) (x2, y2) (px, py) in
+  let s2 = cross (x2, y2) (x3, y3) (px, py) in
+  let s3 = cross (x3, y3) (x0, y0) (px, py) in
+  (s0 >= 0.0 && s1 >= 0.0 && s2 >= 0.0 && s3 >= 0.0)
+  || (s0 <= 0.0 && s1 <= 0.0 && s2 <= 0.0 && s3 <= 0.0)
+;;
+
+(* Draw a filled quadrilateral connecting two circles *)
+let draw_quad_to_canvas state x0 y0 r0 x1 y1 r1 color =
+  match state.canvas_buffer with
+  | None -> None
+  | Some buffer ->
+    let width = state.canvas_width in
+    let height = state.canvas_height in
+    (* Calculate direction vector and perpendicular *)
+    let dx = x1 -. x0 in
+    let dy = y1 -. y0 in
+    let dist = sqrt ((dx *. dx) +. (dy *. dy)) in
+    if dist < 0.01
+    then None (* Too close, skip *)
+    else (
+      (* Perpendicular vector (normalized) *)
+      let px = -.dy /. dist in
+      let py = dx /. dist in
+      (* Four corners of the quadrilateral *)
+      let corner0 = x0 +. (px *. r0), y0 +. (py *. r0) in
+      let corner1 = x0 -. (px *. r0), y0 -. (py *. r0) in
+      let corner2 = x1 -. (px *. r1), y1 -. (py *. r1) in
+      let corner3 = x1 +. (px *. r1), y1 +. (py *. r1) in
+      (* Calculate bounding box (union of both circles) *)
+      let min_x = max 0 (int_of_float (min x0 x1 -. max r0 r1 -. 1.0)) in
+      let min_y = max 0 (int_of_float (min y0 y1 -. max r0 r1 -. 1.0)) in
+      let max_x = min (width - 1) (int_of_float (max x0 x1 +. max r0 r1 +. 1.0)) in
+      let max_y = min (height - 1) (int_of_float (max y0 y1 +. max r0 r1 +. 1.0)) in
+      (* Fill the quadrilateral *)
+      for y = min_y to max_y do
+        for x = min_x to max_x do
+          let fx = float_of_int x in
+          let fy = float_of_int y in
+          if point_in_quad fx fy corner0 corner1 corner2 corner3
+          then (
+            let index = (y * width) + x in
+            Bigarray.Array1.unsafe_set buffer index color)
+        done
+      done;
+      (* Return damage rect *)
+      let rect_width = max_x - min_x + 1 in
+      let rect_height = max_y - min_y + 1 in
+      if rect_width > 0 && rect_height > 0
+      then
+        Some
+          Winit_softbuffer.
+            { x = min_x; y = min_y; width = rect_width; height = rect_height }
+      else None)
 ;;
 
 (* Draw a filled circle directly into the canvas buffer and return damage rect *)
@@ -126,9 +195,30 @@ let draw_stroke state x y pressure =
   let radius = min_radius +. (pressure *. (max_radius -. min_radius)) in
   (* Use black color *)
   let color = 0xFF000000l in
-  match draw_circle_to_canvas state x y radius color with
-  | Some rect -> state.dirty_regions <- rect :: state.dirty_regions
-  | None -> ()
+  (* Check if this is a continuation of a stroke *)
+  match state.last_x, state.last_y, state.last_radius with
+  | Some last_x, Some last_y, Some last_radius ->
+    (* Draw connecting quadrilateral *)
+    (match draw_quad_to_canvas state last_x last_y last_radius x y radius color with
+     | Some rect -> state.dirty_regions <- rect :: state.dirty_regions
+     | None -> ());
+    (* Draw circle at current position *)
+    (match draw_circle_to_canvas state x y radius color with
+     | Some rect -> state.dirty_regions <- rect :: state.dirty_regions
+     | None -> ());
+    (* Update last position *)
+    state.last_x <- Some x;
+    state.last_y <- Some y;
+    state.last_radius <- Some radius
+  | _ ->
+    (* First stroke - just draw circle *)
+    (match draw_circle_to_canvas state x y radius color with
+     | Some rect -> state.dirty_regions <- rect :: state.dirty_regions
+     | None -> ());
+    (* Save position for next stroke *)
+    state.last_x <- Some x;
+    state.last_y <- Some y;
+    state.last_radius <- Some radius
 ;;
 
 let () =
@@ -157,7 +247,11 @@ let () =
           state.is_drawing <- true
         | PointerButtonReleased _ ->
           Printf.printf "Pen up\n%!";
-          state.is_drawing <- false
+          state.is_drawing <- false;
+          (* Reset stroke state so next stroke starts fresh *)
+          state.last_x <- None;
+          state.last_y <- None;
+          state.last_radius <- None
         | PointerMoved { x; y; source; _ } ->
           (match source with
            | Tablet { pressure; tool_kind; _ } when state.is_drawing ->
