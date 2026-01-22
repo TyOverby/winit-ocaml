@@ -531,8 +531,9 @@ pacman -S libxcb libx11 libxkbcommon wayland
 ### Building Examples
 
 ```bash
-./opam exec -- dune build ocaml/examples/hello_window.exe
-./opam exec -- dune exec ocaml/examples/hello_window.exe
+# cd to project root
+dune build ocaml/examples/hello_window.exe
+dune exec ocaml/examples/hello_window.exe
 ```
 
 ### Build Order
@@ -667,12 +668,14 @@ let test_create_and_destroy () =
 For changes to rendering:
 
 ```bash
+# cd to project root
+
 # Use Xvfb for headless testing
 Xvfb :99 -screen 0 800x600x24 &
 export DISPLAY=:99
 
 # Run visual test
-./opam exec -- dune exec ocaml/examples/hello_window.exe &
+dune exec ocaml/examples/hello_window.exe &
 sleep 1
 
 # Capture screenshot
@@ -684,14 +687,16 @@ import -window root screenshot.png
 ### Running Tests
 
 ```bash
+# cd to project root
+
 # FFI smoke test (works without display)
-./opam exec -- dune exec ocaml/examples/test_ffi.exe
+dune exec ocaml/examples/test_ffi.exe
 
 # Full graphical test (requires display)
-./opam exec -- dune exec ocaml/examples/hello_window.exe
+dune exec ocaml/examples/hello_window.exe
 
 # With Xvfb (headless)
-Xvfb :99 & DISPLAY=:99 ./opam exec -- dune exec ocaml/examples/hello_window.exe
+Xvfb :99 & DISPLAY=:99 dune exec ocaml/examples/hello_window.exe
 ```
 
 ### Memory Testing
@@ -699,8 +704,7 @@ Xvfb :99 & DISPLAY=:99 ./opam exec -- dune exec ocaml/examples/hello_window.exe
 Check for leaks with valgrind:
 
 ```bash
-valgrind --leak-check=full --show-leak-kinds=all \
-  ./opam exec -- dune exec ocaml/examples/hello_window.exe
+valgrind --leak-check=full --show-leak-kinds=all dune exec ocaml/examples/hello_window.exe
 ```
 
 Expected output: No leaks from our code (may see leaks from X11 drivers).
@@ -710,7 +714,7 @@ Expected output: No leaks from our code (may see leaks from X11 drivers).
 The `test_ffi.exe` example verifies the FFI chain works:
 
 ```bash
-./opam exec -- dune exec ocaml/examples/test_ffi.exe
+dune exec ocaml/examples/test_ffi.exe
 ```
 
 Output:

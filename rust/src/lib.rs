@@ -247,7 +247,6 @@ impl ApplicationHandler for EventCollector {
                     (ModifiersKeyState::Pressed, ModifiersKeyState::Unknown) => 1,
                     (ModifiersKeyState::Unknown, ModifiersKeyState::Pressed) => 2,
                     (ModifiersKeyState::Pressed, ModifiersKeyState::Pressed) => 3,
-                    _ => 0,
                 };
 
                 data[1] = match (modifiers.lcontrol_state(), modifiers.rcontrol_state()) {
@@ -255,7 +254,6 @@ impl ApplicationHandler for EventCollector {
                     (ModifiersKeyState::Pressed, ModifiersKeyState::Unknown) => 1,
                     (ModifiersKeyState::Unknown, ModifiersKeyState::Pressed) => 2,
                     (ModifiersKeyState::Pressed, ModifiersKeyState::Pressed) => 3,
-                    _ => 0,
                 };
 
                 data[2] = match (modifiers.lalt_state(), modifiers.ralt_state()) {
@@ -263,7 +261,6 @@ impl ApplicationHandler for EventCollector {
                     (ModifiersKeyState::Pressed, ModifiersKeyState::Unknown) => 1,
                     (ModifiersKeyState::Unknown, ModifiersKeyState::Pressed) => 2,
                     (ModifiersKeyState::Pressed, ModifiersKeyState::Pressed) => 3,
-                    _ => 0,
                 };
 
                 data[3] = match (modifiers.lsuper_state(), modifiers.rsuper_state()) {
@@ -271,7 +268,6 @@ impl ApplicationHandler for EventCollector {
                     (ModifiersKeyState::Pressed, ModifiersKeyState::Unknown) => 1,
                     (ModifiersKeyState::Unknown, ModifiersKeyState::Pressed) => 2,
                     (ModifiersKeyState::Pressed, ModifiersKeyState::Pressed) => 3,
-                    _ => 0,
                 };
 
                 self.events.push(Event {

@@ -8,15 +8,16 @@
   ../rust/Cargo.toml
   ../rust/Cargo.lock)
  (action
-  (progn
-   (chdir
-    ../rust
-    (run cargo build --release))
-   (run cp ../rust/target/release/libwinit_ocaml_ffi.a libwinit_ocaml_ffi.a)
-   (run
-    cp
-    ../rust/target/release/libwinit_ocaml_ffi.so
-    dllwinit_ocaml_ffi.so))))
+  (no-infer
+   (progn
+    (chdir
+     ../rust
+     (run cargo build --release))
+    (run cp ../rust/target/release/libwinit_ocaml_ffi.a libwinit_ocaml_ffi.a)
+    (run
+     cp
+     ../rust/target/release/libwinit_ocaml_ffi.so
+     dllwinit_ocaml_ffi.so)))))
 
 (library
  (name winit_softbuffer)
