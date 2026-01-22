@@ -1,0 +1,9 @@
+(library
+ (name winit_softbuffer)
+ (public_name winit-softbuffer)
+ (libraries unix bigarray)
+ (foreign_stubs
+  (language c)
+  (names winit_stubs)
+  (flags :standard -I../rust/target/release))
+ (c_library_flags :standard /home/tyoverby/workspace/rust/winit-ocaml/rust/target/release/libwinit_ocaml_ffi.a -lpthread -ldl -lm))

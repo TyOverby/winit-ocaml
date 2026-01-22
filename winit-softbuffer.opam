@@ -1,0 +1,10 @@
+opam-version: "2.0"
+name: "winit-softbuffer"
+version: "0.1.0"
+synopsis: "OCaml bindings for winit and softbuffer"
+maintainer: "dev@example.com"
+authors: ["Claude"]
+depends: [
+  "ocaml"
+  "dune" {>= "3.0"}
+]
