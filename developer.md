@@ -429,6 +429,31 @@ Auto-present on next `get_buffer()`. Rejected because:
 - Surprising behavior (side effect in getter)
 - Harder to implement damage regions later
 
+### 7. Tablet Support
+
+**Implementation:** Full support for graphics tablets (Wacom, etc.) on X11/Linux with pressure and tilt data.
+
+**How it works:**
+- The vendored winit fork includes custom patches to properly handle tablet events on X11
+- Tablet devices (pens, erasers) are detected by the presence of pressure and tilt valuators
+- The Device struct stores which valuator index corresponds to pressure, tilt_x, and tilt_y
+- When tablet events arrive, the data is extracted from valuators and encoded as PointerSource::TabletTool
+- This is then passed through to OCaml as source type 2 (tablet) in PointerMoved events
+- Pressure and tilt information is available in the event data fields
+
+**Platform support:**
+- ✅ **X11/Linux**: Full support with pressure and tilt
+- ⚠️ **Wayland/Linux**: Depends on winit's upstream Wayland tablet support
+- ⚠️ **macOS/Windows**: Not yet tested
+
+**Key changes in vendored winit:**
+- Modified `xinput2_mouse_motion` to handle Pen and Eraser device types
+- Modified `xinput2_button_input` to handle Pen and Eraser device types
+- Added `extract_tablet_data` helper to extract pressure and tilt from X11 valuators
+- Extended Device struct to track tablet axis indices
+
+See the closed issue `issues/closed/6-wacom-tablet-support.md` for implementation details.
+
 ## Build System
 
 ### Overview

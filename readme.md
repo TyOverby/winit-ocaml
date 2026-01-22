@@ -22,6 +22,7 @@ The library gives you direct access to a pixel buffer where every frame, you can
 - **Direct pixel access**: Zero-copy buffer access via Bigarray for maximum performance
 - **OCaml-controlled event loop**: Your code controls the main loop, not the windowing library
 - **Cross-platform**: Works on Linux (X11/Wayland), with macOS and Windows support planned
+- **Tablet support**: Full support for graphics tablets (Wacom, etc.) with pressure and tilt data on X11
 - **Type-safe**: Rust's safety guarantees at the FFI boundary, OCaml's type safety in your code
 - **Modern**: Built on the excellent Rust windowing ecosystem
 
