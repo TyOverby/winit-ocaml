@@ -17,14 +17,15 @@ Claude is encouraged to create new issues in `./issues/open` to be worked on in 
 4. Dig into the code more deeply and use the internet to do any necessary research. Add a new `# Notes` section to the issue with information that you've learned.
 5. Begin working on addressing the issue.  As you go, feel free to add notes to the issue file under a new `# Addressing` header
    that talks about how you're going about addressing the issue.
-6. Ensure that the project builds and that tests pass.
+6. Ensure that the project builds (no warnings!) and that tests pass.
 7. After making all the changes that you see fit, ensure that the `# Addressing` section is accurate
 8. *IMPORTANT*: Ensure that all documentation (e.g. `./developer.md`) is up to date
 9. Move the file into `./issues/closed`
-10. Commit your changes, and create a new pull request using the `gh` tool.
-11. Move back to the `master` branch
-12. File any new issues that you came across in `./issues/open` for future work.
-13. Commit the new issues directoy to `master` and push
+10. Run code formatters (`dune fmt` and `cargo fmt`)
+11. Commit your changes, and create a new pull request using the `gh` tool.
+12. Move back to the `master` branch
+13. File any new issues that you came across in `./issues/open` for future work.
+14. Commit the new issues directoy to `master` and push
 
 ## Merging pull requests
 
