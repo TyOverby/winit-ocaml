@@ -473,12 +473,30 @@ dune build
 
 Dune will automatically:
 - Detect changes in Rust source files
-- Invoke `cargo build --release` when needed
+- Invoke `cargo build` (dev mode) or `cargo build --release` (release mode) when needed
 - Copy the resulting library to the build directory
 - Compile C stubs and OCaml code
 - Link everything together
 
 No manual cargo commands or cleaning is needed!
+
+### Build Profiles
+
+The build system supports conditional compilation based on Dune's build profile:
+
+- **Development builds** (default):
+  ```bash
+  dune build
+  ```
+  Uses `cargo build` (debug mode, unoptimized, faster compilation)
+
+- **Release builds**:
+  ```bash
+  dune build --profile release
+  ```
+  Uses `cargo build --release` (optimized, slower compilation, faster runtime)
+
+This makes development iteration much faster while preserving full optimization for production builds.
 
 ### How It Works
 
@@ -486,18 +504,25 @@ The `ocaml/dune` file uses a custom rule to build the Rust library:
 
 ```scheme
 (rule
- (targets libwinit_ocaml_ffi.a)
+ (targets libwinit_ocaml_ffi.a dllwinit_ocaml_ffi.so)
  (deps
   (source_tree ../rust/src)
   (source_tree ../rust/vendor)
   ../rust/Cargo.toml
   ../rust/Cargo.lock)
  (action
-  (progn
-   (chdir
-    ../rust
-    (run cargo build --release))
-   (run cp ../rust/target/release/libwinit_ocaml_ffi.a libwinit_ocaml_ffi.a))))
+  (no-infer
+   (bash
+    "\
+if [ \"%{profile}\" = \"release\" ]; then \
+  cd ../rust && cargo build --release; \
+  cp target/release/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; \
+  cp target/release/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; \
+else \
+  cd ../rust && cargo build; \
+  cp target/debug/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; \
+  cp target/debug/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; \
+fi"))))
 
 (library
  (name winit_softbuffer)
@@ -519,6 +544,8 @@ The `ocaml/dune` file uses a custom rule to build the Rust library:
 
 - `(rule)`: Defines how to build the Rust library
 - `(deps)`: Tracks Rust sources, vendored dependencies, and Cargo files
+- `(bash)`: Uses a bash script to conditionally build based on `%{profile}`
+- `%{profile}`: Dune variable that contains the current build profile ("dev" or "release")
 - `(foreign_archives)`: Links the Rust static library into the OCaml library
 - `(foreign_stubs)`: Compiles C stub file
 - `(c_library_flags)`: System libraries required by winit and softbuffer

@@ -9,15 +9,17 @@
   ../rust/Cargo.lock)
  (action
   (no-infer
-   (progn
-    (chdir
-     ../rust
-     (run cargo build --release))
-    (run cp ../rust/target/release/libwinit_ocaml_ffi.a libwinit_ocaml_ffi.a)
-    (run
-     cp
-     ../rust/target/release/libwinit_ocaml_ffi.so
-     dllwinit_ocaml_ffi.so)))))
+   (bash
+    "\
+if [ \"%{profile}\" = \"release\" ]; then \
+  cd ../rust && cargo build --release; \
+  cp target/release/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; \
+  cp target/release/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; \
+else \
+  cd ../rust && cargo build; \
+  cp target/debug/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; \
+  cp target/debug/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; \
+fi"))))
 
 (library
  (name winit_softbuffer)
