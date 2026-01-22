@@ -471,6 +471,14 @@ Simply run:
 dune build
 ```
 
+Or use the convenience script:
+
+```bash
+./build.sh
+```
+
+This script runs `dune build` and as well as an example application.
+
 Dune will automatically:
 - Detect changes in Rust source files
 - Invoke `cargo build` (dev mode) or `cargo build --release` (release mode) when needed
@@ -622,6 +630,15 @@ This is incremental: if Rust hasn't changed, cargo won't rebuild. If nothing has
 - Use `dune fmt` for formatting (ocamlformat)
 - Prefer immutability and functional patterns
 - Add .mli documentation for all public functions
+
+**Formatting:**
+Format all code (OCaml and Rust) with the convenience script:
+
+```bash
+./fmt.sh
+```
+
+This runs both `dune fmt` and `cargo fmt` to ensure consistent formatting across the entire codebase.
 
 ### Adding New Features
 
@@ -784,7 +801,10 @@ Test 2: Event type handling... [lists all event types]
 **Problem:** `undefined reference to 'winit_create'`
 
 **Solution:**
-- Run `dune clean && dune build` to rebuild everything
+- Clean and rebuild everything:
+  ```bash
+  ./clean.sh && ./build.sh
+  ```
 - Verify Rust sources are present in `rust/src/`
 - Check that cargo is installed and accessible: `cargo --version`
 - Verify symbols are exported: `nm rust/target/release/libwinit_ocaml_ffi.a | grep winit_create`
@@ -823,6 +843,9 @@ Test 2: Event type handling... [lists all event types]
 ```
 winit-ocaml/
 ├── Cargo.toml               # Rust workspace configuration
+├── build.sh                 # Convenience script: build everything
+├── clean.sh                 # Convenience script: clean all build artifacts
+├── fmt.sh                   # Convenience script: format all code
 ├── rust/
 │   ├── Cargo.toml           # Rust FFI library dependencies
 │   ├── src/

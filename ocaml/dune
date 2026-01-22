@@ -10,16 +10,7 @@
  (action
   (no-infer
    (bash
-    "\
-if [ \"%{profile}\" = \"release\" ]; then \
-  cd ../rust && cargo build --release; \
-  cp target/release/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; \
-  cp target/release/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; \
-else \
-  cd ../rust && cargo build; \
-  cp target/debug/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; \
-  cp target/debug/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; \
-fi"))))
+    "if [ \"%{profile}\" = \"release\" ]; then cd ../rust && cargo build --release; cp target/release/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; cp target/release/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; else cd ../rust && cargo build; cp target/debug/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; cp target/debug/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; fi"))))
 
 (library
  (name winit_softbuffer)
