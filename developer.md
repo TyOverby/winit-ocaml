@@ -762,5 +762,8 @@ winit-ocaml/
 ```
 
 The `rust/vendor` directory contains git submodule vendored copies of the `winit`
-and `softbuffer` codebase. The project uses a Cargo workspace at the root to manage
+and `softbuffer` codebase. These submodules point to forks under the TyOverby GitHub
+account (TyOverby/winit and TyOverby/softbuffer), allowing the project to make custom
+modifications when needed. The project uses a Cargo workspace at the root to manage
 all Rust crates, making it easy to explore the dependencies and make changes if necessary.
+See CLAUDE.md for detailed instructions on working with vendored dependencies.
