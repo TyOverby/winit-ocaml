@@ -21,11 +21,30 @@ type modifier_key_state =
   | RightPressed (** Only the right variant is pressed *)
   | BothPressed (** Both left and right variants are pressed *)
 
+(** Tablet tool type *)
+type tablet_tool_kind =
+  | Pen (** Pen/stylus *)
+  | Eraser (** Eraser end of stylus *)
+  | Brush (** Brush tool *)
+  | Pencil (** Pencil tool *)
+  | Airbrush (** Airbrush tool *)
+  | Finger (** Finger *)
+  | TabletMouse (** Tablet puck/mouse *)
+  | Lens (** Lens tool *)
+
+(** Tablet-specific data (pressure, tilt, etc.) *)
+type tablet_data =
+  { pressure : float option (** Pressure 0.0-1.0, None if not available *)
+  ; tilt_x : int option (** Tilt X in degrees -90 to 90, None if not available *)
+  ; tilt_y : int option (** Tilt Y in degrees -90 to 90, None if not available *)
+  ; tool_kind : tablet_tool_kind (** Type of tool *)
+  }
+
 (** Source of a pointer event *)
 type pointer_source =
   | Mouse (** Traditional mouse pointer *)
   | Touch (** Touch screen or trackpad *)
-  | Tablet (** Graphics tablet or stylus *)
+  | Tablet of tablet_data (** Graphics tablet or stylus with tablet-specific data *)
   | Unknown (** Unknown pointer source *)
 
 (** Mouse wheel delta type *)

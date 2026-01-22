@@ -19,11 +19,30 @@ type modifier_key_state =
   | RightPressed
   | BothPressed
 
+(** Tablet tool type *)
+type tablet_tool_kind =
+  | Pen
+  | Eraser
+  | Brush
+  | Pencil
+  | Airbrush
+  | Finger
+  | TabletMouse
+  | Lens
+
+(** Tablet-specific data (pressure, tilt, etc.) *)
+type tablet_data =
+  { pressure : float option
+  ; tilt_x : int option
+  ; tilt_y : int option
+  ; tool_kind : tablet_tool_kind
+  }
+
 (** Pointer source type *)
 type pointer_source =
   | Mouse
   | Touch
-  | Tablet
+  | Tablet of tablet_data
   | Unknown
 
 (** Mouse wheel delta type *)
@@ -157,10 +176,33 @@ let modifier_key_state_of_int : int -> modifier_key_state = function
   | _ -> Unknown
 ;;
 
-let pointer_source_of_int : int -> pointer_source = function
+let tablet_tool_kind_of_int = function
+  | 0 -> Pen
+  | 1 -> Eraser
+  | 2 -> Brush
+  | 3 -> Pencil
+  | 4 -> Airbrush
+  | 5 -> Finger
+  | 6 -> TabletMouse
+  | 7 -> Lens
+  | _ -> Pen
+;;
+
+let decode_tablet_data data =
+  let pressure =
+    if data.(6) = 0 then None else Some (decode_f32 data.(6))
+  in
+  let tilt_x = if data.(7) = 0 then None else Some data.(7) in
+  let tilt_y = if data.(8) = 0 then None else Some data.(8) in
+  let tool_kind = tablet_tool_kind_of_int data.(9) in
+  { pressure; tilt_x; tilt_y; tool_kind }
+;;
+
+let pointer_source_of_int data source_int =
+  match source_int with
   | 0 -> Mouse
   | 1 -> Touch
-  | 2 -> Tablet
+  | 2 -> Tablet (decode_tablet_data data)
   | 3 -> Unknown
   | _ -> Unknown
 ;;
@@ -208,7 +250,7 @@ let event_of_raw event_type data =
       { x = decode_f64 data.(0) data.(1)
       ; y = decode_f64 data.(2) data.(3)
       ; primary = data.(4) <> 0
-      ; source = pointer_source_of_int data.(5)
+      ; source = pointer_source_of_int data data.(5)
       }
   | 7 ->
     PointerButtonPressed
@@ -229,14 +271,14 @@ let event_of_raw event_type data =
       { x = decode_f64 data.(0) data.(1)
       ; y = decode_f64 data.(2) data.(3)
       ; primary = data.(4) <> 0
-      ; source = pointer_source_of_int data.(5)
+      ; source = pointer_source_of_int data data.(5)
       }
   | 10 ->
     PointerLeft
       { x = decode_f64 data.(0) data.(1)
       ; y = decode_f64 data.(2) data.(3)
       ; primary = data.(4) <> 0
-      ; source = pointer_source_of_int data.(5)
+      ; source = pointer_source_of_int data data.(5)
       }
   | 11 ->
     MouseWheel

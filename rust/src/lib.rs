@@ -74,6 +74,11 @@ pub struct Event {
 //   data[3]: y position in pixels (f64 bits 32-63)
 //   data[4]: primary pointer (0=no, 1=yes)
 //   data[5]: source (0=mouse, 1=touch, 2=tablet, 3=unknown)
+//   --- For tablet source only (source=2): ---
+//   data[6]: pressure (f32 bits as i32, 0.0-1.0 normalized)
+//   data[7]: tilt_x (i8 degrees -90 to 90, encoded as i32)
+//   data[8]: tilt_y (i8 degrees -90 to 90, encoded as i32)
+//   data[9]: tablet tool kind (0=Pen, 1=Eraser, 2=Brush, 3=Pencil, 4=Airbrush, etc.)
 //
 // PointerEntered/PointerLeft:
 //   data[0]: x position (f64 bits 0-31)
@@ -290,12 +295,45 @@ impl ApplicationHandler for EventCollector {
                 data[2] = y_low;
                 data[3] = y_high;
                 data[4] = if primary { 1 } else { 0 };
-                data[5] = match source {
+                data[5] = match &source {
                     winit::event::PointerSource::Mouse => 0,
                     winit::event::PointerSource::Touch { .. } => 1,
                     winit::event::PointerSource::TabletTool { .. } => 2,
                     winit::event::PointerSource::Unknown => 3,
                 };
+
+                // Extract tablet-specific data if this is a tablet event
+                if let winit::event::PointerSource::TabletTool { kind, data: tablet_data } = source {
+                    // Encode pressure (normalized 0.0-1.0)
+                    if let Some(force) = tablet_data.force {
+                        let pressure = match force {
+                            winit::event::Force::Normalized(p) => p as f32,
+                            winit::event::Force::Calibrated { force, max_possible_force, .. } => {
+                                (force / max_possible_force) as f32
+                            }
+                        };
+                        data[6] = encode_f32(pressure);
+                    }
+
+                    // Encode tilt
+                    if let Some(tilt) = tablet_data.tilt {
+                        data[7] = tilt.x as i32;
+                        data[8] = tilt.y as i32;
+                    }
+
+                    // Encode tool kind
+                    data[9] = match kind {
+                        winit::event::TabletToolKind::Pen => 0,
+                        winit::event::TabletToolKind::Eraser => 1,
+                        winit::event::TabletToolKind::Brush => 2,
+                        winit::event::TabletToolKind::Pencil => 3,
+                        winit::event::TabletToolKind::Airbrush => 4,
+                        winit::event::TabletToolKind::Finger => 5,
+                        winit::event::TabletToolKind::Mouse => 6,
+                        winit::event::TabletToolKind::Lens => 7,
+                        _ => 0, // Default to Pen for unknown tool kinds
+                    };
+                }
 
                 self.events.push(Event {
                     event_type: EventType::PointerMoved,
