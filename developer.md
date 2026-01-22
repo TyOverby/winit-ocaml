@@ -433,21 +433,72 @@ Auto-present on next `get_buffer()`. Rejected because:
 
 ### Overview
 
-The build process involves multiple tools:
-1. **Cargo**: Builds the Rust FFI library
-2. **Dune**: Builds the OCaml library and links it with the Rust library
-3. **C Compiler**: Compiles the C stubs (invoked by Dune)
+The build process is fully integrated through Dune, which automatically handles:
+1. **Cargo**: Builds the Rust FFI library (invoked automatically by Dune)
+2. **C Compiler**: Compiles the C stubs (invoked by Dune)
+3. **OCaml Compiler**: Builds the OCaml library and links everything together
 
-### Rust Build (Cargo)
+### Unified Build Command
+
+Simply run:
 
 ```bash
-cd rust
-cargo build --release
+dune build
 ```
 
-This produces:
-- `target/release/libwinit_ocaml_ffi.a` (static library)
-- `target/release/libwinit_ocaml_ffi.so` (dynamic library)
+Dune will automatically:
+- Detect changes in Rust source files
+- Invoke `cargo build --release` when needed
+- Copy the resulting library to the build directory
+- Compile C stubs and OCaml code
+- Link everything together
+
+No manual cargo commands or cleaning is needed!
+
+### How It Works
+
+The `ocaml/dune` file uses a custom rule to build the Rust library:
+
+```scheme
+(rule
+ (targets libwinit_ocaml_ffi.a)
+ (deps
+  (source_tree ../rust/src)
+  (source_tree ../rust/vendor)
+  ../rust/Cargo.toml
+  ../rust/Cargo.lock)
+ (action
+  (progn
+   (chdir
+    ../rust
+    (run cargo build --release))
+   (run cp ../rust/target/release/libwinit_ocaml_ffi.a libwinit_ocaml_ffi.a))))
+
+(library
+ (name winit_softbuffer)
+ (public_name winit-softbuffer)
+ (libraries unix bigarray)
+ (foreign_stubs
+  (language c)
+  (names winit_stubs)
+  (flags :standard))
+ (foreign_archives winit_ocaml_ffi)
+ (c_library_flags
+  :standard
+  -lpthread
+  -ldl
+  -lm))
+```
+
+**Key Components:**
+
+- `(rule)`: Defines how to build the Rust library
+- `(deps)`: Tracks Rust sources, vendored dependencies, and Cargo files
+- `(foreign_archives)`: Links the Rust static library into the OCaml library
+- `(foreign_stubs)`: Compiles C stub file
+- `(c_library_flags)`: System libraries required by winit and softbuffer
+
+### Rust Build Details
 
 The Cargo.toml specifies:
 
@@ -459,32 +510,7 @@ crate-type = ["staticlib", "cdylib"]
 - `staticlib`: For linking into the final OCaml executable
 - `cdylib`: For dynamic loading if needed
 
-### OCaml Build (Dune)
-
-```bash
-./opam exec -- dune build
-```
-
-The `ocaml/dune` file configures foreign library linking:
-
-```scheme
-(library
- (name winit_softbuffer)
- (public_name winit-softbuffer)
- (libraries unix bigarray)
- (foreign_stubs
-  (language c)
-  (names winit_stubs)
-  (flags :standard -I../rust/target/release))
- (c_library_flags :standard -L../rust/target/release -lwinit_ocaml_ffi
-  -lxcb -lX11 -lxkbcommon -lwayland-client -lwayland-cursor -ldl -lpthread))
-```
-
-**Key Components:**
-
-- `foreign_stubs`: Compiles C stub file with access to Rust headers
-- `c_library_flags`: Links against Rust library and system dependencies
-- System libraries (`-lxcb`, `-lX11`, etc.): Required by winit for Linux platform support
+Dune uses the static library (`libwinit_ocaml_ffi.a`) for linking.
 
 **Platform-Specific Linking:**
 
@@ -511,11 +537,16 @@ pacman -S libxcb libx11 libxkbcommon wayland
 
 ### Build Order
 
-1. Rust library must be built first (manual step)
-2. Dune finds the Rust library at `../rust/target/release/`
-3. C stubs are compiled and linked against Rust library
-4. OCaml code is compiled and linked with C stubs
-5. Examples are built linking the OCaml library
+When you run `dune build`, the following happens automatically:
+
+1. Dune checks if Rust sources have changed (by tracking `rust/src/`, `rust/vendor/`, `Cargo.toml`, `Cargo.lock`)
+2. If changes detected, Dune runs `cargo build --release` in the `rust/` directory
+3. The resulting `libwinit_ocaml_ffi.a` is copied to the build directory
+4. C stubs are compiled
+5. OCaml code is compiled
+6. Everything is linked together into the final library/executable
+
+This is incremental: if Rust hasn't changed, cargo won't rebuild. If nothing has changed, dune does nothing.
 
 ## Contributing
 
@@ -697,9 +728,10 @@ Test 2: Event type handling... [lists all event types]
 **Problem:** `undefined reference to 'winit_create'`
 
 **Solution:**
-- Ensure Rust library is built: `cd rust && cargo build --release`
-- Check library path in `ocaml/dune` matches your Rust output
-- Verify symbols are exported: `nm -D rust/target/release/libwinit_ocaml_ffi.so | grep winit`
+- Run `dune clean && dune build` to rebuild everything
+- Verify Rust sources are present in `rust/src/`
+- Check that cargo is installed and accessible: `cargo --version`
+- Verify symbols are exported: `nm rust/target/release/libwinit_ocaml_ffi.a | grep winit_create`
 
 ### Runtime Issues
 

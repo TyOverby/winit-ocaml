@@ -1,3 +1,19 @@
+; Rule to build the Rust FFI library using Cargo
+
+(rule
+ (targets libwinit_ocaml_ffi.a)
+ (deps
+  (source_tree ../rust/src)
+  (source_tree ../rust/vendor)
+  ../rust/Cargo.toml
+  ../rust/Cargo.lock)
+ (action
+  (progn
+   (chdir
+    ../rust
+    (run cargo build --release))
+   (run cp ../rust/target/release/libwinit_ocaml_ffi.a libwinit_ocaml_ffi.a))))
+
 (library
  (name winit_softbuffer)
  (public_name winit-softbuffer)
@@ -5,10 +21,6 @@
  (foreign_stubs
   (language c)
   (names winit_stubs)
-  (flags :standard -I../rust/target/release))
- (c_library_flags
-  :standard
-  /home/tyoverby/workspace/rust/winit-ocaml/rust/target/release/libwinit_ocaml_ffi.a
-  -lpthread
-  -ldl
-  -lm))
+  (flags :standard))
+ (foreign_archives winit_ocaml_ffi)
+ (c_library_flags :standard -lpthread -ldl -lm))
