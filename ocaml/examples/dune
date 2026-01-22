@@ -5,3 +5,7 @@
 (executable
  (name test_ffi)
  (libraries winit-softbuffer unix bigarray))
+
+(executable
+ (name paint)
+ (libraries winit-softbuffer unix bigarray))
