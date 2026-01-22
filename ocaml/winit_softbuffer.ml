@@ -189,9 +189,7 @@ let tablet_tool_kind_of_int = function
 ;;
 
 let decode_tablet_data data =
-  let pressure =
-    if data.(6) = 0 then None else Some (decode_f32 data.(6))
-  in
+  let pressure = if data.(6) = 0 then None else Some (decode_f32 data.(6)) in
   let tilt_x = if data.(7) = 0 then None else Some data.(7) in
   let tilt_y = if data.(8) = 0 then None else Some data.(8) in
   let tool_kind = tablet_tool_kind_of_int data.(9) in

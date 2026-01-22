@@ -18,9 +18,12 @@ let () =
           Printf.printf "Frame %d: CloseRequested\n%!" !frame;
           should_exit := true
         | SurfaceResized { width; height } ->
-          Printf.printf "Frame %d: SurfaceResized { width=%d; height=%d }\n%!" !frame width height
-        | RedrawRequested ->
-          Printf.printf "Frame %d: RedrawRequested\n%!" !frame
+          Printf.printf
+            "Frame %d: SurfaceResized { width=%d; height=%d }\n%!"
+            !frame
+            width
+            height
+        | RedrawRequested -> () (* Printf.printf "Frame %d: RedrawRequested\n%!" !frame *)
         | KeyPressed { key_code; location; repeat } ->
           Printf.printf
             "Frame %d: KeyPressed { key_code=%d; location=%s; repeat=%b }\n%!"
@@ -85,8 +88,8 @@ let () =
                primary
            | Tablet { pressure; tilt_x; tilt_y; tool_kind } ->
              Printf.printf
-               "Frame %d: PointerMoved { x=%.2f; y=%.2f; primary=%b; source=Tablet { tool=%s; \
-                pressure=%s; tilt_x=%s; tilt_y=%s } }\n\
+               "Frame %d: PointerMoved { x=%.2f; y=%.2f; primary=%b; source=Tablet { \
+                tool=%s; pressure=%s; tilt_x=%s; tilt_y=%s } }\n\
                 %!"
                !frame
                x
@@ -121,7 +124,8 @@ let () =
           (match source with
            | Tablet { tool_kind; _ } ->
              Printf.printf
-               "Frame %d: PointerEntered { x=%.2f; y=%.2f; primary=%b; source=Tablet(%s) }\n%!"
+               "Frame %d: PointerEntered { x=%.2f; y=%.2f; primary=%b; source=Tablet(%s) }\n\
+                %!"
                !frame
                x
                y
@@ -146,7 +150,8 @@ let () =
           (match source with
            | Tablet { tool_kind; _ } ->
              Printf.printf
-               "Frame %d: PointerLeft { x=%.2f; y=%.2f; primary=%b; source=Tablet(%s) }\n%!"
+               "Frame %d: PointerLeft { x=%.2f; y=%.2f; primary=%b; source=Tablet(%s) }\n\
+                %!"
                !frame
                x
                y
@@ -177,7 +182,8 @@ let () =
             primary
         | PointerButtonReleased { button; x; y; primary } ->
           Printf.printf
-            "Frame %d: PointerButtonReleased { button=%d; x=%.2f; y=%.2f; primary=%b }\n%!"
+            "Frame %d: PointerButtonReleased { button=%d; x=%.2f; y=%.2f; primary=%b }\n\
+             %!"
             !frame
             button
             x
@@ -197,18 +203,13 @@ let () =
              | Moved -> "Moved"
              | Ended -> "Ended"
              | Cancelled -> "Cancelled")
-        | Focused ->
-          Printf.printf "Frame %d: Focused\n%!" !frame
-        | Unfocused ->
-          Printf.printf "Frame %d: Unfocused\n%!" !frame
+        | Focused -> Printf.printf "Frame %d: Focused\n%!" !frame
+        | Unfocused -> Printf.printf "Frame %d: Unfocused\n%!" !frame
         | WindowMoved { x; y } ->
           Printf.printf "Frame %d: WindowMoved { x=%d; y=%d }\n%!" !frame x y
-        | Destroyed ->
-          Printf.printf "Frame %d: Destroyed\n%!" !frame
-        | Occluded ->
-          Printf.printf "Frame %d: Occluded\n%!" !frame
-        | Unoccluded ->
-          Printf.printf "Frame %d: Unoccluded\n%!" !frame
+        | Destroyed -> Printf.printf "Frame %d: Destroyed\n%!" !frame
+        | Occluded -> Printf.printf "Frame %d: Occluded\n%!" !frame
+        | Unoccluded -> Printf.printf "Frame %d: Unoccluded\n%!" !frame
         | ThemeChanged theme ->
           Printf.printf
             "Frame %d: ThemeChanged %s\n%!"
@@ -218,8 +219,7 @@ let () =
              | Dark -> "Dark")
         | ScaleFactorChanged scale ->
           Printf.printf "Frame %d: ScaleFactorChanged %.2f\n%!" !frame scale
-        | NoEvent ->
-          ())
+        | NoEvent -> ())
       events;
     (* Get buffer and draw *)
     let width, height, buffer = get_buffer app in
