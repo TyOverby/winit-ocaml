@@ -6,29 +6,66 @@ let () =
   Printf.printf "Test 1: Calling test_version()... ";
   let version = test_version () in
   Printf.printf "OK! Got version: %d\n%!" version;
-  (* Test 2: Verify event type conversions work *)
+  (* Test 2: Verify event type handling works *)
   Printf.printf "Test 2: Event type handling... ";
   let test_events =
-    [ { event_type = CloseRequested; data1 = 0; data2 = 0 }
-    ; { event_type = Resized; data1 = 1024; data2 = 768 }
-    ; { event_type = KeyPressed; data1 = 42; data2 = 0 }
-    ; { event_type = MouseMoved; data1 = 100; data2 = 200 }
-    ; { event_type = MouseButtonPressed; data1 = 1; data2 = 0 }
+    [ CloseRequested
+    ; SurfaceResized { width = 1024; height = 768 }
+    ; KeyPressed { key_code = 42; location = Standard; repeat = false }
+    ; PointerMoved { x = 100.0; y = 200.0; primary = true; source = Mouse }
+    ; PointerButtonPressed { button = 1; x = 100.0; y = 200.0; primary = true }
+    ; ModifiersChanged
+        { shift = LeftPressed; control = Unknown; alt = Unknown; super = Unknown }
+    ; MouseWheel { delta_type = Line; x = 0.0; y = 1.0; phase = Moved }
+    ; Focused
+    ; ThemeChanged Light
+    ; ScaleFactorChanged 2.0
     ]
   in
   List.iter
     (fun e ->
       let type_str =
-        match e.event_type with
+        match e with
         | NoEvent -> "NoEvent"
         | CloseRequested -> "CloseRequested"
-        | Resized -> Printf.sprintf "Resized(%d,%d)" e.data1 e.data2
+        | SurfaceResized { width; height } ->
+          Printf.sprintf "SurfaceResized(%d,%d)" width height
         | RedrawRequested -> "RedrawRequested"
-        | KeyPressed -> Printf.sprintf "KeyPressed(%d)" e.data1
-        | KeyReleased -> "KeyReleased"
-        | MouseMoved -> Printf.sprintf "MouseMoved(%d,%d)" e.data1 e.data2
-        | MouseButtonPressed -> Printf.sprintf "MouseButtonPressed(%d)" e.data1
-        | MouseButtonReleased -> "MouseButtonReleased"
+        | KeyPressed { key_code; location = _; repeat } ->
+          Printf.sprintf "KeyPressed(code=%d, repeat=%b)" key_code repeat
+        | KeyReleased { key_code; location = _; repeat = _ } ->
+          Printf.sprintf "KeyReleased(code=%d)" key_code
+        | ModifiersChanged { shift; control = _; alt = _; super = _ } ->
+          Printf.sprintf
+            "ModifiersChanged(shift=%s)"
+            (match shift with
+             | Unknown -> "unknown"
+             | LeftPressed -> "left"
+             | RightPressed -> "right"
+             | BothPressed -> "both")
+        | PointerMoved { x; y; primary = _; source = _ } ->
+          Printf.sprintf "PointerMoved(%.0f,%.0f)" x y
+        | PointerButtonPressed { button; x = _; y = _; primary = _ } ->
+          Printf.sprintf "PointerButtonPressed(%d)" button
+        | PointerButtonReleased { button; x = _; y = _; primary = _ } ->
+          Printf.sprintf "PointerButtonReleased(%d)" button
+        | PointerEntered { x = _; y = _; primary = _; source = _ } -> "PointerEntered"
+        | PointerLeft { x = _; y = _; primary = _; source = _ } -> "PointerLeft"
+        | MouseWheel { delta_type = _; x = _; y; phase = _ } ->
+          Printf.sprintf "MouseWheel(y=%.1f)" y
+        | Focused -> "Focused"
+        | Unfocused -> "Unfocused"
+        | WindowMoved { x; y } -> Printf.sprintf "WindowMoved(%d,%d)" x y
+        | Destroyed -> "Destroyed"
+        | Occluded -> "Occluded"
+        | Unoccluded -> "Unoccluded"
+        | ThemeChanged theme ->
+          Printf.sprintf
+            "ThemeChanged(%s)"
+            (match theme with
+             | Light -> "light"
+             | Dark -> "dark")
+        | ScaleFactorChanged scale -> Printf.sprintf "ScaleFactorChanged(%.1f)" scale
       in
       Printf.printf "  - %s\n%!" type_str)
     test_events;

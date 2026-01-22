@@ -13,15 +13,49 @@ let () =
     (* Process events *)
     List.iter
       (fun event ->
-        match event.event_type with
+        match event with
         | CloseRequested ->
           Printf.printf "Frame %d: Close requested\n%!" !frame;
           should_exit := true
-        | Resized ->
-          Printf.printf "Frame %d: Resized to %dx%d\n%!" !frame event.data1 event.data2
-        | KeyPressed -> Printf.printf "Frame %d: Key pressed\n%!" !frame
-        | MouseButtonPressed ->
-          Printf.printf "Frame %d: Mouse button %d pressed\n%!" !frame event.data1
+        | SurfaceResized { width; height } ->
+          Printf.printf "Frame %d: Resized to %dx%d\n%!" !frame width height
+        | KeyPressed { key_code; location; repeat } ->
+          Printf.printf
+            "Frame %d: Key %d pressed (location=%s, repeat=%b)\n%!"
+            !frame
+            key_code
+            (match location with
+             | Standard -> "standard"
+             | Left -> "left"
+             | Right -> "right"
+             | Numpad -> "numpad")
+            repeat
+        | PointerButtonPressed { button; x; y; primary = _ } ->
+          Printf.printf
+            "Frame %d: Mouse button %d pressed at (%.1f, %.1f)\n%!"
+            !frame
+            button
+            x
+            y
+        | ModifiersChanged { shift; control; alt; super = _ } ->
+          Printf.printf
+            "Frame %d: Modifiers changed (shift=%s, ctrl=%s, alt=%s)\n%!"
+            !frame
+            (match shift with
+             | Unknown -> "unknown"
+             | LeftPressed -> "left"
+             | RightPressed -> "right"
+             | BothPressed -> "both")
+            (match control with
+             | Unknown -> "unknown"
+             | LeftPressed -> "left"
+             | RightPressed -> "right"
+             | BothPressed -> "both")
+            (match alt with
+             | Unknown -> "unknown"
+             | LeftPressed -> "left"
+             | RightPressed -> "right"
+             | BothPressed -> "both")
         | _ -> ())
       events;
     (* Get buffer and draw *)
