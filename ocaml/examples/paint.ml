@@ -12,12 +12,9 @@ type stroke =
 type paint_state =
   { mutable strokes : stroke list
   ; mutable is_drawing : bool
-  ; mutable last_x : float
-  ; mutable last_y : float
   }
 
-let create_state () =
-  { strokes = []; is_drawing = false; last_x = 0.0; last_y = 0.0 }
+let create_state () = { strokes = []; is_drawing = false }
 ;;
 
 (* Draw a filled circle (using a simple algorithm) *)
@@ -92,9 +89,7 @@ let () =
           state.strokes <- []
         | PointerButtonPressed { x; y; _ } ->
           Printf.printf "Pen down at (%.1f, %.1f)\n%!" x y;
-          state.is_drawing <- true;
-          state.last_x <- x;
-          state.last_y <- y
+          state.is_drawing <- true
         | PointerButtonReleased _ ->
           Printf.printf "Pen up\n%!";
           state.is_drawing <- false
@@ -116,14 +111,10 @@ let () =
                 | Eraser -> "Eraser"
                 | _ -> "Other");
              (* Add stroke at current position *)
-             add_stroke state x y pressure_val;
-             state.last_x <- x;
-             state.last_y <- y
+             add_stroke state x y pressure_val
            | Mouse when state.is_drawing ->
              (* Also support mouse for testing without tablet *)
-             add_stroke state x y 0.5;
-             state.last_x <- x;
-             state.last_y <- y
+             add_stroke state x y 0.5
            | _ -> ())
         | _ -> ())
       events;
