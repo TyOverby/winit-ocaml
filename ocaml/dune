@@ -1,7 +1,7 @@
 ; Rule to build the Rust FFI library using Cargo
 
 (rule
- (targets libwinit_ocaml_ffi.a)
+ (targets libwinit_ocaml_ffi.a dllwinit_ocaml_ffi.so)
  (deps
   (source_tree ../rust/src)
   (source_tree ../rust/vendor)
@@ -12,7 +12,8 @@
    (chdir
     ../rust
     (run cargo build --release))
-   (run cp ../rust/target/release/libwinit_ocaml_ffi.a libwinit_ocaml_ffi.a))))
+   (run cp ../rust/target/release/libwinit_ocaml_ffi.a libwinit_ocaml_ffi.a)
+   (run cp ../rust/target/release/libwinit_ocaml_ffi.so dllwinit_ocaml_ffi.so))))
 
 (library
  (name winit_softbuffer)
