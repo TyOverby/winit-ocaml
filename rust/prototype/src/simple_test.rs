@@ -2,28 +2,21 @@
 // Key insight: keep window, context, and surface together to avoid borrow checker issues
 
 use std::num::NonZeroU32;
+use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 
-use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::pump_events::{EventLoopExtPumpEvents, PumpStatus};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowAttributes, WindowId};
 
-// Store everything together
-struct State<D, W> {
-    context: softbuffer::Context<D>,
-    surface: softbuffer::Surface<D, W>,
-}
-
 struct App {
-    window: Option<Box<dyn Window>>,
+    window: Option<Arc<Box<dyn Window>>>,
+    context: Option<softbuffer::Context<Arc<Box<dyn Window>>>>,
+    surface: Option<softbuffer::Surface<Arc<Box<dyn Window>>, Arc<Box<dyn Window>>>>,
     frame_count: u32,
-    // Store context and surface in a type-erased way to avoid complex type signatures
-    context: Option<Box<dyn std::any::Any>>,
-    surface: Option<Box<dyn std::any::Any>>,
 }
 
 impl App {
@@ -37,13 +30,10 @@ impl App {
     }
 
     fn initialize_graphics(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let window = self.window.as_ref().ok_or("No window")?;
+        let window = self.window.as_ref().ok_or("No window")?.clone();
 
-        let owned_display = window.display_handle()?.to_owned();
-        let owned_window = window.window_handle()?.to_owned();
-
-        let context = softbuffer::Context::new(owned_display)?;
-        let mut surface = softbuffer::Surface::new(&context, owned_window)?;
+        let context = softbuffer::Context::new(window.clone())?;
+        let mut surface = softbuffer::Surface::new(&context, window.clone())?;
 
         // Set initial size
         let size = window.surface_size();
@@ -54,18 +44,13 @@ impl App {
             println!("Surface initialized: {}x{}", width, height);
         }
 
-        // Store in type-erased boxes
-        self.surface = Some(Box::new(surface));
-        self.context = Some(Box::new(context));
+        self.surface = Some(surface);
+        self.context = Some(context);
         Ok(())
     }
 
     fn draw_frame(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        // Get surface with proper type
-        let surface_any = self.surface.as_mut().ok_or("No surface")?;
-        let surface: &mut softbuffer::Surface<_, _> = surface_any
-            .downcast_mut()
-            .ok_or("Wrong surface type")?;
+        let surface = self.surface.as_mut().ok_or("No surface")?;
 
         let mut buffer = surface.buffer_mut()?;
         let width = buffer.width().get() as usize;
@@ -89,11 +74,12 @@ impl App {
         Ok(())
     }
 
-    fn resize_surface(&mut self, width: u32, height: u32) -> Result<(), Box<dyn std::error::Error>> {
-        let surface_any = self.surface.as_mut().ok_or("No surface")?;
-        let surface: &mut softbuffer::Surface<_, _> = surface_any
-            .downcast_mut()
-            .ok_or("Wrong surface type")?;
+    fn resize_surface(
+        &mut self,
+        width: u32,
+        height: u32,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let surface = self.surface.as_mut().ok_or("No surface")?;
 
         if let (Some(w), Some(h)) = (NonZeroU32::new(width), NonZeroU32::new(height)) {
             surface.resize(w, h)?;
@@ -111,7 +97,7 @@ impl ApplicationHandler for App {
         match event_loop.create_window(window_attributes) {
             Ok(window) => {
                 println!("Window created");
-                self.window = Some(window);
+                self.window = Some(Arc::new(window));
 
                 // Initialize graphics immediately
                 if let Err(e) = self.initialize_graphics() {
