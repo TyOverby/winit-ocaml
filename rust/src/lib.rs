@@ -303,14 +303,20 @@ impl ApplicationHandler for EventCollector {
                 };
 
                 // Extract tablet-specific data if this is a tablet event
-                if let winit::event::PointerSource::TabletTool { kind, data: tablet_data } = source {
+                if let winit::event::PointerSource::TabletTool {
+                    kind,
+                    data: tablet_data,
+                } = source
+                {
                     // Encode pressure (normalized 0.0-1.0)
                     if let Some(force) = tablet_data.force {
                         let pressure = match force {
                             winit::event::Force::Normalized(p) => p as f32,
-                            winit::event::Force::Calibrated { force, max_possible_force, .. } => {
-                                (force / max_possible_force) as f32
-                            }
+                            winit::event::Force::Calibrated {
+                                force,
+                                max_possible_force,
+                                ..
+                            } => (force / max_possible_force) as f32,
                         };
                         data[6] = encode_f32(pressure);
                     }
