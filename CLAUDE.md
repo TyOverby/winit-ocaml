@@ -20,7 +20,7 @@ Claude is encouraged to create new issues in `./issues/open` to be worked on in 
 6. Ensure that the project builds (no warnings!) and that tests pass.
 7. After making all the changes that you see fit, ensure that the `## Addressing` section is accurate
 8. *IMPORTANT*: Ensure that all documentation (e.g. `./developer.md`) is up to date
-9. Move the file into `./issues/closed`
+9. Use `git mv` to move the issue file into `./issues/closed`
 10. Run code formatters (`dune fmt` and `cargo fmt`)
 11. Commit your changes, and create a new pull request using the `gh` tool.
 12. Move back to the `master` branch
