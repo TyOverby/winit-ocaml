@@ -1,0 +1,6 @@
+[submodule "vendor/winit"]
+	path = vendor/winit
+	url = git@github.com:rust-windowing/winit.git
+[submodule "vendor/softbuffer"]
+	path = vendor/softbuffer
+	url = git@github.com:rust-windowing/softbuffer.git

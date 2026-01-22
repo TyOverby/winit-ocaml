@@ -1,0 +1,22 @@
+[package]
+name = "winit-softbuffer-prototype"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+softbuffer = { path = "../vendor/softbuffer" }
+winit = { path = "../vendor/winit/winit" }
+raw-window-handle = "0.6"
+tracing-subscriber = "0.3"
+
+[[bin]]
+name = "pump_events_test"
+path = "src/pump_events_test.rs"
+
+[[bin]]
+name = "manual_draw"
+path = "src/manual_draw.rs"
+
+[[bin]]
+name = "simple_test"
+path = "src/simple_test.rs"
