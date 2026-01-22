@@ -3,6 +3,14 @@
 (** Opaque type representing the application state *)
 type app
 
+(** A rectangular region of the buffer for damage tracking *)
+type damage_rect =
+  { x : int (** X coordinate of top left corner *)
+  ; y : int (** Y coordinate of top left corner *)
+  ; width : int (** Width of the rectangle (must be > 0) *)
+  ; height : int (** Height of the rectangle (must be > 0) *)
+  }
+
 (** Physical key code - layout-independent key position. This is the scancode value from
     the keyboard hardware. *)
 type key_code = int
@@ -159,10 +167,33 @@ val get_buffer
   :  app
   -> int * int * (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t
 
+(** Get the age of the current buffer. Returns the number of frames ago this buffer was
+    last presented:
+    - 0 means it's a new buffer with unspecified contents (must redraw everything)
+    - 1 means it's the same as the last frame (can use damage regions)
+    - 2+ means it's from even earlier frames (for triple-buffering)
+
+    This is useful for optimizing redraws when using {!present_with_damage}. *)
+val get_buffer_age : app -> int
+
 (** Present the current buffer to the screen. This displays the pixels you've drawn and
     invalidates the buffer. You must call {!get_buffer} again to get a new buffer for the
     next frame. *)
 val present : app -> unit
+
+(** Present the current buffer with damage regions. This is like {!present} but tells the
+    window system which regions of the buffer have changed, allowing it to optimize the
+    display update.
+
+    Platform support:
+    - Supported on Wayland, X11 (with XShm), Win32, Web
+    - Falls back to full present on unsupported platforms
+
+    Use {!get_buffer_age} to determine if you need to redraw everything (age=0) or can use
+    damage regions (age>=1).
+
+    @param damage_rects Array of rectangles that have changed since the last frame *)
+val present_with_damage : app -> damage_rect array -> unit
 
 (** Test function to verify FFI is working. Returns 100 if the FFI is working correctly. *)
 val test_version : unit -> int

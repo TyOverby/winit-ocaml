@@ -5,12 +5,15 @@
 #include <caml/bigarray.h>
 #include <caml/fail.h>
 #include <string.h>
+#include <stdlib.h>
 
 // Forward declarations of Rust FFI functions
 extern void* winit_create(void);
 extern int winit_pump_events(void* app, void* events_out, size_t max_events);
 extern unsigned int* winit_get_buffer(void* app, unsigned int* width_out, unsigned int* height_out);
 extern int winit_present(void* app);
+extern int winit_get_buffer_age(void* app);
+extern int winit_present_with_damage(void* app, const void* damage_rects, size_t damage_count);
 extern void winit_destroy(void* app);
 extern int winit_test_version(void);
 
@@ -44,6 +47,14 @@ typedef struct {
     EventType event_type;
     int data[16];
 } Event;
+
+// Damage rectangle (must match Rust)
+typedef struct {
+    unsigned int x;
+    unsigned int y;
+    unsigned int width;
+    unsigned int height;
+} DamageRect;
 
 // Custom block for app handle
 static void winit_app_finalize(value v) {
@@ -166,6 +177,62 @@ CAMLprim value caml_winit_present(value app_val) {
     int result = winit_present(app);
     if (result < 0) {
         caml_failwith("winit_present failed");
+    }
+
+    CAMLreturn(Val_unit);
+}
+
+// OCaml: external winit_get_buffer_age : app -> int = "caml_winit_get_buffer_age"
+CAMLprim value caml_winit_get_buffer_age(value app_val) {
+    CAMLparam1(app_val);
+
+    void* app = winit_app_val(app_val);
+
+    int age = winit_get_buffer_age(app);
+    if (age < 0) {
+        caml_failwith("winit_get_buffer_age failed");
+    }
+
+    CAMLreturn(Val_int(age));
+}
+
+// OCaml: external winit_present_with_damage : app -> damage_rect array -> unit = "caml_winit_present_with_damage"
+CAMLprim value caml_winit_present_with_damage(value app_val, value rects_val) {
+    CAMLparam2(app_val, rects_val);
+
+    void* app = winit_app_val(app_val);
+
+    // Get array size
+    mlsize_t count = Wosize_val(rects_val);
+
+    // Allocate C array for damage rects
+    DamageRect* rects = NULL;
+    if (count > 0) {
+        rects = (DamageRect*)malloc(sizeof(DamageRect) * count);
+        if (rects == NULL) {
+            caml_failwith("Failed to allocate damage rects");
+        }
+
+        // Convert OCaml tuples to C structs
+        for (mlsize_t i = 0; i < count; i++) {
+            value rect_tuple = Field(rects_val, i);
+            rects[i].x = Int_val(Field(rect_tuple, 0));
+            rects[i].y = Int_val(Field(rect_tuple, 1));
+            rects[i].width = Int_val(Field(rect_tuple, 2));
+            rects[i].height = Int_val(Field(rect_tuple, 3));
+        }
+    }
+
+    // Call Rust FFI
+    int result = winit_present_with_damage(app, rects, count);
+
+    // Free allocated memory
+    if (rects != NULL) {
+        free(rects);
+    }
+
+    if (result < 0) {
+        caml_failwith("winit_present_with_damage failed");
     }
 
     CAMLreturn(Val_unit);

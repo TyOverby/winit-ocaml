@@ -10,6 +10,16 @@ use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::keyboard::{ModifiersKeyState, PhysicalKey};
 use winit::window::{Theme, Window, WindowAttributes, WindowId};
 
+// C-compatible damage rectangle
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct DamageRect {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+}
+
 // C-compatible event type
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -680,6 +690,13 @@ impl WinitOcamlApp {
         }
     }
 
+    fn get_buffer_age(&self) -> u8 {
+        match &self.buffer {
+            Some(buffer) => buffer.age(),
+            None => 0,
+        }
+    }
+
     fn present(&mut self) -> i32 {
         // Take the buffer and present it
         if let Some(buffer) = self.buffer.take() {
@@ -693,6 +710,44 @@ impl WinitOcamlApp {
                 }
                 Err(e) => {
                     eprintln!("Failed to present: {:?}", e);
+                    -1
+                }
+            }
+        } else {
+            -1
+        }
+    }
+
+    fn present_with_damage(&mut self, damage_rects: &[DamageRect]) -> i32 {
+        // Take the buffer and present it with damage regions
+        if let Some(buffer) = self.buffer.take() {
+            // Convert DamageRect to softbuffer::Rect
+            let rects: Vec<softbuffer::Rect> = damage_rects
+                .iter()
+                .filter_map(|r| {
+                    // softbuffer::Rect requires NonZeroU32 for width and height
+                    match (NonZeroU32::new(r.width), NonZeroU32::new(r.height)) {
+                        (Some(w), Some(h)) => Some(softbuffer::Rect {
+                            x: r.x,
+                            y: r.y,
+                            width: w,
+                            height: h,
+                        }),
+                        _ => None, // Skip invalid rects
+                    }
+                })
+                .collect();
+
+            match buffer.present_with_damage(&rects) {
+                Ok(_) => {
+                    // Request redraw for next frame
+                    if let Some(window) = &self.collector.window {
+                        window.request_redraw();
+                    }
+                    0
+                }
+                Err(e) => {
+                    eprintln!("Failed to present with damage: {:?}", e);
                     -1
                 }
             }
@@ -765,6 +820,32 @@ pub extern "C" fn winit_present(app: *mut WinitOcamlApp) -> i32 {
 
     let app = unsafe { &mut *app };
     app.present()
+}
+
+#[no_mangle]
+pub extern "C" fn winit_present_with_damage(
+    app: *mut WinitOcamlApp,
+    damage_rects: *const DamageRect,
+    damage_count: usize,
+) -> i32 {
+    if app.is_null() || damage_rects.is_null() {
+        return -1;
+    }
+
+    let app = unsafe { &mut *app };
+    let rects = unsafe { slice::from_raw_parts(damage_rects, damage_count) };
+
+    app.present_with_damage(rects)
+}
+
+#[no_mangle]
+pub extern "C" fn winit_get_buffer_age(app: *mut WinitOcamlApp) -> i32 {
+    if app.is_null() {
+        return -1;
+    }
+
+    let app = unsafe { &*app };
+    app.get_buffer_age() as i32
 }
 
 #[no_mangle]

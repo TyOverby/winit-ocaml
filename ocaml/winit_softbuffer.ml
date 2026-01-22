@@ -2,6 +2,14 @@
 
 type app
 
+(** Damage rectangle *)
+type damage_rect =
+  { x : int
+  ; y : int
+  ; width : int
+  ; height : int
+  }
+
 (** Physical key code - layout-independent key position *)
 type key_code = int
 
@@ -144,7 +152,15 @@ external get_buffer
   -> int * int * (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t
   = "caml_winit_get_buffer"
 
+external get_buffer_age : app -> int = "caml_winit_get_buffer_age"
 external present : app -> unit = "caml_winit_present"
+
+external present_with_damage_impl
+  :  app
+  -> (int * int * int * int) array
+  -> unit
+  = "caml_winit_present_with_damage"
+
 external test_version : unit -> int = "caml_winit_test_version"
 
 let create = winit_create
@@ -306,4 +322,9 @@ let event_of_raw event_type data =
 let pump_events app =
   let raw_events = winit_pump_events_raw app in
   Array.to_list (Array.map (fun (et, data) -> event_of_raw et data) raw_events)
+;;
+
+let present_with_damage app rects =
+  let tuples = Array.map (fun r -> r.x, r.y, r.width, r.height) rects in
+  present_with_damage_impl app tuples
 ;;
