@@ -454,6 +454,62 @@ Auto-present on next `get_buffer()`. Rejected because:
 
 See the closed issue `issues/closed/6-wacom-tablet-support.md` for implementation details.
 
+### 8. Damage Tracking and Optimized Presentation
+
+**Implementation:** Support for `present_with_damage` to optimize display updates by only
+redrawing changed regions of the buffer.
+
+**How it works:**
+- Softbuffer provides `Buffer::present_with_damage(damage: &[Rect])` to present only specific regions
+- Softbuffer also provides `Buffer::age()` to check if the buffer is reused from previous frames
+- The age indicates how many frames ago this buffer was presented (0 = new buffer, 1 = same as last frame, etc.)
+- Applications can track which regions they modify and only blit/present those regions
+
+**API Functions:**
+
+1. **`get_buffer_age : app -> int`**
+   - Returns the buffer age (0 = new buffer with unspecified contents, 1+ = reused buffer)
+   - Applications should check age: if 0, must redraw everything; if >0, can use damage regions
+
+2. **`present_with_damage : app -> damage_rect array -> unit`**
+   - Presents only the specified damaged regions
+   - `damage_rect` has fields: `x`, `y`, `width`, `height` (all integers)
+   - Falls back to full present on unsupported platforms
+
+**Platform support:**
+- ✅ **Wayland**: Full support
+- ✅ **X11**: Supported when XShm is available
+- ✅ **Win32**: Supported
+- ✅ **Web**: Supported
+- ⚠️ Other platforms fall back to full present
+
+**Implementation layers:**
+
+1. **Rust layer** (`rust/src/lib.rs`):
+   - Added `DamageRect` C-compatible struct with x, y, width, height fields
+   - Added `WinitOcamlApp::get_buffer_age()` that calls `Buffer::age()`
+   - Added `WinitOcamlApp::present_with_damage()` that converts `DamageRect` to `softbuffer::Rect`
+   - The conversion handles `NonZeroU32` requirement for width/height
+
+2. **C stubs layer** (`ocaml/winit_stubs.c`):
+   - Added `caml_winit_get_buffer_age()` wrapper
+   - Added `caml_winit_present_with_damage()` that converts OCaml tuples to C structs
+
+3. **OCaml layer** (`ocaml/winit_softbuffer.ml`):
+   - Added `damage_rect` record type
+   - Added wrappers that convert records to tuples for C layer
+
+**Example usage in paint app:**
+The paint example (`ocaml/examples/paint.ml`) demonstrates the optimization:
+1. Tracks dirty regions when drawing strokes (bounding boxes of circles)
+2. Checks buffer age - if 0, blits entire canvas; otherwise only blits dirty regions
+3. Presents with accumulated damage rects
+4. Clears dirty regions after presenting
+
+This significantly reduces CPU usage for applications where only small regions change per frame.
+
+See the closed issue `issues/closed/11-present-damaged.md` for implementation details.
+
 ## Build System
 
 ### Overview
