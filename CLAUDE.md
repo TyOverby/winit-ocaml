@@ -24,6 +24,7 @@ Claude is encouraged to create new issues in `./issues/open` to be worked on in 
 10. Run code formatters (`dune fmt` and `cargo fmt`)
 11. Commit your changes, and create a new pull request using the `gh` tool.
 12. Move back to the `master` branch
+13. If necessary, run `git submodule update` to revert submodule changes
 13. File any new issues that you came across in `./issues/open` for future work.
 14. Commit the new issues directoy to `master` and push
 
