@@ -13,14 +13,14 @@ Claude is encouraged to create new issues in `./issues/open` to be worked on in 
 
 1. You'll be directed to work on an issue in `./issues/open`
 2. Read that issue carefully.
-3. Explore the repository and take notes on the current status of the repository in a new `# Currently` section in the isse markdown file (the project may have changed since the issue was filed!) 
-4. Dig into the code more deeply and use the internet to do any necessary research. Add a new `# Notes` section to the issue with information that you've learned.
-5. Begin working on addressing the issue.  As you go, feel free to add notes to the issue file under a new `# Addressing` header
+3. Explore the repository and take notes on the current status of the repository in a new `## Currently` section in the isse markdown file (the project may have changed since the issue was filed!) 
+4. Dig into the code more deeply and use the internet to do any necessary research. Add a new `## Notes` section to the issue with information that you've learned.
+5. Begin working on addressing the issue.  As you go, feel free to add notes to the issue file under a new `## Addressing` header
    that talks about how you're going about addressing the issue.
 6. Ensure that the project builds (no warnings!) and that tests pass.
-7. After making all the changes that you see fit, ensure that the `# Addressing` section is accurate
+7. After making all the changes that you see fit, ensure that the `## Addressing` section is accurate
 8. *IMPORTANT*: Ensure that all documentation (e.g. `./developer.md`) is up to date
-9. Move the file into `./issues/closed`
+9. Use `git mv` to move the issue file into `./issues/closed`
 10. Run code formatters (`dune fmt` and `cargo fmt`)
 11. Commit your changes, and create a new pull request using the `gh` tool.
 12. Move back to the `master` branch
