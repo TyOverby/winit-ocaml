@@ -223,8 +223,7 @@ impl WinitOcamlApp {
     }
 
     fn initialize(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let event_loop = self.event_loop.as_mut()
-            .ok_or("Event loop already taken")?;
+        let event_loop = self.event_loop.as_mut().ok_or("Event loop already taken")?;
 
         // Pump events until window is created
         while self.collector.window.is_none() {
@@ -236,8 +235,7 @@ impl WinitOcamlApp {
         }
 
         // Create graphics state
-        let window = self.collector.window.take()
-            .ok_or("Window not created")?;
+        let window = self.collector.window.take().ok_or("Window not created")?;
         self.graphics = Some(GraphicsState::new(window.clone())?);
         self.collector.window = Some(window);
 
@@ -291,9 +289,7 @@ impl WinitOcamlApp {
                 // This is unsafe but necessary for FFI. The caller must ensure
                 // they don't use this pointer after calling present or after
                 // the app is destroyed.
-                let buffer: softbuffer::Buffer<'static> = unsafe {
-                    std::mem::transmute(buffer)
-                };
+                let buffer: softbuffer::Buffer<'static> = unsafe { std::mem::transmute(buffer) };
                 self.buffer = Some(buffer);
 
                 (ptr, width, height)
@@ -331,15 +327,13 @@ impl WinitOcamlApp {
 #[no_mangle]
 pub extern "C" fn winit_create() -> *mut WinitOcamlApp {
     match WinitOcamlApp::new() {
-        Ok(mut app) => {
-            match app.initialize() {
-                Ok(_) => Box::into_raw(Box::new(app)),
-                Err(e) => {
-                    eprintln!("Failed to initialize app: {:?}", e);
-                    std::ptr::null_mut()
-                }
+        Ok(mut app) => match app.initialize() {
+            Ok(_) => Box::into_raw(Box::new(app)),
+            Err(e) => {
+                eprintln!("Failed to initialize app: {:?}", e);
+                std::ptr::null_mut()
             }
-        }
+        },
         Err(e) => {
             eprintln!("Failed to create app: {:?}", e);
             std::ptr::null_mut()
