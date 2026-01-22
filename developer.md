@@ -755,3 +755,8 @@ winit-ocaml/
 ├── readme.md               # User-facing documentation
 └── developer.md            # This file
 ```
+
+The `vendor` directory contains git submodule vendored copies of the `winit`
+and `softbuffer` codebase.  The project should build against these versions,
+and also make it easy for you to explore the dependencies and even make changes
+if necessary.
