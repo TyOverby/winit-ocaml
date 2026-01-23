@@ -152,13 +152,15 @@ let blit_to_screen canvas_buffer screen_buffer =
   (* Bigarray.Array1.blit uses memcpy internally - much faster than element-by-element *)
   if Bigarray.Array1.dim canvas_buffer = Bigarray.Array1.dim screen_buffer
   then Bigarray.Array1.blit canvas_buffer screen_buffer
-  else
+  else (
     (* Fallback to manual copy if sizes don't match (shouldn't happen) *)
-    let size = min (Bigarray.Array1.dim canvas_buffer) (Bigarray.Array1.dim screen_buffer) in
+    let size =
+      min (Bigarray.Array1.dim canvas_buffer) (Bigarray.Array1.dim screen_buffer)
+    in
     for i = 0 to size - 1 do
       let pixel = Bigarray.Array1.unsafe_get canvas_buffer i in
       Bigarray.Array1.unsafe_set screen_buffer i pixel
-    done
+    done)
 ;;
 
 (* Blit only the damaged regions from canvas to screen buffer *)
@@ -290,7 +292,6 @@ let () =
     (* Check buffer age to determine if we need full redraw *)
     let age = get_buffer_age app in
     (* Blit canvas to screen *)
-    Printf.printf "age:%d\n%!" age;
     match state.canvas_buffer, age, state.dirty_regions with
     | Some canvas_buffer, 1, _ :: _ ->
       blit_damaged_regions canvas_buffer buffer width state.dirty_regions;
