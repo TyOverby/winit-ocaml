@@ -1,0 +1,34 @@
+; Rule to build the Rust FFI library using Cargo
+
+(rule
+ (targets libwinit_ocaml_ffi.a dllwinit_ocaml_ffi.so)
+ (deps
+  (source_tree ../../rust/src)
+  (source_tree ../../rust/vendor)
+  ../../rust/Cargo.toml
+  ../../rust/Cargo.lock)
+ (action
+  (no-infer
+   (bash
+    "\n# Determine dynamic library extension based on OS\ncase \"$(uname)\" in\n  Darwin) DYLIB_EXT=dylib ;;\n  *)      DYLIB_EXT=so ;;\nesac\n\nRUST_DIR=$(pwd)/../../rust\nOUT_DIR=$(pwd)\n\nif [ \"%{profile}\" = \"release\" ]; then\n  cd $RUST_DIR && cargo build --release\n  cp $RUST_DIR/target/release/libwinit_ocaml_ffi.a $OUT_DIR/libwinit_ocaml_ffi.a\n  cp $RUST_DIR/target/release/libwinit_ocaml_ffi.$DYLIB_EXT $OUT_DIR/dllwinit_ocaml_ffi.so\nelse\n  cd $RUST_DIR && cargo build\n  cp $RUST_DIR/target/debug/libwinit_ocaml_ffi.a $OUT_DIR/libwinit_ocaml_ffi.a\n  cp $RUST_DIR/target/debug/libwinit_ocaml_ffi.$DYLIB_EXT $OUT_DIR/dllwinit_ocaml_ffi.so\nfi\n"))))
+
+; Generate platform-specific C library flags
+
+(rule
+ (targets c_library_flags.sexp)
+ (action
+  (bash
+   "\ncase \"$(uname)\" in\n  Darwin)\n    echo '(-lpthread -framework CoreFoundation -framework CoreGraphics -framework AppKit -framework QuartzCore -framework CoreVideo -framework Metal -framework IOKit -framework IOSurface -framework Carbon -lobjc)' > c_library_flags.sexp\n    ;;\n  *)\n    echo '(-lpthread -ldl -lm)' > c_library_flags.sexp\n    ;;\nesac\n")))
+
+(library
+ (name winit)
+ (public_name winit)
+ (libraries unix)
+ (foreign_stubs
+  (language c)
+  (names winit_stubs)
+  (flags :standard))
+ (foreign_archives winit_ocaml_ffi)
+ (c_library_flags
+  (:standard
+   (:include c_library_flags.sexp))))

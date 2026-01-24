@@ -1,11 +1,11 @@
 (executable
  (name hello_window)
- (libraries winit-softbuffer unix bigarray))
+ (libraries winit softbuffer unix bigarray))
 
 (executable
  (name test_ffi)
- (libraries winit-softbuffer unix bigarray))
+ (libraries winit unix))
 
 (executable
  (name paint)
- (libraries winit-softbuffer unix bigarray))
+ (libraries winit softbuffer unix bigarray))

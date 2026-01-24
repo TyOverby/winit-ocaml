@@ -1,14 +1,7 @@
-(** OCaml bindings for winit and softbuffer *)
+(** OCaml bindings for winit - Window creation and event handling *)
 
-type app
-
-(** Damage rectangle *)
-type damage_rect =
-  { x : int
-  ; y : int
-  ; width : int
-  ; height : int
-  }
+type window
+type window_handle
 
 (** Physical key code - layout-independent key position *)
 type key_code = int
@@ -144,26 +137,15 @@ type event =
   | ScaleFactorChanged of float
 
 (* External C stubs *)
-external winit_create : unit -> app = "caml_winit_create"
-external winit_pump_events_raw : app -> (int * int array) array = "caml_winit_pump_events"
+external create : unit -> window = "caml_winit_window_create"
 
-external get_buffer
-  :  app
-  -> int * int * (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t
-  = "caml_winit_get_buffer"
+external pump_events_raw
+  :  window
+  -> (int * int array) array
+  = "caml_winit_window_pump_events"
 
-external get_buffer_age : app -> int = "caml_winit_get_buffer_age"
-external present : app -> unit = "caml_winit_present"
-
-external present_with_damage_impl
-  :  app
-  -> (int * int * int * int) array
-  -> unit
-  = "caml_winit_present_with_damage"
-
+external get_handle : window -> window_handle = "caml_winit_window_get_handle"
 external test_version : unit -> int = "caml_winit_test_version"
-
-let create = winit_create
 
 (* Helper to decode f64 from two i32s *)
 let decode_f64 low high =
@@ -319,12 +301,7 @@ let event_of_raw event_type data =
   | _ -> NoEvent
 ;;
 
-let pump_events app =
-  let raw_events = winit_pump_events_raw app in
+let pump_events window =
+  let raw_events = pump_events_raw window in
   Array.to_list (Array.map (fun (et, data) -> event_of_raw et data) raw_events)
-;;
-
-let present_with_damage app rects =
-  let tuples = Array.map (fun r -> r.x, r.y, r.width, r.height) rects in
-  present_with_damage_impl app tuples
 ;;

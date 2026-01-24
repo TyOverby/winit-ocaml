@@ -1,0 +1,172 @@
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/alloc.h>
+#include <caml/custom.h>
+#include <caml/fail.h>
+#include <string.h>
+
+// Forward declarations of Rust FFI functions
+extern void* winit_window_create(void);
+extern int winit_window_pump_events(void* window, void* events_out, size_t max_events);
+extern const void* winit_window_get_handle(const void* window);
+extern void winit_window_handle_release(const void* handle);
+extern void winit_window_destroy(void* window);
+extern int winit_test_version(void);
+
+// Event type enum (must match Rust)
+typedef enum {
+    EVENT_NO_EVENT = 0,
+    EVENT_CLOSE_REQUESTED = 1,
+    EVENT_SURFACE_RESIZED = 2,
+    EVENT_REDRAW_REQUESTED = 3,
+    EVENT_KEY_PRESSED = 4,
+    EVENT_KEY_RELEASED = 5,
+    EVENT_POINTER_MOVED = 6,
+    EVENT_POINTER_BUTTON_PRESSED = 7,
+    EVENT_POINTER_BUTTON_RELEASED = 8,
+    EVENT_POINTER_ENTERED = 9,
+    EVENT_POINTER_LEFT = 10,
+    EVENT_MOUSE_WHEEL = 11,
+    EVENT_FOCUSED = 12,
+    EVENT_UNFOCUSED = 13,
+    EVENT_WINDOW_MOVED = 14,
+    EVENT_MODIFIERS_CHANGED = 15,
+    EVENT_DESTROYED = 16,
+    EVENT_OCCLUDED = 17,
+    EVENT_UNOCCLUDED = 18,
+    EVENT_THEME_CHANGED = 19,
+    EVENT_SCALE_FACTOR_CHANGED = 20
+} EventType;
+
+// Event structure (must match Rust)
+typedef struct {
+    EventType event_type;
+    int data[16];
+} Event;
+
+// Custom block for window handle
+static void winit_window_finalize(value v) {
+    void* window = *((void**)Data_custom_val(v));
+    if (window != NULL) {
+        winit_window_destroy(window);
+    }
+}
+
+static struct custom_operations winit_window_ops = {
+    "winit_window",
+    winit_window_finalize,
+    custom_compare_default,
+    custom_hash_default,
+    custom_serialize_default,
+    custom_deserialize_default,
+    custom_compare_ext_default,
+    custom_fixed_length_default
+};
+
+// Wrap window pointer in OCaml custom block
+static value alloc_winit_window(void* window) {
+    value v = caml_alloc_custom(&winit_window_ops, sizeof(void*), 0, 1);
+    *((void**)Data_custom_val(v)) = window;
+    return v;
+}
+
+// Extract window pointer from OCaml value
+static void* winit_window_val(value v) {
+    return *((void**)Data_custom_val(v));
+}
+
+// Custom block for window handle (non-owning reference for softbuffer)
+// This does NOT have a finalizer because ownership is transferred to softbuffer
+static struct custom_operations winit_window_handle_ops = {
+    "winit_window_handle",
+    custom_finalize_default,  // No finalizer - ownership transfers to softbuffer
+    custom_compare_default,
+    custom_hash_default,
+    custom_serialize_default,
+    custom_deserialize_default,
+    custom_compare_ext_default,
+    custom_fixed_length_default
+};
+
+// Wrap handle pointer in OCaml custom block
+static value alloc_winit_window_handle(const void* handle) {
+    value v = caml_alloc_custom(&winit_window_handle_ops, sizeof(void*), 0, 1);
+    *((const void**)Data_custom_val(v)) = handle;
+    return v;
+}
+
+// OCaml: external create : unit -> window = "caml_winit_window_create"
+CAMLprim value caml_winit_window_create(value unit) {
+    CAMLparam1(unit);
+    CAMLlocal1(result);
+
+    void* window = winit_window_create();
+    if (window == NULL) {
+        caml_failwith("Failed to create winit window");
+    }
+
+    result = alloc_winit_window(window);
+    CAMLreturn(result);
+}
+
+// OCaml: external pump_events_raw : window -> (int * int array) array = "caml_winit_window_pump_events"
+CAMLprim value caml_winit_window_pump_events(value window_val) {
+    CAMLparam1(window_val);
+    CAMLlocal3(result, event_tuple, data_array);
+
+    void* window = winit_window_val(window_val);
+
+    // Allocate event buffer (max 32 events per pump)
+    Event events[32];
+    memset(events, 0, sizeof(events));
+
+    int count = winit_window_pump_events(window, events, 32);
+
+    if (count < 0) {
+        caml_failwith("winit_window_pump_events failed");
+    }
+
+    // Convert events to OCaml array
+    result = caml_alloc(count, 0);
+    for (int i = 0; i < count; i++) {
+        // Create tuple (event_type, data_array)
+        event_tuple = caml_alloc_tuple(2);
+
+        // Store event type
+        Store_field(event_tuple, 0, Val_int(events[i].event_type));
+
+        // Create data array
+        data_array = caml_alloc(16, 0);
+        for (int j = 0; j < 16; j++) {
+            Store_field(data_array, j, Val_int(events[i].data[j]));
+        }
+        Store_field(event_tuple, 1, data_array);
+
+        Store_field(result, i, event_tuple);
+    }
+
+    CAMLreturn(result);
+}
+
+// OCaml: external get_handle : window -> window_handle = "caml_winit_window_get_handle"
+CAMLprim value caml_winit_window_get_handle(value window_val) {
+    CAMLparam1(window_val);
+    CAMLlocal1(result);
+
+    void* window = winit_window_val(window_val);
+    const void* handle = winit_window_get_handle(window);
+
+    if (handle == NULL) {
+        caml_failwith("Failed to get window handle");
+    }
+
+    result = alloc_winit_window_handle(handle);
+    CAMLreturn(result);
+}
+
+// OCaml: external test_version : unit -> int = "caml_winit_test_version"
+CAMLprim value caml_winit_test_version(value unit) {
+    CAMLparam1(unit);
+    int version = winit_test_version();
+    CAMLreturn(Val_int(version));
+}
