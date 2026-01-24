@@ -57,7 +57,7 @@ The project uses a three-layer architecture to bridge OCaml and Rust:
                ↓                   ↓
 ┌──────────────────────┐  ┌──────────────────────────┐
 │    Winit Library     │  │   Softbuffer Library     │
-│  (ocaml/winit/)      │  │  (ocaml/softbuffer/)     │
+│  (winit/src/)        │  │  (softbuffer/src/)       │
 │  - Window creation   │  │  - Pixel buffer access   │
 │  - Event handling    │  │  - Present/damage        │
 │  - All event types   │←─│  - Depends on Winit      │
@@ -72,13 +72,13 @@ The project uses a three-layer architecture to bridge OCaml and Rust:
 └──────────┬───────────┘  └──────────┬───────────────┘
            │                         │
            ↓                         ↓
-┌─────────────────────────────────────────────────────┐
-│              Rust FFI Layer                          │
-│   (rust/src/)                                        │
-│   lib.rs        - Shared types, re-exports          │
-│   winit_ffi.rs  - WinitWindow, EventCollector       │
-│   softbuffer_ffi.rs - SoftbufferSurface, Buffer     │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────┐  ┌──────────────────────────┐
+│   Rust FFI Layer     │  │    Rust FFI Layer        │
+│   (winit/ffi/)       │  │   (softbuffer/ffi/)      │
+│   - WinitWindow      │  │   - SoftbufferSurface    │
+│   - EventCollector   │  │   - Buffer management    │
+│   - Shared types     │  │   - Uses winit_ffi types │
+└──────────────────────┘  └──────────────────────────┘
 ```
 
 ### Why Three Layers?
@@ -99,24 +99,15 @@ The project uses a three-layer architecture to bridge OCaml and Rust:
 
 #### 1. Rust FFI Layer
 
-The Rust layer is split into three files:
+The Rust layer is split into two separate crates:
 
-**`rust/src/lib.rs`** - Shared types and re-exports:
+**`winit/ffi/src/lib.rs`** - Shared types and window FFI:
 ```rust
-mod winit_ffi;
-mod softbuffer_ffi;
-
-pub use winit_ffi::*;
-pub use softbuffer_ffi::*;
-
 // Shared C-compatible types
 pub struct DamageRect { x: u32, y: u32, width: u32, height: u32 }
 pub enum EventType { NoEvent, CloseRequested, SurfaceResized, ... }
 pub struct Event { event_type: EventType, data: [i32; 16] }
-```
 
-**`rust/src/winit_ffi.rs`** - Window and event handling:
-```rust
 pub struct WinitWindow {
     event_loop: Option<EventLoop>,
     collector: EventCollector,  // holds Arc<Box<dyn Window>>
@@ -129,8 +120,10 @@ pub extern "C" fn winit_window_get_handle(...) -> *const c_void;
 pub extern "C" fn winit_window_destroy(...);
 ```
 
-**`rust/src/softbuffer_ffi.rs`** - Rendering surface:
+**`softbuffer/ffi/src/lib.rs`** - Rendering surface (depends on winit_ffi):
 ```rust
+use winit_ffi::DamageRect;
+
 pub struct SoftbufferSurface {
     window_ref: Arc<Box<dyn Window>>,  // keeps window alive
     graphics: GraphicsState,            // context + surface
@@ -198,7 +191,7 @@ This is safe because:
 
 #### 2. C Stubs Layer
 
-**`ocaml/winit/winit_stubs.c`** - Window stubs:
+**`winit/src/winit_stubs.c`** - Window stubs:
 ```c
 // Custom block with finalizer for window
 static struct custom_operations winit_window_ops = {
@@ -215,7 +208,7 @@ static struct custom_operations winit_window_handle_ops = {
 };
 ```
 
-**`ocaml/softbuffer/softbuffer_stubs.c`** - Surface stubs:
+**`softbuffer/src/softbuffer_stubs.c`** - Surface stubs:
 ```c
 // Custom block with finalizer for surface
 static struct custom_operations softbuffer_surface_ops = {
@@ -230,7 +223,7 @@ ba = caml_ba_alloc(CAML_BA_INT32 | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL, 1, buffe
 
 #### 3. OCaml API Layer
 
-**`ocaml/winit/winit.ml`** - Window API:
+**`winit/src/winit.ml`** - Window API:
 ```ocaml
 type window        (* Opaque - owns event loop and window *)
 type window_handle (* Opaque - non-owning reference for softbuffer *)
@@ -240,7 +233,7 @@ val pump_events : window -> event list
 val get_handle : window -> window_handle  (* For passing to Softbuffer *)
 ```
 
-**`ocaml/softbuffer/softbuffer.ml`** - Rendering API:
+**`softbuffer/src/softbuffer.ml`** - Rendering API:
 ```ocaml
 type surface  (* Opaque - owns rendering surface *)
 
@@ -389,7 +382,7 @@ redrawing changed regions of the buffer.
 ### Overview
 
 The build process is fully integrated through Dune, which automatically handles:
-1. **Cargo**: Builds the Rust FFI library (invoked automatically by Dune)
+1. **Cargo**: Builds the Rust FFI libraries (invoked automatically by Dune)
 2. **C Compiler**: Compiles the C stubs (invoked by Dune)
 3. **OCaml Compiler**: Builds the OCaml libraries and links everything together
 
@@ -410,7 +403,7 @@ Or use the convenience script:
 Dune will automatically:
 - Detect changes in Rust source files
 - Invoke `cargo build` (dev mode) or `cargo build --release` (release mode) when needed
-- Copy the resulting library to the build directory
+- Copy the resulting libraries to the build directory
 - Compile C stubs and OCaml code
 - Link everything together
 
@@ -430,11 +423,13 @@ Dune will automatically:
 
 ### How It Works
 
-The `ocaml/winit/dune` file builds the Rust library and defines the winit OCaml library.
-The `ocaml/softbuffer/dune` file defines the softbuffer library which depends on winit.
+The project is organized with each library containing both Rust FFI and OCaml code:
+- `winit/ffi/` - Rust FFI crate for winit
+- `winit/src/` - OCaml library with C stubs
+- `softbuffer/ffi/` - Rust FFI crate for softbuffer (depends on winit_ffi)
+- `softbuffer/src/` - OCaml library with C stubs
 
-Since both libraries share the same Rust FFI library, the Rust build only happens once
-in the winit library's dune file.
+Each library's `dune` file builds its corresponding Rust FFI crate.
 
 **Platform-Specific Linking:**
 
@@ -455,9 +450,9 @@ pacman -S libxcb libx11 libxkbcommon wayland
 ### Building Examples
 
 ```bash
-dune exec ocaml/examples/hello_window.exe
-dune exec ocaml/examples/paint.exe
-dune exec ocaml/examples/test_ffi.exe
+dune exec examples/hello_window.exe
+dune exec examples/paint.exe
+dune exec examples/test_ffi.exe
 ```
 
 ## Contributing
@@ -493,7 +488,7 @@ Format all code (OCaml and Rust) with the convenience script:
 
 #### Adding a New Event Type
 
-1. Add variant to Rust enum (`rust/src/lib.rs`):
+1. Add variant to Rust enum (`winit/ffi/src/lib.rs`):
    ```rust
    pub enum EventType {
        // ...
@@ -501,7 +496,7 @@ Format all code (OCaml and Rust) with the convenience script:
    }
    ```
 
-2. Handle it in `winit_ffi.rs` `ApplicationHandler::window_event`:
+2. Handle it in `winit/ffi/src/ffi.rs` `ApplicationHandler::window_event`:
    ```rust
    WindowEvent::SomeNewEvent { data } => {
        self.events.push(Event {
@@ -512,7 +507,7 @@ Format all code (OCaml and Rust) with the convenience script:
    }
    ```
 
-3. Add to OCaml type (`ocaml/winit/winit.mli` and `.ml`):
+3. Add to OCaml type (`winit/src/winit.mli` and `.ml`):
    ```ocaml
    type event =
      | (* ... *)
@@ -527,7 +522,7 @@ Format all code (OCaml and Rust) with the convenience script:
 
 #### Adding a New Softbuffer API Function
 
-1. Implement in Rust `softbuffer_ffi.rs` with `#[no_mangle]` and `extern "C"`:
+1. Implement in Rust `softbuffer/ffi/src/lib.rs` with `#[no_mangle]` and `extern "C"`:
    ```rust
    #[no_mangle]
    pub extern "C" fn softbuffer_surface_new_function(surface: *mut SoftbufferSurface) -> i32 {
@@ -535,7 +530,7 @@ Format all code (OCaml and Rust) with the convenience script:
    }
    ```
 
-2. Declare in `softbuffer_stubs.c` and create stub:
+2. Declare in `softbuffer/src/softbuffer_stubs.c` and create stub:
    ```c
    extern int softbuffer_surface_new_function(void* surface);
 
@@ -547,12 +542,12 @@ Format all code (OCaml and Rust) with the convenience script:
    }
    ```
 
-3. Add external declaration and wrapper in `softbuffer.ml`:
+3. Add external declaration and wrapper in `softbuffer/src/softbuffer.ml`:
    ```ocaml
    external new_function : surface -> int = "caml_softbuffer_surface_new_function"
    ```
 
-4. Update `softbuffer.mli` with documentation
+4. Update `softbuffer/src/softbuffer.mli` with documentation
 
 ## Testing
 
@@ -562,16 +557,16 @@ Standard unit tests and headless integration tests can be run with `./test.sh`
 
 ```bash
 # FFI smoke test (works without display)
-dune exec ocaml/examples/test_ffi.exe
+dune exec examples/test_ffi.exe
 
 # Full graphical test (requires display)
-dune exec ocaml/examples/hello_window.exe
+dune exec examples/hello_window.exe
 
 # Tablet/painting test
-dune exec ocaml/examples/paint.exe
+dune exec examples/paint.exe
 
 # With Xvfb (headless)
-Xvfb :99 & DISPLAY=:99 dune exec ocaml/examples/hello_window.exe
+Xvfb :99 & DISPLAY=:99 dune exec examples/hello_window.exe
 ```
 
 ### Memory Testing
@@ -579,7 +574,7 @@ Xvfb :99 & DISPLAY=:99 dune exec ocaml/examples/hello_window.exe
 Check for leaks with valgrind:
 
 ```bash
-valgrind --leak-check=full --show-leak-kinds=all dune exec ocaml/examples/hello_window.exe
+valgrind --leak-check=full --show-leak-kinds=all dune exec examples/hello_window.exe
 ```
 
 Expected output: No leaks from our code (may see leaks from X11 drivers).
@@ -595,9 +590,9 @@ Expected output: No leaks from our code (may see leaks from X11 drivers).
   ```bash
   ./clean.sh && ./build.sh
   ```
-- Verify Rust sources are present in `rust/src/`
+- Verify Rust sources are present in `winit/ffi/src/`
 - Check that cargo is installed and accessible: `cargo --version`
-- Verify symbols are exported: `nm rust/target/debug/libwinit_ocaml_ffi.a | grep winit_window`
+- Verify symbols are exported: `nm target/debug/libwinit_ffi.a | grep winit_window`
 
 ### Runtime Issues
 
@@ -636,42 +631,47 @@ winit-ocaml/
 ├── build.sh                 # Convenience script: build everything
 ├── clean.sh                 # Convenience script: clean all build artifacts
 ├── fmt.sh                   # Convenience script: format all code
-├── rust/
-│   ├── Cargo.toml           # Rust FFI library dependencies
-│   ├── src/
-│   │   ├── lib.rs           # Shared types, re-exports
-│   │   ├── winit_ffi.rs     # Window/event FFI
-│   │   └── softbuffer_ffi.rs# Rendering FFI
-│   ├── prototype/
-│   │   ├── Cargo.toml       # Prototype binaries
-│   │   └── src/             # Prototype source code
-│   └── vendor/
-│       ├── winit/           # Vendored winit library
-│       └── softbuffer/      # Vendored softbuffer library
-├── ocaml/
-│   ├── winit/               # Winit OCaml library
-│   │   ├── dune             # Build config (includes Rust build)
-│   │   ├── winit.ml         # OCaml implementation
-│   │   ├── winit.mli        # Public API interface
-│   │   └── winit_stubs.c    # C FFI bridge
-│   ├── softbuffer/          # Softbuffer OCaml library
-│   │   ├── dune             # Build config
-│   │   ├── softbuffer.ml    # OCaml implementation
-│   │   ├── softbuffer.mli   # Public API interface
-│   │   └── softbuffer_stubs.c # C FFI bridge
-│   └── examples/
-│       ├── dune             # Example build config
-│       ├── hello_window.ml  # Graphical demo
-│       ├── paint.ml         # Tablet painting demo
-│       └── test_ffi.ml      # FFI test
+├── test.sh                  # Convenience script: run tests
+├── winit/                   # Winit library (window creation & events)
+│   ├── ffi/                 # Rust FFI crate
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs       # Shared types + module exports
+│   │       └── ffi.rs       # WinitWindow, EventCollector
+│   └── src/                 # OCaml library
+│       ├── dune             # Build config (includes Rust build)
+│       ├── winit.ml         # OCaml implementation
+│       ├── winit.mli        # Public API interface
+│       └── winit_stubs.c    # C FFI bridge
+├── softbuffer/              # Softbuffer library (pixel buffer rendering)
+│   ├── ffi/                 # Rust FFI crate
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── lib.rs       # SoftbufferSurface, buffer management
+│   └── src/                 # OCaml library
+│       ├── dune             # Build config
+│       ├── softbuffer.ml    # OCaml implementation
+│       ├── softbuffer.mli   # Public API interface
+│       └── softbuffer_stubs.c # C FFI bridge
+├── vendor/                  # Vendored dependencies (git submodules)
+│   ├── winit/               # Vendored winit library
+│   └── softbuffer/          # Vendored softbuffer library
+├── examples/                # Example applications
+│   ├── dune                 # Example build config
+│   ├── hello_window.ml      # Graphical demo
+│   ├── paint.ml             # Tablet painting demo
+│   ├── test_ffi.ml          # FFI test
+│   └── prototype/           # Rust prototypes
+├── image_buf/               # Image buffer utility library
 ├── docs/                    # Design documentation
 ├── issues/                  # Project issue tracking
 ├── dune-project             # Top-level Dune config
 ├── readme.md                # User-facing documentation
-└── developer.md             # This file
+├── developer.md             # This file
+└── CLAUDE.md                # Project instructions
 ```
 
-The `rust/vendor` directory contains git submodule vendored copies of the `winit`
+The `vendor/` directory contains git submodule vendored copies of the `winit`
 and `softbuffer` codebase. These submodules point to forks under the TyOverby GitHub
 account (TyOverby/winit and TyOverby/softbuffer), allowing the project to make custom
 modifications when needed. The project uses a Cargo workspace at the root to manage

@@ -1,6 +1,6 @@
 [submodule "vendor/winit"]
-	path = rust/vendor/winit
+	path = vendor/winit
 	url = git@github.com:TyOverby/winit.git
 [submodule "vendor/softbuffer"]
-	path = rust/vendor/softbuffer
+	path = vendor/softbuffer
 	url = git@github.com:TyOverby/softbuffer.git

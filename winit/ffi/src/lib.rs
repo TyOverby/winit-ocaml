@@ -1,20 +1,14 @@
-//! Winit-OCaml FFI Library
+//! Winit FFI Library
 //!
-//! This library provides FFI bindings for winit (windowing) and softbuffer (rendering)
-//! to be used from OCaml. The library is split into two modules:
-//!
-//! - `winit_ffi`: Window creation and event handling
-//! - `softbuffer_ffi`: Pixel buffer rendering
+//! This library provides FFI bindings for winit (windowing) to be used from OCaml.
 
-mod softbuffer_ffi;
-mod winit_ffi;
+mod ffi;
 
 // Re-export FFI types and functions
-pub use softbuffer_ffi::*;
-pub use winit_ffi::*;
+pub use ffi::*;
 
 // ============================================================================
-// Shared Types
+// Shared Types (also used by softbuffer_ffi)
 // ============================================================================
 
 /// C-compatible damage rectangle
