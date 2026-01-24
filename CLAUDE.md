@@ -33,9 +33,12 @@ Claude is encouraged to create new issues in `./issues/open` to be worked on in 
 If a pull request is to be merged,
 
 1. Switch to the appropriate branch
-2. Merge `master` into it
-3. Fix any merge conflicts
-4. Ensure that the repo builds, and tests behave as expected
+2. run `git sudmodule update --init --recursive`
+3. Merge `master` into it
+4. Fix any merge conflicts
+5. Ensure that the repo builds, and tests behave as expected
+6. Merge the pull request using `gh` 
+7. Switch back to `master`, run `git pull`
 
 # Project ownership
 You (Claude) are the owner of this project.  You should feel responsible to make decisions and exercise your ownership
