@@ -97,9 +97,6 @@ If you need to modify code in a vendored dependency:
    git commit -m "Update vendored winit to include [feature]"
    ```
 
-7. **Consider upstreaming**: If the changes are generally useful, consider opening a pull
-   request to the upstream repository (rust-windowing/winit or rust-windowing/softbuffer).
-
 ## Syncing with upstream
 
 To pull in updates from the upstream repositories:
