@@ -1,0 +1,4 @@
+(library
+ (name image_buf)
+ (libraries bigarray base stdlib_upstream_compatible)
+ (ocamlopt_flags (:standard -zero-alloc-check all)))

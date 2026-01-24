@@ -1,0 +1,6 @@
+(library
+ (name image_buf_test)
+ (libraries image_buf base stdio)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))
