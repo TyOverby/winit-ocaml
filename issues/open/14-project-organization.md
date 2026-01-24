@@ -32,4 +32,6 @@ examples/
   prototype/
 ```
 
-This will probably necessitate a more involved "cargo workspace" strategy
+This will probably necessitate a more involved "cargo workspace" strategy.
+
+Use `git mv` whenever possible.
