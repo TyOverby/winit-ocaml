@@ -1,0 +1,8 @@
+(library
+ (name softbuffer)
+ (public_name softbuffer)
+ (libraries winit bigarray)
+ (foreign_stubs
+  (language c)
+  (names softbuffer_stubs)
+  (flags :standard)))

@@ -1,5 +1,3 @@
-open Winit_softbuffer
-
 (* State for the painting app *)
 type paint_state =
   { mutable canvas_buffer :
@@ -7,7 +5,7 @@ type paint_state =
   ; mutable canvas_width : int
   ; mutable canvas_height : int
   ; mutable is_drawing : bool
-  ; mutable dirty_regions : Winit_softbuffer.damage_rect list
+  ; mutable dirty_regions : Softbuffer.damage_rect list
   ; mutable last_x : float option
   ; mutable last_y : float option
   ; mutable last_radius : float option
@@ -99,9 +97,7 @@ let draw_quad_to_canvas state x0 y0 r0 x1 y1 r1 color =
       let rect_height = max_y - min_y + 1 in
       if rect_width > 0 && rect_height > 0
       then
-        Some
-          Winit_softbuffer.
-            { x = min_x; y = min_y; width = rect_width; height = rect_height }
+        Some Softbuffer.{ x = min_x; y = min_y; width = rect_width; height = rect_height }
       else None)
 ;;
 
@@ -141,9 +137,7 @@ let draw_circle_to_canvas state cx cy radius color =
     let rect_height = max_y - min_y + 1 in
     if rect_width > 0 && rect_height > 0
     then
-      Some
-        Winit_softbuffer.
-          { x = min_x; y = min_y; width = rect_width; height = rect_height }
+      Some Softbuffer.{ x = min_x; y = min_y; width = rect_width; height = rect_height }
     else None
 ;;
 
@@ -166,7 +160,7 @@ let blit_to_screen canvas_buffer screen_buffer =
 (* Blit only the damaged regions from canvas to screen buffer *)
 let blit_damaged_regions canvas_buffer screen_buffer width dirty_regions =
   List.iter
-    (fun (rect : Winit_softbuffer.damage_rect) ->
+    (fun (rect : Softbuffer.damage_rect) ->
       (* Copy row by row using Bigarray.blit for each row *)
       for y = rect.y to rect.y + rect.height - 1 do
         let row_start = (y * width) + rect.x in
@@ -189,7 +183,7 @@ let clear_canvas state =
     done;
     (* Mark entire canvas as dirty *)
     state.dirty_regions
-    <- [ Winit_softbuffer.
+    <- [ Softbuffer.
            { x = 0; y = 0; width = state.canvas_width; height = state.canvas_height }
        ];
     Printf.printf "Canvas cleared\n%!"
@@ -236,33 +230,36 @@ let () =
   Printf.printf "- Pressure controls brush size (2-20 pixels)\n%!";
   Printf.printf "- Press 'C' key to clear canvas\n%!";
   Printf.printf "- Close window to exit\n\n%!";
-  let app = create () in
+  let window = Winit.create () in
+  let surface = Softbuffer.create (Winit.get_handle window) in
   let state = create_state () in
   let should_exit = ref false in
   while not !should_exit do
     (* Pump events *)
-    let events = pump_events app in
+    let events = Winit.pump_events window in
     (* Process events *)
     List.iter
       (fun event ->
         match event with
-        | CloseRequested -> should_exit := true
-        | KeyPressed { key_code = 6; _ } ->
+        | Winit.CloseRequested -> should_exit := true
+        | Winit.SurfaceResized { width; height } ->
+          Softbuffer.resize surface ~width ~height
+        | Winit.KeyPressed { key_code = 6; _ } ->
           (* Key code 6 is 'C' - clear canvas *)
           clear_canvas state
-        | PointerButtonPressed _ ->
+        | Winit.PointerButtonPressed _ ->
           Printf.printf "Pen down\n%!";
           state.is_drawing <- true
-        | PointerButtonReleased _ ->
+        | Winit.PointerButtonReleased _ ->
           Printf.printf "Pen up\n%!";
           state.is_drawing <- false;
           (* Reset stroke state so next stroke starts fresh *)
           state.last_x <- None;
           state.last_y <- None;
           state.last_radius <- None
-        | PointerMoved { x; y; source; _ } ->
+        | Winit.PointerMoved { x; y; source; _ } ->
           (match source with
-           | Tablet { pressure; tool_kind; _ } when state.is_drawing ->
+           | Winit.Tablet { pressure; tool_kind; _ } when state.is_drawing ->
              let pressure_val =
                match pressure with
                | Some p -> p
@@ -274,34 +271,34 @@ let () =
                y
                pressure_val
                (match tool_kind with
-                | Pen -> "Pen"
-                | Eraser -> "Eraser"
+                | Winit.Pen -> "Pen"
+                | Winit.Eraser -> "Eraser"
                 | _ -> "Other");
              (* Draw directly to canvas buffer *)
              draw_stroke state x y pressure_val
-           | Mouse when state.is_drawing ->
+           | Winit.Mouse when state.is_drawing ->
              (* Also support mouse for testing without tablet *)
              draw_stroke state x y 0.5
            | _ -> ())
         | _ -> ())
       events;
     (* Get buffer and draw *)
-    let width, height, buffer = get_buffer app in
+    let width, height, buffer = Softbuffer.get_buffer surface in
     (* Ensure canvas is the right size *)
     ensure_canvas_size state width height;
     (* Check buffer age to determine if we need full redraw *)
-    let age = get_buffer_age app in
+    let age = Softbuffer.get_buffer_age surface in
     (* Blit canvas to screen *)
     match state.canvas_buffer, age, state.dirty_regions with
     | Some canvas_buffer, 1, _ :: _ ->
       blit_damaged_regions canvas_buffer buffer width state.dirty_regions;
-      present_with_damage app (Array.of_list state.dirty_regions);
+      Softbuffer.present_with_damage surface (Array.of_list state.dirty_regions);
       state.dirty_regions <- []
     | _, 1, [] -> ()
     | Some canvas_buffer, _, _ ->
       Printf.printf "blitting everything!\n%!";
       blit_to_screen canvas_buffer buffer;
-      present app;
+      Softbuffer.present surface;
       state.dirty_regions <- []
     | _ -> ()
   done;

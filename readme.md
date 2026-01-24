@@ -25,29 +25,30 @@ The library gives you direct access to a pixel buffer where every frame, you can
 - **Tablet support**: Full support for graphics tablets (Wacom, etc.) with pressure and tilt data on X11
 - **Type-safe**: Rust's safety guarantees at the FFI boundary, OCaml's type safety in your code
 - **Modern**: Built on the excellent Rust windowing ecosystem
+- **Modular**: Separate `winit` and `softbuffer` libraries for flexibility
 
 ## Quick Example
 
 ```ocaml
-open Winit_softbuffer
-
 let () =
-  (* Create window *)
-  let app = create () in
+  (* Create window and rendering surface *)
+  let window = Winit.create () in
+  let surface = Softbuffer.create (Winit.get_handle window) in
 
   (* Main loop *)
   let running = ref true in
   while !running do
     (* Handle events *)
-    let events = pump_events app in
     List.iter (fun event ->
-      match event.event_type with
-      | CloseRequested -> running := false
+      match event with
+      | Winit.CloseRequested -> running := false
+      | Winit.SurfaceResized { width; height } ->
+          Softbuffer.resize surface ~width ~height
       | _ -> ()
-    ) events;
+    ) (Winit.pump_events window);
 
     (* Get pixel buffer *)
-    let width, height, buffer = get_buffer app in
+    let width, height, buffer = Softbuffer.get_buffer surface in
 
     (* Draw red pixels *)
     for i = 0 to width * height - 1 do
@@ -55,7 +56,22 @@ let () =
     done;
 
     (* Display *)
-    present app;
+    Softbuffer.present surface;
     Unix.sleepf 0.016  (* ~60 FPS *)
   done
+```
+
+## Libraries
+
+This project provides two OCaml libraries:
+
+- **`winit`**: Window creation and event handling
+- **`softbuffer`**: Pixel buffer rendering (depends on winit)
+
+Add them to your `dune` file:
+
+```scheme
+(executable
+ (name my_app)
+ (libraries winit softbuffer unix bigarray))
 ```

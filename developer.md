@@ -31,6 +31,17 @@ The project enables OCaml developers to create window-based applications where
 they have direct access to a pixel buffer for custom rendering, suitable for
 games, visualizations, pixel art tools, and educational graphics applications.
 
+### Library Split
+
+The project provides **two separate OCaml libraries**:
+
+- **`winit`**: Window creation and event handling
+- **`softbuffer`**: Pixel buffer rendering (depends on winit)
+
+This separation allows applications to use just the windowing functionality
+without the softbuffer dependency, and enables future alternative rendering
+backends.
+
 ## Architecture
 
 ### Three-Layer Design
@@ -38,35 +49,36 @@ games, visualizations, pixel art tools, and educational graphics applications.
 The project uses a three-layer architecture to bridge OCaml and Rust:
 
 ```
-┌─────────────────────────────────────┐
-│         OCaml Application           │
-│   (User code in OCaml)              │
-└──────────────┬──────────────────────┘
-               │ OCaml API (winit_softbuffer.ml/mli)
-               │ - Type-safe OCaml types
-               │ - Event conversion
-               │ - Memory management via GC integration
-               ↓
-┌──────────────────────────────────────┐
-│        C Stubs Layer                 │
-│   (ocaml/winit_stubs.c)              │
-│   - OCaml runtime integration        │
-│   - Custom blocks & finalizers       │
-│   - Bigarray wrapping                │
-└──────────────┬───────────────────────┘
-               │ C ABI
-               │ - Raw pointers
-               │ - C-compatible structs
-               │ - #[repr(C)] enums
-               ↓
-┌──────────────────────────────────────┐
-│        Rust FFI Layer                │
-│   (rust/src/lib.rs)                  │
-│   - Window management (winit)        │
-│   - Pixel buffer (softbuffer)        │
-│   - Event collection                 │
-│   - Memory safety                    │
-└──────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│              OCaml Application                       │
+│   (User code in OCaml)                              │
+└──────────────┬───────────────────┬──────────────────┘
+               │                   │
+               ↓                   ↓
+┌──────────────────────┐  ┌──────────────────────────┐
+│    Winit Library     │  │   Softbuffer Library     │
+│  (ocaml/winit/)      │  │  (ocaml/softbuffer/)     │
+│  - Window creation   │  │  - Pixel buffer access   │
+│  - Event handling    │  │  - Present/damage        │
+│  - All event types   │←─│  - Depends on Winit      │
+└──────────┬───────────┘  └──────────┬───────────────┘
+           │                         │
+           ↓                         ↓
+┌──────────────────────┐  ┌──────────────────────────┐
+│   C Stubs Layer      │  │    C Stubs Layer         │
+│   (winit_stubs.c)    │  │  (softbuffer_stubs.c)    │
+│  - OCaml runtime     │  │  - Bigarray wrapping     │
+│  - Custom blocks     │  │  - Damage rects          │
+└──────────┬───────────┘  └──────────┬───────────────┘
+           │                         │
+           ↓                         ↓
+┌─────────────────────────────────────────────────────┐
+│              Rust FFI Layer                          │
+│   (rust/src/)                                        │
+│   lib.rs        - Shared types, re-exports          │
+│   winit_ffi.rs  - WinitWindow, EventCollector       │
+│   softbuffer_ffi.rs - SoftbufferSurface, Buffer     │
+└─────────────────────────────────────────────────────┘
 ```
 
 ### Why Three Layers?
@@ -85,37 +97,51 @@ The project uses a three-layer architecture to bridge OCaml and Rust:
 
 ### Component Details
 
-#### 1. Rust FFI Layer (`rust/src/lib.rs`)
+#### 1. Rust FFI Layer
 
-**Responsibilities:**
-- Create and manage winit event loop using `EventLoop`
-- Handle window creation via `ApplicationHandler` trait
-- Manage softbuffer `Context` and `Surface` for pixel buffer access
-- Collect window events (keyboard, mouse, resize, close) into a simple C-compatible format
-- Provide C-compatible FFI functions with `#[no_mangle]` and `extern "C"`
+The Rust layer is split into three files:
 
-**Key Types:**
-
+**`rust/src/lib.rs`** - Shared types and re-exports:
 ```rust
-pub struct WinitOcamlApp {
-    event_loop: Option<EventLoop>,        // Window system event loop
-    collector: EventCollector,            // Accumulates events
-    graphics: Option<GraphicsState>,      // softbuffer context/surface
-    buffer: Option<softbuffer::Buffer<'static>>, // Current pixel buffer
+mod winit_ffi;
+mod softbuffer_ffi;
+
+pub use winit_ffi::*;
+pub use softbuffer_ffi::*;
+
+// Shared C-compatible types
+pub struct DamageRect { x: u32, y: u32, width: u32, height: u32 }
+pub enum EventType { NoEvent, CloseRequested, SurfaceResized, ... }
+pub struct Event { event_type: EventType, data: [i32; 16] }
+```
+
+**`rust/src/winit_ffi.rs`** - Window and event handling:
+```rust
+pub struct WinitWindow {
+    event_loop: Option<EventLoop>,
+    collector: EventCollector,  // holds Arc<Box<dyn Window>>
 }
 
-struct EventCollector {
-    window: Option<Arc<Box<dyn Window>>>,  // The window handle
-    events: Vec<Event>,                     // Collected events
-    should_exit: bool,                      // Exit flag
+// FFI functions
+pub extern "C" fn winit_window_create() -> *mut WinitWindow;
+pub extern "C" fn winit_window_pump_events(...) -> i32;
+pub extern "C" fn winit_window_get_handle(...) -> *const c_void;
+pub extern "C" fn winit_window_destroy(...);
+```
+
+**`rust/src/softbuffer_ffi.rs`** - Rendering surface:
+```rust
+pub struct SoftbufferSurface {
+    window_ref: Arc<Box<dyn Window>>,  // keeps window alive
+    graphics: GraphicsState,            // context + surface
+    buffer: Option<Buffer<'static>>,    // current pixel buffer
 }
 
-struct GraphicsState {
-    context: softbuffer::Context<Arc<Box<dyn Window>>>,
-    surface: softbuffer::Surface<Arc<Box<dyn Window>>, Arc<Box<dyn Window>>>,
-    width: u32,
-    height: u32,
-}
+// FFI functions
+pub extern "C" fn softbuffer_surface_create(handle: *const c_void) -> *mut SoftbufferSurface;
+pub extern "C" fn softbuffer_surface_get_buffer(...);
+pub extern "C" fn softbuffer_surface_present(...);
+pub extern "C" fn softbuffer_surface_destroy(...);
 ```
 
 **Critical Design Decision: The `pump_events` Pattern**
@@ -139,15 +165,15 @@ This non-blocking call:
 This is the **most critical architectural decision** in the entire project, as
 it enables the OCaml-controlled event loop pattern.
 
-**Memory Management Challenge: Window Handles**
+**Memory Management: Window Handle Transfer**
 
-winit's `Window` type is `dyn Window` (trait object) and can't be cloned.
-However, softbuffer needs access to window handles to create its rendering
-context. The solution:
+The split architecture requires safely transferring window handles between
+Winit and Softbuffer. The solution uses Arc reference counting:
 
-1. Store the window as `Arc<Box<dyn Window>>` for reference counting
-2. Pass the same Arc to both the EventCollector and GraphicsState
-3. Use `Arc::clone()` to increment reference counts without cloning the window itself
+1. WinitWindow stores `Arc<Box<dyn Window>>`
+2. `winit_window_get_handle` clones the Arc (incrementing ref count)
+3. `softbuffer_surface_create` takes ownership of that Arc reference
+4. The window lives as long as either WinitWindow or SoftbufferSurface exists
 
 **Lifetime Extension Hack: Buffer Safety**
 
@@ -166,137 +192,99 @@ self.buffer = Some(buffer);
 ```
 
 This is safe because:
-1. We store the buffer inside `WinitOcamlApp`, ensuring it doesn't outlive the surface
+1. We store the buffer inside `SoftbufferSurface`, ensuring it doesn't outlive the surface
 2. OCaml must call `present()` before the next `get_buffer()`, consuming the old buffer
-3. The app is destroyed only when OCaml drops its handle, properly sequencing cleanup
+3. The surface is destroyed only when OCaml drops its handle, properly sequencing cleanup
 
-**FFI Functions:**
+#### 2. C Stubs Layer
 
-- `winit_create() -> *mut WinitOcamlApp`: Creates window and initializes graphics
-- `winit_pump_events(app, events_out, max_events) -> i32`: Polls events, returns count
-- `winit_get_buffer(app, width_out, height_out) -> *mut u32`: Gets pixel buffer pointer
-- `winit_present(app) -> i32`: Presents buffer to screen
-- `winit_destroy(app)`: Cleanup
-- `winit_test_version() -> i32`: Test function for FFI validation
-
-#### 2. C Stubs Layer (`ocaml/winit_stubs.c`)
-
-**Responsibilities:**
-- Convert between OCaml values and C types
-- Manage custom blocks for opaque app handles
-- Integrate with OCaml's GC via finalizers
-- Wrap pixel buffers as Bigarrays for zero-copy access
-
-**Key OCaml FFI Concepts:**
-
-**Custom Blocks:**
-OCaml uses tagged values where pointers need special treatment. Custom blocks
-allow us to embed arbitrary C data into OCaml values with proper GC
-integration:
-
+**`ocaml/winit/winit_stubs.c`** - Window stubs:
 ```c
-static struct custom_operations winit_app_ops = {
-    "winit_app",
-    winit_app_finalize,  // Called when OCaml GC collects this value
-    // ... other operations
+// Custom block with finalizer for window
+static struct custom_operations winit_window_ops = {
+    "winit_window",
+    winit_window_finalize,  // Calls winit_window_destroy
+    ...
 };
 
-value alloc_winit_app(void* app) {
-    value v = caml_alloc_custom(&winit_app_ops, sizeof(void*), 0, 1);
-    *((void**)Data_custom_val(v)) = app;
-    return v;
-}
+// Custom block WITHOUT finalizer for handle (non-owning)
+static struct custom_operations winit_window_handle_ops = {
+    "winit_window_handle",
+    custom_finalize_default,  // No cleanup - ownership transfers
+    ...
+};
 ```
 
-When OCaml's GC collects this value, `winit_app_finalize` is called, which
-calls Rust's `winit_destroy()` to clean up resources.
-
-**Bigarray Integration:**
-
-For zero-copy pixel access, we wrap Rust's pixel buffer pointer in an OCaml Bigarray:
-
+**`ocaml/softbuffer/softbuffer_stubs.c`** - Surface stubs:
 ```c
-intnat dims[1];
-dims[0] = (intnat)(width * height);
-ba = caml_ba_alloc(
-    CAML_BA_INT32 | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL,
-    1,
-    buffer,  // Pointer from Rust
-    dims
-);
+// Custom block with finalizer for surface
+static struct custom_operations softbuffer_surface_ops = {
+    "softbuffer_surface",
+    softbuffer_surface_finalize,  // Calls softbuffer_surface_destroy
+    ...
+};
+
+// Bigarray wrapping for zero-copy pixel access
+ba = caml_ba_alloc(CAML_BA_INT32 | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL, 1, buffer, dims);
 ```
 
-The `CAML_BA_EXTERNAL` flag means OCaml doesn't own this memory. The buffer remains valid until:
-1. `present()` is called (consumes the buffer)
-2. The app is destroyed
-3. `get_buffer()` is called again (invalidates previous buffer)
+#### 3. OCaml API Layer
 
-**Event Conversion:**
-
-Events from Rust are C structs with simple integer fields. The C layer converts
-them to OCaml tuples:
-
-```c
-value event_tuple = caml_alloc_tuple(3);
-Store_field(event_tuple, 0, Val_int(events[i].event_type));
-Store_field(event_tuple, 1, Val_int(events[i].data1));
-Store_field(event_tuple, 2, Val_int(events[i].data2));
-```
-
-#### 3. OCaml API Layer (`ocaml/winit_softbuffer.ml`)
-
-**Responsibilities:**
-- Provide type-safe, idiomatic OCaml API
-- Convert raw event tuples into tagged union types
-- Hide FFI complexity from user code
-
-**Type Design:**
-
+**`ocaml/winit/winit.ml`** - Window API:
 ```ocaml
-type app  (* Abstract type - hides the custom block *)
+type window        (* Opaque - owns event loop and window *)
+type window_handle (* Opaque - non-owning reference for softbuffer *)
 
-type event_type =
-  | NoEvent
-  | CloseRequested
-  | Resized
-  | RedrawRequested
-  | KeyPressed
-  | KeyReleased
-  | MouseMoved
-  | MouseButtonPressed
-  | MouseButtonReleased
-
-type event = {
-  event_type : event_type;
-  data1 : int;  (* Width, X coordinate, button ID, etc. *)
-  data2 : int;  (* Height, Y coordinate, etc. *)
-}
+val create : unit -> window
+val pump_events : window -> event list
+val get_handle : window -> window_handle  (* For passing to Softbuffer *)
 ```
 
-**API Functions:**
-
+**`ocaml/softbuffer/softbuffer.ml`** - Rendering API:
 ```ocaml
-val create : unit -> app
-val pump_events : app -> event list
-val get_buffer : app -> int * int * (int32, ...) Bigarray.Array1.t
-val present : app -> unit
-```
+type surface  (* Opaque - owns rendering surface *)
 
-The OCaml layer converts the raw C tuples into proper OCaml variant types:
-
-```ocaml
-let pump_events app =
-  let raw_events = winit_pump_events_raw app in
-  Array.to_list
-    (Array.map
-       (fun (et, d1, d2) ->
-         { event_type = event_type_of_int et; data1 = d1; data2 = d2 })
-       raw_events)
+val create : Winit.window_handle -> surface
+val resize : surface -> width:int -> height:int -> unit
+val get_buffer : surface -> int * int * (int32, ...) Bigarray.Array1.t
+val present : surface -> unit
+val present_with_damage : surface -> damage_rect array -> unit
 ```
 
 ## Key Design Decisions
 
-### 1. Pump Events Pattern (OCaml Controls the Loop)
+### 1. Library Split (Winit vs Softbuffer)
+
+**Decision:** Split into two separate OCaml libraries with explicit dependency.
+
+**Why:**
+- Matches the Rust ecosystem design (winit and softbuffer are separate crates)
+- Allows using winit without softbuffer
+- Enables future alternative rendering backends (GPU, etc.)
+- Clearer separation of concerns
+
+**API Pattern:**
+```ocaml
+let window = Winit.create () in
+let surface = Softbuffer.create (Winit.get_handle window) in
+
+(* Event loop *)
+while not !should_exit do
+  List.iter (fun event ->
+    match event with
+    | Winit.SurfaceResized { width; height } ->
+        Softbuffer.resize surface ~width ~height
+    | Winit.CloseRequested -> should_exit := true
+    | _ -> ()
+  ) (Winit.pump_events window);
+
+  let _, _, buffer = Softbuffer.get_buffer surface in
+  (* draw to buffer *)
+  Softbuffer.present surface
+done
+```
+
+### 2. Pump Events Pattern (OCaml Controls the Loop)
 
 **Decision:** Use winit's `pump_events` API instead of the callback-based `run()` API.
 
@@ -313,13 +301,7 @@ let pump_events app =
 - ⚠️ Slightly less efficient than callback-based approach (negligible in practice)
 - ⚠️ Must call `pump_events` regularly or UI becomes unresponsive
 
-**Alternative Considered:**
-Running winit on a separate thread and using message passing to communicate with OCaml. Rejected because:
-- winit must run on the main thread (platform requirement)
-- Thread synchronization adds complexity
-- OCaml's threading model is complex (systhreads vs. multicore)
-
-### 2. Three-Layer Architecture (Rust → C → OCaml)
+### 3. Three-Layer Architecture (Rust → C → OCaml)
 
 **Decision:** Use C stubs as an intermediate layer instead of direct Rust-to-OCaml FFI.
 
@@ -329,21 +311,7 @@ Running winit on a separate thread and using message passing to communicate with
 - Proven, stable approach used by most OCaml FFI bindings
 - Clear separation of concerns (Rust = logic, C = marshaling, OCaml = API)
 
-**Trade-offs:**
-- ✅ Maximum compatibility and portability
-- ✅ Well-documented pattern
-- ✅ Easy to debug with standard tools (gdb, valgrind)
-- ⚠️ Extra layer of code to maintain
-- ⚠️ Manual memory management in C layer
-
-**Alternative Considered:**
-Using the `ocaml-rs` crate for type-safe Rust-to-OCaml FFI. Rejected because:
-- Adds dependency complexity
-- Still requires understanding OCaml's value representation
-- C stubs are simpler for this use case
-- Can refactor to `ocaml-rs` later if needed
-
-### 3. Zero-Copy Buffer Access via Bigarray
+### 4. Zero-Copy Buffer Access via Bigarray
 
 **Decision:** Expose the pixel buffer as a Bigarray backed by Rust memory.
 
@@ -360,76 +328,23 @@ Using the `ocaml-rs` crate for type-safe Rust-to-OCaml FFI. Rejected because:
 - ⚠️ Buffer lifetime must be carefully managed
 - ⚠️ Users must understand buffer invalidation rules
 
-**Alternative Considered:**
-Copying the buffer to OCaml memory. Rejected because:
-- Copying 800×600×4 = ~2MB per frame at 60fps = 120MB/s overhead
-- Defeats the purpose of a high-performance graphics API
-- Bigarray is designed exactly for this use case
+### 5. Explicit Resize
 
-### 4. Simplified Event Types
-
-**Decision:** Use a simple C-compatible event structure with event type enum and two integer data fields.
+**Decision:** Require explicit `Softbuffer.resize` call when window is resized.
 
 **Why:**
-- winit's events are complex Rust types with lifetimes and nested structures
-- Marshaling complex types across FFI is error-prone
-- Most graphics applications only need basic events
-- Easy to extend later by adding new event types
+- Matches how most graphics applications work
+- User must handle SurfaceResized events explicitly
+- Clear control over when buffer reallocation happens
+- Avoids hidden allocation in get_buffer
 
-**Trade-offs:**
-- ✅ Simple, predictable FFI boundary
-- ✅ Easy to understand and debug
-- ✅ Covers 90% of use cases
-- ⚠️ Advanced events (IME, touch gestures) not yet supported
-- ⚠️ Some information is lost (e.g., physical vs. logical key codes)
+**Usage:**
+```ocaml
+| Winit.SurfaceResized { width; height } ->
+    Softbuffer.resize surface ~width ~height
+```
 
-### 5. Single Opaque App Handle
-
-**Decision:** Bundle window, event loop, and graphics state into a single `WinitOcamlApp` struct.
-
-**Why:**
-- Simplifies lifetime management (everything lives together)
-- Reduces number of FFI functions needed
-- Prevents misuse (can't present without a valid window)
-- Clear ownership model
-
-**Trade-offs:**
-- ✅ Simple, safe API
-- ✅ Impossible to use freed resources
-- ✅ Fewer FFI calls = less overhead
-- ⚠️ Less flexibility (can't swap windows/surfaces)
-- ⚠️ No support for multiple windows (yet)
-
-**Alternative Considered:**
-Separate handles for window, surface, and buffer. Rejected because:
-- Complex lifetime relationships would need explicit management
-- Easy to misuse (present with wrong surface)
-- Opaque handle is extensible (can add multi-window support later)
-
-### 6. Explicit Present Model
-
-**Decision:** Require explicit `present()` call after drawing, consuming the buffer.
-
-**Why:**
-- Matches softbuffer's API design (buffer.present() consumes the buffer)
-- Forces correct usage pattern (get buffer → draw → present → repeat)
-- Prevents accidental use of stale buffers
-- Clear API boundary for frame submission
-
-**Trade-offs:**
-- ✅ Explicit control over frame submission
-- ✅ Matches Rust API semantics
-- ✅ Prevents errors (can't forget to present)
-- ⚠️ Must get new buffer after each present
-- ⚠️ Can't incrementally update and present
-
-**Alternative Considered:**
-Auto-present on next `get_buffer()`. Rejected because:
-- Hides frame boundaries
-- Surprising behavior (side effect in getter)
-- Harder to implement damage regions later
-
-### 7. Tablet Support
+### 6. Tablet Support
 
 **Implementation:** Full support for graphics tablets (Wacom, etc.) on X11/Linux with pressure and tilt data.
 
@@ -438,40 +353,26 @@ Auto-present on next `get_buffer()`. Rejected because:
 - Tablet devices (pens, erasers) are detected by the presence of pressure and tilt valuators
 - The Device struct stores which valuator index corresponds to pressure, tilt_x, and tilt_y
 - When tablet events arrive, the data is extracted from valuators and encoded as PointerSource::TabletTool
-- This is then passed through to OCaml as source type 2 (tablet) in PointerMoved events
-- Pressure and tilt information is available in the event data fields
+- This is then passed through to OCaml as `Winit.Tablet` in PointerMoved events
+- Pressure and tilt information is available in the tablet_data record
 
 **Platform support:**
 - ✅ **X11/Linux**: Full support with pressure and tilt
 - ⚠️ **Wayland/Linux**: Depends on winit's upstream Wayland tablet support
 - ⚠️ **macOS/Windows**: Not yet tested
 
-**Key changes in vendored winit:**
-- Modified `xinput2_mouse_motion` to handle Pen and Eraser device types
-- Modified `xinput2_button_input` to handle Pen and Eraser device types
-- Added `extract_tablet_data` helper to extract pressure and tilt from X11 valuators
-- Extended Device struct to track tablet axis indices
-
-See the closed issue `issues/closed/6-wacom-tablet-support.md` for implementation details.
-
-### 8. Damage Tracking and Optimized Presentation
+### 7. Damage Tracking and Optimized Presentation
 
 **Implementation:** Support for `present_with_damage` to optimize display updates by only
 redrawing changed regions of the buffer.
 
-**How it works:**
-- Softbuffer provides `Buffer::present_with_damage(damage: &[Rect])` to present only specific regions
-- Softbuffer also provides `Buffer::age()` to check if the buffer is reused from previous frames
-- The age indicates how many frames ago this buffer was presented (0 = new buffer, 1 = same as last frame, etc.)
-- Applications can track which regions they modify and only blit/present those regions
-
 **API Functions:**
 
-1. **`get_buffer_age : app -> int`**
+1. **`Softbuffer.get_buffer_age : surface -> int`**
    - Returns the buffer age (0 = new buffer with unspecified contents, 1+ = reused buffer)
    - Applications should check age: if 0, must redraw everything; if >0, can use damage regions
 
-2. **`present_with_damage : app -> damage_rect array -> unit`**
+2. **`Softbuffer.present_with_damage : surface -> damage_rect array -> unit`**
    - Presents only the specified damaged regions
    - `damage_rect` has fields: `x`, `y`, `width`, `height` (all integers)
    - Falls back to full present on unsupported platforms
@@ -483,33 +384,6 @@ redrawing changed regions of the buffer.
 - ✅ **Web**: Supported
 - ⚠️ Other platforms fall back to full present
 
-**Implementation layers:**
-
-1. **Rust layer** (`rust/src/lib.rs`):
-   - Added `DamageRect` C-compatible struct with x, y, width, height fields
-   - Added `WinitOcamlApp::get_buffer_age()` that calls `Buffer::age()`
-   - Added `WinitOcamlApp::present_with_damage()` that converts `DamageRect` to `softbuffer::Rect`
-   - The conversion handles `NonZeroU32` requirement for width/height
-
-2. **C stubs layer** (`ocaml/winit_stubs.c`):
-   - Added `caml_winit_get_buffer_age()` wrapper
-   - Added `caml_winit_present_with_damage()` that converts OCaml tuples to C structs
-
-3. **OCaml layer** (`ocaml/winit_softbuffer.ml`):
-   - Added `damage_rect` record type
-   - Added wrappers that convert records to tuples for C layer
-
-**Example usage in paint app:**
-The paint example (`ocaml/examples/paint.ml`) demonstrates the optimization:
-1. Tracks dirty regions when drawing strokes (bounding boxes of circles)
-2. Checks buffer age - if 0, blits entire canvas; otherwise only blits dirty regions
-3. Presents with accumulated damage rects
-4. Clears dirty regions after presenting
-
-This significantly reduces CPU usage for applications where only small regions change per frame.
-
-See the closed issue `issues/closed/11-present-damaged.md` for implementation details.
-
 ## Build System
 
 ### Overview
@@ -517,7 +391,7 @@ See the closed issue `issues/closed/11-present-damaged.md` for implementation de
 The build process is fully integrated through Dune, which automatically handles:
 1. **Cargo**: Builds the Rust FFI library (invoked automatically by Dune)
 2. **C Compiler**: Compiles the C stubs (invoked by Dune)
-3. **OCaml Compiler**: Builds the OCaml library and links everything together
+3. **OCaml Compiler**: Builds the OCaml libraries and links everything together
 
 ### Unified Build Command
 
@@ -533,8 +407,6 @@ Or use the convenience script:
 ./build.sh
 ```
 
-This script runs `dune build` and as well as an example application.
-
 Dune will automatically:
 - Detect changes in Rust source files
 - Invoke `cargo build` (dev mode) or `cargo build --release` (release mode) when needed
@@ -542,11 +414,7 @@ Dune will automatically:
 - Compile C stubs and OCaml code
 - Link everything together
 
-No manual cargo commands or cleaning is needed!
-
 ### Build Profiles
-
-The build system supports conditional compilation based on Dune's build profile:
 
 - **Development builds** (default):
   ```bash
@@ -560,73 +428,13 @@ The build system supports conditional compilation based on Dune's build profile:
   ```
   Uses `cargo build --release` (optimized, slower compilation, faster runtime)
 
-This makes development iteration much faster while preserving full optimization for production builds.
-
 ### How It Works
 
-The `ocaml/dune` file uses a custom rule to build the Rust library:
+The `ocaml/winit/dune` file builds the Rust library and defines the winit OCaml library.
+The `ocaml/softbuffer/dune` file defines the softbuffer library which depends on winit.
 
-```scheme
-(rule
- (targets libwinit_ocaml_ffi.a dllwinit_ocaml_ffi.so)
- (deps
-  (source_tree ../rust/src)
-  (source_tree ../rust/vendor)
-  ../rust/Cargo.toml
-  ../rust/Cargo.lock)
- (action
-  (no-infer
-   (bash
-    "\
-if [ \"%{profile}\" = \"release\" ]; then \
-  cd ../rust && cargo build --release; \
-  cp target/release/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; \
-  cp target/release/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; \
-else \
-  cd ../rust && cargo build; \
-  cp target/debug/libwinit_ocaml_ffi.a ../ocaml/libwinit_ocaml_ffi.a; \
-  cp target/debug/libwinit_ocaml_ffi.so ../ocaml/dllwinit_ocaml_ffi.so; \
-fi"))))
-
-(library
- (name winit_softbuffer)
- (public_name winit-softbuffer)
- (libraries unix bigarray)
- (foreign_stubs
-  (language c)
-  (names winit_stubs)
-  (flags :standard))
- (foreign_archives winit_ocaml_ffi)
- (c_library_flags
-  :standard
-  -lpthread
-  -ldl
-  -lm))
-```
-
-**Key Components:**
-
-- `(rule)`: Defines how to build the Rust library
-- `(deps)`: Tracks Rust sources, vendored dependencies, and Cargo files
-- `(bash)`: Uses a bash script to conditionally build based on `%{profile}`
-- `%{profile}`: Dune variable that contains the current build profile ("dev" or "release")
-- `(foreign_archives)`: Links the Rust static library into the OCaml library
-- `(foreign_stubs)`: Compiles C stub file
-- `(c_library_flags)`: System libraries required by winit and softbuffer
-
-### Rust Build Details
-
-The Cargo.toml specifies:
-
-```toml
-[lib]
-crate-type = ["staticlib", "cdylib"]
-```
-
-- `staticlib`: For linking into the final OCaml executable
-- `cdylib`: For dynamic loading if needed
-
-Dune uses the static library (`libwinit_ocaml_ffi.a`) for linking.
+Since both libraries share the same Rust FFI library, the Rust build only happens once
+in the winit library's dune file.
 
 **Platform-Specific Linking:**
 
@@ -647,23 +455,10 @@ pacman -S libxcb libx11 libxkbcommon wayland
 ### Building Examples
 
 ```bash
-# cd to project root
-dune build ocaml/examples/hello_window.exe
 dune exec ocaml/examples/hello_window.exe
+dune exec ocaml/examples/paint.exe
+dune exec ocaml/examples/test_ffi.exe
 ```
-
-### Build Order
-
-When you run `dune build`, the following happens automatically:
-
-1. Dune checks if Rust sources have changed (by tracking `rust/src/`, `rust/vendor/`, `Cargo.toml`, `Cargo.lock`)
-2. If changes detected, Dune runs `cargo build --release` in the `rust/` directory
-3. The resulting `libwinit_ocaml_ffi.a` is copied to the build directory
-4. C stubs are compiled
-5. OCaml code is compiled
-6. Everything is linked together into the final library/executable
-
-This is incremental: if Rust hasn't changed, cargo won't rebuild. If nothing has changed, dune does nothing.
 
 ## Contributing
 
@@ -694,8 +489,6 @@ Format all code (OCaml and Rust) with the convenience script:
 ./fmt.sh
 ```
 
-This runs both `dune fmt` and `cargo fmt` to ensure consistent formatting across the entire codebase.
-
 ### Adding New Features
 
 #### Adding a New Event Type
@@ -704,11 +497,11 @@ This runs both `dune fmt` and `cargo fmt` to ensure consistent formatting across
    ```rust
    pub enum EventType {
        // ...
-       NewEvent = 9,
+       NewEvent = 21,
    }
    ```
 
-2. Handle it in `ApplicationHandler::window_event`:
+2. Handle it in `winit_ffi.rs` `ApplicationHandler::window_event`:
    ```rust
    WindowEvent::SomeNewEvent { data } => {
        self.events.push(Event {
@@ -719,106 +512,61 @@ This runs both `dune fmt` and `cargo fmt` to ensure consistent formatting across
    }
    ```
 
-3. Add to OCaml type (`ocaml/winit_softbuffer.mli` and `.ml`):
+3. Add to OCaml type (`ocaml/winit/winit.mli` and `.ml`):
    ```ocaml
-   type event_type =
+   type event =
      | (* ... *)
-     | NewEvent
+     | NewEvent of { ... }
 
-   let event_type_of_int = function
-     | (* ... *)
-     | 9 -> NewEvent
+   let event_of_raw event_type data =
+     (* ... *)
+     | 21 -> NewEvent { ... }
    ```
 
-4. Document the event's data1/data2 meaning
+4. Document the event's data fields
 
-#### Adding a New API Function
+#### Adding a New Softbuffer API Function
 
-1. Implement in Rust with `#[no_mangle]` and `extern "C"`:
+1. Implement in Rust `softbuffer_ffi.rs` with `#[no_mangle]` and `extern "C"`:
    ```rust
    #[no_mangle]
-   pub extern "C" fn winit_new_function(app: *mut WinitOcamlApp) -> i32 {
+   pub extern "C" fn softbuffer_surface_new_function(surface: *mut SoftbufferSurface) -> i32 {
        // Implementation
    }
    ```
 
-2. Declare in C stubs header:
+2. Declare in `softbuffer_stubs.c` and create stub:
    ```c
-   extern int winit_new_function(void* app);
-   ```
+   extern int softbuffer_surface_new_function(void* surface);
 
-3. Create C stub function:
-   ```c
-   CAMLprim value caml_winit_new_function(value app_val) {
-       CAMLparam1(app_val);
-       void* app = winit_app_val(app_val);
-       int result = winit_new_function(app);
+   CAMLprim value caml_softbuffer_surface_new_function(value surface_val) {
+       CAMLparam1(surface_val);
+       void* surface = softbuffer_surface_val(surface_val);
+       int result = softbuffer_surface_new_function(surface);
        CAMLreturn(Val_int(result));
    }
    ```
 
-4. Add external declaration and wrapper in OCaml:
+3. Add external declaration and wrapper in `softbuffer.ml`:
    ```ocaml
-   external new_function_impl : app -> int = "caml_winit_new_function"
-
-   let new_function app =
-     new_function_impl app
+   external new_function : surface -> int = "caml_softbuffer_surface_new_function"
    ```
 
-5. Update .mli with documentation
-
-### Testing Guidelines
-
-**Unit Tests:**
-Test individual components in isolation:
-
-```ocaml
-(* ocaml/examples/test_ffi.ml *)
-let test_version () =
-  let v = Winit_softbuffer.test_version () in
-  assert (v = 100);
-  Printf.printf "Version check passed\n"
-```
-
-**Integration Tests:**
-Test full workflows:
-
-```ocaml
-let test_create_and_destroy () =
-  let app = create () in
-  present app  (* Should not crash *)
-```
-
-**Visual Tests:**
-For changes to rendering:
-
-```bash
-# cd to project root
-
-# Use Xvfb for headless testing
-Xvfb :99 -screen 0 800x600x24 &
-export DISPLAY=:99
-
-# Run visual test
-dune exec ocaml/examples/hello_window.exe &
-sleep 1
-
-# Capture screenshot
-import -window root screenshot.png
-```
+4. Update `softbuffer.mli` with documentation
 
 ## Testing
 
 ### Running Tests
 
 ```bash
-# cd to project root
-
 # FFI smoke test (works without display)
 dune exec ocaml/examples/test_ffi.exe
 
 # Full graphical test (requires display)
 dune exec ocaml/examples/hello_window.exe
+
+# Tablet/painting test
+dune exec ocaml/examples/paint.exe
 
 # With Xvfb (headless)
 Xvfb :99 & DISPLAY=:99 dune exec ocaml/examples/hello_window.exe
@@ -834,27 +582,11 @@ valgrind --leak-check=full --show-leak-kinds=all dune exec ocaml/examples/hello_
 
 Expected output: No leaks from our code (may see leaks from X11 drivers).
 
-### FFI Verification
-
-The `test_ffi.exe` example verifies the FFI chain works:
-
-```bash
-dune exec ocaml/examples/test_ffi.exe
-```
-
-Output:
-```
-Testing FFI without display...
-Test 1: Calling test_version()... OK! Got version: 100
-Test 2: Event type handling... [lists all event types]
-=== FFI Tests Passed ===
-```
-
 ## Troubleshooting
 
 ### Build Issues
 
-**Problem:** `undefined reference to 'winit_create'`
+**Problem:** `undefined reference to 'winit_window_create'`
 
 **Solution:**
 - Clean and rebuild everything:
@@ -863,7 +595,7 @@ Test 2: Event type handling... [lists all event types]
   ```
 - Verify Rust sources are present in `rust/src/`
 - Check that cargo is installed and accessible: `cargo --version`
-- Verify symbols are exported: `nm rust/target/release/libwinit_ocaml_ffi.a | grep winit_create`
+- Verify symbols are exported: `nm rust/target/debug/libwinit_ocaml_ffi.a | grep winit_window`
 
 ### Runtime Issues
 
@@ -878,7 +610,7 @@ Test 2: Event type handling... [lists all event types]
 
 **Solution:**
 - Check that buffer isn't used after `present()` (buffer is consumed)
-- Verify app isn't used after cleanup
+- Verify surface isn't used after window is dropped
 - Run with `gdb` or `valgrind` to find the issue
 
 **Problem:** Window appears but is unresponsive
@@ -905,7 +637,9 @@ winit-ocaml/
 ├── rust/
 │   ├── Cargo.toml           # Rust FFI library dependencies
 │   ├── src/
-│   │   └── lib.rs           # Rust FFI implementation
+│   │   ├── lib.rs           # Shared types, re-exports
+│   │   ├── winit_ffi.rs     # Window/event FFI
+│   │   └── softbuffer_ffi.rs# Rendering FFI
 │   ├── prototype/
 │   │   ├── Cargo.toml       # Prototype binaries
 │   │   └── src/             # Prototype source code
@@ -913,13 +647,20 @@ winit-ocaml/
 │       ├── winit/           # Vendored winit library
 │       └── softbuffer/      # Vendored softbuffer library
 ├── ocaml/
-│   ├── dune                 # OCaml build configuration
-│   ├── winit_stubs.c        # C FFI bridge
-│   ├── winit_softbuffer.mli # Public API interface
-│   ├── winit_softbuffer.ml  # OCaml implementation
+│   ├── winit/               # Winit OCaml library
+│   │   ├── dune             # Build config (includes Rust build)
+│   │   ├── winit.ml         # OCaml implementation
+│   │   ├── winit.mli        # Public API interface
+│   │   └── winit_stubs.c    # C FFI bridge
+│   ├── softbuffer/          # Softbuffer OCaml library
+│   │   ├── dune             # Build config
+│   │   ├── softbuffer.ml    # OCaml implementation
+│   │   ├── softbuffer.mli   # Public API interface
+│   │   └── softbuffer_stubs.c # C FFI bridge
 │   └── examples/
 │       ├── dune             # Example build config
 │       ├── hello_window.ml  # Graphical demo
+│       ├── paint.ml         # Tablet painting demo
 │       └── test_ffi.ml      # FFI test
 ├── docs/                    # Design documentation
 ├── issues/                  # Project issue tracking
