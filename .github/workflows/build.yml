@@ -24,13 +24,16 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install OCaml
+      - name: Install OCaml (OxCaml)
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: 5.2.x
+          ocaml-compiler: ocaml-variants.5.2.0+ox
+          opam-repositories: |
+            ox: git+https://github.com/oxcaml/opam-repository.git
+            default: https://opam.ocaml.org
 
       - name: Install OCaml dependencies
-        run: opam install dune --yes
+        run: opam install dune ppx_jane base stdio --yes
 
       - name: Build project
         run: opam exec -- dune build
