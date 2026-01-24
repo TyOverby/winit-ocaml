@@ -1,0 +1,26 @@
+; Rule to build the Rust FFI library using Cargo
+; We use --manifest-path to point to the source Cargo.toml to avoid workspace issues
+
+(rule
+ (targets libsoftbuffer_ffi.a dllsoftbuffer_ffi.so)
+ (deps
+  (source_tree ../ffi/src)
+  (source_tree ../../winit/ffi/src)
+  (source_tree ../../vendor)
+  ../ffi/Cargo.toml
+  ../../winit/ffi/Cargo.toml
+  ../../Cargo.toml)
+ (action
+  (no-infer
+   (bash
+    "\n# Determine dynamic library extension based on OS\ncase \"$(uname)\" in\n  Darwin) DYLIB_EXT=dylib ;;\n  *)      DYLIB_EXT=so ;;\nesac\n\nOUT_DIR=$(pwd)\n\n# Find the actual source root by going up from _build/default/softbuffer/src\nSOURCE_ROOT=$(cd ../../../.. && pwd)\n\nif [ \"%{profile}\" = \"release\" ]; then\n  cargo build --release -p softbuffer_ffi --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/release/libsoftbuffer_ffi.a $OUT_DIR/libsoftbuffer_ffi.a\n  cp $SOURCE_ROOT/target/release/libsoftbuffer_ffi.$DYLIB_EXT $OUT_DIR/dllsoftbuffer_ffi.so\nelse\n  cargo build -p softbuffer_ffi --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/debug/libsoftbuffer_ffi.a $OUT_DIR/libsoftbuffer_ffi.a\n  cp $SOURCE_ROOT/target/debug/libsoftbuffer_ffi.$DYLIB_EXT $OUT_DIR/dllsoftbuffer_ffi.so\nfi\n"))))
+
+(library
+ (name softbuffer)
+ (public_name softbuffer)
+ (libraries winit bigarray)
+ (foreign_stubs
+  (language c)
+  (names softbuffer_stubs)
+  (flags :standard))
+ (foreign_archives softbuffer_ffi))

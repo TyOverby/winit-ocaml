@@ -1,11 +1,12 @@
-//! Softbuffer FFI module - Pixel buffer rendering
+//! Softbuffer FFI Library
+//!
+//! This library provides FFI bindings for softbuffer (rendering) to be used from OCaml.
 
 use std::num::NonZeroU32;
 use std::sync::Arc;
 
 use winit::window::Window;
-
-use crate::DamageRect;
+use winit_ffi::DamageRect;
 
 /// Graphics state - holds softbuffer context and surface
 struct GraphicsState {

@@ -1,0 +1,35 @@
+; Rule to build the Rust FFI library using Cargo
+; We use --manifest-path to point to the source Cargo.toml to avoid workspace issues
+
+(rule
+ (targets libwinit_ffi.a dllwinit_ffi.so)
+ (deps
+  (source_tree ../ffi/src)
+  (source_tree ../../vendor)
+  ../ffi/Cargo.toml
+  ../../Cargo.toml)
+ (action
+  (no-infer
+   (bash
+    "\n# Determine dynamic library extension based on OS\ncase \"$(uname)\" in\n  Darwin) DYLIB_EXT=dylib ;;\n  *)      DYLIB_EXT=so ;;\nesac\n\nOUT_DIR=$(pwd)\n\n# Find the actual source root by going up from _build/default/winit/src\n# We're in _build/default/winit/src, need to go to project root then back out of _build\nSOURCE_ROOT=$(cd ../../../.. && pwd)\n\nif [ \"%{profile}\" = \"release\" ]; then\n  cargo build --release -p winit_ffi --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/release/libwinit_ffi.a $OUT_DIR/libwinit_ffi.a\n  cp $SOURCE_ROOT/target/release/libwinit_ffi.$DYLIB_EXT $OUT_DIR/dllwinit_ffi.so\nelse\n  cargo build -p winit_ffi --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/debug/libwinit_ffi.a $OUT_DIR/libwinit_ffi.a\n  cp $SOURCE_ROOT/target/debug/libwinit_ffi.$DYLIB_EXT $OUT_DIR/dllwinit_ffi.so\nfi\n"))))
+
+; Generate platform-specific C library flags
+
+(rule
+ (targets c_library_flags.sexp)
+ (action
+  (bash
+   "\ncase \"$(uname)\" in\n  Darwin)\n    echo '(-lpthread -framework CoreFoundation -framework CoreGraphics -framework AppKit -framework QuartzCore -framework CoreVideo -framework Metal -framework IOKit -framework IOSurface -framework Carbon -lobjc)' > c_library_flags.sexp\n    ;;\n  *)\n    echo '(-lpthread -ldl -lm)' > c_library_flags.sexp\n    ;;\nesac\n")))
+
+(library
+ (name winit)
+ (public_name winit)
+ (libraries unix)
+ (foreign_stubs
+  (language c)
+  (names winit_stubs)
+  (flags :standard))
+ (foreign_archives winit_ffi)
+ (c_library_flags
+  (:standard
+   (:include c_library_flags.sexp))))
