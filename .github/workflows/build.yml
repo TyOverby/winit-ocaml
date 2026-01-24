@@ -1,0 +1,45 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-dev libx11-dev libxkbcommon-dev libwayland-dev
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Install OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.2.x
+
+      - name: Install OCaml dependencies
+        run: opam install dune --yes
+
+      - name: Build project
+        run: opam exec -- dune build
+
+      - name: Build paint example
+        run: opam exec -- dune build ./examples/paint.exe
+
+      - name: Upload paint artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: paint-linux
+          path: _build/default/examples/paint.exe
