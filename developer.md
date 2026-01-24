@@ -556,7 +556,9 @@ Format all code (OCaml and Rust) with the convenience script:
 
 ## Testing
 
-### Running Tests
+Standard unit tests and headless integration tests can be run with `./test.sh`
+
+### Manual testing
 
 ```bash
 # FFI smoke test (works without display)
