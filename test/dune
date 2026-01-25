@@ -1,0 +1,3 @@
+(executable
+ (name test_compute)
+ (libraries wgpu ctypes ctypes.foreign))
