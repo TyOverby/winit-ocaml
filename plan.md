@@ -464,13 +464,15 @@ let pipeline =
 - ✅ Rust/Cargo integration working (libwgpu_native.a builds and links)
 - ✅ Minimal Instance create/release verified working
 
-**Phase 2 (Code Generator)**: Milestone 1 Complete ✅
+**Phase 2 (Code Generator)**: Milestone 2 Complete ✅
 - ✅ YAML parsing (parse_yml.ml)
 - ✅ IR definition (ir.ml)
 - ✅ Low-level generator (gen_low.ml) - enums, bitflags, object handles
 - ✅ High-level generator (gen_high.ml) - module wrappers
+- ✅ Sync wrappers for async APIs (adapter/device request)
+- ✅ Adapter info retrieval
 - 🔄 Struct generation (not yet implemented)
-- 🔄 Function generation (only create_instance)
+- 🔄 Buffer/texture operations
 
 ## Next Steps
 
@@ -479,9 +481,11 @@ let pipeline =
 3. ~~Verify wgpu-native builds and links successfully~~ ✅
 4. ~~Write minimal manual binding (wgpuCreateInstance) to test linking~~ ✅
 5. ~~Implement code generator for enums/bitflags~~ ✅
-6. Generate struct types and field accessors
-7. Generate more function bindings (request_adapter, request_device)
+6. ~~Generate adapter/device bindings with sync wrappers~~ ✅
+7. Add buffer creation and shader module loading
 8. Implement headless compute example
+9. Generate struct types and field accessors
+10. Implement headless render-to-PNG example
 
 ---
 
