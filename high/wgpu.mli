@@ -801,14 +801,6 @@ module Texture_Usage : sig
   val to_int : t -> int
   val list_to_int : t list -> int
 end
-module Adapter : sig
-  (** TODO *)
-
-  type t
-
-  val release : t -> unit
-end
-
 module Bind_Group : sig
   (** TODO *)
 
@@ -865,14 +857,6 @@ module Compute_Pipeline : sig
   val release : t -> unit
 end
 
-module Device : sig
-  (** TODO *)
-
-  type t
-
-  val release : t -> unit
-end
-
 module Pipeline_Layout : sig
   (** TODO *)
 
@@ -882,14 +866,6 @@ module Pipeline_Layout : sig
 end
 
 module Query_Set : sig
-  (** TODO *)
-
-  type t
-
-  val release : t -> unit
-end
-
-module Queue : sig
   (** TODO *)
 
   type t
@@ -968,9 +944,39 @@ module Texture_View : sig
 
   val release : t -> unit
 end
+module Adapter_info : sig
+  type t =
+    { vendor : string
+    ; architecture : string
+    ; device : string
+    ; description : string
+    ; backend_type : int
+    ; adapter_type : int
+    }
+end
+
+module Adapter : sig
+  type t
+
+  val get_info : t -> Adapter_info.t
+  val release : t -> unit
+end
+
+module Device : sig
+  type t
+
+  val release : t -> unit
+end
+
+module Queue : sig
+  type t
+
+  val release : t -> unit
+end
 module Instance : sig
   type t
 
   val create : unit -> t
   val release : t -> unit
+  val request_adapter : t -> Adapter.t
 end

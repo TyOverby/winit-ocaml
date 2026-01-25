@@ -108,12 +108,6 @@ module Map_Mode = Wgpu_low.Map_Mode
 module Shader_Stage = Wgpu_low.Shader_Stage
 
 module Texture_Usage = Wgpu_low.Texture_Usage
-module Adapter = struct
-  type t = { handle : Wgpu_low.adapter }
-
-  let release t = Wgpu_low.adapter_release t.handle
-end
-
 module Bind_Group = struct
   type t = { handle : Wgpu_low.bind_group }
 
@@ -156,12 +150,6 @@ module Compute_Pipeline = struct
   let release t = Wgpu_low.compute_pipeline_release t.handle
 end
 
-module Device = struct
-  type t = { handle : Wgpu_low.device }
-
-  let release t = Wgpu_low.device_release t.handle
-end
-
 module Pipeline_Layout = struct
   type t = { handle : Wgpu_low.pipeline_layout }
 
@@ -172,12 +160,6 @@ module Query_Set = struct
   type t = { handle : Wgpu_low.query_set }
 
   let release t = Wgpu_low.query_set_release t.handle
-end
-
-module Queue = struct
-  type t = { handle : Wgpu_low.queue }
-
-  let release t = Wgpu_low.queue_release t.handle
 end
 
 module Render_Bundle = struct
@@ -233,9 +215,42 @@ module Texture_View = struct
 
   let release t = Wgpu_low.texture_view_release t.handle
 end
+module Adapter_info = struct
+  type t = Wgpu_low.adapter_info =
+    { vendor : string
+    ; architecture : string
+    ; device : string
+    ; description : string
+    ; backend_type : int
+    ; adapter_type : int
+    }
+end
+
+module Adapter = struct
+  type t = { handle : Wgpu_low.adapter }
+
+  let get_info t = Wgpu_low.adapter_get_info t.handle
+  let release t = Wgpu_low.adapter_release t.handle
+end
+
+module Device = struct
+  type t = { handle : Wgpu_low.device }
+
+  let release t = Wgpu_low.device_release t.handle
+end
+
+module Queue = struct
+  type t = { handle : Wgpu_low.queue }
+
+  let release t = Wgpu_low.queue_release t.handle
+end
 module Instance = struct
   type t = { handle : Wgpu_low.instance }
 
   let create () = { handle = Wgpu_low.create_instance () }
   let release t = Wgpu_low.instance_release t.handle
+
+  let request_adapter t =
+    let adapter = Wgpu_low.instance_request_adapter_sync t.handle in
+    { Adapter.handle = adapter }
 end

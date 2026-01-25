@@ -1719,3 +1719,30 @@ type texture_view = nativeint
 
 external texture_view_release : texture_view -> unit = "caml_wgpu_texture_view_release"
 external create_instance : unit -> instance = "caml_wgpu_create_instance"
+
+external instance_request_adapter_sync : instance -> adapter
+  = "caml_wgpu_instance_request_adapter_sync"
+
+external adapter_request_device_sync : adapter -> device
+  = "caml_wgpu_adapter_request_device_sync"
+
+external device_get_queue : device -> queue = "caml_wgpu_device_get_queue"
+
+type adapter_info =
+  { vendor : string
+  ; architecture : string
+  ; device : string
+  ; description : string
+  ; backend_type : int
+  ; adapter_type : int
+  }
+
+external adapter_get_info_raw :
+  adapter -> string * string * string * string * int * int
+  = "caml_wgpu_adapter_get_info"
+
+let adapter_get_info adapter =
+  let vendor, architecture, device, description, backend_type, adapter_type =
+    adapter_get_info_raw adapter
+  in
+  { vendor; architecture; device; description; backend_type; adapter_type }

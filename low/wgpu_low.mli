@@ -832,3 +832,20 @@ type texture_view = nativeint
 
 val texture_view_release : texture_view -> unit
 val create_instance : unit -> instance
+
+val instance_request_adapter_sync : instance -> adapter
+
+val adapter_request_device_sync : adapter -> device
+
+val device_get_queue : device -> queue
+
+type adapter_info =
+  { vendor : string
+  ; architecture : string
+  ; device : string
+  ; description : string
+  ; backend_type : int
+  ; adapter_type : int
+  }
+
+val adapter_get_info : adapter -> adapter_info

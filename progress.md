@@ -57,6 +57,35 @@
 - `dune build @check` passes with no warnings
 
 ### Next Steps
-1. Add more function bindings (beyond just create_instance)
+1. ~~Add more function bindings (beyond just create_instance)~~ ✅
 2. Generate struct types and accessors
-3. Implement request_adapter to get a working GPU pipeline
+3. ~~Implement request_adapter to get a working GPU pipeline~~ ✅
+
+---
+
+## 2026-01-25: Adapter and Device Bindings
+
+### Accomplished
+- Added synchronous wrappers for callback-based APIs:
+  - `instance_request_adapter_sync` - request GPU adapter
+  - `adapter_request_device_sync` - request GPU device
+  - `device_get_queue` - get command queue
+  - `adapter_get_info` - get adapter information
+- Created high-level modules: `Adapter`, `Adapter_info`, `Device`, `Queue`
+- Test successfully enumerates GPU adapter
+
+### Test Output
+```
+Creating wgpu instance...
+Requesting adapter...
+Adapter obtained!
+  Vendor: llvmpipe
+  Device: llvmpipe (LLVM 20.1.8, 256 bits)
+  Backend type: 6 (Vulkan)
+  Adapter type: 3 (CPU/Software)
+```
+
+### Next Steps
+1. Add buffer creation and data transfer
+2. Implement compute shader execution
+3. Create headless render-to-texture example

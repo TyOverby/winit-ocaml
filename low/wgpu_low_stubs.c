@@ -2344,3 +2344,88 @@ CAMLprim value caml_wgpu_create_instance(value unit) {
   CAMLreturn(caml_copy_nativeint((intnat)instance));
 }
 /* TODO: wgpuGetInstanceCapabilities */
+
+/* Synchronous adapter request helper */
+static void handle_request_adapter_sync(WGPURequestAdapterStatus status,
+                                        WGPUAdapter adapter,
+                                        WGPUStringView message,
+                                        void *userdata1, void *userdata2) {
+  (void)status;
+  (void)message;
+  (void)userdata2;
+  *(WGPUAdapter *)userdata1 = adapter;
+}
+
+CAMLprim value caml_wgpu_instance_request_adapter_sync(value instance_val) {
+  CAMLparam1(instance_val);
+  WGPUInstance instance = (WGPUInstance)Nativeint_val(instance_val);
+  WGPUAdapter adapter = NULL;
+
+  WGPURequestAdapterCallbackInfo callback_info = {
+    .callback = handle_request_adapter_sync,
+    .userdata1 = &adapter,
+    .userdata2 = NULL,
+  };
+
+  wgpuInstanceRequestAdapter(instance, NULL, callback_info);
+
+  CAMLreturn(caml_copy_nativeint((intnat)adapter));
+}
+
+/* Synchronous device request helper */
+static void handle_request_device_sync(WGPURequestDeviceStatus status,
+                                       WGPUDevice device,
+                                       WGPUStringView message,
+                                       void *userdata1, void *userdata2) {
+  (void)status;
+  (void)message;
+  (void)userdata2;
+  *(WGPUDevice *)userdata1 = device;
+}
+
+CAMLprim value caml_wgpu_adapter_request_device_sync(value adapter_val) {
+  CAMLparam1(adapter_val);
+  WGPUAdapter adapter = (WGPUAdapter)Nativeint_val(adapter_val);
+  WGPUDevice device = NULL;
+
+  WGPURequestDeviceCallbackInfo callback_info = {
+    .callback = handle_request_device_sync,
+    .userdata1 = &device,
+    .userdata2 = NULL,
+  };
+
+  wgpuAdapterRequestDevice(adapter, NULL, callback_info);
+
+  CAMLreturn(caml_copy_nativeint((intnat)device));
+}
+
+/* Get device queue */
+CAMLprim value caml_wgpu_device_get_queue(value device_val) {
+  CAMLparam1(device_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  WGPUQueue queue = wgpuDeviceGetQueue(device);
+  CAMLreturn(caml_copy_nativeint((intnat)queue));
+}
+
+/* Get adapter info */
+CAMLprim value caml_wgpu_adapter_get_info(value adapter_val) {
+  CAMLparam1(adapter_val);
+  CAMLlocal1(result);
+
+  WGPUAdapter adapter = (WGPUAdapter)Nativeint_val(adapter_val);
+  WGPUAdapterInfo info = {0};
+  wgpuAdapterGetInfo(adapter, &info);
+
+  /* Return as a tuple: (vendor, architecture, device, description, backend_type, adapter_type) */
+  result = caml_alloc_tuple(6);
+  Store_field(result, 0, caml_copy_string(info.vendor.data ? info.vendor.data : ""));
+  Store_field(result, 1, caml_copy_string(info.architecture.data ? info.architecture.data : ""));
+  Store_field(result, 2, caml_copy_string(info.device.data ? info.device.data : ""));
+  Store_field(result, 3, caml_copy_string(info.description.data ? info.description.data : ""));
+  Store_field(result, 4, Val_int(info.backendType));
+  Store_field(result, 5, Val_int(info.adapterType));
+
+  wgpuAdapterInfoFreeMembers(info);
+
+  CAMLreturn(result);
+}

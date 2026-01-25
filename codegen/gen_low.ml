@@ -263,6 +263,96 @@ let gen_c_function_stubs (func : Ir.function_) : string =
   | _ -> sprintf "/* TODO: %s */\n" c_name
 ;;
 
+(** Generate additional helper functions for sync wrappers *)
+let gen_c_sync_helpers () : string =
+  {|
+/* Synchronous adapter request helper */
+static void handle_request_adapter_sync(WGPURequestAdapterStatus status,
+                                        WGPUAdapter adapter,
+                                        WGPUStringView message,
+                                        void *userdata1, void *userdata2) {
+  (void)status;
+  (void)message;
+  (void)userdata2;
+  *(WGPUAdapter *)userdata1 = adapter;
+}
+
+CAMLprim value caml_wgpu_instance_request_adapter_sync(value instance_val) {
+  CAMLparam1(instance_val);
+  WGPUInstance instance = (WGPUInstance)Nativeint_val(instance_val);
+  WGPUAdapter adapter = NULL;
+
+  WGPURequestAdapterCallbackInfo callback_info = {
+    .callback = handle_request_adapter_sync,
+    .userdata1 = &adapter,
+    .userdata2 = NULL,
+  };
+
+  wgpuInstanceRequestAdapter(instance, NULL, callback_info);
+
+  CAMLreturn(caml_copy_nativeint((intnat)adapter));
+}
+
+/* Synchronous device request helper */
+static void handle_request_device_sync(WGPURequestDeviceStatus status,
+                                       WGPUDevice device,
+                                       WGPUStringView message,
+                                       void *userdata1, void *userdata2) {
+  (void)status;
+  (void)message;
+  (void)userdata2;
+  *(WGPUDevice *)userdata1 = device;
+}
+
+CAMLprim value caml_wgpu_adapter_request_device_sync(value adapter_val) {
+  CAMLparam1(adapter_val);
+  WGPUAdapter adapter = (WGPUAdapter)Nativeint_val(adapter_val);
+  WGPUDevice device = NULL;
+
+  WGPURequestDeviceCallbackInfo callback_info = {
+    .callback = handle_request_device_sync,
+    .userdata1 = &device,
+    .userdata2 = NULL,
+  };
+
+  wgpuAdapterRequestDevice(adapter, NULL, callback_info);
+
+  CAMLreturn(caml_copy_nativeint((intnat)device));
+}
+
+/* Get device queue */
+CAMLprim value caml_wgpu_device_get_queue(value device_val) {
+  CAMLparam1(device_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  WGPUQueue queue = wgpuDeviceGetQueue(device);
+  CAMLreturn(caml_copy_nativeint((intnat)queue));
+}
+
+/* Get adapter info */
+CAMLprim value caml_wgpu_adapter_get_info(value adapter_val) {
+  CAMLparam1(adapter_val);
+  CAMLlocal1(result);
+
+  WGPUAdapter adapter = (WGPUAdapter)Nativeint_val(adapter_val);
+  WGPUAdapterInfo info = {0};
+  wgpuAdapterGetInfo(adapter, &info);
+
+  /* Return as a tuple: (vendor, architecture, device, description, backend_type, adapter_type) */
+  result = caml_alloc_tuple(6);
+  Store_field(result, 0, caml_copy_string(info.vendor.data ? info.vendor.data : ""));
+  Store_field(result, 1, caml_copy_string(info.architecture.data ? info.architecture.data : ""));
+  Store_field(result, 2, caml_copy_string(info.device.data ? info.device.data : ""));
+  Store_field(result, 3, caml_copy_string(info.description.data ? info.description.data : ""));
+  Store_field(result, 4, Val_int(info.backendType));
+  Store_field(result, 5, Val_int(info.adapterType));
+
+  wgpuAdapterInfoFreeMembers(info);
+
+  CAMLreturn(result);
+}
+|}
+;;
+
 (** Generate all C stubs *)
 let gen_c_stubs (api : Ir.api) : string =
   let header =
@@ -290,7 +380,8 @@ let gen_c_stubs (api : Ir.api) : string =
   let function_stubs =
     List.map api.functions ~f:gen_c_function_stubs |> String.concat ~sep:"\n"
   in
-  String.concat [ header; enum_stubs; bitflag_stubs; object_stubs; function_stubs ]
+  let sync_helpers = gen_c_sync_helpers () in
+  String.concat [ header; enum_stubs; bitflag_stubs; object_stubs; function_stubs; sync_helpers ]
 ;;
 
 (** Generate all OCaml bindings *)
@@ -300,7 +391,35 @@ let gen_ml (api : Ir.api) : string =
   let bitflags = List.map api.bitflags ~f:gen_ml_bitflag |> String.concat ~sep:"\n" in
   let objects = List.map api.objects ~f:gen_ml_object |> String.concat ~sep:"\n" in
   let functions =
-    "external create_instance : unit -> instance = \"caml_wgpu_create_instance\"\n"
+    {|external create_instance : unit -> instance = "caml_wgpu_create_instance"
+
+external instance_request_adapter_sync : instance -> adapter
+  = "caml_wgpu_instance_request_adapter_sync"
+
+external adapter_request_device_sync : adapter -> device
+  = "caml_wgpu_adapter_request_device_sync"
+
+external device_get_queue : device -> queue = "caml_wgpu_device_get_queue"
+
+type adapter_info =
+  { vendor : string
+  ; architecture : string
+  ; device : string
+  ; description : string
+  ; backend_type : int
+  ; adapter_type : int
+  }
+
+external adapter_get_info_raw :
+  adapter -> string * string * string * string * int * int
+  = "caml_wgpu_adapter_get_info"
+
+let adapter_get_info adapter =
+  let vendor, architecture, device, description, backend_type, adapter_type =
+    adapter_get_info_raw adapter
+  in
+  { vendor; architecture; device; description; backend_type; adapter_type }
+|}
   in
   String.concat [ header; enums; bitflags; objects; functions ]
 ;;
@@ -311,6 +430,26 @@ let gen_mli (api : Ir.api) : string =
   let enums = List.map api.enums ~f:gen_mli_enum |> String.concat ~sep:"\n" in
   let bitflags = List.map api.bitflags ~f:gen_mli_bitflag |> String.concat ~sep:"\n" in
   let objects = List.map api.objects ~f:gen_mli_object |> String.concat ~sep:"\n" in
-  let functions = "val create_instance : unit -> instance\n" in
+  let functions =
+    {|val create_instance : unit -> instance
+
+val instance_request_adapter_sync : instance -> adapter
+
+val adapter_request_device_sync : adapter -> device
+
+val device_get_queue : device -> queue
+
+type adapter_info =
+  { vendor : string
+  ; architecture : string
+  ; device : string
+  ; description : string
+  ; backend_type : int
+  ; adapter_type : int
+  }
+
+val adapter_get_info : adapter -> adapter_info
+|}
+  in
   String.concat [ header; enums; bitflags; objects; functions ]
 ;;
