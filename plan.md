@@ -78,15 +78,13 @@ wgpu-native-ocaml/
 ### 1.2 Build System Setup
 - Set up dune-project with appropriate dependencies
 - Configure wgpu-native compilation (static library)
-- Create opam file with dependencies: ctypes, ctypes-foreign, yaml, etc.
+- Create opam file with dependencies: yaml, etc.
 
 ### 1.3 Dependencies
 ```
 depends: [
   "ocaml" {>= "4.14.0"}
   "dune" {>= "3.0"}
-  "ctypes" {>= "0.20.0"}
-  "ctypes-foreign"
   "yaml"              # For parsing webgpu.yml
   "stb_image"         # For PNG output in tests (or use camlimages)
 ]
@@ -301,7 +299,7 @@ end
 4. Generate all bitflag types
 
 ### Milestone 2: Code Generator for Structs
-1. Generate low-level ctypes struct bindings
+1. Generate low-level `external` based bindings for accessing and writing to struct fields
 2. Generate high-level record types
 3. Generate conversion functions (OCaml record ↔ C struct)
 
