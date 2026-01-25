@@ -8,23 +8,2339 @@
 #include "webgpu.h"
 #include "wgpu.h"
 
-/* Minimal test stub: create a wgpu instance */
+/* Enum: WGPUAdapterType */
+CAMLprim value caml_wgpu_adapter_type_discrete_gpu(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUAdapterType_DiscreteGPU));
+}
+
+CAMLprim value caml_wgpu_adapter_type_integrated_gpu(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUAdapterType_IntegratedGPU));
+}
+
+CAMLprim value caml_wgpu_adapter_type_cpu(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUAdapterType_CPU));
+}
+
+CAMLprim value caml_wgpu_adapter_type_unknown(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUAdapterType_Unknown));
+}
+
+/* Enum: WGPUAddressMode */
+CAMLprim value caml_wgpu_address_mode_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUAddressMode_Undefined));
+}
+
+CAMLprim value caml_wgpu_address_mode_clamp_to_edge(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUAddressMode_ClampToEdge));
+}
+
+CAMLprim value caml_wgpu_address_mode_repeat(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUAddressMode_Repeat));
+}
+
+CAMLprim value caml_wgpu_address_mode_mirror_repeat(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUAddressMode_MirrorRepeat));
+}
+
+/* Enum: WGPUBackendType */
+CAMLprim value caml_wgpu_backend_type_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBackendType_Undefined));
+}
+
+CAMLprim value caml_wgpu_backend_type_null(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBackendType_Null));
+}
+
+CAMLprim value caml_wgpu_backend_type_webgpu(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBackendType_WebGPU));
+}
+
+CAMLprim value caml_wgpu_backend_type_d3d11(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBackendType_D3D11));
+}
+
+CAMLprim value caml_wgpu_backend_type_d3d12(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBackendType_D3D12));
+}
+
+CAMLprim value caml_wgpu_backend_type_metal(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBackendType_Metal));
+}
+
+CAMLprim value caml_wgpu_backend_type_vulkan(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBackendType_Vulkan));
+}
+
+CAMLprim value caml_wgpu_backend_type_opengl(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBackendType_OpenGL));
+}
+
+CAMLprim value caml_wgpu_backend_type_opengles(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBackendType_OpenGLES));
+}
+
+/* Enum: WGPUBlendFactor */
+CAMLprim value caml_wgpu_blend_factor_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_Undefined));
+}
+
+CAMLprim value caml_wgpu_blend_factor_zero(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_Zero));
+}
+
+CAMLprim value caml_wgpu_blend_factor_one(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_One));
+}
+
+CAMLprim value caml_wgpu_blend_factor_src(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_Src));
+}
+
+CAMLprim value caml_wgpu_blend_factor_one_minus_src(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_OneMinusSrc));
+}
+
+CAMLprim value caml_wgpu_blend_factor_src_alpha(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_SrcAlpha));
+}
+
+CAMLprim value caml_wgpu_blend_factor_one_minus_src_alpha(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_OneMinusSrcAlpha));
+}
+
+CAMLprim value caml_wgpu_blend_factor_dst(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_Dst));
+}
+
+CAMLprim value caml_wgpu_blend_factor_one_minus_dst(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_OneMinusDst));
+}
+
+CAMLprim value caml_wgpu_blend_factor_dst_alpha(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_DstAlpha));
+}
+
+CAMLprim value caml_wgpu_blend_factor_one_minus_dst_alpha(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_OneMinusDstAlpha));
+}
+
+CAMLprim value caml_wgpu_blend_factor_src_alpha_saturated(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_SrcAlphaSaturated));
+}
+
+CAMLprim value caml_wgpu_blend_factor_constant(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_Constant));
+}
+
+CAMLprim value caml_wgpu_blend_factor_one_minus_constant(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_OneMinusConstant));
+}
+
+CAMLprim value caml_wgpu_blend_factor_src1(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_Src1));
+}
+
+CAMLprim value caml_wgpu_blend_factor_one_minus_src1(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_OneMinusSrc1));
+}
+
+CAMLprim value caml_wgpu_blend_factor_src1_alpha(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_Src1Alpha));
+}
+
+CAMLprim value caml_wgpu_blend_factor_one_minus_src1_alpha(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendFactor_OneMinusSrc1Alpha));
+}
+
+/* Enum: WGPUBlendOperation */
+CAMLprim value caml_wgpu_blend_operation_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendOperation_Undefined));
+}
+
+CAMLprim value caml_wgpu_blend_operation_add(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendOperation_Add));
+}
+
+CAMLprim value caml_wgpu_blend_operation_subtract(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendOperation_Subtract));
+}
+
+CAMLprim value caml_wgpu_blend_operation_reverse_subtract(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendOperation_ReverseSubtract));
+}
+
+CAMLprim value caml_wgpu_blend_operation_min(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendOperation_Min));
+}
+
+CAMLprim value caml_wgpu_blend_operation_max(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBlendOperation_Max));
+}
+
+/* Enum: WGPUBufferBindingType */
+CAMLprim value caml_wgpu_buffer_binding_type_binding_not_used(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferBindingType_BindingNotUsed));
+}
+
+CAMLprim value caml_wgpu_buffer_binding_type_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferBindingType_Undefined));
+}
+
+CAMLprim value caml_wgpu_buffer_binding_type_uniform(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferBindingType_Uniform));
+}
+
+CAMLprim value caml_wgpu_buffer_binding_type_storage(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferBindingType_Storage));
+}
+
+CAMLprim value caml_wgpu_buffer_binding_type_read_only_storage(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferBindingType_ReadOnlyStorage));
+}
+
+/* Enum: WGPUBufferMapState */
+CAMLprim value caml_wgpu_buffer_map_state_unmapped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferMapState_Unmapped));
+}
+
+CAMLprim value caml_wgpu_buffer_map_state_pending(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferMapState_Pending));
+}
+
+CAMLprim value caml_wgpu_buffer_map_state_mapped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferMapState_Mapped));
+}
+
+/* Enum: WGPUCallbackMode */
+CAMLprim value caml_wgpu_callback_mode_wait_any_only(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCallbackMode_WaitAnyOnly));
+}
+
+CAMLprim value caml_wgpu_callback_mode_allow_process_events(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCallbackMode_AllowProcessEvents));
+}
+
+CAMLprim value caml_wgpu_callback_mode_allow_spontaneous(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCallbackMode_AllowSpontaneous));
+}
+
+/* Enum: WGPUCompareFunction */
+CAMLprim value caml_wgpu_compare_function_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompareFunction_Undefined));
+}
+
+CAMLprim value caml_wgpu_compare_function_never(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompareFunction_Never));
+}
+
+CAMLprim value caml_wgpu_compare_function_less(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompareFunction_Less));
+}
+
+CAMLprim value caml_wgpu_compare_function_equal(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompareFunction_Equal));
+}
+
+CAMLprim value caml_wgpu_compare_function_less_equal(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompareFunction_LessEqual));
+}
+
+CAMLprim value caml_wgpu_compare_function_greater(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompareFunction_Greater));
+}
+
+CAMLprim value caml_wgpu_compare_function_not_equal(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompareFunction_NotEqual));
+}
+
+CAMLprim value caml_wgpu_compare_function_greater_equal(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompareFunction_GreaterEqual));
+}
+
+CAMLprim value caml_wgpu_compare_function_always(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompareFunction_Always));
+}
+
+/* Enum: WGPUCompilationInfoRequestStatus */
+CAMLprim value caml_wgpu_compilation_info_request_status_success(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompilationInfoRequestStatus_Success));
+}
+
+CAMLprim value caml_wgpu_compilation_info_request_status_instance_dropped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompilationInfoRequestStatus_InstanceDropped));
+}
+
+CAMLprim value caml_wgpu_compilation_info_request_status_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompilationInfoRequestStatus_Error));
+}
+
+CAMLprim value caml_wgpu_compilation_info_request_status_unknown(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompilationInfoRequestStatus_Unknown));
+}
+
+/* Enum: WGPUCompilationMessageType */
+CAMLprim value caml_wgpu_compilation_message_type_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompilationMessageType_Error));
+}
+
+CAMLprim value caml_wgpu_compilation_message_type_warning(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompilationMessageType_Warning));
+}
+
+CAMLprim value caml_wgpu_compilation_message_type_info(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompilationMessageType_Info));
+}
+
+/* Enum: WGPUCompositeAlphaMode */
+CAMLprim value caml_wgpu_composite_alpha_mode_auto(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompositeAlphaMode_Auto));
+}
+
+CAMLprim value caml_wgpu_composite_alpha_mode_opaque(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompositeAlphaMode_Opaque));
+}
+
+CAMLprim value caml_wgpu_composite_alpha_mode_premultiplied(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompositeAlphaMode_Premultiplied));
+}
+
+CAMLprim value caml_wgpu_composite_alpha_mode_unpremultiplied(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompositeAlphaMode_Unpremultiplied));
+}
+
+CAMLprim value caml_wgpu_composite_alpha_mode_inherit(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCompositeAlphaMode_Inherit));
+}
+
+/* Enum: WGPUCreatePipelineAsyncStatus */
+CAMLprim value caml_wgpu_create_pipeline_async_status_success(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCreatePipelineAsyncStatus_Success));
+}
+
+CAMLprim value caml_wgpu_create_pipeline_async_status_instance_dropped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCreatePipelineAsyncStatus_InstanceDropped));
+}
+
+CAMLprim value caml_wgpu_create_pipeline_async_status_validation_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCreatePipelineAsyncStatus_ValidationError));
+}
+
+CAMLprim value caml_wgpu_create_pipeline_async_status_internal_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCreatePipelineAsyncStatus_InternalError));
+}
+
+CAMLprim value caml_wgpu_create_pipeline_async_status_unknown(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCreatePipelineAsyncStatus_Unknown));
+}
+
+/* Enum: WGPUCullMode */
+CAMLprim value caml_wgpu_cull_mode_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCullMode_Undefined));
+}
+
+CAMLprim value caml_wgpu_cull_mode_none(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCullMode_None));
+}
+
+CAMLprim value caml_wgpu_cull_mode_front(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCullMode_Front));
+}
+
+CAMLprim value caml_wgpu_cull_mode_back(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUCullMode_Back));
+}
+
+/* Enum: WGPUDeviceLostReason */
+CAMLprim value caml_wgpu_device_lost_reason_unknown(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUDeviceLostReason_Unknown));
+}
+
+CAMLprim value caml_wgpu_device_lost_reason_destroyed(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUDeviceLostReason_Destroyed));
+}
+
+CAMLprim value caml_wgpu_device_lost_reason_instance_dropped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUDeviceLostReason_InstanceDropped));
+}
+
+CAMLprim value caml_wgpu_device_lost_reason_failed_creation(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUDeviceLostReason_FailedCreation));
+}
+
+/* Enum: WGPUErrorFilter */
+CAMLprim value caml_wgpu_error_filter_validation(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUErrorFilter_Validation));
+}
+
+CAMLprim value caml_wgpu_error_filter_out_of_memory(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUErrorFilter_OutOfMemory));
+}
+
+CAMLprim value caml_wgpu_error_filter_internal(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUErrorFilter_Internal));
+}
+
+/* Enum: WGPUErrorType */
+CAMLprim value caml_wgpu_error_type_no_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUErrorType_NoError));
+}
+
+CAMLprim value caml_wgpu_error_type_validation(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUErrorType_Validation));
+}
+
+CAMLprim value caml_wgpu_error_type_out_of_memory(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUErrorType_OutOfMemory));
+}
+
+CAMLprim value caml_wgpu_error_type_internal(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUErrorType_Internal));
+}
+
+CAMLprim value caml_wgpu_error_type_unknown(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUErrorType_Unknown));
+}
+
+/* Enum: WGPUFeatureLevel */
+CAMLprim value caml_wgpu_feature_level_compatibility(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureLevel_Compatibility));
+}
+
+CAMLprim value caml_wgpu_feature_level_core(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureLevel_Core));
+}
+
+/* Enum: WGPUFeatureName */
+CAMLprim value caml_wgpu_feature_name_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_Undefined));
+}
+
+CAMLprim value caml_wgpu_feature_name_depth_clip_control(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_DepthClipControl));
+}
+
+CAMLprim value caml_wgpu_feature_name_depth32_float_stencil8(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_Depth32FloatStencil8));
+}
+
+CAMLprim value caml_wgpu_feature_name_timestamp_query(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_TimestampQuery));
+}
+
+CAMLprim value caml_wgpu_feature_name_texture_compression_bc(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_TextureCompressionBC));
+}
+
+CAMLprim value caml_wgpu_feature_name_texture_compression_bc_sliced_3d(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_TextureCompressionBCSliced3D));
+}
+
+CAMLprim value caml_wgpu_feature_name_texture_compression_etc2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_TextureCompressionETC2));
+}
+
+CAMLprim value caml_wgpu_feature_name_texture_compression_astc(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_TextureCompressionASTC));
+}
+
+CAMLprim value caml_wgpu_feature_name_texture_compression_astc_sliced_3d(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_TextureCompressionASTCSliced3D));
+}
+
+CAMLprim value caml_wgpu_feature_name_indirect_first_instance(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_IndirectFirstInstance));
+}
+
+CAMLprim value caml_wgpu_feature_name_shader_f16(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_ShaderF16));
+}
+
+CAMLprim value caml_wgpu_feature_name_rg11b10_ufloat_renderable(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_RG11B10UfloatRenderable));
+}
+
+CAMLprim value caml_wgpu_feature_name_bgra8_unorm_storage(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_BGRA8UnormStorage));
+}
+
+CAMLprim value caml_wgpu_feature_name_float32_filterable(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_Float32Filterable));
+}
+
+CAMLprim value caml_wgpu_feature_name_float32_blendable(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_Float32Blendable));
+}
+
+CAMLprim value caml_wgpu_feature_name_clip_distances(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_ClipDistances));
+}
+
+CAMLprim value caml_wgpu_feature_name_dual_source_blending(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFeatureName_DualSourceBlending));
+}
+
+/* Enum: WGPUFilterMode */
+CAMLprim value caml_wgpu_filter_mode_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFilterMode_Undefined));
+}
+
+CAMLprim value caml_wgpu_filter_mode_nearest(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFilterMode_Nearest));
+}
+
+CAMLprim value caml_wgpu_filter_mode_linear(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFilterMode_Linear));
+}
+
+/* Enum: WGPUFrontFace */
+CAMLprim value caml_wgpu_front_face_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFrontFace_Undefined));
+}
+
+CAMLprim value caml_wgpu_front_face_ccw(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFrontFace_CCW));
+}
+
+CAMLprim value caml_wgpu_front_face_cw(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUFrontFace_CW));
+}
+
+/* Enum: WGPUIndexFormat */
+CAMLprim value caml_wgpu_index_format_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUIndexFormat_Undefined));
+}
+
+CAMLprim value caml_wgpu_index_format_uint16(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUIndexFormat_Uint16));
+}
+
+CAMLprim value caml_wgpu_index_format_uint32(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUIndexFormat_Uint32));
+}
+
+/* Enum: WGPULoadOp */
+CAMLprim value caml_wgpu_load_op_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPULoadOp_Undefined));
+}
+
+CAMLprim value caml_wgpu_load_op_load(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPULoadOp_Load));
+}
+
+CAMLprim value caml_wgpu_load_op_clear(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPULoadOp_Clear));
+}
+
+/* Enum: WGPUMapAsyncStatus */
+CAMLprim value caml_wgpu_map_async_status_success(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMapAsyncStatus_Success));
+}
+
+CAMLprim value caml_wgpu_map_async_status_instance_dropped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMapAsyncStatus_InstanceDropped));
+}
+
+CAMLprim value caml_wgpu_map_async_status_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMapAsyncStatus_Error));
+}
+
+CAMLprim value caml_wgpu_map_async_status_aborted(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMapAsyncStatus_Aborted));
+}
+
+CAMLprim value caml_wgpu_map_async_status_unknown(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMapAsyncStatus_Unknown));
+}
+
+/* Enum: WGPUMipmapFilterMode */
+CAMLprim value caml_wgpu_mipmap_filter_mode_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMipmapFilterMode_Undefined));
+}
+
+CAMLprim value caml_wgpu_mipmap_filter_mode_nearest(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMipmapFilterMode_Nearest));
+}
+
+CAMLprim value caml_wgpu_mipmap_filter_mode_linear(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMipmapFilterMode_Linear));
+}
+
+/* Enum: WGPUOptionalBool */
+CAMLprim value caml_wgpu_optional_bool_false(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUOptionalBool_False));
+}
+
+CAMLprim value caml_wgpu_optional_bool_true(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUOptionalBool_True));
+}
+
+CAMLprim value caml_wgpu_optional_bool_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUOptionalBool_Undefined));
+}
+
+/* Enum: WGPUPopErrorScopeStatus */
+CAMLprim value caml_wgpu_pop_error_scope_status_success(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPopErrorScopeStatus_Success));
+}
+
+CAMLprim value caml_wgpu_pop_error_scope_status_instance_dropped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPopErrorScopeStatus_InstanceDropped));
+}
+
+CAMLprim value caml_wgpu_pop_error_scope_status_empty_stack(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPopErrorScopeStatus_EmptyStack));
+}
+
+/* Enum: WGPUPowerPreference */
+CAMLprim value caml_wgpu_power_preference_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPowerPreference_Undefined));
+}
+
+CAMLprim value caml_wgpu_power_preference_low_power(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPowerPreference_LowPower));
+}
+
+CAMLprim value caml_wgpu_power_preference_high_performance(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPowerPreference_HighPerformance));
+}
+
+/* Enum: WGPUPresentMode */
+CAMLprim value caml_wgpu_present_mode_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPresentMode_Undefined));
+}
+
+CAMLprim value caml_wgpu_present_mode_fifo(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPresentMode_Fifo));
+}
+
+CAMLprim value caml_wgpu_present_mode_fifo_relaxed(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPresentMode_FifoRelaxed));
+}
+
+CAMLprim value caml_wgpu_present_mode_immediate(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPresentMode_Immediate));
+}
+
+CAMLprim value caml_wgpu_present_mode_mailbox(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPresentMode_Mailbox));
+}
+
+/* Enum: WGPUPrimitiveTopology */
+CAMLprim value caml_wgpu_primitive_topology_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPrimitiveTopology_Undefined));
+}
+
+CAMLprim value caml_wgpu_primitive_topology_point_list(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPrimitiveTopology_PointList));
+}
+
+CAMLprim value caml_wgpu_primitive_topology_line_list(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPrimitiveTopology_LineList));
+}
+
+CAMLprim value caml_wgpu_primitive_topology_line_strip(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPrimitiveTopology_LineStrip));
+}
+
+CAMLprim value caml_wgpu_primitive_topology_triangle_list(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPrimitiveTopology_TriangleList));
+}
+
+CAMLprim value caml_wgpu_primitive_topology_triangle_strip(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUPrimitiveTopology_TriangleStrip));
+}
+
+/* Enum: WGPUQueryType */
+CAMLprim value caml_wgpu_query_type_occlusion(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUQueryType_Occlusion));
+}
+
+CAMLprim value caml_wgpu_query_type_timestamp(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUQueryType_Timestamp));
+}
+
+/* Enum: WGPUQueueWorkDoneStatus */
+CAMLprim value caml_wgpu_queue_work_done_status_success(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUQueueWorkDoneStatus_Success));
+}
+
+CAMLprim value caml_wgpu_queue_work_done_status_instance_dropped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUQueueWorkDoneStatus_InstanceDropped));
+}
+
+CAMLprim value caml_wgpu_queue_work_done_status_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUQueueWorkDoneStatus_Error));
+}
+
+CAMLprim value caml_wgpu_queue_work_done_status_unknown(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUQueueWorkDoneStatus_Unknown));
+}
+
+/* Enum: WGPURequestAdapterStatus */
+CAMLprim value caml_wgpu_request_adapter_status_success(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPURequestAdapterStatus_Success));
+}
+
+CAMLprim value caml_wgpu_request_adapter_status_instance_dropped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPURequestAdapterStatus_InstanceDropped));
+}
+
+CAMLprim value caml_wgpu_request_adapter_status_unavailable(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPURequestAdapterStatus_Unavailable));
+}
+
+CAMLprim value caml_wgpu_request_adapter_status_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPURequestAdapterStatus_Error));
+}
+
+CAMLprim value caml_wgpu_request_adapter_status_unknown(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPURequestAdapterStatus_Unknown));
+}
+
+/* Enum: WGPURequestDeviceStatus */
+CAMLprim value caml_wgpu_request_device_status_success(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPURequestDeviceStatus_Success));
+}
+
+CAMLprim value caml_wgpu_request_device_status_instance_dropped(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPURequestDeviceStatus_InstanceDropped));
+}
+
+CAMLprim value caml_wgpu_request_device_status_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPURequestDeviceStatus_Error));
+}
+
+CAMLprim value caml_wgpu_request_device_status_unknown(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPURequestDeviceStatus_Unknown));
+}
+
+/* Enum: WGPUSType */
+CAMLprim value caml_wgpu_s_type_shader_source_spirv(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSType_ShaderSourceSPIRV));
+}
+
+CAMLprim value caml_wgpu_s_type_shader_source_wgsl(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSType_ShaderSourceWGSL));
+}
+
+CAMLprim value caml_wgpu_s_type_render_pass_max_draw_count(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSType_RenderPassMaxDrawCount));
+}
+
+CAMLprim value caml_wgpu_s_type_surface_source_metal_layer(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSType_SurfaceSourceMetalLayer));
+}
+
+CAMLprim value caml_wgpu_s_type_surface_source_windows_hwnd(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSType_SurfaceSourceWindowsHWND));
+}
+
+CAMLprim value caml_wgpu_s_type_surface_source_xlib_window(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSType_SurfaceSourceXlibWindow));
+}
+
+CAMLprim value caml_wgpu_s_type_surface_source_wayland_surface(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSType_SurfaceSourceWaylandSurface));
+}
+
+CAMLprim value caml_wgpu_s_type_surface_source_android_native_window(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSType_SurfaceSourceAndroidNativeWindow));
+}
+
+CAMLprim value caml_wgpu_s_type_surface_source_xcb_window(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSType_SurfaceSourceXCBWindow));
+}
+
+/* Enum: WGPUSamplerBindingType */
+CAMLprim value caml_wgpu_sampler_binding_type_binding_not_used(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSamplerBindingType_BindingNotUsed));
+}
+
+CAMLprim value caml_wgpu_sampler_binding_type_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSamplerBindingType_Undefined));
+}
+
+CAMLprim value caml_wgpu_sampler_binding_type_filtering(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSamplerBindingType_Filtering));
+}
+
+CAMLprim value caml_wgpu_sampler_binding_type_non_filtering(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSamplerBindingType_NonFiltering));
+}
+
+CAMLprim value caml_wgpu_sampler_binding_type_comparison(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSamplerBindingType_Comparison));
+}
+
+/* Enum: WGPUStatus */
+CAMLprim value caml_wgpu_status_success(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStatus_Success));
+}
+
+CAMLprim value caml_wgpu_status_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStatus_Error));
+}
+
+/* Enum: WGPUStencilOperation */
+CAMLprim value caml_wgpu_stencil_operation_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStencilOperation_Undefined));
+}
+
+CAMLprim value caml_wgpu_stencil_operation_keep(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStencilOperation_Keep));
+}
+
+CAMLprim value caml_wgpu_stencil_operation_zero(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStencilOperation_Zero));
+}
+
+CAMLprim value caml_wgpu_stencil_operation_replace(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStencilOperation_Replace));
+}
+
+CAMLprim value caml_wgpu_stencil_operation_invert(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStencilOperation_Invert));
+}
+
+CAMLprim value caml_wgpu_stencil_operation_increment_clamp(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStencilOperation_IncrementClamp));
+}
+
+CAMLprim value caml_wgpu_stencil_operation_decrement_clamp(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStencilOperation_DecrementClamp));
+}
+
+CAMLprim value caml_wgpu_stencil_operation_increment_wrap(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStencilOperation_IncrementWrap));
+}
+
+CAMLprim value caml_wgpu_stencil_operation_decrement_wrap(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStencilOperation_DecrementWrap));
+}
+
+/* Enum: WGPUStorageTextureAccess */
+CAMLprim value caml_wgpu_storage_texture_access_binding_not_used(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStorageTextureAccess_BindingNotUsed));
+}
+
+CAMLprim value caml_wgpu_storage_texture_access_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStorageTextureAccess_Undefined));
+}
+
+CAMLprim value caml_wgpu_storage_texture_access_write_only(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStorageTextureAccess_WriteOnly));
+}
+
+CAMLprim value caml_wgpu_storage_texture_access_read_only(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStorageTextureAccess_ReadOnly));
+}
+
+CAMLprim value caml_wgpu_storage_texture_access_read_write(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStorageTextureAccess_ReadWrite));
+}
+
+/* Enum: WGPUStoreOp */
+CAMLprim value caml_wgpu_store_op_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStoreOp_Undefined));
+}
+
+CAMLprim value caml_wgpu_store_op_store(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStoreOp_Store));
+}
+
+CAMLprim value caml_wgpu_store_op_discard(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUStoreOp_Discard));
+}
+
+/* Enum: WGPUSurfaceGetCurrentTextureStatus */
+CAMLprim value caml_wgpu_surface_get_current_texture_status_success_optimal(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal));
+}
+
+CAMLprim value caml_wgpu_surface_get_current_texture_status_success_suboptimal(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal));
+}
+
+CAMLprim value caml_wgpu_surface_get_current_texture_status_timeout(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSurfaceGetCurrentTextureStatus_Timeout));
+}
+
+CAMLprim value caml_wgpu_surface_get_current_texture_status_outdated(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSurfaceGetCurrentTextureStatus_Outdated));
+}
+
+CAMLprim value caml_wgpu_surface_get_current_texture_status_lost(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSurfaceGetCurrentTextureStatus_Lost));
+}
+
+CAMLprim value caml_wgpu_surface_get_current_texture_status_out_of_memory(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSurfaceGetCurrentTextureStatus_OutOfMemory));
+}
+
+CAMLprim value caml_wgpu_surface_get_current_texture_status_device_lost(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSurfaceGetCurrentTextureStatus_DeviceLost));
+}
+
+CAMLprim value caml_wgpu_surface_get_current_texture_status_error(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUSurfaceGetCurrentTextureStatus_Error));
+}
+
+/* Enum: WGPUTextureAspect */
+CAMLprim value caml_wgpu_texture_aspect_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureAspect_Undefined));
+}
+
+CAMLprim value caml_wgpu_texture_aspect_all(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureAspect_All));
+}
+
+CAMLprim value caml_wgpu_texture_aspect_stencil_only(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureAspect_StencilOnly));
+}
+
+CAMLprim value caml_wgpu_texture_aspect_depth_only(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureAspect_DepthOnly));
+}
+
+/* Enum: WGPUTextureDimension */
+CAMLprim value caml_wgpu_texture_dimension_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureDimension_Undefined));
+}
+
+CAMLprim value caml_wgpu_texture_dimension_1d(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureDimension_1D));
+}
+
+CAMLprim value caml_wgpu_texture_dimension_2d(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureDimension_2D));
+}
+
+CAMLprim value caml_wgpu_texture_dimension_3d(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureDimension_3D));
+}
+
+/* Enum: WGPUTextureFormat */
+CAMLprim value caml_wgpu_texture_format_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_Undefined));
+}
+
+CAMLprim value caml_wgpu_texture_format_r8_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R8Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_r8_snorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R8Snorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_r8_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R8Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_r8_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R8Sint));
+}
+
+CAMLprim value caml_wgpu_texture_format_r16_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R16Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_r16_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R16Sint));
+}
+
+CAMLprim value caml_wgpu_texture_format_r16_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R16Float));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg8_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG8Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg8_snorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG8Snorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg8_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG8Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg8_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG8Sint));
+}
+
+CAMLprim value caml_wgpu_texture_format_r32_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R32Float));
+}
+
+CAMLprim value caml_wgpu_texture_format_r32_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R32Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_r32_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_R32Sint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg16_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG16Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg16_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG16Sint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg16_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG16Float));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba8_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA8Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba8_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA8UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba8_snorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA8Snorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba8_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA8Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba8_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA8Sint));
+}
+
+CAMLprim value caml_wgpu_texture_format_bgra8_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BGRA8Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_bgra8_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BGRA8UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgb10_a2_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGB10A2Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgb10_a2_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGB10A2Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg11_b10_ufloat(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG11B10Ufloat));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgb9_e5_ufloat(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGB9E5Ufloat));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg32_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG32Float));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg32_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG32Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rg32_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RG32Sint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba16_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA16Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba16_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA16Sint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba16_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA16Float));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba32_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA32Float));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba32_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA32Uint));
+}
+
+CAMLprim value caml_wgpu_texture_format_rgba32_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_RGBA32Sint));
+}
+
+CAMLprim value caml_wgpu_texture_format_stencil8(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_Stencil8));
+}
+
+CAMLprim value caml_wgpu_texture_format_depth16_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_Depth16Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_depth24_plus(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_Depth24Plus));
+}
+
+CAMLprim value caml_wgpu_texture_format_depth24_plus_stencil8(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_Depth24PlusStencil8));
+}
+
+CAMLprim value caml_wgpu_texture_format_depth32_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_Depth32Float));
+}
+
+CAMLprim value caml_wgpu_texture_format_depth32_float_stencil8(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_Depth32FloatStencil8));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc1_rgba_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC1RGBAUnorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc1_rgba_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC1RGBAUnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc2_rgba_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC2RGBAUnorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc2_rgba_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC2RGBAUnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc3_rgba_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC3RGBAUnorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc3_rgba_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC3RGBAUnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc4_r_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC4RUnorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc4_r_snorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC4RSnorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc5_rg_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC5RGUnorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc5_rg_snorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC5RGSnorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc6h_rgb_ufloat(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC6HRGBUfloat));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc6h_rgb_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC6HRGBFloat));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc7_rgba_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC7RGBAUnorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_bc7_rgba_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_BC7RGBAUnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_etc2_rgb8_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ETC2RGB8Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_etc2_rgb8_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ETC2RGB8UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_etc2_rgb8a1_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ETC2RGB8A1Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_etc2_rgb8a1_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ETC2RGB8A1UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_etc2_rgba8_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ETC2RGBA8Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_etc2_rgba8_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ETC2RGBA8UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_eac_r11_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_EACR11Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_eac_r11_snorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_EACR11Snorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_eac_rg11_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_EACRG11Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_eac_rg11_snorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_EACRG11Snorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_4x4_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC4x4Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_4x4_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC4x4UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_5x4_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC5x4Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_5x4_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC5x4UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_5x5_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC5x5Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_5x5_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC5x5UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_6x5_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC6x5Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_6x5_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC6x5UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_6x6_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC6x6Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_6x6_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC6x6UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_8x5_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC8x5Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_8x5_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC8x5UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_8x6_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC8x6Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_8x6_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC8x6UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_8x8_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC8x8Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_8x8_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC8x8UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_10x5_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC10x5Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_10x5_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC10x5UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_10x6_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC10x6Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_10x6_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC10x6UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_10x8_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC10x8Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_10x8_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC10x8UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_10x10_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC10x10Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_10x10_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC10x10UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_12x10_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC12x10Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_12x10_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC12x10UnormSrgb));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_12x12_unorm(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC12x12Unorm));
+}
+
+CAMLprim value caml_wgpu_texture_format_astc_12x12_unorm_srgb(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureFormat_ASTC12x12UnormSrgb));
+}
+
+/* Enum: WGPUTextureSampleType */
+CAMLprim value caml_wgpu_texture_sample_type_binding_not_used(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureSampleType_BindingNotUsed));
+}
+
+CAMLprim value caml_wgpu_texture_sample_type_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureSampleType_Undefined));
+}
+
+CAMLprim value caml_wgpu_texture_sample_type_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureSampleType_Float));
+}
+
+CAMLprim value caml_wgpu_texture_sample_type_unfilterable_float(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureSampleType_UnfilterableFloat));
+}
+
+CAMLprim value caml_wgpu_texture_sample_type_depth(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureSampleType_Depth));
+}
+
+CAMLprim value caml_wgpu_texture_sample_type_sint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureSampleType_Sint));
+}
+
+CAMLprim value caml_wgpu_texture_sample_type_uint(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureSampleType_Uint));
+}
+
+/* Enum: WGPUTextureViewDimension */
+CAMLprim value caml_wgpu_texture_view_dimension_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureViewDimension_Undefined));
+}
+
+CAMLprim value caml_wgpu_texture_view_dimension_1d(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureViewDimension_1D));
+}
+
+CAMLprim value caml_wgpu_texture_view_dimension_2d(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureViewDimension_2D));
+}
+
+CAMLprim value caml_wgpu_texture_view_dimension_2d_array(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureViewDimension_2DArray));
+}
+
+CAMLprim value caml_wgpu_texture_view_dimension_cube(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureViewDimension_Cube));
+}
+
+CAMLprim value caml_wgpu_texture_view_dimension_cube_array(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureViewDimension_CubeArray));
+}
+
+CAMLprim value caml_wgpu_texture_view_dimension_3d(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureViewDimension_3D));
+}
+
+/* Enum: WGPUVertexFormat */
+CAMLprim value caml_wgpu_vertex_format_uint8(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint8));
+}
+
+CAMLprim value caml_wgpu_vertex_format_uint8x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint8x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_uint8x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint8x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint8(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint8));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint8x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint8x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint8x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint8x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_unorm8(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Unorm8));
+}
+
+CAMLprim value caml_wgpu_vertex_format_unorm8x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Unorm8x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_unorm8x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Unorm8x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_snorm8(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Snorm8));
+}
+
+CAMLprim value caml_wgpu_vertex_format_snorm8x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Snorm8x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_snorm8x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Snorm8x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_uint16(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint16));
+}
+
+CAMLprim value caml_wgpu_vertex_format_uint16x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint16x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_uint16x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint16x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint16(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint16));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint16x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint16x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint16x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint16x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_unorm16(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Unorm16));
+}
+
+CAMLprim value caml_wgpu_vertex_format_unorm16x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Unorm16x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_unorm16x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Unorm16x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_snorm16(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Snorm16));
+}
+
+CAMLprim value caml_wgpu_vertex_format_snorm16x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Snorm16x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_snorm16x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Snorm16x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_float16(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Float16));
+}
+
+CAMLprim value caml_wgpu_vertex_format_float16x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Float16x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_float16x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Float16x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_float32(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Float32));
+}
+
+CAMLprim value caml_wgpu_vertex_format_float32x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Float32x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_float32x3(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Float32x3));
+}
+
+CAMLprim value caml_wgpu_vertex_format_float32x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Float32x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_uint32(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint32));
+}
+
+CAMLprim value caml_wgpu_vertex_format_uint32x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint32x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_uint32x3(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint32x3));
+}
+
+CAMLprim value caml_wgpu_vertex_format_uint32x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Uint32x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint32(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint32));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint32x2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint32x2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint32x3(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint32x3));
+}
+
+CAMLprim value caml_wgpu_vertex_format_sint32x4(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Sint32x4));
+}
+
+CAMLprim value caml_wgpu_vertex_format_unorm10__10__10__2(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Unorm10_10_10_2));
+}
+
+CAMLprim value caml_wgpu_vertex_format_unorm8x4_b_g_r_a(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexFormat_Unorm8x4BGRA));
+}
+
+/* Enum: WGPUVertexStepMode */
+CAMLprim value caml_wgpu_vertex_step_mode_vertex_buffer_not_used(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexStepMode_VertexBufferNotUsed));
+}
+
+CAMLprim value caml_wgpu_vertex_step_mode_undefined(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexStepMode_Undefined));
+}
+
+CAMLprim value caml_wgpu_vertex_step_mode_vertex(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexStepMode_Vertex));
+}
+
+CAMLprim value caml_wgpu_vertex_step_mode_instance(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUVertexStepMode_Instance));
+}
+
+/* Enum: WGPUWaitStatus */
+CAMLprim value caml_wgpu_wait_status_success(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUWaitStatus_Success));
+}
+
+CAMLprim value caml_wgpu_wait_status_timed_out(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUWaitStatus_TimedOut));
+}
+
+CAMLprim value caml_wgpu_wait_status_unsupported_timeout(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUWaitStatus_UnsupportedTimeout));
+}
+
+CAMLprim value caml_wgpu_wait_status_unsupported_count(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUWaitStatus_UnsupportedCount));
+}
+
+CAMLprim value caml_wgpu_wait_status_unsupported_mixed_sources(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUWaitStatus_UnsupportedMixedSources));
+}
+
+/* Enum: WGPUWGSLLanguageFeatureName */
+CAMLprim value caml_wgpu_wgsl_language_feature_name_readonly_and_readwrite_storage_textures(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUWGSLLanguageFeatureName_ReadonlyAndReadwriteStorageTextures));
+}
+
+CAMLprim value caml_wgpu_wgsl_language_feature_name_packed4x8_integer_dot_product(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct));
+}
+
+CAMLprim value caml_wgpu_wgsl_language_feature_name_unrestricted_pointer_parameters(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUWGSLLanguageFeatureName_UnrestrictedPointerParameters));
+}
+
+CAMLprim value caml_wgpu_wgsl_language_feature_name_pointer_composite_access(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUWGSLLanguageFeatureName_PointerCompositeAccess));
+}
+/* Bitflag: WGPUBufferUsage */
+CAMLprim value caml_wgpu_buffer_usage_none(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_None));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_map_read(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_MapRead));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_map_write(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_MapWrite));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_copy_src(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_CopySrc));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_copy_dst(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_CopyDst));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_index(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_Index));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_vertex(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_Vertex));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_uniform(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_Uniform));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_storage(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_Storage));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_indirect(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_Indirect));
+}
+
+CAMLprim value caml_wgpu_buffer_usage_query_resolve(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUBufferUsage_QueryResolve));
+}
+
+/* Bitflag: WGPUColorWriteMask */
+CAMLprim value caml_wgpu_color_write_mask_none(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUColorWriteMask_None));
+}
+
+CAMLprim value caml_wgpu_color_write_mask_red(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUColorWriteMask_Red));
+}
+
+CAMLprim value caml_wgpu_color_write_mask_green(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUColorWriteMask_Green));
+}
+
+CAMLprim value caml_wgpu_color_write_mask_blue(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUColorWriteMask_Blue));
+}
+
+CAMLprim value caml_wgpu_color_write_mask_alpha(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUColorWriteMask_Alpha));
+}
+
+CAMLprim value caml_wgpu_color_write_mask_all(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUColorWriteMask_All));
+}
+
+/* Bitflag: WGPUMapMode */
+CAMLprim value caml_wgpu_map_mode_none(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMapMode_None));
+}
+
+CAMLprim value caml_wgpu_map_mode_read(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMapMode_Read));
+}
+
+CAMLprim value caml_wgpu_map_mode_write(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUMapMode_Write));
+}
+
+/* Bitflag: WGPUShaderStage */
+CAMLprim value caml_wgpu_shader_stage_none(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUShaderStage_None));
+}
+
+CAMLprim value caml_wgpu_shader_stage_vertex(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUShaderStage_Vertex));
+}
+
+CAMLprim value caml_wgpu_shader_stage_fragment(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUShaderStage_Fragment));
+}
+
+CAMLprim value caml_wgpu_shader_stage_compute(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUShaderStage_Compute));
+}
+
+/* Bitflag: WGPUTextureUsage */
+CAMLprim value caml_wgpu_texture_usage_none(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureUsage_None));
+}
+
+CAMLprim value caml_wgpu_texture_usage_copy_src(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureUsage_CopySrc));
+}
+
+CAMLprim value caml_wgpu_texture_usage_copy_dst(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureUsage_CopyDst));
+}
+
+CAMLprim value caml_wgpu_texture_usage_texture_binding(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureUsage_TextureBinding));
+}
+
+CAMLprim value caml_wgpu_texture_usage_storage_binding(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureUsage_StorageBinding));
+}
+
+CAMLprim value caml_wgpu_texture_usage_render_attachment(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(WGPUTextureUsage_RenderAttachment));
+}
+/* Object: WGPUAdapter */
+CAMLprim value caml_wgpu_adapter_release(value handle) {
+  CAMLparam1(handle);
+  WGPUAdapter obj = (WGPUAdapter)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuAdapterRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUBindGroup */
+CAMLprim value caml_wgpu_bind_group_release(value handle) {
+  CAMLparam1(handle);
+  WGPUBindGroup obj = (WGPUBindGroup)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuBindGroupRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUBindGroupLayout */
+CAMLprim value caml_wgpu_bind_group_layout_release(value handle) {
+  CAMLparam1(handle);
+  WGPUBindGroupLayout obj = (WGPUBindGroupLayout)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuBindGroupLayoutRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUBuffer */
+CAMLprim value caml_wgpu_buffer_release(value handle) {
+  CAMLparam1(handle);
+  WGPUBuffer obj = (WGPUBuffer)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuBufferRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUCommandBuffer */
+CAMLprim value caml_wgpu_command_buffer_release(value handle) {
+  CAMLparam1(handle);
+  WGPUCommandBuffer obj = (WGPUCommandBuffer)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuCommandBufferRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUCommandEncoder */
+CAMLprim value caml_wgpu_command_encoder_release(value handle) {
+  CAMLparam1(handle);
+  WGPUCommandEncoder obj = (WGPUCommandEncoder)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuCommandEncoderRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUComputePassEncoder */
+CAMLprim value caml_wgpu_compute_pass_encoder_release(value handle) {
+  CAMLparam1(handle);
+  WGPUComputePassEncoder obj = (WGPUComputePassEncoder)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuComputePassEncoderRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUComputePipeline */
+CAMLprim value caml_wgpu_compute_pipeline_release(value handle) {
+  CAMLparam1(handle);
+  WGPUComputePipeline obj = (WGPUComputePipeline)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuComputePipelineRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUDevice */
+CAMLprim value caml_wgpu_device_release(value handle) {
+  CAMLparam1(handle);
+  WGPUDevice obj = (WGPUDevice)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuDeviceRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUInstance */
+CAMLprim value caml_wgpu_instance_release(value handle) {
+  CAMLparam1(handle);
+  WGPUInstance obj = (WGPUInstance)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuInstanceRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUPipelineLayout */
+CAMLprim value caml_wgpu_pipeline_layout_release(value handle) {
+  CAMLparam1(handle);
+  WGPUPipelineLayout obj = (WGPUPipelineLayout)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuPipelineLayoutRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUQuerySet */
+CAMLprim value caml_wgpu_query_set_release(value handle) {
+  CAMLparam1(handle);
+  WGPUQuerySet obj = (WGPUQuerySet)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuQuerySetRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUQueue */
+CAMLprim value caml_wgpu_queue_release(value handle) {
+  CAMLparam1(handle);
+  WGPUQueue obj = (WGPUQueue)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuQueueRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPURenderBundle */
+CAMLprim value caml_wgpu_render_bundle_release(value handle) {
+  CAMLparam1(handle);
+  WGPURenderBundle obj = (WGPURenderBundle)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuRenderBundleRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPURenderBundleEncoder */
+CAMLprim value caml_wgpu_render_bundle_encoder_release(value handle) {
+  CAMLparam1(handle);
+  WGPURenderBundleEncoder obj = (WGPURenderBundleEncoder)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuRenderBundleEncoderRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPURenderPassEncoder */
+CAMLprim value caml_wgpu_render_pass_encoder_release(value handle) {
+  CAMLparam1(handle);
+  WGPURenderPassEncoder obj = (WGPURenderPassEncoder)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuRenderPassEncoderRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPURenderPipeline */
+CAMLprim value caml_wgpu_render_pipeline_release(value handle) {
+  CAMLparam1(handle);
+  WGPURenderPipeline obj = (WGPURenderPipeline)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuRenderPipelineRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUSampler */
+CAMLprim value caml_wgpu_sampler_release(value handle) {
+  CAMLparam1(handle);
+  WGPUSampler obj = (WGPUSampler)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuSamplerRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUShaderModule */
+CAMLprim value caml_wgpu_shader_module_release(value handle) {
+  CAMLparam1(handle);
+  WGPUShaderModule obj = (WGPUShaderModule)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuShaderModuleRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUSurface */
+CAMLprim value caml_wgpu_surface_release(value handle) {
+  CAMLparam1(handle);
+  WGPUSurface obj = (WGPUSurface)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuSurfaceRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUTexture */
+CAMLprim value caml_wgpu_texture_release(value handle) {
+  CAMLparam1(handle);
+  WGPUTexture obj = (WGPUTexture)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuTextureRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
+
+/* Object: WGPUTextureView */
+CAMLprim value caml_wgpu_texture_view_release(value handle) {
+  CAMLparam1(handle);
+  WGPUTextureView obj = (WGPUTextureView)Nativeint_val(handle);
+  if (obj != NULL) {
+    wgpuTextureViewRelease(obj);
+  }
+  CAMLreturn(Val_unit);
+}
 CAMLprim value caml_wgpu_create_instance(value unit) {
   CAMLparam1(unit);
   WGPUInstanceDescriptor desc = {
     .nextInChain = NULL,
   };
   WGPUInstance instance = wgpuCreateInstance(&desc);
-  /* For now, just return the pointer as a nativeint */
   CAMLreturn(caml_copy_nativeint((intnat)instance));
 }
-
-/* Release an instance */
-CAMLprim value caml_wgpu_instance_release(value instance_val) {
-  CAMLparam1(instance_val);
-  WGPUInstance instance = (WGPUInstance)Nativeint_val(instance_val);
-  if (instance != NULL) {
-    wgpuInstanceRelease(instance);
-  }
-  CAMLreturn(Val_unit);
-}
+/* TODO: wgpuGetInstanceCapabilities */

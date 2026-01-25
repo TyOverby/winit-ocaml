@@ -464,11 +464,13 @@ let pipeline =
 - ✅ Rust/Cargo integration working (libwgpu_native.a builds and links)
 - ✅ Minimal Instance create/release verified working
 
-**Phase 2 (Code Generator)**: Not started
-- ⬜ YAML parsing
-- ⬜ IR definition
-- ⬜ Low-level generator
-- ⬜ High-level generator
+**Phase 2 (Code Generator)**: Milestone 1 Complete ✅
+- ✅ YAML parsing (parse_yml.ml)
+- ✅ IR definition (ir.ml)
+- ✅ Low-level generator (gen_low.ml) - enums, bitflags, object handles
+- ✅ High-level generator (gen_high.ml) - module wrappers
+- 🔄 Struct generation (not yet implemented)
+- 🔄 Function generation (only create_instance)
 
 ## Next Steps
 
@@ -476,7 +478,10 @@ let pipeline =
 2. ~~Add Rust/Cargo build rule to low/dune~~ ✅
 3. ~~Verify wgpu-native builds and links successfully~~ ✅
 4. ~~Write minimal manual binding (wgpuCreateInstance) to test linking~~ ✅
-5. Begin implementing code generator (YAML parsing)
+5. ~~Implement code generator for enums/bitflags~~ ✅
+6. Generate struct types and field accessors
+7. Generate more function bindings (request_adapter, request_device)
+8. Implement headless compute example
 
 ---
 
