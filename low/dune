@@ -1,0 +1,3 @@
+(library
+ (name wgpu_low)
+ (public_name wgpu.low))

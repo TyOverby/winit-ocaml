@@ -24,8 +24,10 @@ This document outlines the implementation strategy for creating idiomatic OCaml 
                                   ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    Low-Level Ctypes Bindings                        │
-│  (wgpu_raw.ml - generated from webgpu.yml)                          │
-│  - Direct C function bindings                                       │
+│  (wgpu_raw.{ml,mli}, wgpu_raw_stubs.c - generated from webgpu.yml)  │
+│  - `extern` based C function bindings                               │
+│  - statically links against rust lib                                │
+│  - Includes webgpu.h                                                │
 │  - Raw struct types                                                 │
 │  - Enum constants                                                   │
 └─────────────────────────────────────────────────────────────────────┘
@@ -51,10 +53,13 @@ wgpu-native-ocaml/
 │   ├── gen_raw.ml            # Low-level bindings generator
 │   ├── gen_high.ml           # High-level bindings generator
 │   └── main.ml               # Generator entry point
-├── lib/
+├── low/
 │   ├── dune                  # Library build file
+│   ├── wgpu_raw_stubs.ml     # (generated) C stubs
 │   ├── wgpu_raw.ml           # (generated) Low-level bindings
 │   ├── wgpu_raw.mli          # (generated) Low-level interface
+├── high/
+│   ├── dune                  # Library build file
 │   ├── wgpu.ml               # (generated) High-level bindings
 │   └── wgpu.mli              # (generated) High-level interface
 ├── test/
@@ -165,50 +170,13 @@ type api = {
 
 ### 2.2 Low-Level Bindings Generator
 
-The low-level generator produces ctypes bindings:
-
-```ocaml
-(* Example generated output for wgpu_raw.ml *)
-
-(* Opaque handle types *)
-module Adapter = struct
-  type t
-  let t : t Ctypes.structure Ctypes.typ = Ctypes.structure "WGPUAdapterImpl"
-  let t_ptr = Ctypes.ptr t
-end
-
-(* Enum types as integers with constants *)
-module Adapter_type = struct
-  type t = int
-  let discrete_gpu = 0x0001
-  let integrated_gpu = 0x0002
-  let cpu = 0x0003
-  let unknown = 0x0004
-end
-
-(* Struct types *)
-module Adapter_info = struct
-  type t
-  let t : t Ctypes.structure Ctypes.typ = Ctypes.structure "WGPUAdapterInfo"
-  let vendor = Ctypes.field t "vendor" String_view.t
-  let architecture = Ctypes.field t "architecture" String_view.t
-  (* ... more fields ... *)
-  let () = Ctypes.seal t
-end
-
-(* Function bindings *)
-let wgpu_create_instance =
-  Ctypes.Foreign.foreign "wgpuCreateInstance"
-    (Ctypes.ptr Instance_descriptor.t @-> returning Instance.t_ptr)
-
-let wgpu_adapter_get_info =
-  Ctypes.Foreign.foreign "wgpuAdapterGetInfo"
-    (Adapter.t_ptr @-> Ctypes.ptr Adapter_info.t @-> returning Status.t)
-```
+The low-level generator produces `.c` stubs as well as 
+an `.ml` file containing the `external` declarations that bind 
+to the stubs.
 
 ### 2.3 High-Level Bindings Generator
 
-The high-level generator produces idiomatic OCaml:
+The high-level generator produces idiomatic (Jane Street style) OCaml:
 
 ```ocaml
 (* Example generated output for wgpu.mli *)
@@ -324,46 +292,31 @@ module Callback_registry : sig
 end
 ```
 
-## Phase 4: Implementation Milestones
+## Implementation Milestones
 
-### Milestone 1: Minimal Working Binding (Compute Example)
-Goal: Run a headless compute shader, verify output
-
-1. Manually write bindings for:
-   - `Instance` (create, request_adapter)
-   - `Adapter` (request_device)
-   - `Device` (create_buffer, create_shader_module, create_compute_pipeline, get_queue)
-   - `Queue` (submit, write_buffer)
-   - `Buffer` (map_async, get_mapped_range, unmap)
-   - `CommandEncoder`, `ComputePassEncoder`
-   - `ComputePipeline`, `BindGroup`, `BindGroupLayout`
-
-2. Port the `compute/main.c` example to OCaml
-3. Verify output matches expected values
-
-### Milestone 2: Code Generator for Enums and Constants
+### Milestone 1: Code Generator for Enums and Constants
 1. Parse webgpu.yml
 2. Generate all enum types
 3. Generate all constants
 4. Generate all bitflag types
 
-### Milestone 3: Code Generator for Structs
+### Milestone 2: Code Generator for Structs
 1. Generate low-level ctypes struct bindings
 2. Generate high-level record types
 3. Generate conversion functions (OCaml record ↔ C struct)
 
-### Milestone 4: Code Generator for Objects and Methods
+### Milestone 3: Code Generator for Objects and Methods
 1. Generate object handle types
 2. Generate method bindings
 3. Add finalizers for automatic cleanup
 4. Handle callbacks (sync wrappers)
 
-### Milestone 5: Capture Example (Render to PNG)
+### Milestone 4: Capture Example (Render to PNG)
 1. Add texture, render pass, and surface types
 2. Port `capture/main.c` to OCaml
 3. Output PNG file, verify image
 
-### Milestone 6: Polish and Documentation
+### Milestone 5: Polish and Documentation
 1. Generate comprehensive `.mli` files with documentation
 2. Add examples directory
 3. Write user guide

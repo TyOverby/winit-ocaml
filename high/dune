@@ -1,0 +1,3 @@
+(library
+ (name wgpu)
+ (public_name wgpu))

@@ -1,4 +1,0 @@
-(library
- (name wgpu)
- (public_name wgpu)
- (libraries ctypes ctypes.foreign))

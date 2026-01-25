@@ -5,15 +5,15 @@
 (generate_opam_files true)
 
 (source
- (github anthropics/wgpu-native-ocaml))
+ (github TyOverby/wgpu-native-ocaml))
 
-(authors "Anthropic")
+(authors "Ty Overby")
 
-(maintainers "Anthropic")
+(maintainers "Ty Overby")
 
 (license MIT)
 
-(documentation https://github.com/anthropics/wgpu-native-ocaml)
+(documentation https://github.com/TyOverby/wgpu-native-ocaml)
 
 (package
  (name wgpu)
@@ -25,6 +25,4 @@
    (>= 4.14.0))
   dune
   (ctypes
-   (>= 0.20.0))
-  ctypes-foreign
-  yaml))
+   (>= 0.20.0))))
