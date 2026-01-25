@@ -32,6 +32,8 @@ The wgpu-native wiki is in `./vendor/wgpu-native-wiki`, which has a "getting sta
 
 ## Developing
 
+The code generator should be written in Jane Street style OCaml, using `Core`.
+
 A fast developer iteration loop is critical!  Make sure to always write code in such a way that it's easy to validate your work!  
 
 Build test executables and run them regularly.  (These tests may need to be headless, you won't always have access to a display driver).  If you can have a headless binary produce `.png` files that you can read, that's excellent!

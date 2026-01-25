@@ -1,3 +1,27 @@
 (library
  (name wgpu_low)
  (public_name wgpu.low))
+
+(rule
+ (action
+  (with-stdout-to
+   wgpu_low_stubs.c
+   (run ../codegen/gen_bindings.exe Low C)))
+ (mode promote)
+ (target wgpu_low_stubs.c))
+
+ (rule
+  (action
+   (with-stdout-to
+    wgpu_low.ml
+    (run ../codegen/gen_bindings.exe Low Ml)))
+  (mode promote)
+  (target wgpu_low.ml))
+
+  (rule
+   (action
+    (with-stdout-to
+     wgpu_low.mli
+     (run ../codegen/gen_bindings.exe Low Mli)))
+   (mode promote)
+   (target wgpu_low.mli))

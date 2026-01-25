@@ -1,1 +1,1 @@
-(* to be generated... *)
+// C stubs go here

@@ -1,3 +1,5 @@
 (executable
  (name gen_bindings)
- (libraries yaml core))
+ (libraries yaml core core_unix.command_unix)
+ (preprocess
+  (pps ppx_jane)))
