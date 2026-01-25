@@ -1,19 +1,20 @@
 (library
  (name wgpu)
- (public_name wgpu))
+ (public_name wgpu)
+ (libraries wgpu_low))
 
- (rule
-  (action
-   (with-stdout-to
-    wgpu.ml
-    (run ../codegen/gen_bindings.exe High Ml)))
-  (mode promote)
-  (target wgpu.ml))
+(rule
+ (action
+  (with-stdout-to
+   wgpu.ml
+   (run ../codegen/gen_bindings.exe High Ml)))
+ (mode promote)
+ (target wgpu.ml))
 
-  (rule
-   (action
-    (with-stdout-to
-     wgpu.mli
-     (run ../codegen/gen_bindings.exe High Mli)))
-   (mode promote)
-   (target wgpu.mli))
+(rule
+ (action
+  (with-stdout-to
+   wgpu.mli
+   (run ../codegen/gen_bindings.exe High Mli)))
+ (mode promote)
+ (target wgpu.mli))

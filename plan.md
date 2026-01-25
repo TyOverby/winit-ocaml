@@ -23,13 +23,14 @@ This document outlines the implementation strategy for creating idiomatic OCaml 
                                   │
                                   ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    Low-Level Ctypes Bindings                        │
-│  (wgpu_raw.{ml,mli}, wgpu_raw_stubs.c - generated from webgpu.yml)  │
-│  - `extern` based C function bindings                               │
-│  - statically links against rust lib                                │
+│                    Low-Level External Bindings                      │
+│  (wgpu_low.{ml,mli}, wgpu_low_stubs.c - generated from webgpu.yml)  │
+│  - `external` based C function bindings                             │
+│  - Hand-written C stubs that call wgpu-native                       │
+│  - Statically links against libwgpu_native.a                        │
 │  - Includes webgpu.h                                                │
-│  - Raw struct types                                                 │
-│  - Enum constants                                                   │
+│  - Raw struct accessors                                             │
+│  - Enum constants as OCaml ints                                     │
 └─────────────────────────────────────────────────────────────────────┘
                                   │
                                   ▼
@@ -77,18 +78,54 @@ wgpu-native-ocaml/
 
 ### 1.2 Build System Setup
 - Set up dune-project with appropriate dependencies
-- Configure wgpu-native compilation (static library)
+- Configure wgpu-native compilation (static library) via dune rule
 - Create opam file with dependencies: yaml, etc.
 
-### 1.3 Dependencies
+### 1.3 Rust/Cargo Integration
+
+The low-level library builds wgpu-native as a static library using Cargo. The dune rule:
+- Declares dependencies on Rust source files via `(source_tree ...)`
+- Runs `cargo build` with appropriate profile (debug/release)
+- Copies the resulting `libwgpu_native.a` to the build directory
+- Links via `(foreign_archives wgpu_native)`
+
+```dune
+(rule
+ (targets libwgpu_native.a dllwgpu_native.so)
+ (deps
+  (source_tree ../vendor/wgpu-native/src)
+  (source_tree ../vendor/wgpu-native/ffi)
+  ../vendor/wgpu-native/Cargo.toml)
+ (action
+  (no-infer
+   (bash "
+     # Build wgpu-native and copy artifacts
+     OUT_DIR=$(pwd)
+     SOURCE_ROOT=$(cd ../vendor/wgpu-native && pwd)
+     if [ \"%{profile}\" = \"release\" ]; then
+       cargo build --release --manifest-path $SOURCE_ROOT/Cargo.toml
+       cp $SOURCE_ROOT/target/release/libwgpu_native.a $OUT_DIR/
+     else
+       cargo build --manifest-path $SOURCE_ROOT/Cargo.toml
+       cp $SOURCE_ROOT/target/debug/libwgpu_native.a $OUT_DIR/
+     fi
+   "))))
+```
+
+### 1.4 Dependencies
 ```
 depends: [
   "ocaml" {>= "4.14.0"}
   "dune" {>= "3.0"}
   "yaml"              # For parsing webgpu.yml
-  "stb_image"         # For PNG output in tests (or use camlimages)
 ]
 ```
+
+### 1.5 Image Output Strategy
+For headless visual tests:
+- Render to texture → copy to buffer → write PPM file
+- Use a dune rule with `(mode promote)` to convert PPM to PNG via ImageMagick
+- PNG files are committed to the repo for visual verification
 
 ## Phase 2: Code Generator Implementation
 
@@ -311,8 +348,9 @@ end
 
 ### Milestone 4: Capture Example (Render to PNG)
 1. Add texture, render pass, and surface types
-2. Port `capture/main.c` to OCaml
-3. Output PNG file, verify image
+2. Port `capture/main.c` from wgpu-native examples to OCaml
+3. Output PPM file, convert to PNG via ImageMagick in dune rule
+4. Promote PNG to source tree for visual verification
 
 ### Milestone 5: Polish and Documentation
 1. Generate comprehensive `.mli` files with documentation
@@ -334,14 +372,25 @@ let%test "compute shader doubles numbers" =
   output = [| 2l; 4l; 6l; 8l |]
 ```
 
-### 5.2 Visual Tests (Manual verification)
+### 5.2 Visual Tests (PPM → PNG workflow)
 ```ocaml
 (* test/test_capture.ml *)
-let%test "render red rectangle" =
-  (* Render to texture, copy to buffer, save as PNG *)
-  let image_path = render_to_file ~width:100 ~height:100 ~color:red in
-  (* Can be manually inspected or compared with reference image *)
-  Sys.file_exists image_path
+let () =
+  (* Render to texture, copy to buffer, save as PPM *)
+  let ppm_path = render_to_ppm ~width:100 ~height:100 ~color:red in
+  print_endline ("Wrote: " ^ ppm_path)
+```
+
+The dune file converts PPM to PNG and promotes it:
+```dune
+(rule
+ (targets test_output.png)
+ (deps test_capture.exe)
+ (action
+  (progn
+   (run ./test_capture.exe)
+   (run convert test_output.ppm test_output.png)))
+ (mode promote))
 ```
 
 ### 5.3 Memory Tests
@@ -359,8 +408,15 @@ The C API has async callbacks for:
 - `bufferMapAsync`
 - Pipeline creation (async variants)
 
-Options:
-1. **Blocking wrappers** (recommended for v1): Call async, poll until complete
+**Decision for v1**: Defer callback-based APIs initially. The webgpu API provides `wgpuInstanceWaitAny`
+which can block on `WGPUFuture` handles, enabling synchronous wrappers when we implement callbacks later.
+
+For now, focus on:
+- Synchronous pipeline creation (`wgpuDeviceCreateComputePipeline`, not `Async` variant)
+- Synchronous operations where possible
+
+Future options for async:
+1. **Blocking wrappers**: Call async, use `wgpuInstanceWaitAny` to block until complete
 2. **Lwt/Async integration**: Return promises (future enhancement)
 3. **Direct callbacks**: Expose raw callback API (escape hatch)
 
@@ -400,13 +456,27 @@ let pipeline =
 5. **Documentation exists**: Types and functions have doc comments
 6. **Tests pass in CI**: Headless tests run without GPU
 
+## Current Status
+
+**Phase 1 (Project Setup)**: Complete ✅
+- ✅ Directory structure created
+- ✅ Dune project configured with generation rules
+- ✅ Rust/Cargo integration working (libwgpu_native.a builds and links)
+- ✅ Minimal Instance create/release verified working
+
+**Phase 2 (Code Generator)**: Not started
+- ⬜ YAML parsing
+- ⬜ IR definition
+- ⬜ Low-level generator
+- ⬜ High-level generator
+
 ## Next Steps
 
-1. Set up basic project structure with dune
-2. Build wgpu-native as static library
-3. Write minimal manual bindings for compute example
-4. Verify manual bindings work
-5. Begin implementing code generator
+1. ~~Set up basic project structure with dune~~ ✅
+2. ~~Add Rust/Cargo build rule to low/dune~~ ✅
+3. ~~Verify wgpu-native builds and links successfully~~ ✅
+4. ~~Write minimal manual binding (wgpuCreateInstance) to test linking~~ ✅
+5. Begin implementing code generator (YAML parsing)
 
 ---
 

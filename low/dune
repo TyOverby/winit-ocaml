@@ -1,6 +1,39 @@
+; Rule to build wgpu-native as a static library using Cargo
+
+(rule
+ (targets libwgpu_native.a dllwgpu_native.so)
+ (deps
+  (source_tree ../vendor/wgpu-native/src)
+  (source_tree ../vendor/wgpu-native/ffi)
+  ../vendor/wgpu-native/Cargo.toml
+  ../vendor/wgpu-native/Cargo.lock)
+ (action
+  (no-infer
+   (bash
+    "\n# Determine dynamic library extension based on OS\ncase \"$(uname)\" in\n  Darwin) DYLIB_EXT=dylib ;;\n  *)      DYLIB_EXT=so ;;\nesac\n\nOUT_DIR=$(pwd)\n\n# Navigate from _build/default/low to the real project root\n# then into vendor/wgpu-native\nSOURCE_ROOT=$(cd ../../.. && pwd)/vendor/wgpu-native\n\nif [ \"%{profile}\" = \"release\" ]; then\n  cargo build --release --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/release/libwgpu_native.a $OUT_DIR/libwgpu_native.a\n  if [ -f $SOURCE_ROOT/target/release/libwgpu_native.$DYLIB_EXT ]; then\n    cp $SOURCE_ROOT/target/release/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so\n  else\n    # Create empty placeholder if no dylib (static-only build)\n    touch $OUT_DIR/dllwgpu_native.so\n  fi\nelse\n  cargo build --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/debug/libwgpu_native.a $OUT_DIR/libwgpu_native.a\n  if [ -f $SOURCE_ROOT/target/debug/libwgpu_native.$DYLIB_EXT ]; then\n    cp $SOURCE_ROOT/target/debug/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so\n  else\n    touch $OUT_DIR/dllwgpu_native.so\n  fi\nfi\n"))))
+
 (library
  (name wgpu_low)
- (public_name wgpu.low))
+ (public_name wgpu.low)
+ (foreign_stubs
+  (language c)
+  (names wgpu_low_stubs)
+  (include_dirs
+   ../vendor/wgpu-native/ffi
+   ../vendor/wgpu-native/ffi/webgpu-headers)
+  (flags :standard))
+ (foreign_archives wgpu_native)
+ (c_library_flags
+  (:include c_library_flags.sexp)))
+
+; Generate C library flags based on OS
+
+(rule
+ (target c_library_flags.sexp)
+ (action
+  (write-file %{target} "(:standard -lpthread -ldl -lm)")))
+
+; Code generation rules
 
 (rule
  (action
@@ -10,18 +43,18 @@
  (mode promote)
  (target wgpu_low_stubs.c))
 
- (rule
-  (action
-   (with-stdout-to
-    wgpu_low.ml
-    (run ../codegen/gen_bindings.exe Low Ml)))
-  (mode promote)
-  (target wgpu_low.ml))
+(rule
+ (action
+  (with-stdout-to
+   wgpu_low.ml
+   (run ../codegen/gen_bindings.exe Low Ml)))
+ (mode promote)
+ (target wgpu_low.ml))
 
-  (rule
-   (action
-    (with-stdout-to
-     wgpu_low.mli
-     (run ../codegen/gen_bindings.exe Low Mli)))
-   (mode promote)
-   (target wgpu_low.mli))
+(rule
+ (action
+  (with-stdout-to
+   wgpu_low.mli
+   (run ../codegen/gen_bindings.exe Low Mli)))
+ (mode promote)
+ (target wgpu_low.mli))
