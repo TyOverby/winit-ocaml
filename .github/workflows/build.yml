@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master]
 
+# Cache version: bump this to invalidate all caches (e.g., when adding new opam packages)
+env:
+  CACHE_VERSION: v1
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
@@ -34,7 +38,15 @@ jobs:
           opam-repositories: |
             ox: git+https://github.com/oxcaml/opam-repository.git
             default: https://opam.ocaml.org
-          cache-prefix: linux-oxcaml
+          dune-cache: true
+
+      - name: Cache opam packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-${{ runner.os }}-${{ env.CACHE_VERSION }}-${{ hashFiles('.github/workflows/build.yml') }}
+          restore-keys: |
+            opam-${{ runner.os }}-${{ env.CACHE_VERSION }}-
 
       - name: Install OCaml dependencies
         run: opam install dune ppx_jane base stdio --yes
@@ -73,7 +85,15 @@ jobs:
           opam-repositories: |
             ox: git+https://github.com/oxcaml/opam-repository.git
             default: https://opam.ocaml.org
-          cache-prefix: macos-oxcaml
+          dune-cache: true
+
+      - name: Cache opam packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.opam
+          key: opam-${{ runner.os }}-${{ env.CACHE_VERSION }}-${{ hashFiles('.github/workflows/build.yml') }}
+          restore-keys: |
+            opam-${{ runner.os }}-${{ env.CACHE_VERSION }}-
 
       - name: Install OCaml dependencies
         run: opam install dune ppx_jane base stdio --yes
@@ -88,43 +108,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: paint-macos
-          path: _build/default/examples/paint.exe
-
-  build-windows:
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install OCaml (OxCaml)
-        uses: ocaml/setup-ocaml@v3
-        with:
-          ocaml-compiler: ocaml-variants.5.2.0+ox
-          opam-repositories: |
-            ox: git+https://github.com/oxcaml/opam-repository.git
-            default: https://opam.ocaml.org
-          cache-prefix: windows-oxcaml
-
-      - name: Install OCaml dependencies
-        run: opam install dune ppx_jane base stdio --yes
-
-      - name: Build project
-        run: opam exec -- dune build
-
-      - name: Build paint example
-        run: opam exec -- dune build ./examples/paint.exe
-
-      - name: Upload paint artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: paint-windows
           path: _build/default/examples/paint.exe
