@@ -163,10 +163,15 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       device
       ~label:"compute_bind_group"
       ~layout:bind_group_layout
-      ~binding:0
-      ~buffer:storage_buffer
-      ~offset:0L
-      ~size:(Int64.of_int data_size)
+      ~entries:
+        [ { Wgpu.Bind_group_entry.binding = 0
+          ; buffer = Some storage_buffer
+          ; offset = 0L
+          ; size = Int64.of_int data_size
+          ; sampler = None
+          ; texture_view = None
+          }
+        ]
       ()
   in
   print_endline "Bind group created.";

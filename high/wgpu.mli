@@ -1424,45 +1424,6 @@ module Device : sig
     -> unit
     -> Bind_group_layout.t
 
-  (** Create a bind group layout from a list of entry descriptors. This is the full API
-      that supports all binding types. *)
-  val create_bind_group_layout
-    :  t
-    -> ?label:string
-    -> entries:Bind_group_layout_entry.t list
-    -> unit
-    -> Bind_group_layout.t
-
-  (** Create a bind group with a single buffer binding *)
-  val create_bind_group
-    :  t
-    -> ?label:string
-    -> layout:Bind_group_layout.t
-    -> binding:int
-    -> buffer:Buffer.t
-    -> offset:int64
-    -> size:int64
-    -> unit
-    -> Bind_group.t
-
-  (** Create a bind group from a list of entry descriptors. This is the full API that
-      supports all binding types. *)
-  val create_bind_group_full
-    :  t
-    -> ?label:string
-    -> layout:Bind_group_layout.t
-    -> entries:Bind_group_entry.t list
-    -> unit
-    -> Bind_group.t
-
-  (** Create a pipeline layout from a list of bind group layouts *)
-  val create_pipeline_layout
-    :  t
-    -> ?label:string
-    -> bind_group_layouts:Bind_group_layout.t list
-    -> unit
-    -> Pipeline_layout.t
-
   (* AUTO-GENERATED DEVICE METHOD SIGNATURES INJECTED HERE *)
   type limits =
     { max_texture_dimension_1D : int
@@ -1497,6 +1458,28 @@ module Device : sig
     ; max_compute_workgroup_size_z : int
     ; max_compute_workgroups_per_dimension : int
     }
+
+  val create_bind_group
+    :  t
+    -> ?label:string
+    -> layout:Bind_group_layout.t
+    -> ?entries:Bind_group_entry.t list
+    -> unit
+    -> Bind_group.t
+
+  val create_bind_group_layout
+    :  t
+    -> ?label:string
+    -> ?entries:Bind_group_layout_entry.t list
+    -> unit
+    -> Bind_group_layout.t
+
+  val create_pipeline_layout
+    :  t
+    -> ?label:string
+    -> ?bind_group_layouts:Bind_group_layout.t list
+    -> unit
+    -> Pipeline_layout.t
 
   val get_limits : t -> limits
 

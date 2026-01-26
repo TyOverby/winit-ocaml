@@ -47,11 +47,7 @@ let manual_implementations =
     ; "device", "create_sampler" (* uses descriptor struct *)
     ; "device", "create_compute_pipeline" (* uses descriptor struct *)
     ; "device", "create_render_pipeline" (* uses descriptor struct *)
-    ; "device", "create_bind_group_layout_for_storage_buffer" (* manually implemented *)
-    ; "device", "create_bind_group_layout" (* manually implemented with array-of-struct *)
-    ; "device", "create_bind_group" (* manually implemented simple version *)
-    ; "device", "create_bind_group_full" (* manually implemented with array-of-struct *)
-    ; "device", "create_pipeline_layout" (* manually implemented *)
+    ; "device", "create_bind_group_layout_for_storage_buffer" (* convenience helper *)
     ; "device", "create_query_set" (* uses descriptor struct *)
     ; "device", "create_render_bundle_encoder" (* uses descriptor struct *)
     ; "device", "pop_error_scope" (* async callback *)
@@ -585,6 +581,18 @@ let member_to_low_level (member_name : string) (type_ref : Ir.type_ref) : string
       "(Array.of_list (List.map %s.list_to_int %s))"
       (ocaml_module_name name)
       member_name
+  | Pointer { inner = Array { elem = Object name; _ }; _ } ->
+    (* Pointer to array of objects - same as array of objects *)
+    sprintf
+      "(Array.of_list (List.map (fun x -> x.%s.handle) %s))"
+      (ocaml_module_name name)
+      member_name
+  | Pointer { inner = Array { elem = Primitive _; _ }; _ } ->
+    (* Pointer to array of primitives *)
+    sprintf "(Array.of_list %s)" member_name
+  | Pointer { inner = Array { elem = Enum name; _ }; _ } ->
+    (* Pointer to array of enums *)
+    sprintf "(Array.of_list (List.map %s.to_int %s))" (ocaml_module_name name) member_name
   | _ -> member_name
 ;;
 
@@ -598,6 +606,7 @@ let default_value_for_type (type_ref : Ir.type_ref) : string =
   | Primitive (Float32 | Float64) -> "0.0"
   | Optional _ -> "None"
   | Array _ -> "[]"
+  | Pointer { inner = Array _; _ } -> "[]"
   | _ -> {|""|}
 ;;
 
@@ -767,7 +776,7 @@ let generate_array_of_structs_conversion
   let array_var = param_name ^ "_array" in
   (* Generate code to convert each entry record to a C struct *)
   let loop_code =
-    [ sprintf "let %s = List.map (fun entry ->" entries_var ]
+    [ sprintf "let %s = List.map (fun (entry : %s.t) ->" entries_var entry_module ]
     @ [ sprintf "    let e = Wgpu_low.%s.%s_create () in" entry_module entry_struct.name ]
     @ List.concat_map entry_struct.members ~f:(fun member ->
       if String.equal member.name "nextInChain"
@@ -1963,111 +1972,6 @@ module Device = struct
       label binding read_only in
     ({ Bind_group_layout.handle = layout } : Bind_group_layout.t)
 
-  (** Create a bind group layout from a list of entry descriptors.
-      This is the full API that supports all binding types. *)
-  let create_bind_group_layout t ?(label = "") ~entries () =
-    let desc = Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_create () in
-    Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_set_label desc label;
-    (* Convert entries to C structs *)
-    let entry_structs = List.map (fun (entry : Bind_group_layout_entry.t) ->
-      let e = Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_create () in
-      Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_binding e entry.binding;
-      Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_visibility e
-        (Shader_stage.list_to_int entry.visibility);
-      (* Handle nested struct: buffer *)
-      (match entry.buffer with
-       | Some buffer_rec ->
-         let nested = Wgpu_low.Buffer_binding_layout.buffer_binding_layout_create () in
-         Wgpu_low.Buffer_binding_layout.buffer_binding_layout_set_type nested
-           (Buffer_binding_type.to_int buffer_rec.type_);
-         Wgpu_low.Buffer_binding_layout.buffer_binding_layout_set_has_dynamic_offset nested
-           buffer_rec.has_dynamic_offset;
-         Wgpu_low.Buffer_binding_layout.buffer_binding_layout_set_min_binding_size nested
-           buffer_rec.min_binding_size;
-         Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_buffer e nested
-       | None -> ());
-      (* Handle nested struct: sampler *)
-      (match entry.sampler with
-       | Some sampler_rec ->
-         let nested = Wgpu_low.Sampler_binding_layout.sampler_binding_layout_create () in
-         Wgpu_low.Sampler_binding_layout.sampler_binding_layout_set_type nested
-           (Sampler_binding_type.to_int sampler_rec.type_);
-         Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_sampler e nested
-       | None -> ());
-      (* Handle nested struct: texture *)
-      (match entry.texture with
-       | Some texture_rec ->
-         let nested = Wgpu_low.Texture_binding_layout.texture_binding_layout_create () in
-         Wgpu_low.Texture_binding_layout.texture_binding_layout_set_sample_type nested
-           (Texture_sample_type.to_int texture_rec.sample_type);
-         Wgpu_low.Texture_binding_layout.texture_binding_layout_set_view_dimension nested
-           (Texture_view_dimension.to_int texture_rec.view_dimension);
-         Wgpu_low.Texture_binding_layout.texture_binding_layout_set_multisampled nested
-           texture_rec.multisampled;
-         Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_texture e nested
-       | None -> ());
-      (* Handle nested struct: storage_texture *)
-      (match entry.storage_texture with
-       | Some storage_rec ->
-         let nested = Wgpu_low.Storage_texture_binding_layout.storage_texture_binding_layout_create () in
-         Wgpu_low.Storage_texture_binding_layout.storage_texture_binding_layout_set_access nested
-           (Storage_texture_access.to_int storage_rec.access);
-         Wgpu_low.Storage_texture_binding_layout.storage_texture_binding_layout_set_format nested
-           (Texture_format.to_int storage_rec.format);
-         Wgpu_low.Storage_texture_binding_layout.storage_texture_binding_layout_set_view_dimension nested
-           (Texture_view_dimension.to_int storage_rec.view_dimension);
-         Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_storage_texture e nested
-       | None -> ());
-      e) entries in
-    let entries_array = Array.of_list entry_structs in
-    Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_set_entries desc entries_array;
-    let layout = Wgpu_low.device_create_bind_group_layout t.handle desc in
-    (* Free entry structs *)
-    List.iter (fun e -> Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_free e) entry_structs;
-    Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_free desc;
-    ({ Bind_group_layout.handle = layout } : Bind_group_layout.t)
-
-  let create_bind_group t ?(label = "") ~layout ~binding ~buffer ~offset ~size () =
-    let bind_group = Wgpu_low.device_create_bind_group_buffer t.handle
-      label layout.Bind_group_layout.handle binding buffer.Buffer.handle offset size in
-    ({ Bind_group.handle = bind_group } : Bind_group.t)
-
-  (** Create a bind group from a list of entry descriptors.
-      This is the full API that supports all binding types. *)
-  let create_bind_group_full t ?(label = "") ~layout ~entries () =
-    let desc = Wgpu_low.Bind_group_descriptor.bind_group_descriptor_create () in
-    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_set_label desc label;
-    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_set_layout desc layout.Bind_group_layout.handle;
-    (* Convert entries to C structs *)
-    let entry_structs = List.map (fun (entry : Bind_group_entry.t) ->
-      let e = Wgpu_low.Bind_group_entry.bind_group_entry_create () in
-      Wgpu_low.Bind_group_entry.bind_group_entry_set_binding e entry.binding;
-      Wgpu_low.Bind_group_entry.bind_group_entry_set_buffer e
-        (match entry.buffer with Some x -> x.Buffer.handle | None -> 0n);
-      Wgpu_low.Bind_group_entry.bind_group_entry_set_offset e entry.offset;
-      Wgpu_low.Bind_group_entry.bind_group_entry_set_size e entry.size;
-      Wgpu_low.Bind_group_entry.bind_group_entry_set_sampler e
-        (match entry.sampler with Some x -> x.Sampler.handle | None -> 0n);
-      Wgpu_low.Bind_group_entry.bind_group_entry_set_texture_view e
-        (match entry.texture_view with Some x -> x.Texture_view.handle | None -> 0n);
-      e) entries in
-    let entries_array = Array.of_list entry_structs in
-    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_set_entries desc entries_array;
-    let bind_group = Wgpu_low.device_create_bind_group t.handle desc in
-    (* Free entry structs *)
-    List.iter (fun e -> Wgpu_low.Bind_group_entry.bind_group_entry_free e) entry_structs;
-    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_free desc;
-    ({ Bind_group.handle = bind_group } : Bind_group.t)
-
-  let create_pipeline_layout t ?(label = "") ~bind_group_layouts () =
-    let desc = Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_create () in
-    Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_set_label desc label;
-    let layouts_array = Array.of_list (List.map (fun x -> x.Bind_group_layout.handle) bind_group_layouts) in
-    Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_set_bind_group_layouts desc layouts_array;
-    let layout = Wgpu_low.device_create_pipeline_layout t.handle desc in
-    Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_free desc;
-    ({ Pipeline_layout.handle = layout } : Pipeline_layout.t)
-
   (* AUTO-GENERATED DEVICE METHODS INJECTED HERE *)
 |}
   in
@@ -2304,24 +2208,6 @@ module Device : sig
   (** Create a bind group layout for a single storage buffer *)
   val create_bind_group_layout_for_storage_buffer : t -> ?label:string -> binding:int ->
     ?read_only:bool -> unit -> Bind_group_layout.t
-
-  (** Create a bind group layout from a list of entry descriptors.
-      This is the full API that supports all binding types. *)
-  val create_bind_group_layout : t -> ?label:string ->
-    entries:Bind_group_layout_entry.t list -> unit -> Bind_group_layout.t
-
-  (** Create a bind group with a single buffer binding *)
-  val create_bind_group : t -> ?label:string -> layout:Bind_group_layout.t ->
-    binding:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit -> Bind_group.t
-
-  (** Create a bind group from a list of entry descriptors.
-      This is the full API that supports all binding types. *)
-  val create_bind_group_full : t -> ?label:string -> layout:Bind_group_layout.t ->
-    entries:Bind_group_entry.t list -> unit -> Bind_group.t
-
-  (** Create a pipeline layout from a list of bind group layouts *)
-  val create_pipeline_layout : t -> ?label:string -> bind_group_layouts:Bind_group_layout.t list ->
-    unit -> Pipeline_layout.t
 
   (* AUTO-GENERATED DEVICE METHOD SIGNATURES INJECTED HERE *)
 |}
