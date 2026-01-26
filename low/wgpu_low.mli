@@ -2245,12 +2245,6 @@ val device_create_bind_group_buffer
   -> int64
   -> bind_group
 
-val device_create_pipeline_layout_single
-  :  device
-  -> string
-  -> bind_group_layout
-  -> pipeline_layout
-
 val device_create_texture_2d : device -> string -> int -> int -> int -> int -> texture
 
 val texture_create_view_configurable

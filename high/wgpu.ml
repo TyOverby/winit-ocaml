@@ -470,6 +470,13 @@ end
 module Surface = struct
   type t = { handle : Wgpu_low.surface }
 
+  type surface_capabilities =
+    { usages : Texture_usage.t list
+    ; formats : nativeint
+    ; present_modes : nativeint
+    ; alpha_modes : nativeint
+    }
+
   type surface_texture =
     { texture : Texture.t
     ; status : Surface_get_current_texture_status.t
@@ -1081,13 +1088,17 @@ module Device = struct
     ({ Bind_group.handle = bind_group } : Bind_group.t)
   ;;
 
-  let create_pipeline_layout t ?(label = "") ~bind_group_layout () =
-    let layout =
-      Wgpu_low.device_create_pipeline_layout_single
-        t.handle
-        label
-        bind_group_layout.Bind_group_layout.handle
+  let create_pipeline_layout t ?(label = "") ~bind_group_layouts () =
+    let desc = Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_create () in
+    Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_set_label desc label;
+    let layouts_array =
+      Array.of_list (List.map (fun x -> x.Bind_group_layout.handle) bind_group_layouts)
     in
+    Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_set_bind_group_layouts
+      desc
+      layouts_array;
+    let layout = Wgpu_low.device_create_pipeline_layout t.handle desc in
+    Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_free desc;
     ({ Pipeline_layout.handle = layout } : Pipeline_layout.t)
   ;;
 

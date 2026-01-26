@@ -39,7 +39,6 @@ let manual_implementations =
     ; "device", "create_render_pipeline" (* uses descriptor struct *)
     ; "device", "create_bind_group_layout" (* uses descriptor with arrays *)
     ; "device", "create_bind_group" (* uses descriptor with arrays *)
-    ; "device", "create_pipeline_layout" (* uses descriptor with arrays *)
     ; "device", "create_query_set" (* uses descriptor struct *)
     ; "device", "create_render_bundle_encoder" (* uses descriptor struct *)
     ; "device", "pop_error_scope" (* async callback *)
@@ -204,6 +203,9 @@ let rec is_simple_member_type (type_ref : Ir.type_ref) : bool =
   | Struct _ -> false
   | Callback _ -> false
   | Array { elem; _ } -> is_simple_member_type elem (* Arrays of simple types are OK *)
+  | Pointer { inner = Array { elem; _ }; _ } ->
+    (* Pointer to array is just an array passed by reference *)
+    is_simple_member_type elem
   | Pointer _ -> false
 ;;
 
@@ -228,6 +230,9 @@ let rec is_simple_member_type_with_nested
     else is_simple_struct_aux structs (Set.add visited name) name
   | Callback _ -> false
   | Array { elem; _ } -> is_simple_member_type_with_nested structs visited elem
+  | Pointer { inner = Array { elem; _ }; _ } ->
+    (* Pointer to array is just an array passed by reference *)
+    is_simple_member_type_with_nested structs visited elem
   | Pointer _ -> false
 
 (** Auxiliary function to check if a struct is simple, with visited tracking *)
@@ -1487,9 +1492,13 @@ module Device = struct
       label layout.Bind_group_layout.handle binding buffer.Buffer.handle offset size in
     ({ Bind_group.handle = bind_group } : Bind_group.t)
 
-  let create_pipeline_layout t ?(label = "") ~bind_group_layout () =
-    let layout = Wgpu_low.device_create_pipeline_layout_single t.handle
-      label bind_group_layout.Bind_group_layout.handle in
+  let create_pipeline_layout t ?(label = "") ~bind_group_layouts () =
+    let desc = Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_create () in
+    Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_set_label desc label;
+    let layouts_array = Array.of_list (List.map (fun x -> x.Bind_group_layout.handle) bind_group_layouts) in
+    Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_set_bind_group_layouts desc layouts_array;
+    let layout = Wgpu_low.device_create_pipeline_layout t.handle desc in
+    Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_free desc;
     ({ Pipeline_layout.handle = layout } : Pipeline_layout.t)
 
   let poll t ?(wait = false) () = Wgpu_low.device_poll t.handle wait
@@ -1700,8 +1709,8 @@ module Device : sig
   val create_bind_group : t -> ?label:string -> layout:Bind_group_layout.t ->
     binding:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit -> Bind_group.t
 
-  (** Create a pipeline layout (currently supports single bind group layout) *)
-  val create_pipeline_layout : t -> ?label:string -> bind_group_layout:Bind_group_layout.t ->
+  (** Create a pipeline layout from a list of bind group layouts *)
+  val create_pipeline_layout : t -> ?label:string -> bind_group_layouts:Bind_group_layout.t list ->
     unit -> Pipeline_layout.t
 
   (** Poll the device for completed work *)

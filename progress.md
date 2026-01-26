@@ -825,3 +825,38 @@ let copy_texture_to_buffer t
 1. Add vertex buffer support for custom geometry
 2. Add texture sampling support
 3. Document the complete high-level API
+
+---
+
+## 2026-01-26: Obsolete Simple Helpers Removed
+
+### Accomplished
+- **Automatic object ordering**: Replaced hardcoded `object_order` list with dependency analysis
+  - Added `extract_object_deps` to extract object references from type_ref
+  - Added `get_object_dependencies` to find all object dependencies from methods
+  - Updated `sort_objects` to use Kahn's algorithm with auto-computed dependencies
+  - Dependencies now derived from both return types and parameter types
+
+- **Removed all `_simple` C helper functions**: 5 hand-written helpers replaced with auto-generated struct-based versions
+  - `copy_texture_to_buffer_simple` -> uses `Command_encoder.copy_texture_to_buffer`
+  - `command_encoder_finish_simple` -> uses `Command_encoder.finish`
+  - `compute_pass_encoder_set_bind_group_simple` -> uses `Compute_pass_encoder.set_bind_group`
+  - `command_encoder_begin_compute_pass_simple` -> uses `Compute_pass_descriptor` struct
+  - `device_create_command_encoder_simple` -> uses `Command_encoder_descriptor` struct
+  - `device_create_compute_pipeline_simple` -> uses `Compute_pipeline_descriptor` + `Programmable_stage_descriptor` structs
+
+### Code Reduction
+- Removed 201 lines of C code
+- Removed 57 lines of OCaml declarations
+- High-level convenience functions now use auto-generated low-level struct APIs
+
+### Technical Details
+The auto-generated struct bindings have matured enough to handle the cases that
+previously required hand-written C helpers:
+- Simple descriptors (label only): `Command_encoder_descriptor`, `Compute_pass_descriptor`
+- Nested structs: `Compute_pipeline_descriptor` with embedded `Programmable_stage_descriptor`
+- Array arguments: `set_bind_group` with empty dynamic_offsets array
+
+### Next Steps
+1. Support descriptors with array members (bind group layout entries, etc.)
+2. Add chained struct support (nextInChain pattern)

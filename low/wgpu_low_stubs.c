@@ -8959,23 +8959,6 @@ CAMLprim value caml_wgpu_device_create_bind_group_buffer_bytecode(value *argv, i
   return caml_wgpu_device_create_bind_group_buffer(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]);
 }
 
-/* Create pipeline layout with a single bind group layout */
-CAMLprim value caml_wgpu_device_create_pipeline_layout_single(value device_val, value label_val, value bind_group_layout_val) {
-  CAMLparam3(device_val, label_val, bind_group_layout_val);
-  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
-  const char* label = String_val(label_val);
-  WGPUBindGroupLayout layout = (WGPUBindGroupLayout)Nativeint_val(bind_group_layout_val);
-
-  WGPUPipelineLayoutDescriptor desc = {
-    .label = { .data = label, .length = caml_string_length(label_val) },
-    .bindGroupLayoutCount = 1,
-    .bindGroupLayouts = &layout,
-  };
-
-  WGPUPipelineLayout pipeline_layout = wgpuDeviceCreatePipelineLayout(device, &desc);
-  CAMLreturn(caml_copy_nativeint((intnat)pipeline_layout));
-}
-
 /* Create a 2D texture with given dimensions, format, and usage */
 CAMLprim value caml_wgpu_device_create_texture_2d(value device_val, value label_val, value width_val, value height_val, value format_val, value usage_val) {
   CAMLparam5(device_val, label_val, width_val, height_val, format_val);

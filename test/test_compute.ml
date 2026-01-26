@@ -175,7 +175,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     Wgpu.Device.create_pipeline_layout
       device
       ~label:"compute_pipeline_layout"
-      ~bind_group_layout
+      ~bind_group_layouts:[ bind_group_layout ]
       ()
   in
   print_endline "Pipeline layout created.";

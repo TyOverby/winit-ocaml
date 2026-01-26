@@ -1079,6 +1079,13 @@ module Surface : sig
 
   type t
 
+  type surface_capabilities =
+    { usages : Texture_usage.t list
+    ; formats : nativeint
+    ; present_modes : nativeint
+    ; alpha_modes : nativeint
+    }
+
   type surface_texture =
     { texture : Texture.t
     ; status : Surface_get_current_texture_status.t
@@ -1317,11 +1324,11 @@ module Device : sig
     -> unit
     -> Bind_group.t
 
-  (** Create a pipeline layout (currently supports single bind group layout) *)
+  (** Create a pipeline layout from a list of bind group layouts *)
   val create_pipeline_layout
     :  t
     -> ?label:string
-    -> bind_group_layout:Bind_group_layout.t
+    -> bind_group_layouts:Bind_group_layout.t list
     -> unit
     -> Pipeline_layout.t
 

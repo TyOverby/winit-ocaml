@@ -7883,13 +7883,6 @@ external device_create_bind_group_buffer
   = "caml_wgpu_device_create_bind_group_buffer_bytecode"
     "caml_wgpu_device_create_bind_group_buffer"
 
-external device_create_pipeline_layout_single
-  :  device
-  -> string
-  -> bind_group_layout
-  -> pipeline_layout
-  = "caml_wgpu_device_create_pipeline_layout_single"
-
 external device_create_texture_2d
   :  device
   -> string
