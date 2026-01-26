@@ -89,20 +89,6 @@ module Command_buffer = struct
   let set_label t ~label = Wgpu_low.command_buffer_set_label t.handle label
 end
 
-module Compute_pipeline = struct
-  type t = { handle : Wgpu_low.compute_pipeline }
-
-  let release t = Wgpu_low.compute_pipeline_release t.handle
-
-  let get_bind_group_layout t ~group_index : Bind_group_layout.t =
-    { Bind_group_layout.handle =
-        Wgpu_low.compute_pipeline_get_bind_group_layout t.handle group_index
-    }
-  ;;
-
-  let set_label t ~label = Wgpu_low.compute_pipeline_set_label t.handle label
-end
-
 module Pipeline_layout = struct
   type t = { handle : Wgpu_low.pipeline_layout }
 
@@ -127,20 +113,6 @@ module Render_bundle = struct
   let set_label t ~label = Wgpu_low.render_bundle_set_label t.handle label
 end
 
-module Render_pipeline = struct
-  type t = { handle : Wgpu_low.render_pipeline }
-
-  let release t = Wgpu_low.render_pipeline_release t.handle
-
-  let get_bind_group_layout t ~group_index : Bind_group_layout.t =
-    { Bind_group_layout.handle =
-        Wgpu_low.render_pipeline_get_bind_group_layout t.handle group_index
-    }
-  ;;
-
-  let set_label t ~label = Wgpu_low.render_pipeline_set_label t.handle label
-end
-
 module Sampler = struct
   type t = { handle : Wgpu_low.sampler }
 
@@ -160,6 +132,34 @@ module Texture_view = struct
 
   let release t = Wgpu_low.texture_view_release t.handle
   let set_label t ~label = Wgpu_low.texture_view_set_label t.handle label
+end
+
+module Compute_pipeline = struct
+  type t = { handle : Wgpu_low.compute_pipeline }
+
+  let release t = Wgpu_low.compute_pipeline_release t.handle
+
+  let get_bind_group_layout t ~group_index : Bind_group_layout.t =
+    { Bind_group_layout.handle =
+        Wgpu_low.compute_pipeline_get_bind_group_layout t.handle group_index
+    }
+  ;;
+
+  let set_label t ~label = Wgpu_low.compute_pipeline_set_label t.handle label
+end
+
+module Render_pipeline = struct
+  type t = { handle : Wgpu_low.render_pipeline }
+
+  let release t = Wgpu_low.render_pipeline_release t.handle
+
+  let get_bind_group_layout t ~group_index : Bind_group_layout.t =
+    { Bind_group_layout.handle =
+        Wgpu_low.render_pipeline_get_bind_group_layout t.handle group_index
+    }
+  ;;
+
+  let set_label t ~label = Wgpu_low.render_pipeline_set_label t.handle label
 end
 
 module Texture = struct
@@ -225,6 +225,246 @@ module Texture = struct
   let get_format t = Texture_format.of_int (Wgpu_low.texture_get_format t.handle)
   let get_usage t = Wgpu_low.texture_get_usage t.handle
   let destroy t = Wgpu_low.texture_destroy t.handle
+end
+
+module Compute_pass_encoder = struct
+  type t = { handle : Wgpu_low.compute_pass_encoder }
+
+  let release t = Wgpu_low.compute_pass_encoder_release t.handle
+
+  let insert_debug_marker t ~marker_label =
+    Wgpu_low.compute_pass_encoder_insert_debug_marker t.handle marker_label
+  ;;
+
+  let pop_debug_group t = Wgpu_low.compute_pass_encoder_pop_debug_group t.handle
+
+  let push_debug_group t ~group_label =
+    Wgpu_low.compute_pass_encoder_push_debug_group t.handle group_label
+  ;;
+
+  let set_pipeline t ~pipeline =
+    Wgpu_low.compute_pass_encoder_set_pipeline t.handle pipeline.Compute_pipeline.handle
+  ;;
+
+  let set_bind_group t ~group_index ~group ~dynamic_offsets =
+    Wgpu_low.compute_pass_encoder_set_bind_group
+      t.handle
+      group_index
+      group.Bind_group.handle
+      (Array.of_list dynamic_offsets)
+  ;;
+
+  let dispatch_workgroups t ~workgroupCountX ~workgroupCountY ~workgroupCountZ =
+    Wgpu_low.compute_pass_encoder_dispatch_workgroups
+      t.handle
+      workgroupCountX
+      workgroupCountY
+      workgroupCountZ
+  ;;
+
+  let dispatch_workgroups_indirect t ~indirect_buffer ~indirect_offset =
+    Wgpu_low.compute_pass_encoder_dispatch_workgroups_indirect
+      t.handle
+      indirect_buffer.Buffer.handle
+      indirect_offset
+  ;;
+
+  let end_ t = Wgpu_low.compute_pass_encoder_end t.handle
+  let set_label t ~label = Wgpu_low.compute_pass_encoder_set_label t.handle label
+end
+
+module Render_bundle_encoder = struct
+  type t = { handle : Wgpu_low.render_bundle_encoder }
+
+  let release t = Wgpu_low.render_bundle_encoder_release t.handle
+
+  let set_pipeline t ~pipeline =
+    Wgpu_low.render_bundle_encoder_set_pipeline t.handle pipeline.Render_pipeline.handle
+  ;;
+
+  let set_bind_group t ~group_index ~group ~dynamic_offsets =
+    Wgpu_low.render_bundle_encoder_set_bind_group
+      t.handle
+      group_index
+      group.Bind_group.handle
+      (Array.of_list dynamic_offsets)
+  ;;
+
+  let draw t ~vertex_count ~instance_count ~first_vertex ~first_instance =
+    Wgpu_low.render_bundle_encoder_draw
+      t.handle
+      vertex_count
+      instance_count
+      first_vertex
+      first_instance
+  ;;
+
+  let draw_indexed
+    t
+    ~index_count
+    ~instance_count
+    ~first_index
+    ~base_vertex
+    ~first_instance
+    =
+    Wgpu_low.render_bundle_encoder_draw_indexed
+      t.handle
+      index_count
+      instance_count
+      first_index
+      base_vertex
+      first_instance
+  ;;
+
+  let draw_indirect t ~indirect_buffer ~indirect_offset =
+    Wgpu_low.render_bundle_encoder_draw_indirect
+      t.handle
+      indirect_buffer.Buffer.handle
+      indirect_offset
+  ;;
+
+  let draw_indexed_indirect t ~indirect_buffer ~indirect_offset =
+    Wgpu_low.render_bundle_encoder_draw_indexed_indirect
+      t.handle
+      indirect_buffer.Buffer.handle
+      indirect_offset
+  ;;
+
+  let insert_debug_marker t ~marker_label =
+    Wgpu_low.render_bundle_encoder_insert_debug_marker t.handle marker_label
+  ;;
+
+  let pop_debug_group t = Wgpu_low.render_bundle_encoder_pop_debug_group t.handle
+
+  let push_debug_group t ~group_label =
+    Wgpu_low.render_bundle_encoder_push_debug_group t.handle group_label
+  ;;
+
+  let finish t ?(label = "") () =
+    let desc_descriptor =
+      Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_create ()
+    in
+    Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_set_label
+      desc_descriptor
+      label;
+    let result = Wgpu_low.render_bundle_encoder_finish t.handle desc_descriptor in
+    Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_free desc_descriptor;
+    ({ Render_bundle.handle = result } : Render_bundle.t)
+  ;;
+
+  let set_label t ~label = Wgpu_low.render_bundle_encoder_set_label t.handle label
+end
+
+module Render_pass_encoder = struct
+  type t = { handle : Wgpu_low.render_pass_encoder }
+
+  let release t = Wgpu_low.render_pass_encoder_release t.handle
+
+  let set_pipeline t ~pipeline =
+    Wgpu_low.render_pass_encoder_set_pipeline t.handle pipeline.Render_pipeline.handle
+  ;;
+
+  let set_bind_group t ~group_index ~group ~dynamic_offsets =
+    Wgpu_low.render_pass_encoder_set_bind_group
+      t.handle
+      group_index
+      group.Bind_group.handle
+      (Array.of_list dynamic_offsets)
+  ;;
+
+  let draw t ~vertex_count ~instance_count ~first_vertex ~first_instance =
+    Wgpu_low.render_pass_encoder_draw
+      t.handle
+      vertex_count
+      instance_count
+      first_vertex
+      first_instance
+  ;;
+
+  let draw_indexed
+    t
+    ~index_count
+    ~instance_count
+    ~first_index
+    ~base_vertex
+    ~first_instance
+    =
+    Wgpu_low.render_pass_encoder_draw_indexed
+      t.handle
+      index_count
+      instance_count
+      first_index
+      base_vertex
+      first_instance
+  ;;
+
+  let draw_indirect t ~indirect_buffer ~indirect_offset =
+    Wgpu_low.render_pass_encoder_draw_indirect
+      t.handle
+      indirect_buffer.Buffer.handle
+      indirect_offset
+  ;;
+
+  let draw_indexed_indirect t ~indirect_buffer ~indirect_offset =
+    Wgpu_low.render_pass_encoder_draw_indexed_indirect
+      t.handle
+      indirect_buffer.Buffer.handle
+      indirect_offset
+  ;;
+
+  let execute_bundles t ~bundles =
+    Wgpu_low.render_pass_encoder_execute_bundles
+      t.handle
+      (Array.of_list (List.map (fun x -> x.Render_bundle.handle) bundles))
+  ;;
+
+  let insert_debug_marker t ~marker_label =
+    Wgpu_low.render_pass_encoder_insert_debug_marker t.handle marker_label
+  ;;
+
+  let pop_debug_group t = Wgpu_low.render_pass_encoder_pop_debug_group t.handle
+
+  let push_debug_group t ~group_label =
+    Wgpu_low.render_pass_encoder_push_debug_group t.handle group_label
+  ;;
+
+  let set_stencil_reference t ~reference =
+    Wgpu_low.render_pass_encoder_set_stencil_reference t.handle reference
+  ;;
+
+  let set_blend_constant t ~r ~g ~b ~a () =
+    let desc_color = Wgpu_low.Color.color_create () in
+    Wgpu_low.Color.color_set_r desc_color r;
+    Wgpu_low.Color.color_set_g desc_color g;
+    Wgpu_low.Color.color_set_b desc_color b;
+    Wgpu_low.Color.color_set_a desc_color a;
+    Wgpu_low.render_pass_encoder_set_blend_constant t.handle desc_color;
+    Wgpu_low.Color.color_free desc_color;
+    ()
+  ;;
+
+  let set_viewport t ~x ~y ~width ~height ~min_depth ~max_depth =
+    Wgpu_low.render_pass_encoder_set_viewport
+      t.handle
+      x
+      y
+      width
+      height
+      min_depth
+      max_depth
+  ;;
+
+  let set_scissor_rect t ~x ~y ~width ~height =
+    Wgpu_low.render_pass_encoder_set_scissor_rect t.handle x y width height
+  ;;
+
+  let begin_occlusion_query t ~query_index =
+    Wgpu_low.render_pass_encoder_begin_occlusion_query t.handle query_index
+  ;;
+
+  let end_occlusion_query t = Wgpu_low.render_pass_encoder_end_occlusion_query t.handle
+  let end_ t = Wgpu_low.render_pass_encoder_end t.handle
+  let set_label t ~label = Wgpu_low.render_pass_encoder_set_label t.handle label
 end
 
 module Surface = struct
@@ -558,246 +798,6 @@ module Command_encoder = struct
   ;;
 
   let set_label t ~label = Wgpu_low.command_encoder_set_label t.handle label
-end
-
-module Compute_pass_encoder = struct
-  type t = { handle : Wgpu_low.compute_pass_encoder }
-
-  let release t = Wgpu_low.compute_pass_encoder_release t.handle
-
-  let insert_debug_marker t ~marker_label =
-    Wgpu_low.compute_pass_encoder_insert_debug_marker t.handle marker_label
-  ;;
-
-  let pop_debug_group t = Wgpu_low.compute_pass_encoder_pop_debug_group t.handle
-
-  let push_debug_group t ~group_label =
-    Wgpu_low.compute_pass_encoder_push_debug_group t.handle group_label
-  ;;
-
-  let set_pipeline t ~pipeline =
-    Wgpu_low.compute_pass_encoder_set_pipeline t.handle pipeline.Compute_pipeline.handle
-  ;;
-
-  let set_bind_group t ~group_index ~group ~dynamic_offsets =
-    Wgpu_low.compute_pass_encoder_set_bind_group
-      t.handle
-      group_index
-      group.Bind_group.handle
-      (Array.of_list dynamic_offsets)
-  ;;
-
-  let dispatch_workgroups t ~workgroupCountX ~workgroupCountY ~workgroupCountZ =
-    Wgpu_low.compute_pass_encoder_dispatch_workgroups
-      t.handle
-      workgroupCountX
-      workgroupCountY
-      workgroupCountZ
-  ;;
-
-  let dispatch_workgroups_indirect t ~indirect_buffer ~indirect_offset =
-    Wgpu_low.compute_pass_encoder_dispatch_workgroups_indirect
-      t.handle
-      indirect_buffer.Buffer.handle
-      indirect_offset
-  ;;
-
-  let end_ t = Wgpu_low.compute_pass_encoder_end t.handle
-  let set_label t ~label = Wgpu_low.compute_pass_encoder_set_label t.handle label
-end
-
-module Render_bundle_encoder = struct
-  type t = { handle : Wgpu_low.render_bundle_encoder }
-
-  let release t = Wgpu_low.render_bundle_encoder_release t.handle
-
-  let set_pipeline t ~pipeline =
-    Wgpu_low.render_bundle_encoder_set_pipeline t.handle pipeline.Render_pipeline.handle
-  ;;
-
-  let set_bind_group t ~group_index ~group ~dynamic_offsets =
-    Wgpu_low.render_bundle_encoder_set_bind_group
-      t.handle
-      group_index
-      group.Bind_group.handle
-      (Array.of_list dynamic_offsets)
-  ;;
-
-  let draw t ~vertex_count ~instance_count ~first_vertex ~first_instance =
-    Wgpu_low.render_bundle_encoder_draw
-      t.handle
-      vertex_count
-      instance_count
-      first_vertex
-      first_instance
-  ;;
-
-  let draw_indexed
-    t
-    ~index_count
-    ~instance_count
-    ~first_index
-    ~base_vertex
-    ~first_instance
-    =
-    Wgpu_low.render_bundle_encoder_draw_indexed
-      t.handle
-      index_count
-      instance_count
-      first_index
-      base_vertex
-      first_instance
-  ;;
-
-  let draw_indirect t ~indirect_buffer ~indirect_offset =
-    Wgpu_low.render_bundle_encoder_draw_indirect
-      t.handle
-      indirect_buffer.Buffer.handle
-      indirect_offset
-  ;;
-
-  let draw_indexed_indirect t ~indirect_buffer ~indirect_offset =
-    Wgpu_low.render_bundle_encoder_draw_indexed_indirect
-      t.handle
-      indirect_buffer.Buffer.handle
-      indirect_offset
-  ;;
-
-  let insert_debug_marker t ~marker_label =
-    Wgpu_low.render_bundle_encoder_insert_debug_marker t.handle marker_label
-  ;;
-
-  let pop_debug_group t = Wgpu_low.render_bundle_encoder_pop_debug_group t.handle
-
-  let push_debug_group t ~group_label =
-    Wgpu_low.render_bundle_encoder_push_debug_group t.handle group_label
-  ;;
-
-  let finish t ?(label = "") () =
-    let desc_descriptor =
-      Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_create ()
-    in
-    Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_set_label
-      desc_descriptor
-      label;
-    let result = Wgpu_low.render_bundle_encoder_finish t.handle desc_descriptor in
-    Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_free desc_descriptor;
-    ({ Render_bundle.handle = result } : Render_bundle.t)
-  ;;
-
-  let set_label t ~label = Wgpu_low.render_bundle_encoder_set_label t.handle label
-end
-
-module Render_pass_encoder = struct
-  type t = { handle : Wgpu_low.render_pass_encoder }
-
-  let release t = Wgpu_low.render_pass_encoder_release t.handle
-
-  let set_pipeline t ~pipeline =
-    Wgpu_low.render_pass_encoder_set_pipeline t.handle pipeline.Render_pipeline.handle
-  ;;
-
-  let set_bind_group t ~group_index ~group ~dynamic_offsets =
-    Wgpu_low.render_pass_encoder_set_bind_group
-      t.handle
-      group_index
-      group.Bind_group.handle
-      (Array.of_list dynamic_offsets)
-  ;;
-
-  let draw t ~vertex_count ~instance_count ~first_vertex ~first_instance =
-    Wgpu_low.render_pass_encoder_draw
-      t.handle
-      vertex_count
-      instance_count
-      first_vertex
-      first_instance
-  ;;
-
-  let draw_indexed
-    t
-    ~index_count
-    ~instance_count
-    ~first_index
-    ~base_vertex
-    ~first_instance
-    =
-    Wgpu_low.render_pass_encoder_draw_indexed
-      t.handle
-      index_count
-      instance_count
-      first_index
-      base_vertex
-      first_instance
-  ;;
-
-  let draw_indirect t ~indirect_buffer ~indirect_offset =
-    Wgpu_low.render_pass_encoder_draw_indirect
-      t.handle
-      indirect_buffer.Buffer.handle
-      indirect_offset
-  ;;
-
-  let draw_indexed_indirect t ~indirect_buffer ~indirect_offset =
-    Wgpu_low.render_pass_encoder_draw_indexed_indirect
-      t.handle
-      indirect_buffer.Buffer.handle
-      indirect_offset
-  ;;
-
-  let execute_bundles t ~bundles =
-    Wgpu_low.render_pass_encoder_execute_bundles
-      t.handle
-      (Array.of_list (List.map (fun x -> x.Render_bundle.handle) bundles))
-  ;;
-
-  let insert_debug_marker t ~marker_label =
-    Wgpu_low.render_pass_encoder_insert_debug_marker t.handle marker_label
-  ;;
-
-  let pop_debug_group t = Wgpu_low.render_pass_encoder_pop_debug_group t.handle
-
-  let push_debug_group t ~group_label =
-    Wgpu_low.render_pass_encoder_push_debug_group t.handle group_label
-  ;;
-
-  let set_stencil_reference t ~reference =
-    Wgpu_low.render_pass_encoder_set_stencil_reference t.handle reference
-  ;;
-
-  let set_blend_constant t ~r ~g ~b ~a () =
-    let desc_color = Wgpu_low.Color.color_create () in
-    Wgpu_low.Color.color_set_r desc_color r;
-    Wgpu_low.Color.color_set_g desc_color g;
-    Wgpu_low.Color.color_set_b desc_color b;
-    Wgpu_low.Color.color_set_a desc_color a;
-    Wgpu_low.render_pass_encoder_set_blend_constant t.handle desc_color;
-    Wgpu_low.Color.color_free desc_color;
-    ()
-  ;;
-
-  let set_viewport t ~x ~y ~width ~height ~min_depth ~max_depth =
-    Wgpu_low.render_pass_encoder_set_viewport
-      t.handle
-      x
-      y
-      width
-      height
-      min_depth
-      max_depth
-  ;;
-
-  let set_scissor_rect t ~x ~y ~width ~height =
-    Wgpu_low.render_pass_encoder_set_scissor_rect t.handle x y width height
-  ;;
-
-  let begin_occlusion_query t ~query_index =
-    Wgpu_low.render_pass_encoder_begin_occlusion_query t.handle query_index
-  ;;
-
-  let end_occlusion_query t = Wgpu_low.render_pass_encoder_end_occlusion_query t.handle
-  let end_ t = Wgpu_low.render_pass_encoder_end t.handle
-  let set_label t ~label = Wgpu_low.render_pass_encoder_set_label t.handle label
 end
 
 module Adapter_info = struct

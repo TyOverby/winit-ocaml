@@ -1198,36 +1198,101 @@ let gen_mli_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
     methods
 ;;
 
-(** Order objects so dependencies come first. Objects that don't depend on others come
-    first. *)
-let object_order =
-  [ (* Leaf objects - no dependencies on other objects in methods *)
-    "bind_group"
-  ; "bind_group_layout"
-  ; "buffer"
-  ; "command_buffer"
-  ; "compute_pipeline"
-  ; "pipeline_layout"
-  ; "query_set"
-  ; "render_bundle"
-  ; "render_pipeline"
-  ; "sampler"
-  ; "shader_module"
-  ; "texture_view"
-    (* texture_view before texture since Texture.create_view returns Texture_view.t *)
-  ; "texture"
-    (* surface after texture because surface_texture output struct references Texture.t *)
-  ; "surface" (* Objects that depend on above *)
-  ; "command_encoder"
-  ; "compute_pass_encoder"
-  ; "render_bundle_encoder"
-  ; "render_pass_encoder"
-  ]
+(** Extract object dependencies from a type_ref. Returns object names that must be defined
+    before this type can be used. *)
+let rec extract_object_deps (type_ref : Ir.type_ref) : string list =
+  match type_ref with
+  | Object name -> [ name ]
+  | Optional inner -> extract_object_deps inner
+  | Array { elem; _ } -> extract_object_deps elem
+  | Pointer { inner; _ } -> extract_object_deps inner
+  | Primitive _ | Enum _ | Bitflag _ | Struct _ | Callback _ -> []
 ;;
 
-let sort_objects (objects : Ir.object_ list) : Ir.object_ list =
+(** Get all object dependencies for a single object. An object A depends on object B if:
+    1. A method of A returns B (e.g., Texture.create_view returns Texture_view)
+    2. A method of A takes B as a parameter (e.g., Compute_pass_encoder.set_pipeline takes
+       Compute_pipeline)
+    3. A method of A has an output struct with a field of type B *)
+let get_object_dependencies (structs : Ir.struct_ list) (obj : Ir.object_)
+  : Set.M(String).t
+  =
+  let deps = ref (Set.empty (module String)) in
+  List.iter obj.methods ~f:(fun method_ ->
+    (* Check return type *)
+    (match method_.returns with
+     | Some ret ->
+       List.iter (extract_object_deps ret.type_) ~f:(fun dep ->
+         if not (String.equal dep obj.name) then deps := Set.add !deps dep)
+     | None -> ());
+    (* Check argument types *)
+    List.iter method_.args ~f:(fun arg ->
+      (* Direct object arguments *)
+      List.iter (extract_object_deps arg.type_) ~f:(fun dep ->
+        if not (String.equal dep obj.name) then deps := Set.add !deps dep);
+      (* Output struct args - check their fields *)
+      match arg.type_, arg.pointer with
+      | Struct name, Some `Mutable ->
+        (match List.find structs ~f:(fun s -> String.equal s.name name) with
+         | Some struct_ ->
+           List.iter struct_.members ~f:(fun member ->
+             List.iter (extract_object_deps member.type_) ~f:(fun dep ->
+               if not (String.equal dep obj.name) then deps := Set.add !deps dep))
+         | None -> ())
+      | _ -> ()));
+  !deps
+;;
+
+(** Topologically sort objects so dependencies come first. Uses Kahn's algorithm. *)
+let sort_objects (structs : Ir.struct_ list) (objects : Ir.object_ list) : Ir.object_ list
+  =
+  (* Build dependency map: object name -> set of objects it depends on *)
+  let dep_map =
+    List.map objects ~f:(fun obj -> obj.name, get_object_dependencies structs obj)
+    |> Map.of_alist_exn (module String)
+  in
+  (* Build reverse dependency map: object name -> set of objects that depend on it *)
+  let rdep_map =
+    let init =
+      List.map objects ~f:(fun obj -> obj.name, Set.empty (module String))
+      |> Map.of_alist_exn (module String)
+    in
+    Map.fold dep_map ~init ~f:(fun ~key:obj ~data:deps acc ->
+      Set.fold deps ~init:acc ~f:(fun acc dep ->
+        Map.update acc dep ~f:(function
+          | None -> Set.singleton (module String) obj
+          | Some s -> Set.add s obj)))
+  in
+  (* Kahn's algorithm for topological sort *)
+  let in_degree =
+    Map.map dep_map ~f:(fun deps ->
+      (* Only count deps that are in our object list *)
+      Set.count deps ~f:(fun d -> Map.mem dep_map d))
+  in
+  let queue =
+    Map.filter in_degree ~f:(fun degree -> degree = 0) |> Map.keys |> Queue.of_list
+  in
+  let in_degree = ref in_degree in
+  let result = ref [] in
+  while not (Queue.is_empty queue) do
+    let obj_name = Queue.dequeue_exn queue in
+    result := obj_name :: !result;
+    (* Decrease in-degree of dependents *)
+    let dependents =
+      Map.find rdep_map obj_name |> Option.value ~default:(Set.empty (module String))
+    in
+    Set.iter dependents ~f:(fun dependent ->
+      in_degree
+      := Map.update !in_degree dependent ~f:(function
+           | None -> 0
+           | Some d -> d - 1);
+      if Map.find_exn !in_degree dependent = 0 then Queue.enqueue queue dependent)
+  done;
+  (* Return objects in sorted order *)
   let order_map =
-    List.mapi object_order ~f:(fun i name -> name, i) |> Map.of_alist_exn (module String)
+    List.rev !result
+    |> List.mapi ~f:(fun i name -> name, i)
+    |> Map.of_alist_exn (module String)
   in
   List.sort objects ~compare:(fun a b ->
     let a_order = Map.find order_map a.name |> Option.value ~default:999 in
@@ -1248,7 +1313,7 @@ let gen_ml (api : Ir.api) : string =
   in
   let objects =
     regular_objects
-    |> sort_objects
+    |> sort_objects api.structs
     |> List.map ~f:(gen_ml_object api.structs)
     |> String.concat ~sep:"\n"
   in
@@ -1522,7 +1587,7 @@ let gen_mli (api : Ir.api) : string =
   in
   let objects =
     regular_objects
-    |> sort_objects
+    |> sort_objects api.structs
     |> List.map ~f:(gen_mli_object api.structs)
     |> String.concat ~sep:"\n"
   in
