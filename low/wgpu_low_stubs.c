@@ -7872,7 +7872,13 @@ CAMLprim value caml_wgpu_device_get_adapter_info(value self) {
   CAMLreturn(Val_unit);
 }
 
-/* Manually implemented: device.get_queue */
+CAMLprim value caml_wgpu_device_get_queue(value self) {
+  CAMLparam1(self);
+  WGPUDevice c_self = (WGPUDevice)Nativeint_val(self);
+
+  WGPUQueue result = wgpuDeviceGetQueue(c_self);
+  CAMLreturn(caml_copy_nativeint((intnat)result));
+}
 
 CAMLprim value caml_wgpu_device_push_error_scope(value self, value filter) {
   CAMLparam2(self, filter);
@@ -8737,14 +8743,6 @@ CAMLprim value caml_wgpu_adapter_request_device_sync(value adapter_val) {
   wgpuAdapterRequestDevice(adapter, NULL, callback_info);
 
   CAMLreturn(caml_copy_nativeint((intnat)device));
-}
-
-/* Get device queue */
-CAMLprim value caml_wgpu_device_get_queue(value device_val) {
-  CAMLparam1(device_val);
-  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
-  WGPUQueue queue = wgpuDeviceGetQueue(device);
-  CAMLreturn(caml_copy_nativeint((intnat)queue));
 }
 
 /* Get adapter info */

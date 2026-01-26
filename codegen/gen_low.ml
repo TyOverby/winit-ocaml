@@ -260,8 +260,8 @@ CAMLprim value caml_wgpu_%s_free(value handle) {
     c_name
 ;;
 
-(** Compute the count field name for an array field.
-    e.g., "entries" -> "entryCount", "bind_group_layouts" -> "bindGroupLayoutCount" *)
+(** Compute the count field name for an array field. e.g., "entries" -> "entryCount",
+    "bind_group_layouts" -> "bindGroupLayoutCount" *)
 let array_count_field_name (array_field : string) : string =
   let camel = to_camel_case array_field in
   (* Remove trailing 's' to get singular, then add 'Count' *)
@@ -341,8 +341,7 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
           "  for (size_t i = 0; i < count; i++) {\n\
           \    arr[i] = Int_val(Field(val, i));\n\
           \  }"
-        | _ ->
-          sprintf "  /* TODO: copy %s elements */" elem_c_type
+        | _ -> sprintf "  /* TODO: copy %s elements */" elem_c_type
       in
       sprintf
         "  size_t count = Wosize_val(val);\n\
@@ -392,8 +391,7 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
              "  for (size_t i = 0; i < count; i++) {\n\
              \    arr[i] = Int_val(Field(val, i));\n\
              \  }"
-           | _ ->
-             sprintf "  /* TODO: copy %s elements */" elem_c_type
+           | _ -> sprintf "  /* TODO: copy %s elements */" elem_c_type
          in
          sprintf
            "  size_t count = Wosize_val(val);\n\
@@ -523,8 +521,7 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
            | Enum _ | Bitflag _ -> "int array"
            | Primitive (Uint32 | Int32) -> "int array"
            | _ -> "nativeint array")
-        | Object _ | Struct _ | Callback _ | Optional _ | Pointer _ ->
-          "nativeint"
+        | Object _ | Struct _ | Callback _ | Optional _ | Pointer _ -> "nativeint"
       in
       sprintf
         "external %s_set_%s : nativeint -> %s -> unit = \"caml_wgpu_%s_set_%s\""
@@ -593,8 +590,7 @@ let gen_mli_struct (struct_ : Ir.struct_) : string =
            | Enum _ | Bitflag _ -> "int array"
            | Primitive (Uint32 | Int32) -> "int array"
            | _ -> "nativeint array")
-        | Object _ | Struct _ | Callback _ | Optional _ | Pointer _ ->
-          "nativeint"
+        | Object _ | Struct _ | Callback _ | Optional _ | Pointer _ -> "nativeint"
       in
       sprintf "  val %s_set_%s : t -> %s -> unit" type_name member.name ml_type)
     |> String.concat ~sep:"\n"
@@ -638,7 +634,7 @@ let method_is_async (method_ : Ir.method_) : bool = Option.is_some method_.callb
 let method_is_manual (obj_name : string) (method_name : string) : bool =
   match obj_name, method_name with
   | "adapter", "get_info" -> true
-  | "device", "get_queue" -> true
+  (* device.get_queue is now auto-generated *)
   | _ -> false
 ;;
 
@@ -1122,14 +1118,6 @@ CAMLprim value caml_wgpu_adapter_request_device_sync(value adapter_val) {
   wgpuAdapterRequestDevice(adapter, NULL, callback_info);
 
   CAMLreturn(caml_copy_nativeint((intnat)device));
-}
-
-/* Get device queue */
-CAMLprim value caml_wgpu_device_get_queue(value device_val) {
-  CAMLparam1(device_val);
-  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
-  WGPUQueue queue = wgpuDeviceGetQueue(device);
-  CAMLreturn(caml_copy_nativeint((intnat)queue));
 }
 
 /* Get adapter info */
@@ -1716,8 +1704,6 @@ external instance_request_adapter_sync : instance -> adapter
 external adapter_request_device_sync : adapter -> device
   = "caml_wgpu_adapter_request_device_sync"
 
-external device_get_queue : device -> queue = "caml_wgpu_device_get_queue"
-
 type adapter_info =
   { vendor : string
   ; architecture : string
@@ -1832,8 +1818,6 @@ let gen_mli (api : Ir.api) : string =
 val instance_request_adapter_sync : instance -> adapter
 
 val adapter_request_device_sync : adapter -> device
-
-val device_get_queue : device -> queue
 
 type adapter_info =
   { vendor : string

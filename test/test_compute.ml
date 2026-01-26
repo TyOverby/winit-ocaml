@@ -463,15 +463,25 @@ fn fs_main() -> @location(0) vec4<f32> {
 }
 |}
   in
-  let shader = Wgpu_low.device_create_shader_module_wgsl device "triangle_shader" shader_code in
+  let shader =
+    Wgpu_low.device_create_shader_module_wgsl device "triangle_shader" shader_code
+  in
   print_endline "Shader module created.";
   (* Create render target texture *)
   let width = 64 in
   let height = 64 in
-  let texture_format = 18 in (* RGBA8Unorm *)
-  let texture_usage = 0x11 in (* RenderAttachment | CopySrc *)
+  let texture_format = 18 in
+  (* RGBA8Unorm *)
+  let texture_usage = 0x11 in
+  (* RenderAttachment | CopySrc *)
   let texture =
-    Wgpu_low.device_create_texture_2d device "render_target" width height texture_format texture_usage
+    Wgpu_low.device_create_texture_2d
+      device
+      "render_target"
+      width
+      height
+      texture_format
+      texture_usage
   in
   print_endline "Render target texture created.";
   let texture_view = Wgpu_low.texture_create_view_simple texture "render_target_view" in
@@ -493,8 +503,11 @@ fn fs_main() -> @location(0) vec4<f32> {
   let buffer_size = bytes_per_row * height in
   let readback_desc = Wgpu_low.Buffer_Descriptor.buffer_descriptor_create () in
   Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_label readback_desc "readback_buffer";
-  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_size readback_desc (Int64.of_int buffer_size);
-  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_usage readback_desc 0x09; (* MapRead | CopyDst *)
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_size
+    readback_desc
+    (Int64.of_int buffer_size);
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_usage readback_desc 0x09;
+  (* MapRead | CopyDst *)
   Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_mapped_at_creation readback_desc false;
   let readback_buffer = Wgpu_low.device_create_buffer device readback_desc in
   print_endline "Readback buffer created.";
@@ -532,10 +545,15 @@ fn fs_main() -> @location(0) vec4<f32> {
   print_endline "Commands submitted.";
   (* Wait and read back *)
   Wgpu_low.device_poll device true;
-  let _status = Wgpu_low.buffer_map_sync readback_buffer 1 0L (Int64.of_int buffer_size) in
+  let _status =
+    Wgpu_low.buffer_map_sync readback_buffer 1 0L (Int64.of_int buffer_size)
+  in
   Wgpu_low.device_poll device true;
   let mapped_data =
-    Wgpu_low.buffer_get_const_mapped_range_bigarray readback_buffer 0L (Int64.of_int buffer_size)
+    Wgpu_low.buffer_get_const_mapped_range_bigarray
+      readback_buffer
+      0L
+      (Int64.of_int buffer_size)
   in
   print_endline "Buffer mapped for reading.";
   (* Check center pixel - should be green (triangle covers center) *)
@@ -559,7 +577,8 @@ fn fs_main() -> @location(0) vec4<f32> {
   let corner_is_blue = br = 0 && bg = 0 && bb = 255 && ba = 255 in
   if center_is_green && corner_is_blue
   then print_endline "SUCCESS: Triangle rendered correctly!"
-  else print_endline "Note: Triangle rendered (check output image for visual verification)";
+  else
+    print_endline "Note: Triangle rendered (check output image for visual verification)";
   (* Write output *)
   let ppm_file = "render_triangle.ppm" in
   let png_file = "render_triangle.png" in
@@ -603,13 +622,15 @@ let test_bind_group_with_generated_api () =
   let buffer = Wgpu_low.device_create_buffer device buffer_desc in
   print_endline "Buffer created.";
   (* Create buffer binding layout using generated API *)
-  let buffer_binding =
-    Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_create ()
-  in
+  let buffer_binding = Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_create () in
   (* type = Storage = 3 *)
   Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_set_type buffer_binding 3;
-  Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_set_has_dynamic_offset buffer_binding false;
-  Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_set_min_binding_size buffer_binding 0L;
+  Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_set_has_dynamic_offset
+    buffer_binding
+    false;
+  Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_set_min_binding_size
+    buffer_binding
+    0L;
   print_endline "Buffer binding layout created.";
   (* Create bind group layout entry using generated API *)
   let layout_entry = Wgpu_low.Bind_Group_Layout_Entry.bind_group_layout_entry_create () in
@@ -617,7 +638,9 @@ let test_bind_group_with_generated_api () =
   (* visibility = Compute = 0x4 *)
   Wgpu_low.Bind_Group_Layout_Entry.bind_group_layout_entry_set_visibility layout_entry 0x4;
   (* Set the buffer binding layout (embedded struct copy) *)
-  Wgpu_low.Bind_Group_Layout_Entry.bind_group_layout_entry_set_buffer layout_entry buffer_binding;
+  Wgpu_low.Bind_Group_Layout_Entry.bind_group_layout_entry_set_buffer
+    layout_entry
+    buffer_binding;
   print_endline "Layout entry created with buffer binding.";
   (* Create bind group layout descriptor using generated API *)
   let layout_desc =
@@ -643,9 +666,13 @@ let test_bind_group_with_generated_api () =
   print_endline "Bind group entry created.";
   (* Create bind group descriptor *)
   let bind_group_desc = Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_create () in
-  Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_set_label bind_group_desc "test_bind_group";
+  Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_set_label
+    bind_group_desc
+    "test_bind_group";
   Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_set_layout bind_group_desc layout;
-  Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_set_entries bind_group_desc [| entry |];
+  Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_set_entries
+    bind_group_desc
+    [| entry |];
   print_endline "Bind group descriptor with entries array set.";
   (* Create the bind group *)
   let bind_group = Wgpu_low.device_create_bind_group device bind_group_desc in

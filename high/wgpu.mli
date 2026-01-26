@@ -3,10 +3,10 @@
 module Adapter_Type : sig
   (** TODO *)
   type t =
-  | Discrete_gpu
-  | Integrated_gpu
-  | Cpu
-  | Unknown
+    | Discrete_gpu
+    | Integrated_gpu
+    | Cpu
+    | Unknown
 
   val to_int : t -> int
 end
@@ -14,10 +14,10 @@ end
 module Address_Mode : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Clamp_to_edge
-  | Repeat
-  | Mirror_repeat
+    | Undefined
+    | Clamp_to_edge
+    | Repeat
+    | Mirror_repeat
 
   val to_int : t -> int
 end
@@ -25,15 +25,15 @@ end
 module Backend_Type : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Null
-  | Webgpu
-  | D3d11
-  | D3d12
-  | Metal
-  | Vulkan
-  | Opengl
-  | Opengles
+    | Undefined
+    | Null
+    | Webgpu
+    | D3d11
+    | D3d12
+    | Metal
+    | Vulkan
+    | Opengl
+    | Opengles
 
   val to_int : t -> int
 end
@@ -41,24 +41,24 @@ end
 module Blend_Factor : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Zero
-  | One
-  | Src
-  | One_minus_src
-  | Src_alpha
-  | One_minus_src_alpha
-  | Dst
-  | One_minus_dst
-  | Dst_alpha
-  | One_minus_dst_alpha
-  | Src_alpha_saturated
-  | Constant
-  | One_minus_constant
-  | Src1
-  | One_minus_src1
-  | Src1_alpha
-  | One_minus_src1_alpha
+    | Undefined
+    | Zero
+    | One
+    | Src
+    | One_minus_src
+    | Src_alpha
+    | One_minus_src_alpha
+    | Dst
+    | One_minus_dst
+    | Dst_alpha
+    | One_minus_dst_alpha
+    | Src_alpha_saturated
+    | Constant
+    | One_minus_constant
+    | Src1
+    | One_minus_src1
+    | Src1_alpha
+    | One_minus_src1_alpha
 
   val to_int : t -> int
 end
@@ -66,12 +66,12 @@ end
 module Blend_Operation : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Add
-  | Subtract
-  | Reverse_subtract
-  | Min
-  | Max
+    | Undefined
+    | Add
+    | Subtract
+    | Reverse_subtract
+    | Min
+    | Max
 
   val to_int : t -> int
 end
@@ -79,11 +79,11 @@ end
 module Buffer_Binding_Type : sig
   (** TODO *)
   type t =
-  | Binding_not_used
-  | Undefined
-  | Uniform
-  | Storage
-  | Read_only_storage
+    | Binding_not_used
+    | Undefined
+    | Uniform
+    | Storage
+    | Read_only_storage
 
   val to_int : t -> int
 end
@@ -91,19 +91,20 @@ end
 module Buffer_Map_State : sig
   (** TODO *)
   type t =
-  | Unmapped
-  | Pending
-  | Mapped
+    | Unmapped
+    | Pending
+    | Mapped
 
   val to_int : t -> int
 end
 
 module Callback_Mode : sig
-  (** The callback mode controls how a callback for an asynchronous operation may be fired. See @ref Asynchronous-Operations for how these are used. *)
+  (** The callback mode controls how a callback for an asynchronous operation may be
+      fired. See \@ref Asynchronous-Operations for how these are used. *)
   type t =
-  | Wait_any_only
-  | Allow_process_events
-  | Allow_spontaneous
+    | Wait_any_only
+    | Allow_process_events
+    | Allow_spontaneous
 
   val to_int : t -> int
 end
@@ -111,15 +112,15 @@ end
 module Compare_Function : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Never
-  | Less
-  | Equal
-  | Less_equal
-  | Greater
-  | Not_equal
-  | Greater_equal
-  | Always
+    | Undefined
+    | Never
+    | Less
+    | Equal
+    | Less_equal
+    | Greater
+    | Not_equal
+    | Greater_equal
+    | Always
 
   val to_int : t -> int
 end
@@ -127,10 +128,10 @@ end
 module Compilation_Info_Request_Status : sig
   (** TODO *)
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
   val to_int : t -> int
 end
@@ -138,21 +139,22 @@ end
 module Compilation_Message_Type : sig
   (** TODO *)
   type t =
-  | Error
-  | Warning
-  | Info
+    | Error
+    | Warning
+    | Info
 
   val to_int : t -> int
 end
 
 module Composite_Alpha_Mode : sig
-  (** Describes how frames are composited with other contents on the screen when `::wgpuSurfacePresent` is called. *)
+  (** Describes how frames are composited with other contents on the screen when
+      `::wgpuSurfacePresent` is called. *)
   type t =
-  | Auto
-  | Opaque
-  | Premultiplied
-  | Unpremultiplied
-  | Inherit
+    | Auto
+    | Opaque
+    | Premultiplied
+    | Unpremultiplied
+    | Inherit
 
   val to_int : t -> int
 end
@@ -160,11 +162,11 @@ end
 module Create_Pipeline_Async_Status : sig
   (** TODO *)
   type t =
-  | Success
-  | Instance_dropped
-  | Validation_error
-  | Internal_error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Validation_error
+    | Internal_error
+    | Unknown
 
   val to_int : t -> int
 end
@@ -172,10 +174,10 @@ end
 module Cull_Mode : sig
   (** TODO *)
   type t =
-  | Undefined
-  | None
-  | Front
-  | Back
+    | Undefined
+    | None
+    | Front
+    | Back
 
   val to_int : t -> int
 end
@@ -183,10 +185,10 @@ end
 module Device_Lost_Reason : sig
   (** TODO *)
   type t =
-  | Unknown
-  | Destroyed
-  | Instance_dropped
-  | Failed_creation
+    | Unknown
+    | Destroyed
+    | Instance_dropped
+    | Failed_creation
 
   val to_int : t -> int
 end
@@ -194,9 +196,9 @@ end
 module Error_Filter : sig
   (** TODO *)
   type t =
-  | Validation
-  | Out_of_memory
-  | Internal
+    | Validation
+    | Out_of_memory
+    | Internal
 
   val to_int : t -> int
 end
@@ -204,20 +206,20 @@ end
 module Error_Type : sig
   (** TODO *)
   type t =
-  | No_error
-  | Validation
-  | Out_of_memory
-  | Internal
-  | Unknown
+    | No_error
+    | Validation
+    | Out_of_memory
+    | Internal
+    | Unknown
 
   val to_int : t -> int
 end
 
 module Feature_Level : sig
-  (** See @ref WGPURequestAdapterOptions::featureLevel. *)
+  (** See \@ref WGPURequestAdapterOptions::featureLevel. *)
   type t =
-  | Compatibility
-  | Core
+    | Compatibility
+    | Core
 
   val to_int : t -> int
 end
@@ -225,23 +227,23 @@ end
 module Feature_Name : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Depth_clip_control
-  | Depth32_float_stencil8
-  | Timestamp_query
-  | Texture_compression_bc
-  | Texture_compression_bc_sliced_3d
-  | Texture_compression_etc2
-  | Texture_compression_astc
-  | Texture_compression_astc_sliced_3d
-  | Indirect_first_instance
-  | Shader_f16
-  | Rg11b10_ufloat_renderable
-  | Bgra8_unorm_storage
-  | Float32_filterable
-  | Float32_blendable
-  | Clip_distances
-  | Dual_source_blending
+    | Undefined
+    | Depth_clip_control
+    | Depth32_float_stencil8
+    | Timestamp_query
+    | Texture_compression_bc
+    | Texture_compression_bc_sliced_3d
+    | Texture_compression_etc2
+    | Texture_compression_astc
+    | Texture_compression_astc_sliced_3d
+    | Indirect_first_instance
+    | Shader_f16
+    | Rg11b10_ufloat_renderable
+    | Bgra8_unorm_storage
+    | Float32_filterable
+    | Float32_blendable
+    | Clip_distances
+    | Dual_source_blending
 
   val to_int : t -> int
 end
@@ -249,9 +251,9 @@ end
 module Filter_Mode : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Nearest
-  | Linear
+    | Undefined
+    | Nearest
+    | Linear
 
   val to_int : t -> int
 end
@@ -259,9 +261,9 @@ end
 module Front_Face : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Ccw
-  | Cw
+    | Undefined
+    | Ccw
+    | Cw
 
   val to_int : t -> int
 end
@@ -269,9 +271,9 @@ end
 module Index_Format : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Uint16
-  | Uint32
+    | Undefined
+    | Uint16
+    | Uint32
 
   val to_int : t -> int
 end
@@ -279,9 +281,9 @@ end
 module Load_Op : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Load
-  | Clear
+    | Undefined
+    | Load
+    | Clear
 
   val to_int : t -> int
 end
@@ -289,11 +291,11 @@ end
 module Map_Async_Status : sig
   (** TODO *)
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Aborted
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Aborted
+    | Unknown
 
   val to_int : t -> int
 end
@@ -301,9 +303,9 @@ end
 module Mipmap_Filter_Mode : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Nearest
-  | Linear
+    | Undefined
+    | Nearest
+    | Linear
 
   val to_int : t -> int
 end
@@ -311,9 +313,9 @@ end
 module Optional_Bool : sig
   (** TODO *)
   type t =
-  | False
-  | True
-  | Undefined
+    | False
+    | True
+    | Undefined
 
   val to_int : t -> int
 end
@@ -321,9 +323,9 @@ end
 module Pop_Error_Scope_Status : sig
   (** TODO *)
   type t =
-  | Success
-  | Instance_dropped
-  | Empty_stack
+    | Success
+    | Instance_dropped
+    | Empty_stack
 
   val to_int : t -> int
 end
@@ -331,21 +333,22 @@ end
 module Power_Preference : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Low_power
-  | High_performance
+    | Undefined
+    | Low_power
+    | High_performance
 
   val to_int : t -> int
 end
 
 module Present_Mode : sig
-  (** Describes when and in which order frames are presented on the screen when `::wgpuSurfacePresent` is called. *)
+  (** Describes when and in which order frames are presented on the screen when
+      `::wgpuSurfacePresent` is called. *)
   type t =
-  | Undefined
-  | Fifo
-  | Fifo_relaxed
-  | Immediate
-  | Mailbox
+    | Undefined
+    | Fifo
+    | Fifo_relaxed
+    | Immediate
+    | Mailbox
 
   val to_int : t -> int
 end
@@ -353,12 +356,12 @@ end
 module Primitive_Topology : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Point_list
-  | Line_list
-  | Line_strip
-  | Triangle_list
-  | Triangle_strip
+    | Undefined
+    | Point_list
+    | Line_list
+    | Line_strip
+    | Triangle_list
+    | Triangle_strip
 
   val to_int : t -> int
 end
@@ -366,8 +369,8 @@ end
 module Query_Type : sig
   (** TODO *)
   type t =
-  | Occlusion
-  | Timestamp
+    | Occlusion
+    | Timestamp
 
   val to_int : t -> int
 end
@@ -375,10 +378,10 @@ end
 module Queue_Work_Done_Status : sig
   (** TODO *)
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
   val to_int : t -> int
 end
@@ -386,11 +389,11 @@ end
 module Request_Adapter_Status : sig
   (** TODO *)
   type t =
-  | Success
-  | Instance_dropped
-  | Unavailable
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Unavailable
+    | Error
+    | Unknown
 
   val to_int : t -> int
 end
@@ -398,10 +401,10 @@ end
 module Request_Device_Status : sig
   (** TODO *)
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
   val to_int : t -> int
 end
@@ -409,15 +412,15 @@ end
 module S_Type : sig
   (** TODO *)
   type t =
-  | Shader_source_spirv
-  | Shader_source_wgsl
-  | Render_pass_max_draw_count
-  | Surface_source_metal_layer
-  | Surface_source_windows_hwnd
-  | Surface_source_xlib_window
-  | Surface_source_wayland_surface
-  | Surface_source_android_native_window
-  | Surface_source_xcb_window
+    | Shader_source_spirv
+    | Shader_source_wgsl
+    | Render_pass_max_draw_count
+    | Surface_source_metal_layer
+    | Surface_source_windows_hwnd
+    | Surface_source_xlib_window
+    | Surface_source_wayland_surface
+    | Surface_source_android_native_window
+    | Surface_source_xcb_window
 
   val to_int : t -> int
 end
@@ -425,22 +428,22 @@ end
 module Sampler_Binding_Type : sig
   (** TODO *)
   type t =
-  | Binding_not_used
-  | Undefined
-  | Filtering
-  | Non_filtering
-  | Comparison
+    | Binding_not_used
+    | Undefined
+    | Filtering
+    | Non_filtering
+    | Comparison
 
   val to_int : t -> int
 end
 
 module Status : sig
-  (** Status code returned (synchronously) from many operations. Generally
-indicates an invalid input like an unknown enum value or @ref OutStructChainError.
-Read the function's documentation for specific error conditions. *)
+  (** Status code returned (synchronously) from many operations. Generally indicates an
+      invalid input like an unknown enum value or \@ref OutStructChainError. Read the
+      function's documentation for specific error conditions. *)
   type t =
-  | Success
-  | Error
+    | Success
+    | Error
 
   val to_int : t -> int
 end
@@ -448,15 +451,15 @@ end
 module Stencil_Operation : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Keep
-  | Zero
-  | Replace
-  | Invert
-  | Increment_clamp
-  | Decrement_clamp
-  | Increment_wrap
-  | Decrement_wrap
+    | Undefined
+    | Keep
+    | Zero
+    | Replace
+    | Invert
+    | Increment_clamp
+    | Decrement_clamp
+    | Increment_wrap
+    | Decrement_wrap
 
   val to_int : t -> int
 end
@@ -464,11 +467,11 @@ end
 module Storage_Texture_Access : sig
   (** TODO *)
   type t =
-  | Binding_not_used
-  | Undefined
-  | Write_only
-  | Read_only
-  | Read_write
+    | Binding_not_used
+    | Undefined
+    | Write_only
+    | Read_only
+    | Read_write
 
   val to_int : t -> int
 end
@@ -476,9 +479,9 @@ end
 module Store_Op : sig
   (** TODO *)
   type t =
-  | Undefined
-  | Store
-  | Discard
+    | Undefined
+    | Store
+    | Discard
 
   val to_int : t -> int
 end
@@ -486,14 +489,14 @@ end
 module Surface_Get_Current_Texture_Status : sig
   (** The status enum for `::wgpuSurfaceGetCurrentTexture`. *)
   type t =
-  | Success_optimal
-  | Success_suboptimal
-  | Timeout
-  | Outdated
-  | Lost
-  | Out_of_memory
-  | Device_lost
-  | Error
+    | Success_optimal
+    | Success_suboptimal
+    | Timeout
+    | Outdated
+    | Lost
+    | Out_of_memory
+    | Device_lost
+    | Error
 
   val to_int : t -> int
 end
@@ -501,10 +504,10 @@ end
 module Texture_Aspect : sig
   (** TODO *)
   type t =
-  | Undefined
-  | All
-  | Stencil_only
-  | Depth_only
+    | Undefined
+    | All
+    | Stencil_only
+    | Depth_only
 
   val to_int : t -> int
 end
@@ -512,10 +515,10 @@ end
 module Texture_Dimension : sig
   (** TODO *)
   type t =
-  | Undefined
-  | N1d
-  | N2d
-  | N3d
+    | Undefined
+    | N1d
+    | N2d
+    | N3d
 
   val to_int : t -> int
 end
@@ -523,102 +526,102 @@ end
 module Texture_Format : sig
   (** TODO *)
   type t =
-  | Undefined
-  | R8_unorm
-  | R8_snorm
-  | R8_uint
-  | R8_sint
-  | R16_uint
-  | R16_sint
-  | R16_float
-  | Rg8_unorm
-  | Rg8_snorm
-  | Rg8_uint
-  | Rg8_sint
-  | R32_float
-  | R32_uint
-  | R32_sint
-  | Rg16_uint
-  | Rg16_sint
-  | Rg16_float
-  | Rgba8_unorm
-  | Rgba8_unorm_srgb
-  | Rgba8_snorm
-  | Rgba8_uint
-  | Rgba8_sint
-  | Bgra8_unorm
-  | Bgra8_unorm_srgb
-  | Rgb10_a2_uint
-  | Rgb10_a2_unorm
-  | Rg11_b10_ufloat
-  | Rgb9_e5_ufloat
-  | Rg32_float
-  | Rg32_uint
-  | Rg32_sint
-  | Rgba16_uint
-  | Rgba16_sint
-  | Rgba16_float
-  | Rgba32_float
-  | Rgba32_uint
-  | Rgba32_sint
-  | Stencil8
-  | Depth16_unorm
-  | Depth24_plus
-  | Depth24_plus_stencil8
-  | Depth32_float
-  | Depth32_float_stencil8
-  | Bc1_rgba_unorm
-  | Bc1_rgba_unorm_srgb
-  | Bc2_rgba_unorm
-  | Bc2_rgba_unorm_srgb
-  | Bc3_rgba_unorm
-  | Bc3_rgba_unorm_srgb
-  | Bc4_r_unorm
-  | Bc4_r_snorm
-  | Bc5_rg_unorm
-  | Bc5_rg_snorm
-  | Bc6h_rgb_ufloat
-  | Bc6h_rgb_float
-  | Bc7_rgba_unorm
-  | Bc7_rgba_unorm_srgb
-  | Etc2_rgb8_unorm
-  | Etc2_rgb8_unorm_srgb
-  | Etc2_rgb8a1_unorm
-  | Etc2_rgb8a1_unorm_srgb
-  | Etc2_rgba8_unorm
-  | Etc2_rgba8_unorm_srgb
-  | Eac_r11_unorm
-  | Eac_r11_snorm
-  | Eac_rg11_unorm
-  | Eac_rg11_snorm
-  | Astc_4x4_unorm
-  | Astc_4x4_unorm_srgb
-  | Astc_5x4_unorm
-  | Astc_5x4_unorm_srgb
-  | Astc_5x5_unorm
-  | Astc_5x5_unorm_srgb
-  | Astc_6x5_unorm
-  | Astc_6x5_unorm_srgb
-  | Astc_6x6_unorm
-  | Astc_6x6_unorm_srgb
-  | Astc_8x5_unorm
-  | Astc_8x5_unorm_srgb
-  | Astc_8x6_unorm
-  | Astc_8x6_unorm_srgb
-  | Astc_8x8_unorm
-  | Astc_8x8_unorm_srgb
-  | Astc_10x5_unorm
-  | Astc_10x5_unorm_srgb
-  | Astc_10x6_unorm
-  | Astc_10x6_unorm_srgb
-  | Astc_10x8_unorm
-  | Astc_10x8_unorm_srgb
-  | Astc_10x10_unorm
-  | Astc_10x10_unorm_srgb
-  | Astc_12x10_unorm
-  | Astc_12x10_unorm_srgb
-  | Astc_12x12_unorm
-  | Astc_12x12_unorm_srgb
+    | Undefined
+    | R8_unorm
+    | R8_snorm
+    | R8_uint
+    | R8_sint
+    | R16_uint
+    | R16_sint
+    | R16_float
+    | Rg8_unorm
+    | Rg8_snorm
+    | Rg8_uint
+    | Rg8_sint
+    | R32_float
+    | R32_uint
+    | R32_sint
+    | Rg16_uint
+    | Rg16_sint
+    | Rg16_float
+    | Rgba8_unorm
+    | Rgba8_unorm_srgb
+    | Rgba8_snorm
+    | Rgba8_uint
+    | Rgba8_sint
+    | Bgra8_unorm
+    | Bgra8_unorm_srgb
+    | Rgb10_a2_uint
+    | Rgb10_a2_unorm
+    | Rg11_b10_ufloat
+    | Rgb9_e5_ufloat
+    | Rg32_float
+    | Rg32_uint
+    | Rg32_sint
+    | Rgba16_uint
+    | Rgba16_sint
+    | Rgba16_float
+    | Rgba32_float
+    | Rgba32_uint
+    | Rgba32_sint
+    | Stencil8
+    | Depth16_unorm
+    | Depth24_plus
+    | Depth24_plus_stencil8
+    | Depth32_float
+    | Depth32_float_stencil8
+    | Bc1_rgba_unorm
+    | Bc1_rgba_unorm_srgb
+    | Bc2_rgba_unorm
+    | Bc2_rgba_unorm_srgb
+    | Bc3_rgba_unorm
+    | Bc3_rgba_unorm_srgb
+    | Bc4_r_unorm
+    | Bc4_r_snorm
+    | Bc5_rg_unorm
+    | Bc5_rg_snorm
+    | Bc6h_rgb_ufloat
+    | Bc6h_rgb_float
+    | Bc7_rgba_unorm
+    | Bc7_rgba_unorm_srgb
+    | Etc2_rgb8_unorm
+    | Etc2_rgb8_unorm_srgb
+    | Etc2_rgb8a1_unorm
+    | Etc2_rgb8a1_unorm_srgb
+    | Etc2_rgba8_unorm
+    | Etc2_rgba8_unorm_srgb
+    | Eac_r11_unorm
+    | Eac_r11_snorm
+    | Eac_rg11_unorm
+    | Eac_rg11_snorm
+    | Astc_4x4_unorm
+    | Astc_4x4_unorm_srgb
+    | Astc_5x4_unorm
+    | Astc_5x4_unorm_srgb
+    | Astc_5x5_unorm
+    | Astc_5x5_unorm_srgb
+    | Astc_6x5_unorm
+    | Astc_6x5_unorm_srgb
+    | Astc_6x6_unorm
+    | Astc_6x6_unorm_srgb
+    | Astc_8x5_unorm
+    | Astc_8x5_unorm_srgb
+    | Astc_8x6_unorm
+    | Astc_8x6_unorm_srgb
+    | Astc_8x8_unorm
+    | Astc_8x8_unorm_srgb
+    | Astc_10x5_unorm
+    | Astc_10x5_unorm_srgb
+    | Astc_10x6_unorm
+    | Astc_10x6_unorm_srgb
+    | Astc_10x8_unorm
+    | Astc_10x8_unorm_srgb
+    | Astc_10x10_unorm
+    | Astc_10x10_unorm_srgb
+    | Astc_12x10_unorm
+    | Astc_12x10_unorm_srgb
+    | Astc_12x12_unorm
+    | Astc_12x12_unorm_srgb
 
   val to_int : t -> int
 end
@@ -626,13 +629,13 @@ end
 module Texture_Sample_Type : sig
   (** TODO *)
   type t =
-  | Binding_not_used
-  | Undefined
-  | Float
-  | Unfilterable_float
-  | Depth
-  | Sint
-  | Uint
+    | Binding_not_used
+    | Undefined
+    | Float
+    | Unfilterable_float
+    | Depth
+    | Sint
+    | Uint
 
   val to_int : t -> int
 end
@@ -640,13 +643,13 @@ end
 module Texture_View_Dimension : sig
   (** TODO *)
   type t =
-  | Undefined
-  | N1d
-  | N2d
-  | N2d_array
-  | Cube
-  | Cube_array
-  | N3d
+    | Undefined
+    | N1d
+    | N2d
+    | N2d_array
+    | Cube
+    | Cube_array
+    | N3d
 
   val to_int : t -> int
 end
@@ -654,47 +657,47 @@ end
 module Vertex_Format : sig
   (** TODO *)
   type t =
-  | Uint8
-  | Uint8x2
-  | Uint8x4
-  | Sint8
-  | Sint8x2
-  | Sint8x4
-  | Unorm8
-  | Unorm8x2
-  | Unorm8x4
-  | Snorm8
-  | Snorm8x2
-  | Snorm8x4
-  | Uint16
-  | Uint16x2
-  | Uint16x4
-  | Sint16
-  | Sint16x2
-  | Sint16x4
-  | Unorm16
-  | Unorm16x2
-  | Unorm16x4
-  | Snorm16
-  | Snorm16x2
-  | Snorm16x4
-  | Float16
-  | Float16x2
-  | Float16x4
-  | Float32
-  | Float32x2
-  | Float32x3
-  | Float32x4
-  | Uint32
-  | Uint32x2
-  | Uint32x3
-  | Uint32x4
-  | Sint32
-  | Sint32x2
-  | Sint32x3
-  | Sint32x4
-  | Unorm10__10__10__2
-  | Unorm8x4_b_g_r_a
+    | Uint8
+    | Uint8x2
+    | Uint8x4
+    | Sint8
+    | Sint8x2
+    | Sint8x4
+    | Unorm8
+    | Unorm8x2
+    | Unorm8x4
+    | Snorm8
+    | Snorm8x2
+    | Snorm8x4
+    | Uint16
+    | Uint16x2
+    | Uint16x4
+    | Sint16
+    | Sint16x2
+    | Sint16x4
+    | Unorm16
+    | Unorm16x2
+    | Unorm16x4
+    | Snorm16
+    | Snorm16x2
+    | Snorm16x4
+    | Float16
+    | Float16x2
+    | Float16x4
+    | Float32
+    | Float32x2
+    | Float32x3
+    | Float32x4
+    | Uint32
+    | Uint32x2
+    | Uint32x3
+    | Uint32x4
+    | Sint32
+    | Sint32x2
+    | Sint32x3
+    | Sint32x4
+    | Unorm10__10__10__2
+    | Unorm8x4_b_g_r_a
 
   val to_int : t -> int
 end
@@ -702,10 +705,10 @@ end
 module Vertex_Step_Mode : sig
   (** TODO *)
   type t =
-  | Vertex_buffer_not_used
-  | Undefined
-  | Vertex
-  | Instance
+    | Vertex_buffer_not_used
+    | Undefined
+    | Vertex
+    | Instance
 
   val to_int : t -> int
 end
@@ -713,11 +716,11 @@ end
 module Wait_Status : sig
   (** Status returned from a call to ::wgpuInstanceWaitAny. *)
   type t =
-  | Success
-  | Timed_out
-  | Unsupported_timeout
-  | Unsupported_count
-  | Unsupported_mixed_sources
+    | Success
+    | Timed_out
+    | Unsupported_timeout
+    | Unsupported_count
+    | Unsupported_mixed_sources
 
   val to_int : t -> int
 end
@@ -725,27 +728,28 @@ end
 module WGSL_Language_Feature_Name : sig
   (** TODO *)
   type t =
-  | Readonly_and_readwrite_storage_textures
-  | Packed4x8_integer_dot_product
-  | Unrestricted_pointer_parameters
-  | Pointer_composite_access
+    | Readonly_and_readwrite_storage_textures
+    | Packed4x8_integer_dot_product
+    | Unrestricted_pointer_parameters
+    | Pointer_composite_access
 
   val to_int : t -> int
 end
+
 module Buffer_Usage : sig
   (** TODO *)
   type t =
-  | None
-  | Map_read
-  | Map_write
-  | Copy_src
-  | Copy_dst
-  | Index
-  | Vertex
-  | Uniform
-  | Storage
-  | Indirect
-  | Query_resolve
+    | None
+    | Map_read
+    | Map_write
+    | Copy_src
+    | Copy_dst
+    | Index
+    | Vertex
+    | Uniform
+    | Storage
+    | Indirect
+    | Query_resolve
 
   val to_int : t -> int
   val list_to_int : t list -> int
@@ -754,12 +758,12 @@ end
 module Color_Write_Mask : sig
   (** TODO *)
   type t =
-  | None
-  | Red
-  | Green
-  | Blue
-  | Alpha
-  | All
+    | None
+    | Red
+    | Green
+    | Blue
+    | Alpha
+    | All
 
   val to_int : t -> int
   val list_to_int : t list -> int
@@ -768,9 +772,9 @@ end
 module Map_Mode : sig
   (** TODO *)
   type t =
-  | None
-  | Read
-  | Write
+    | None
+    | Read
+    | Write
 
   val to_int : t -> int
   val list_to_int : t list -> int
@@ -779,10 +783,10 @@ end
 module Shader_Stage : sig
   (** TODO *)
   type t =
-  | None
-  | Vertex
-  | Fragment
-  | Compute
+    | None
+    | Vertex
+    | Fragment
+    | Compute
 
   val to_int : t -> int
   val list_to_int : t list -> int
@@ -791,16 +795,17 @@ end
 module Texture_Usage : sig
   (** TODO *)
   type t =
-  | None
-  | Copy_src
-  | Copy_dst
-  | Texture_binding
-  | Storage_binding
-  | Render_attachment
+    | None
+    | Copy_src
+    | Copy_dst
+    | Texture_binding
+    | Storage_binding
+    | Render_attachment
 
   val to_int : t -> int
   val list_to_int : t list -> int
 end
+
 module Bind_Group : sig
   (** TODO *)
 
@@ -922,7 +927,8 @@ module Shader_Module : sig
 end
 
 module Surface : sig
-  (** An object used to continuously present image data to the user, see @ref Surfaces for more details. *)
+  (** An object used to continuously present image data to the user, see \@ref Surfaces
+      for more details. *)
 
   type t
 
@@ -944,6 +950,7 @@ module Texture_View : sig
 
   val release : t -> unit
 end
+
 module Adapter_info : sig
   type t =
     { vendor : string
@@ -973,6 +980,7 @@ module Queue : sig
 
   val release : t -> unit
 end
+
 module Instance : sig
   type t
 

@@ -2,63 +2,79 @@
 
 module Adapter_Type = struct
   type t =
-  | Discrete_gpu
-  | Integrated_gpu
-  | Cpu
-  | Unknown
+    | Discrete_gpu
+    | Integrated_gpu
+    | Cpu
+    | Unknown
 
-external adapter_type_discrete_gpu : unit -> int = "caml_wgpu_adapter_type_discrete_gpu"
-external adapter_type_integrated_gpu : unit -> int = "caml_wgpu_adapter_type_integrated_gpu"
-external adapter_type_cpu : unit -> int = "caml_wgpu_adapter_type_cpu"
-external adapter_type_unknown : unit -> int = "caml_wgpu_adapter_type_unknown"
+  external adapter_type_discrete_gpu : unit -> int = "caml_wgpu_adapter_type_discrete_gpu"
+
+  external adapter_type_integrated_gpu
+    :  unit
+    -> int
+    = "caml_wgpu_adapter_type_integrated_gpu"
+
+  external adapter_type_cpu : unit -> int = "caml_wgpu_adapter_type_cpu"
+  external adapter_type_unknown : unit -> int = "caml_wgpu_adapter_type_unknown"
 
   let to_int = function
     | Discrete_gpu -> adapter_type_discrete_gpu ()
     | Integrated_gpu -> adapter_type_integrated_gpu ()
     | Cpu -> adapter_type_cpu ()
     | Unknown -> adapter_type_unknown ()
+  ;;
 end
 
 module Address_Mode = struct
   type t =
-  | Undefined
-  | Clamp_to_edge
-  | Repeat
-  | Mirror_repeat
+    | Undefined
+    | Clamp_to_edge
+    | Repeat
+    | Mirror_repeat
 
-external address_mode_undefined : unit -> int = "caml_wgpu_address_mode_undefined"
-external address_mode_clamp_to_edge : unit -> int = "caml_wgpu_address_mode_clamp_to_edge"
-external address_mode_repeat : unit -> int = "caml_wgpu_address_mode_repeat"
-external address_mode_mirror_repeat : unit -> int = "caml_wgpu_address_mode_mirror_repeat"
+  external address_mode_undefined : unit -> int = "caml_wgpu_address_mode_undefined"
+
+  external address_mode_clamp_to_edge
+    :  unit
+    -> int
+    = "caml_wgpu_address_mode_clamp_to_edge"
+
+  external address_mode_repeat : unit -> int = "caml_wgpu_address_mode_repeat"
+
+  external address_mode_mirror_repeat
+    :  unit
+    -> int
+    = "caml_wgpu_address_mode_mirror_repeat"
 
   let to_int = function
     | Undefined -> address_mode_undefined ()
     | Clamp_to_edge -> address_mode_clamp_to_edge ()
     | Repeat -> address_mode_repeat ()
     | Mirror_repeat -> address_mode_mirror_repeat ()
+  ;;
 end
 
 module Backend_Type = struct
   type t =
-  | Undefined
-  | Null
-  | Webgpu
-  | D3d11
-  | D3d12
-  | Metal
-  | Vulkan
-  | Opengl
-  | Opengles
+    | Undefined
+    | Null
+    | Webgpu
+    | D3d11
+    | D3d12
+    | Metal
+    | Vulkan
+    | Opengl
+    | Opengles
 
-external backend_type_undefined : unit -> int = "caml_wgpu_backend_type_undefined"
-external backend_type_null : unit -> int = "caml_wgpu_backend_type_null"
-external backend_type_webgpu : unit -> int = "caml_wgpu_backend_type_webgpu"
-external backend_type_d3d11 : unit -> int = "caml_wgpu_backend_type_d3d11"
-external backend_type_d3d12 : unit -> int = "caml_wgpu_backend_type_d3d12"
-external backend_type_metal : unit -> int = "caml_wgpu_backend_type_metal"
-external backend_type_vulkan : unit -> int = "caml_wgpu_backend_type_vulkan"
-external backend_type_opengl : unit -> int = "caml_wgpu_backend_type_opengl"
-external backend_type_opengles : unit -> int = "caml_wgpu_backend_type_opengles"
+  external backend_type_undefined : unit -> int = "caml_wgpu_backend_type_undefined"
+  external backend_type_null : unit -> int = "caml_wgpu_backend_type_null"
+  external backend_type_webgpu : unit -> int = "caml_wgpu_backend_type_webgpu"
+  external backend_type_d3d11 : unit -> int = "caml_wgpu_backend_type_d3d11"
+  external backend_type_d3d12 : unit -> int = "caml_wgpu_backend_type_d3d12"
+  external backend_type_metal : unit -> int = "caml_wgpu_backend_type_metal"
+  external backend_type_vulkan : unit -> int = "caml_wgpu_backend_type_vulkan"
+  external backend_type_opengl : unit -> int = "caml_wgpu_backend_type_opengl"
+  external backend_type_opengles : unit -> int = "caml_wgpu_backend_type_opengles"
 
   let to_int = function
     | Undefined -> backend_type_undefined ()
@@ -70,47 +86,86 @@ external backend_type_opengles : unit -> int = "caml_wgpu_backend_type_opengles"
     | Vulkan -> backend_type_vulkan ()
     | Opengl -> backend_type_opengl ()
     | Opengles -> backend_type_opengles ()
+  ;;
 end
 
 module Blend_Factor = struct
   type t =
-  | Undefined
-  | Zero
-  | One
-  | Src
-  | One_minus_src
-  | Src_alpha
-  | One_minus_src_alpha
-  | Dst
-  | One_minus_dst
-  | Dst_alpha
-  | One_minus_dst_alpha
-  | Src_alpha_saturated
-  | Constant
-  | One_minus_constant
-  | Src1
-  | One_minus_src1
-  | Src1_alpha
-  | One_minus_src1_alpha
+    | Undefined
+    | Zero
+    | One
+    | Src
+    | One_minus_src
+    | Src_alpha
+    | One_minus_src_alpha
+    | Dst
+    | One_minus_dst
+    | Dst_alpha
+    | One_minus_dst_alpha
+    | Src_alpha_saturated
+    | Constant
+    | One_minus_constant
+    | Src1
+    | One_minus_src1
+    | Src1_alpha
+    | One_minus_src1_alpha
 
-external blend_factor_undefined : unit -> int = "caml_wgpu_blend_factor_undefined"
-external blend_factor_zero : unit -> int = "caml_wgpu_blend_factor_zero"
-external blend_factor_one : unit -> int = "caml_wgpu_blend_factor_one"
-external blend_factor_src : unit -> int = "caml_wgpu_blend_factor_src"
-external blend_factor_one_minus_src : unit -> int = "caml_wgpu_blend_factor_one_minus_src"
-external blend_factor_src_alpha : unit -> int = "caml_wgpu_blend_factor_src_alpha"
-external blend_factor_one_minus_src_alpha : unit -> int = "caml_wgpu_blend_factor_one_minus_src_alpha"
-external blend_factor_dst : unit -> int = "caml_wgpu_blend_factor_dst"
-external blend_factor_one_minus_dst : unit -> int = "caml_wgpu_blend_factor_one_minus_dst"
-external blend_factor_dst_alpha : unit -> int = "caml_wgpu_blend_factor_dst_alpha"
-external blend_factor_one_minus_dst_alpha : unit -> int = "caml_wgpu_blend_factor_one_minus_dst_alpha"
-external blend_factor_src_alpha_saturated : unit -> int = "caml_wgpu_blend_factor_src_alpha_saturated"
-external blend_factor_constant : unit -> int = "caml_wgpu_blend_factor_constant"
-external blend_factor_one_minus_constant : unit -> int = "caml_wgpu_blend_factor_one_minus_constant"
-external blend_factor_src1 : unit -> int = "caml_wgpu_blend_factor_src1"
-external blend_factor_one_minus_src1 : unit -> int = "caml_wgpu_blend_factor_one_minus_src1"
-external blend_factor_src1_alpha : unit -> int = "caml_wgpu_blend_factor_src1_alpha"
-external blend_factor_one_minus_src1_alpha : unit -> int = "caml_wgpu_blend_factor_one_minus_src1_alpha"
+  external blend_factor_undefined : unit -> int = "caml_wgpu_blend_factor_undefined"
+  external blend_factor_zero : unit -> int = "caml_wgpu_blend_factor_zero"
+  external blend_factor_one : unit -> int = "caml_wgpu_blend_factor_one"
+  external blend_factor_src : unit -> int = "caml_wgpu_blend_factor_src"
+
+  external blend_factor_one_minus_src
+    :  unit
+    -> int
+    = "caml_wgpu_blend_factor_one_minus_src"
+
+  external blend_factor_src_alpha : unit -> int = "caml_wgpu_blend_factor_src_alpha"
+
+  external blend_factor_one_minus_src_alpha
+    :  unit
+    -> int
+    = "caml_wgpu_blend_factor_one_minus_src_alpha"
+
+  external blend_factor_dst : unit -> int = "caml_wgpu_blend_factor_dst"
+
+  external blend_factor_one_minus_dst
+    :  unit
+    -> int
+    = "caml_wgpu_blend_factor_one_minus_dst"
+
+  external blend_factor_dst_alpha : unit -> int = "caml_wgpu_blend_factor_dst_alpha"
+
+  external blend_factor_one_minus_dst_alpha
+    :  unit
+    -> int
+    = "caml_wgpu_blend_factor_one_minus_dst_alpha"
+
+  external blend_factor_src_alpha_saturated
+    :  unit
+    -> int
+    = "caml_wgpu_blend_factor_src_alpha_saturated"
+
+  external blend_factor_constant : unit -> int = "caml_wgpu_blend_factor_constant"
+
+  external blend_factor_one_minus_constant
+    :  unit
+    -> int
+    = "caml_wgpu_blend_factor_one_minus_constant"
+
+  external blend_factor_src1 : unit -> int = "caml_wgpu_blend_factor_src1"
+
+  external blend_factor_one_minus_src1
+    :  unit
+    -> int
+    = "caml_wgpu_blend_factor_one_minus_src1"
+
+  external blend_factor_src1_alpha : unit -> int = "caml_wgpu_blend_factor_src1_alpha"
+
+  external blend_factor_one_minus_src1_alpha
+    :  unit
+    -> int
+    = "caml_wgpu_blend_factor_one_minus_src1_alpha"
 
   let to_int = function
     | Undefined -> blend_factor_undefined ()
@@ -131,23 +186,29 @@ external blend_factor_one_minus_src1_alpha : unit -> int = "caml_wgpu_blend_fact
     | One_minus_src1 -> blend_factor_one_minus_src1 ()
     | Src1_alpha -> blend_factor_src1_alpha ()
     | One_minus_src1_alpha -> blend_factor_one_minus_src1_alpha ()
+  ;;
 end
 
 module Blend_Operation = struct
   type t =
-  | Undefined
-  | Add
-  | Subtract
-  | Reverse_subtract
-  | Min
-  | Max
+    | Undefined
+    | Add
+    | Subtract
+    | Reverse_subtract
+    | Min
+    | Max
 
-external blend_operation_undefined : unit -> int = "caml_wgpu_blend_operation_undefined"
-external blend_operation_add : unit -> int = "caml_wgpu_blend_operation_add"
-external blend_operation_subtract : unit -> int = "caml_wgpu_blend_operation_subtract"
-external blend_operation_reverse_subtract : unit -> int = "caml_wgpu_blend_operation_reverse_subtract"
-external blend_operation_min : unit -> int = "caml_wgpu_blend_operation_min"
-external blend_operation_max : unit -> int = "caml_wgpu_blend_operation_max"
+  external blend_operation_undefined : unit -> int = "caml_wgpu_blend_operation_undefined"
+  external blend_operation_add : unit -> int = "caml_wgpu_blend_operation_add"
+  external blend_operation_subtract : unit -> int = "caml_wgpu_blend_operation_subtract"
+
+  external blend_operation_reverse_subtract
+    :  unit
+    -> int
+    = "caml_wgpu_blend_operation_reverse_subtract"
+
+  external blend_operation_min : unit -> int = "caml_wgpu_blend_operation_min"
+  external blend_operation_max : unit -> int = "caml_wgpu_blend_operation_max"
 
   let to_int = function
     | Undefined -> blend_operation_undefined ()
@@ -156,21 +217,41 @@ external blend_operation_max : unit -> int = "caml_wgpu_blend_operation_max"
     | Reverse_subtract -> blend_operation_reverse_subtract ()
     | Min -> blend_operation_min ()
     | Max -> blend_operation_max ()
+  ;;
 end
 
 module Buffer_Binding_Type = struct
   type t =
-  | Binding_not_used
-  | Undefined
-  | Uniform
-  | Storage
-  | Read_only_storage
+    | Binding_not_used
+    | Undefined
+    | Uniform
+    | Storage
+    | Read_only_storage
 
-external buffer_binding_type_binding_not_used : unit -> int = "caml_wgpu_buffer_binding_type_binding_not_used"
-external buffer_binding_type_undefined : unit -> int = "caml_wgpu_buffer_binding_type_undefined"
-external buffer_binding_type_uniform : unit -> int = "caml_wgpu_buffer_binding_type_uniform"
-external buffer_binding_type_storage : unit -> int = "caml_wgpu_buffer_binding_type_storage"
-external buffer_binding_type_read_only_storage : unit -> int = "caml_wgpu_buffer_binding_type_read_only_storage"
+  external buffer_binding_type_binding_not_used
+    :  unit
+    -> int
+    = "caml_wgpu_buffer_binding_type_binding_not_used"
+
+  external buffer_binding_type_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_buffer_binding_type_undefined"
+
+  external buffer_binding_type_uniform
+    :  unit
+    -> int
+    = "caml_wgpu_buffer_binding_type_uniform"
+
+  external buffer_binding_type_storage
+    :  unit
+    -> int
+    = "caml_wgpu_buffer_binding_type_storage"
+
+  external buffer_binding_type_read_only_storage
+    :  unit
+    -> int
+    = "caml_wgpu_buffer_binding_type_read_only_storage"
 
   let to_int = function
     | Binding_not_used -> buffer_binding_type_binding_not_used ()
@@ -178,61 +259,93 @@ external buffer_binding_type_read_only_storage : unit -> int = "caml_wgpu_buffer
     | Uniform -> buffer_binding_type_uniform ()
     | Storage -> buffer_binding_type_storage ()
     | Read_only_storage -> buffer_binding_type_read_only_storage ()
+  ;;
 end
 
 module Buffer_Map_State = struct
   type t =
-  | Unmapped
-  | Pending
-  | Mapped
+    | Unmapped
+    | Pending
+    | Mapped
 
-external buffer_map_state_unmapped : unit -> int = "caml_wgpu_buffer_map_state_unmapped"
-external buffer_map_state_pending : unit -> int = "caml_wgpu_buffer_map_state_pending"
-external buffer_map_state_mapped : unit -> int = "caml_wgpu_buffer_map_state_mapped"
+  external buffer_map_state_unmapped : unit -> int = "caml_wgpu_buffer_map_state_unmapped"
+  external buffer_map_state_pending : unit -> int = "caml_wgpu_buffer_map_state_pending"
+  external buffer_map_state_mapped : unit -> int = "caml_wgpu_buffer_map_state_mapped"
 
   let to_int = function
     | Unmapped -> buffer_map_state_unmapped ()
     | Pending -> buffer_map_state_pending ()
     | Mapped -> buffer_map_state_mapped ()
+  ;;
 end
 
 module Callback_Mode = struct
   type t =
-  | Wait_any_only
-  | Allow_process_events
-  | Allow_spontaneous
+    | Wait_any_only
+    | Allow_process_events
+    | Allow_spontaneous
 
-external callback_mode_wait_any_only : unit -> int = "caml_wgpu_callback_mode_wait_any_only"
-external callback_mode_allow_process_events : unit -> int = "caml_wgpu_callback_mode_allow_process_events"
-external callback_mode_allow_spontaneous : unit -> int = "caml_wgpu_callback_mode_allow_spontaneous"
+  external callback_mode_wait_any_only
+    :  unit
+    -> int
+    = "caml_wgpu_callback_mode_wait_any_only"
+
+  external callback_mode_allow_process_events
+    :  unit
+    -> int
+    = "caml_wgpu_callback_mode_allow_process_events"
+
+  external callback_mode_allow_spontaneous
+    :  unit
+    -> int
+    = "caml_wgpu_callback_mode_allow_spontaneous"
 
   let to_int = function
     | Wait_any_only -> callback_mode_wait_any_only ()
     | Allow_process_events -> callback_mode_allow_process_events ()
     | Allow_spontaneous -> callback_mode_allow_spontaneous ()
+  ;;
 end
 
 module Compare_Function = struct
   type t =
-  | Undefined
-  | Never
-  | Less
-  | Equal
-  | Less_equal
-  | Greater
-  | Not_equal
-  | Greater_equal
-  | Always
+    | Undefined
+    | Never
+    | Less
+    | Equal
+    | Less_equal
+    | Greater
+    | Not_equal
+    | Greater_equal
+    | Always
 
-external compare_function_undefined : unit -> int = "caml_wgpu_compare_function_undefined"
-external compare_function_never : unit -> int = "caml_wgpu_compare_function_never"
-external compare_function_less : unit -> int = "caml_wgpu_compare_function_less"
-external compare_function_equal : unit -> int = "caml_wgpu_compare_function_equal"
-external compare_function_less_equal : unit -> int = "caml_wgpu_compare_function_less_equal"
-external compare_function_greater : unit -> int = "caml_wgpu_compare_function_greater"
-external compare_function_not_equal : unit -> int = "caml_wgpu_compare_function_not_equal"
-external compare_function_greater_equal : unit -> int = "caml_wgpu_compare_function_greater_equal"
-external compare_function_always : unit -> int = "caml_wgpu_compare_function_always"
+  external compare_function_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_compare_function_undefined"
+
+  external compare_function_never : unit -> int = "caml_wgpu_compare_function_never"
+  external compare_function_less : unit -> int = "caml_wgpu_compare_function_less"
+  external compare_function_equal : unit -> int = "caml_wgpu_compare_function_equal"
+
+  external compare_function_less_equal
+    :  unit
+    -> int
+    = "caml_wgpu_compare_function_less_equal"
+
+  external compare_function_greater : unit -> int = "caml_wgpu_compare_function_greater"
+
+  external compare_function_not_equal
+    :  unit
+    -> int
+    = "caml_wgpu_compare_function_not_equal"
+
+  external compare_function_greater_equal
+    :  unit
+    -> int
+    = "caml_wgpu_compare_function_greater_equal"
+
+  external compare_function_always : unit -> int = "caml_wgpu_compare_function_always"
 
   let to_int = function
     | Undefined -> compare_function_undefined ()
@@ -244,56 +357,101 @@ external compare_function_always : unit -> int = "caml_wgpu_compare_function_alw
     | Not_equal -> compare_function_not_equal ()
     | Greater_equal -> compare_function_greater_equal ()
     | Always -> compare_function_always ()
+  ;;
 end
 
 module Compilation_Info_Request_Status = struct
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
-external compilation_info_request_status_success : unit -> int = "caml_wgpu_compilation_info_request_status_success"
-external compilation_info_request_status_instance_dropped : unit -> int = "caml_wgpu_compilation_info_request_status_instance_dropped"
-external compilation_info_request_status_error : unit -> int = "caml_wgpu_compilation_info_request_status_error"
-external compilation_info_request_status_unknown : unit -> int = "caml_wgpu_compilation_info_request_status_unknown"
+  external compilation_info_request_status_success
+    :  unit
+    -> int
+    = "caml_wgpu_compilation_info_request_status_success"
+
+  external compilation_info_request_status_instance_dropped
+    :  unit
+    -> int
+    = "caml_wgpu_compilation_info_request_status_instance_dropped"
+
+  external compilation_info_request_status_error
+    :  unit
+    -> int
+    = "caml_wgpu_compilation_info_request_status_error"
+
+  external compilation_info_request_status_unknown
+    :  unit
+    -> int
+    = "caml_wgpu_compilation_info_request_status_unknown"
 
   let to_int = function
     | Success -> compilation_info_request_status_success ()
     | Instance_dropped -> compilation_info_request_status_instance_dropped ()
     | Error -> compilation_info_request_status_error ()
     | Unknown -> compilation_info_request_status_unknown ()
+  ;;
 end
 
 module Compilation_Message_Type = struct
   type t =
-  | Error
-  | Warning
-  | Info
+    | Error
+    | Warning
+    | Info
 
-external compilation_message_type_error : unit -> int = "caml_wgpu_compilation_message_type_error"
-external compilation_message_type_warning : unit -> int = "caml_wgpu_compilation_message_type_warning"
-external compilation_message_type_info : unit -> int = "caml_wgpu_compilation_message_type_info"
+  external compilation_message_type_error
+    :  unit
+    -> int
+    = "caml_wgpu_compilation_message_type_error"
+
+  external compilation_message_type_warning
+    :  unit
+    -> int
+    = "caml_wgpu_compilation_message_type_warning"
+
+  external compilation_message_type_info
+    :  unit
+    -> int
+    = "caml_wgpu_compilation_message_type_info"
 
   let to_int = function
     | Error -> compilation_message_type_error ()
     | Warning -> compilation_message_type_warning ()
     | Info -> compilation_message_type_info ()
+  ;;
 end
 
 module Composite_Alpha_Mode = struct
   type t =
-  | Auto
-  | Opaque
-  | Premultiplied
-  | Unpremultiplied
-  | Inherit
+    | Auto
+    | Opaque
+    | Premultiplied
+    | Unpremultiplied
+    | Inherit
 
-external composite_alpha_mode_auto : unit -> int = "caml_wgpu_composite_alpha_mode_auto"
-external composite_alpha_mode_opaque : unit -> int = "caml_wgpu_composite_alpha_mode_opaque"
-external composite_alpha_mode_premultiplied : unit -> int = "caml_wgpu_composite_alpha_mode_premultiplied"
-external composite_alpha_mode_unpremultiplied : unit -> int = "caml_wgpu_composite_alpha_mode_unpremultiplied"
-external composite_alpha_mode_inherit : unit -> int = "caml_wgpu_composite_alpha_mode_inherit"
+  external composite_alpha_mode_auto : unit -> int = "caml_wgpu_composite_alpha_mode_auto"
+
+  external composite_alpha_mode_opaque
+    :  unit
+    -> int
+    = "caml_wgpu_composite_alpha_mode_opaque"
+
+  external composite_alpha_mode_premultiplied
+    :  unit
+    -> int
+    = "caml_wgpu_composite_alpha_mode_premultiplied"
+
+  external composite_alpha_mode_unpremultiplied
+    :  unit
+    -> int
+    = "caml_wgpu_composite_alpha_mode_unpremultiplied"
+
+  external composite_alpha_mode_inherit
+    :  unit
+    -> int
+    = "caml_wgpu_composite_alpha_mode_inherit"
 
   let to_int = function
     | Auto -> composite_alpha_mode_auto ()
@@ -301,21 +459,41 @@ external composite_alpha_mode_inherit : unit -> int = "caml_wgpu_composite_alpha
     | Premultiplied -> composite_alpha_mode_premultiplied ()
     | Unpremultiplied -> composite_alpha_mode_unpremultiplied ()
     | Inherit -> composite_alpha_mode_inherit ()
+  ;;
 end
 
 module Create_Pipeline_Async_Status = struct
   type t =
-  | Success
-  | Instance_dropped
-  | Validation_error
-  | Internal_error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Validation_error
+    | Internal_error
+    | Unknown
 
-external create_pipeline_async_status_success : unit -> int = "caml_wgpu_create_pipeline_async_status_success"
-external create_pipeline_async_status_instance_dropped : unit -> int = "caml_wgpu_create_pipeline_async_status_instance_dropped"
-external create_pipeline_async_status_validation_error : unit -> int = "caml_wgpu_create_pipeline_async_status_validation_error"
-external create_pipeline_async_status_internal_error : unit -> int = "caml_wgpu_create_pipeline_async_status_internal_error"
-external create_pipeline_async_status_unknown : unit -> int = "caml_wgpu_create_pipeline_async_status_unknown"
+  external create_pipeline_async_status_success
+    :  unit
+    -> int
+    = "caml_wgpu_create_pipeline_async_status_success"
+
+  external create_pipeline_async_status_instance_dropped
+    :  unit
+    -> int
+    = "caml_wgpu_create_pipeline_async_status_instance_dropped"
+
+  external create_pipeline_async_status_validation_error
+    :  unit
+    -> int
+    = "caml_wgpu_create_pipeline_async_status_validation_error"
+
+  external create_pipeline_async_status_internal_error
+    :  unit
+    -> int
+    = "caml_wgpu_create_pipeline_async_status_internal_error"
+
+  external create_pipeline_async_status_unknown
+    :  unit
+    -> int
+    = "caml_wgpu_create_pipeline_async_status_unknown"
 
   let to_int = function
     | Success -> create_pipeline_async_status_success ()
@@ -323,75 +501,99 @@ external create_pipeline_async_status_unknown : unit -> int = "caml_wgpu_create_
     | Validation_error -> create_pipeline_async_status_validation_error ()
     | Internal_error -> create_pipeline_async_status_internal_error ()
     | Unknown -> create_pipeline_async_status_unknown ()
+  ;;
 end
 
 module Cull_Mode = struct
   type t =
-  | Undefined
-  | None
-  | Front
-  | Back
+    | Undefined
+    | None
+    | Front
+    | Back
 
-external cull_mode_undefined : unit -> int = "caml_wgpu_cull_mode_undefined"
-external cull_mode_none : unit -> int = "caml_wgpu_cull_mode_none"
-external cull_mode_front : unit -> int = "caml_wgpu_cull_mode_front"
-external cull_mode_back : unit -> int = "caml_wgpu_cull_mode_back"
+  external cull_mode_undefined : unit -> int = "caml_wgpu_cull_mode_undefined"
+  external cull_mode_none : unit -> int = "caml_wgpu_cull_mode_none"
+  external cull_mode_front : unit -> int = "caml_wgpu_cull_mode_front"
+  external cull_mode_back : unit -> int = "caml_wgpu_cull_mode_back"
 
   let to_int = function
     | Undefined -> cull_mode_undefined ()
     | None -> cull_mode_none ()
     | Front -> cull_mode_front ()
     | Back -> cull_mode_back ()
+  ;;
 end
 
 module Device_Lost_Reason = struct
   type t =
-  | Unknown
-  | Destroyed
-  | Instance_dropped
-  | Failed_creation
+    | Unknown
+    | Destroyed
+    | Instance_dropped
+    | Failed_creation
 
-external device_lost_reason_unknown : unit -> int = "caml_wgpu_device_lost_reason_unknown"
-external device_lost_reason_destroyed : unit -> int = "caml_wgpu_device_lost_reason_destroyed"
-external device_lost_reason_instance_dropped : unit -> int = "caml_wgpu_device_lost_reason_instance_dropped"
-external device_lost_reason_failed_creation : unit -> int = "caml_wgpu_device_lost_reason_failed_creation"
+  external device_lost_reason_unknown
+    :  unit
+    -> int
+    = "caml_wgpu_device_lost_reason_unknown"
+
+  external device_lost_reason_destroyed
+    :  unit
+    -> int
+    = "caml_wgpu_device_lost_reason_destroyed"
+
+  external device_lost_reason_instance_dropped
+    :  unit
+    -> int
+    = "caml_wgpu_device_lost_reason_instance_dropped"
+
+  external device_lost_reason_failed_creation
+    :  unit
+    -> int
+    = "caml_wgpu_device_lost_reason_failed_creation"
 
   let to_int = function
     | Unknown -> device_lost_reason_unknown ()
     | Destroyed -> device_lost_reason_destroyed ()
     | Instance_dropped -> device_lost_reason_instance_dropped ()
     | Failed_creation -> device_lost_reason_failed_creation ()
+  ;;
 end
 
 module Error_Filter = struct
   type t =
-  | Validation
-  | Out_of_memory
-  | Internal
+    | Validation
+    | Out_of_memory
+    | Internal
 
-external error_filter_validation : unit -> int = "caml_wgpu_error_filter_validation"
-external error_filter_out_of_memory : unit -> int = "caml_wgpu_error_filter_out_of_memory"
-external error_filter_internal : unit -> int = "caml_wgpu_error_filter_internal"
+  external error_filter_validation : unit -> int = "caml_wgpu_error_filter_validation"
+
+  external error_filter_out_of_memory
+    :  unit
+    -> int
+    = "caml_wgpu_error_filter_out_of_memory"
+
+  external error_filter_internal : unit -> int = "caml_wgpu_error_filter_internal"
 
   let to_int = function
     | Validation -> error_filter_validation ()
     | Out_of_memory -> error_filter_out_of_memory ()
     | Internal -> error_filter_internal ()
+  ;;
 end
 
 module Error_Type = struct
   type t =
-  | No_error
-  | Validation
-  | Out_of_memory
-  | Internal
-  | Unknown
+    | No_error
+    | Validation
+    | Out_of_memory
+    | Internal
+    | Unknown
 
-external error_type_no_error : unit -> int = "caml_wgpu_error_type_no_error"
-external error_type_validation : unit -> int = "caml_wgpu_error_type_validation"
-external error_type_out_of_memory : unit -> int = "caml_wgpu_error_type_out_of_memory"
-external error_type_internal : unit -> int = "caml_wgpu_error_type_internal"
-external error_type_unknown : unit -> int = "caml_wgpu_error_type_unknown"
+  external error_type_no_error : unit -> int = "caml_wgpu_error_type_no_error"
+  external error_type_validation : unit -> int = "caml_wgpu_error_type_validation"
+  external error_type_out_of_memory : unit -> int = "caml_wgpu_error_type_out_of_memory"
+  external error_type_internal : unit -> int = "caml_wgpu_error_type_internal"
+  external error_type_unknown : unit -> int = "caml_wgpu_error_type_unknown"
 
   let to_int = function
     | No_error -> error_type_no_error ()
@@ -399,58 +601,125 @@ external error_type_unknown : unit -> int = "caml_wgpu_error_type_unknown"
     | Out_of_memory -> error_type_out_of_memory ()
     | Internal -> error_type_internal ()
     | Unknown -> error_type_unknown ()
+  ;;
 end
 
 module Feature_Level = struct
   type t =
-  | Compatibility
-  | Core
+    | Compatibility
+    | Core
 
-external feature_level_compatibility : unit -> int = "caml_wgpu_feature_level_compatibility"
-external feature_level_core : unit -> int = "caml_wgpu_feature_level_core"
+  external feature_level_compatibility
+    :  unit
+    -> int
+    = "caml_wgpu_feature_level_compatibility"
+
+  external feature_level_core : unit -> int = "caml_wgpu_feature_level_core"
 
   let to_int = function
     | Compatibility -> feature_level_compatibility ()
     | Core -> feature_level_core ()
+  ;;
 end
 
 module Feature_Name = struct
   type t =
-  | Undefined
-  | Depth_clip_control
-  | Depth32_float_stencil8
-  | Timestamp_query
-  | Texture_compression_bc
-  | Texture_compression_bc_sliced_3d
-  | Texture_compression_etc2
-  | Texture_compression_astc
-  | Texture_compression_astc_sliced_3d
-  | Indirect_first_instance
-  | Shader_f16
-  | Rg11b10_ufloat_renderable
-  | Bgra8_unorm_storage
-  | Float32_filterable
-  | Float32_blendable
-  | Clip_distances
-  | Dual_source_blending
+    | Undefined
+    | Depth_clip_control
+    | Depth32_float_stencil8
+    | Timestamp_query
+    | Texture_compression_bc
+    | Texture_compression_bc_sliced_3d
+    | Texture_compression_etc2
+    | Texture_compression_astc
+    | Texture_compression_astc_sliced_3d
+    | Indirect_first_instance
+    | Shader_f16
+    | Rg11b10_ufloat_renderable
+    | Bgra8_unorm_storage
+    | Float32_filterable
+    | Float32_blendable
+    | Clip_distances
+    | Dual_source_blending
 
-external feature_name_undefined : unit -> int = "caml_wgpu_feature_name_undefined"
-external feature_name_depth_clip_control : unit -> int = "caml_wgpu_feature_name_depth_clip_control"
-external feature_name_depth32_float_stencil8 : unit -> int = "caml_wgpu_feature_name_depth32_float_stencil8"
-external feature_name_timestamp_query : unit -> int = "caml_wgpu_feature_name_timestamp_query"
-external feature_name_texture_compression_bc : unit -> int = "caml_wgpu_feature_name_texture_compression_bc"
-external feature_name_texture_compression_bc_sliced_3d : unit -> int = "caml_wgpu_feature_name_texture_compression_bc_sliced_3d"
-external feature_name_texture_compression_etc2 : unit -> int = "caml_wgpu_feature_name_texture_compression_etc2"
-external feature_name_texture_compression_astc : unit -> int = "caml_wgpu_feature_name_texture_compression_astc"
-external feature_name_texture_compression_astc_sliced_3d : unit -> int = "caml_wgpu_feature_name_texture_compression_astc_sliced_3d"
-external feature_name_indirect_first_instance : unit -> int = "caml_wgpu_feature_name_indirect_first_instance"
-external feature_name_shader_f16 : unit -> int = "caml_wgpu_feature_name_shader_f16"
-external feature_name_rg11b10_ufloat_renderable : unit -> int = "caml_wgpu_feature_name_rg11b10_ufloat_renderable"
-external feature_name_bgra8_unorm_storage : unit -> int = "caml_wgpu_feature_name_bgra8_unorm_storage"
-external feature_name_float32_filterable : unit -> int = "caml_wgpu_feature_name_float32_filterable"
-external feature_name_float32_blendable : unit -> int = "caml_wgpu_feature_name_float32_blendable"
-external feature_name_clip_distances : unit -> int = "caml_wgpu_feature_name_clip_distances"
-external feature_name_dual_source_blending : unit -> int = "caml_wgpu_feature_name_dual_source_blending"
+  external feature_name_undefined : unit -> int = "caml_wgpu_feature_name_undefined"
+
+  external feature_name_depth_clip_control
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_depth_clip_control"
+
+  external feature_name_depth32_float_stencil8
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_depth32_float_stencil8"
+
+  external feature_name_timestamp_query
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_timestamp_query"
+
+  external feature_name_texture_compression_bc
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_texture_compression_bc"
+
+  external feature_name_texture_compression_bc_sliced_3d
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_texture_compression_bc_sliced_3d"
+
+  external feature_name_texture_compression_etc2
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_texture_compression_etc2"
+
+  external feature_name_texture_compression_astc
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_texture_compression_astc"
+
+  external feature_name_texture_compression_astc_sliced_3d
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_texture_compression_astc_sliced_3d"
+
+  external feature_name_indirect_first_instance
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_indirect_first_instance"
+
+  external feature_name_shader_f16 : unit -> int = "caml_wgpu_feature_name_shader_f16"
+
+  external feature_name_rg11b10_ufloat_renderable
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_rg11b10_ufloat_renderable"
+
+  external feature_name_bgra8_unorm_storage
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_bgra8_unorm_storage"
+
+  external feature_name_float32_filterable
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_float32_filterable"
+
+  external feature_name_float32_blendable
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_float32_blendable"
+
+  external feature_name_clip_distances
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_clip_distances"
+
+  external feature_name_dual_source_blending
+    :  unit
+    -> int
+    = "caml_wgpu_feature_name_dual_source_blending"
 
   let to_int = function
     | Undefined -> feature_name_undefined ()
@@ -461,7 +730,8 @@ external feature_name_dual_source_blending : unit -> int = "caml_wgpu_feature_na
     | Texture_compression_bc_sliced_3d -> feature_name_texture_compression_bc_sliced_3d ()
     | Texture_compression_etc2 -> feature_name_texture_compression_etc2 ()
     | Texture_compression_astc -> feature_name_texture_compression_astc ()
-    | Texture_compression_astc_sliced_3d -> feature_name_texture_compression_astc_sliced_3d ()
+    | Texture_compression_astc_sliced_3d ->
+      feature_name_texture_compression_astc_sliced_3d ()
     | Indirect_first_instance -> feature_name_indirect_first_instance ()
     | Shader_f16 -> feature_name_shader_f16 ()
     | Rg11b10_ufloat_renderable -> feature_name_rg11b10_ufloat_renderable ()
@@ -470,85 +740,95 @@ external feature_name_dual_source_blending : unit -> int = "caml_wgpu_feature_na
     | Float32_blendable -> feature_name_float32_blendable ()
     | Clip_distances -> feature_name_clip_distances ()
     | Dual_source_blending -> feature_name_dual_source_blending ()
+  ;;
 end
 
 module Filter_Mode = struct
   type t =
-  | Undefined
-  | Nearest
-  | Linear
+    | Undefined
+    | Nearest
+    | Linear
 
-external filter_mode_undefined : unit -> int = "caml_wgpu_filter_mode_undefined"
-external filter_mode_nearest : unit -> int = "caml_wgpu_filter_mode_nearest"
-external filter_mode_linear : unit -> int = "caml_wgpu_filter_mode_linear"
+  external filter_mode_undefined : unit -> int = "caml_wgpu_filter_mode_undefined"
+  external filter_mode_nearest : unit -> int = "caml_wgpu_filter_mode_nearest"
+  external filter_mode_linear : unit -> int = "caml_wgpu_filter_mode_linear"
 
   let to_int = function
     | Undefined -> filter_mode_undefined ()
     | Nearest -> filter_mode_nearest ()
     | Linear -> filter_mode_linear ()
+  ;;
 end
 
 module Front_Face = struct
   type t =
-  | Undefined
-  | Ccw
-  | Cw
+    | Undefined
+    | Ccw
+    | Cw
 
-external front_face_undefined : unit -> int = "caml_wgpu_front_face_undefined"
-external front_face_ccw : unit -> int = "caml_wgpu_front_face_ccw"
-external front_face_cw : unit -> int = "caml_wgpu_front_face_cw"
+  external front_face_undefined : unit -> int = "caml_wgpu_front_face_undefined"
+  external front_face_ccw : unit -> int = "caml_wgpu_front_face_ccw"
+  external front_face_cw : unit -> int = "caml_wgpu_front_face_cw"
 
   let to_int = function
     | Undefined -> front_face_undefined ()
     | Ccw -> front_face_ccw ()
     | Cw -> front_face_cw ()
+  ;;
 end
 
 module Index_Format = struct
   type t =
-  | Undefined
-  | Uint16
-  | Uint32
+    | Undefined
+    | Uint16
+    | Uint32
 
-external index_format_undefined : unit -> int = "caml_wgpu_index_format_undefined"
-external index_format_uint16 : unit -> int = "caml_wgpu_index_format_uint16"
-external index_format_uint32 : unit -> int = "caml_wgpu_index_format_uint32"
+  external index_format_undefined : unit -> int = "caml_wgpu_index_format_undefined"
+  external index_format_uint16 : unit -> int = "caml_wgpu_index_format_uint16"
+  external index_format_uint32 : unit -> int = "caml_wgpu_index_format_uint32"
 
   let to_int = function
     | Undefined -> index_format_undefined ()
     | Uint16 -> index_format_uint16 ()
     | Uint32 -> index_format_uint32 ()
+  ;;
 end
 
 module Load_Op = struct
   type t =
-  | Undefined
-  | Load
-  | Clear
+    | Undefined
+    | Load
+    | Clear
 
-external load_op_undefined : unit -> int = "caml_wgpu_load_op_undefined"
-external load_op_load : unit -> int = "caml_wgpu_load_op_load"
-external load_op_clear : unit -> int = "caml_wgpu_load_op_clear"
+  external load_op_undefined : unit -> int = "caml_wgpu_load_op_undefined"
+  external load_op_load : unit -> int = "caml_wgpu_load_op_load"
+  external load_op_clear : unit -> int = "caml_wgpu_load_op_clear"
 
   let to_int = function
     | Undefined -> load_op_undefined ()
     | Load -> load_op_load ()
     | Clear -> load_op_clear ()
+  ;;
 end
 
 module Map_Async_Status = struct
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Aborted
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Aborted
+    | Unknown
 
-external map_async_status_success : unit -> int = "caml_wgpu_map_async_status_success"
-external map_async_status_instance_dropped : unit -> int = "caml_wgpu_map_async_status_instance_dropped"
-external map_async_status_error : unit -> int = "caml_wgpu_map_async_status_error"
-external map_async_status_aborted : unit -> int = "caml_wgpu_map_async_status_aborted"
-external map_async_status_unknown : unit -> int = "caml_wgpu_map_async_status_unknown"
+  external map_async_status_success : unit -> int = "caml_wgpu_map_async_status_success"
+
+  external map_async_status_instance_dropped
+    :  unit
+    -> int
+    = "caml_wgpu_map_async_status_instance_dropped"
+
+  external map_async_status_error : unit -> int = "caml_wgpu_map_async_status_error"
+  external map_async_status_aborted : unit -> int = "caml_wgpu_map_async_status_aborted"
+  external map_async_status_unknown : unit -> int = "caml_wgpu_map_async_status_unknown"
 
   let to_int = function
     | Success -> map_async_status_success ()
@@ -556,85 +836,120 @@ external map_async_status_unknown : unit -> int = "caml_wgpu_map_async_status_un
     | Error -> map_async_status_error ()
     | Aborted -> map_async_status_aborted ()
     | Unknown -> map_async_status_unknown ()
+  ;;
 end
 
 module Mipmap_Filter_Mode = struct
   type t =
-  | Undefined
-  | Nearest
-  | Linear
+    | Undefined
+    | Nearest
+    | Linear
 
-external mipmap_filter_mode_undefined : unit -> int = "caml_wgpu_mipmap_filter_mode_undefined"
-external mipmap_filter_mode_nearest : unit -> int = "caml_wgpu_mipmap_filter_mode_nearest"
-external mipmap_filter_mode_linear : unit -> int = "caml_wgpu_mipmap_filter_mode_linear"
+  external mipmap_filter_mode_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_mipmap_filter_mode_undefined"
+
+  external mipmap_filter_mode_nearest
+    :  unit
+    -> int
+    = "caml_wgpu_mipmap_filter_mode_nearest"
+
+  external mipmap_filter_mode_linear : unit -> int = "caml_wgpu_mipmap_filter_mode_linear"
 
   let to_int = function
     | Undefined -> mipmap_filter_mode_undefined ()
     | Nearest -> mipmap_filter_mode_nearest ()
     | Linear -> mipmap_filter_mode_linear ()
+  ;;
 end
 
 module Optional_Bool = struct
   type t =
-  | False
-  | True
-  | Undefined
+    | False
+    | True
+    | Undefined
 
-external optional_bool_false : unit -> int = "caml_wgpu_optional_bool_false"
-external optional_bool_true : unit -> int = "caml_wgpu_optional_bool_true"
-external optional_bool_undefined : unit -> int = "caml_wgpu_optional_bool_undefined"
+  external optional_bool_false : unit -> int = "caml_wgpu_optional_bool_false"
+  external optional_bool_true : unit -> int = "caml_wgpu_optional_bool_true"
+  external optional_bool_undefined : unit -> int = "caml_wgpu_optional_bool_undefined"
 
   let to_int = function
     | False -> optional_bool_false ()
     | True -> optional_bool_true ()
     | Undefined -> optional_bool_undefined ()
+  ;;
 end
 
 module Pop_Error_Scope_Status = struct
   type t =
-  | Success
-  | Instance_dropped
-  | Empty_stack
+    | Success
+    | Instance_dropped
+    | Empty_stack
 
-external pop_error_scope_status_success : unit -> int = "caml_wgpu_pop_error_scope_status_success"
-external pop_error_scope_status_instance_dropped : unit -> int = "caml_wgpu_pop_error_scope_status_instance_dropped"
-external pop_error_scope_status_empty_stack : unit -> int = "caml_wgpu_pop_error_scope_status_empty_stack"
+  external pop_error_scope_status_success
+    :  unit
+    -> int
+    = "caml_wgpu_pop_error_scope_status_success"
+
+  external pop_error_scope_status_instance_dropped
+    :  unit
+    -> int
+    = "caml_wgpu_pop_error_scope_status_instance_dropped"
+
+  external pop_error_scope_status_empty_stack
+    :  unit
+    -> int
+    = "caml_wgpu_pop_error_scope_status_empty_stack"
 
   let to_int = function
     | Success -> pop_error_scope_status_success ()
     | Instance_dropped -> pop_error_scope_status_instance_dropped ()
     | Empty_stack -> pop_error_scope_status_empty_stack ()
+  ;;
 end
 
 module Power_Preference = struct
   type t =
-  | Undefined
-  | Low_power
-  | High_performance
+    | Undefined
+    | Low_power
+    | High_performance
 
-external power_preference_undefined : unit -> int = "caml_wgpu_power_preference_undefined"
-external power_preference_low_power : unit -> int = "caml_wgpu_power_preference_low_power"
-external power_preference_high_performance : unit -> int = "caml_wgpu_power_preference_high_performance"
+  external power_preference_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_power_preference_undefined"
+
+  external power_preference_low_power
+    :  unit
+    -> int
+    = "caml_wgpu_power_preference_low_power"
+
+  external power_preference_high_performance
+    :  unit
+    -> int
+    = "caml_wgpu_power_preference_high_performance"
 
   let to_int = function
     | Undefined -> power_preference_undefined ()
     | Low_power -> power_preference_low_power ()
     | High_performance -> power_preference_high_performance ()
+  ;;
 end
 
 module Present_Mode = struct
   type t =
-  | Undefined
-  | Fifo
-  | Fifo_relaxed
-  | Immediate
-  | Mailbox
+    | Undefined
+    | Fifo
+    | Fifo_relaxed
+    | Immediate
+    | Mailbox
 
-external present_mode_undefined : unit -> int = "caml_wgpu_present_mode_undefined"
-external present_mode_fifo : unit -> int = "caml_wgpu_present_mode_fifo"
-external present_mode_fifo_relaxed : unit -> int = "caml_wgpu_present_mode_fifo_relaxed"
-external present_mode_immediate : unit -> int = "caml_wgpu_present_mode_immediate"
-external present_mode_mailbox : unit -> int = "caml_wgpu_present_mode_mailbox"
+  external present_mode_undefined : unit -> int = "caml_wgpu_present_mode_undefined"
+  external present_mode_fifo : unit -> int = "caml_wgpu_present_mode_fifo"
+  external present_mode_fifo_relaxed : unit -> int = "caml_wgpu_present_mode_fifo_relaxed"
+  external present_mode_immediate : unit -> int = "caml_wgpu_present_mode_immediate"
+  external present_mode_mailbox : unit -> int = "caml_wgpu_present_mode_mailbox"
 
   let to_int = function
     | Undefined -> present_mode_undefined ()
@@ -642,23 +957,47 @@ external present_mode_mailbox : unit -> int = "caml_wgpu_present_mode_mailbox"
     | Fifo_relaxed -> present_mode_fifo_relaxed ()
     | Immediate -> present_mode_immediate ()
     | Mailbox -> present_mode_mailbox ()
+  ;;
 end
 
 module Primitive_Topology = struct
   type t =
-  | Undefined
-  | Point_list
-  | Line_list
-  | Line_strip
-  | Triangle_list
-  | Triangle_strip
+    | Undefined
+    | Point_list
+    | Line_list
+    | Line_strip
+    | Triangle_list
+    | Triangle_strip
 
-external primitive_topology_undefined : unit -> int = "caml_wgpu_primitive_topology_undefined"
-external primitive_topology_point_list : unit -> int = "caml_wgpu_primitive_topology_point_list"
-external primitive_topology_line_list : unit -> int = "caml_wgpu_primitive_topology_line_list"
-external primitive_topology_line_strip : unit -> int = "caml_wgpu_primitive_topology_line_strip"
-external primitive_topology_triangle_list : unit -> int = "caml_wgpu_primitive_topology_triangle_list"
-external primitive_topology_triangle_strip : unit -> int = "caml_wgpu_primitive_topology_triangle_strip"
+  external primitive_topology_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_primitive_topology_undefined"
+
+  external primitive_topology_point_list
+    :  unit
+    -> int
+    = "caml_wgpu_primitive_topology_point_list"
+
+  external primitive_topology_line_list
+    :  unit
+    -> int
+    = "caml_wgpu_primitive_topology_line_list"
+
+  external primitive_topology_line_strip
+    :  unit
+    -> int
+    = "caml_wgpu_primitive_topology_line_strip"
+
+  external primitive_topology_triangle_list
+    :  unit
+    -> int
+    = "caml_wgpu_primitive_topology_triangle_list"
+
+  external primitive_topology_triangle_strip
+    :  unit
+    -> int
+    = "caml_wgpu_primitive_topology_triangle_strip"
 
   let to_int = function
     | Undefined -> primitive_topology_undefined ()
@@ -667,53 +1006,90 @@ external primitive_topology_triangle_strip : unit -> int = "caml_wgpu_primitive_
     | Line_strip -> primitive_topology_line_strip ()
     | Triangle_list -> primitive_topology_triangle_list ()
     | Triangle_strip -> primitive_topology_triangle_strip ()
+  ;;
 end
 
 module Query_Type = struct
   type t =
-  | Occlusion
-  | Timestamp
+    | Occlusion
+    | Timestamp
 
-external query_type_occlusion : unit -> int = "caml_wgpu_query_type_occlusion"
-external query_type_timestamp : unit -> int = "caml_wgpu_query_type_timestamp"
+  external query_type_occlusion : unit -> int = "caml_wgpu_query_type_occlusion"
+  external query_type_timestamp : unit -> int = "caml_wgpu_query_type_timestamp"
 
   let to_int = function
     | Occlusion -> query_type_occlusion ()
     | Timestamp -> query_type_timestamp ()
+  ;;
 end
 
 module Queue_Work_Done_Status = struct
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
-external queue_work_done_status_success : unit -> int = "caml_wgpu_queue_work_done_status_success"
-external queue_work_done_status_instance_dropped : unit -> int = "caml_wgpu_queue_work_done_status_instance_dropped"
-external queue_work_done_status_error : unit -> int = "caml_wgpu_queue_work_done_status_error"
-external queue_work_done_status_unknown : unit -> int = "caml_wgpu_queue_work_done_status_unknown"
+  external queue_work_done_status_success
+    :  unit
+    -> int
+    = "caml_wgpu_queue_work_done_status_success"
+
+  external queue_work_done_status_instance_dropped
+    :  unit
+    -> int
+    = "caml_wgpu_queue_work_done_status_instance_dropped"
+
+  external queue_work_done_status_error
+    :  unit
+    -> int
+    = "caml_wgpu_queue_work_done_status_error"
+
+  external queue_work_done_status_unknown
+    :  unit
+    -> int
+    = "caml_wgpu_queue_work_done_status_unknown"
 
   let to_int = function
     | Success -> queue_work_done_status_success ()
     | Instance_dropped -> queue_work_done_status_instance_dropped ()
     | Error -> queue_work_done_status_error ()
     | Unknown -> queue_work_done_status_unknown ()
+  ;;
 end
 
 module Request_Adapter_Status = struct
   type t =
-  | Success
-  | Instance_dropped
-  | Unavailable
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Unavailable
+    | Error
+    | Unknown
 
-external request_adapter_status_success : unit -> int = "caml_wgpu_request_adapter_status_success"
-external request_adapter_status_instance_dropped : unit -> int = "caml_wgpu_request_adapter_status_instance_dropped"
-external request_adapter_status_unavailable : unit -> int = "caml_wgpu_request_adapter_status_unavailable"
-external request_adapter_status_error : unit -> int = "caml_wgpu_request_adapter_status_error"
-external request_adapter_status_unknown : unit -> int = "caml_wgpu_request_adapter_status_unknown"
+  external request_adapter_status_success
+    :  unit
+    -> int
+    = "caml_wgpu_request_adapter_status_success"
+
+  external request_adapter_status_instance_dropped
+    :  unit
+    -> int
+    = "caml_wgpu_request_adapter_status_instance_dropped"
+
+  external request_adapter_status_unavailable
+    :  unit
+    -> int
+    = "caml_wgpu_request_adapter_status_unavailable"
+
+  external request_adapter_status_error
+    :  unit
+    -> int
+    = "caml_wgpu_request_adapter_status_error"
+
+  external request_adapter_status_unknown
+    :  unit
+    -> int
+    = "caml_wgpu_request_adapter_status_unknown"
 
   let to_int = function
     | Success -> request_adapter_status_success ()
@@ -721,48 +1097,97 @@ external request_adapter_status_unknown : unit -> int = "caml_wgpu_request_adapt
     | Unavailable -> request_adapter_status_unavailable ()
     | Error -> request_adapter_status_error ()
     | Unknown -> request_adapter_status_unknown ()
+  ;;
 end
 
 module Request_Device_Status = struct
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
-external request_device_status_success : unit -> int = "caml_wgpu_request_device_status_success"
-external request_device_status_instance_dropped : unit -> int = "caml_wgpu_request_device_status_instance_dropped"
-external request_device_status_error : unit -> int = "caml_wgpu_request_device_status_error"
-external request_device_status_unknown : unit -> int = "caml_wgpu_request_device_status_unknown"
+  external request_device_status_success
+    :  unit
+    -> int
+    = "caml_wgpu_request_device_status_success"
+
+  external request_device_status_instance_dropped
+    :  unit
+    -> int
+    = "caml_wgpu_request_device_status_instance_dropped"
+
+  external request_device_status_error
+    :  unit
+    -> int
+    = "caml_wgpu_request_device_status_error"
+
+  external request_device_status_unknown
+    :  unit
+    -> int
+    = "caml_wgpu_request_device_status_unknown"
 
   let to_int = function
     | Success -> request_device_status_success ()
     | Instance_dropped -> request_device_status_instance_dropped ()
     | Error -> request_device_status_error ()
     | Unknown -> request_device_status_unknown ()
+  ;;
 end
 
 module S_Type = struct
   type t =
-  | Shader_source_spirv
-  | Shader_source_wgsl
-  | Render_pass_max_draw_count
-  | Surface_source_metal_layer
-  | Surface_source_windows_hwnd
-  | Surface_source_xlib_window
-  | Surface_source_wayland_surface
-  | Surface_source_android_native_window
-  | Surface_source_xcb_window
+    | Shader_source_spirv
+    | Shader_source_wgsl
+    | Render_pass_max_draw_count
+    | Surface_source_metal_layer
+    | Surface_source_windows_hwnd
+    | Surface_source_xlib_window
+    | Surface_source_wayland_surface
+    | Surface_source_android_native_window
+    | Surface_source_xcb_window
 
-external s_type_shader_source_spirv : unit -> int = "caml_wgpu_s_type_shader_source_spirv"
-external s_type_shader_source_wgsl : unit -> int = "caml_wgpu_s_type_shader_source_wgsl"
-external s_type_render_pass_max_draw_count : unit -> int = "caml_wgpu_s_type_render_pass_max_draw_count"
-external s_type_surface_source_metal_layer : unit -> int = "caml_wgpu_s_type_surface_source_metal_layer"
-external s_type_surface_source_windows_hwnd : unit -> int = "caml_wgpu_s_type_surface_source_windows_hwnd"
-external s_type_surface_source_xlib_window : unit -> int = "caml_wgpu_s_type_surface_source_xlib_window"
-external s_type_surface_source_wayland_surface : unit -> int = "caml_wgpu_s_type_surface_source_wayland_surface"
-external s_type_surface_source_android_native_window : unit -> int = "caml_wgpu_s_type_surface_source_android_native_window"
-external s_type_surface_source_xcb_window : unit -> int = "caml_wgpu_s_type_surface_source_xcb_window"
+  external s_type_shader_source_spirv
+    :  unit
+    -> int
+    = "caml_wgpu_s_type_shader_source_spirv"
+
+  external s_type_shader_source_wgsl : unit -> int = "caml_wgpu_s_type_shader_source_wgsl"
+
+  external s_type_render_pass_max_draw_count
+    :  unit
+    -> int
+    = "caml_wgpu_s_type_render_pass_max_draw_count"
+
+  external s_type_surface_source_metal_layer
+    :  unit
+    -> int
+    = "caml_wgpu_s_type_surface_source_metal_layer"
+
+  external s_type_surface_source_windows_hwnd
+    :  unit
+    -> int
+    = "caml_wgpu_s_type_surface_source_windows_hwnd"
+
+  external s_type_surface_source_xlib_window
+    :  unit
+    -> int
+    = "caml_wgpu_s_type_surface_source_xlib_window"
+
+  external s_type_surface_source_wayland_surface
+    :  unit
+    -> int
+    = "caml_wgpu_s_type_surface_source_wayland_surface"
+
+  external s_type_surface_source_android_native_window
+    :  unit
+    -> int
+    = "caml_wgpu_s_type_surface_source_android_native_window"
+
+  external s_type_surface_source_xcb_window
+    :  unit
+    -> int
+    = "caml_wgpu_s_type_surface_source_xcb_window"
 
   let to_int = function
     | Shader_source_spirv -> s_type_shader_source_spirv ()
@@ -772,23 +1197,44 @@ external s_type_surface_source_xcb_window : unit -> int = "caml_wgpu_s_type_surf
     | Surface_source_windows_hwnd -> s_type_surface_source_windows_hwnd ()
     | Surface_source_xlib_window -> s_type_surface_source_xlib_window ()
     | Surface_source_wayland_surface -> s_type_surface_source_wayland_surface ()
-    | Surface_source_android_native_window -> s_type_surface_source_android_native_window ()
+    | Surface_source_android_native_window ->
+      s_type_surface_source_android_native_window ()
     | Surface_source_xcb_window -> s_type_surface_source_xcb_window ()
+  ;;
 end
 
 module Sampler_Binding_Type = struct
   type t =
-  | Binding_not_used
-  | Undefined
-  | Filtering
-  | Non_filtering
-  | Comparison
+    | Binding_not_used
+    | Undefined
+    | Filtering
+    | Non_filtering
+    | Comparison
 
-external sampler_binding_type_binding_not_used : unit -> int = "caml_wgpu_sampler_binding_type_binding_not_used"
-external sampler_binding_type_undefined : unit -> int = "caml_wgpu_sampler_binding_type_undefined"
-external sampler_binding_type_filtering : unit -> int = "caml_wgpu_sampler_binding_type_filtering"
-external sampler_binding_type_non_filtering : unit -> int = "caml_wgpu_sampler_binding_type_non_filtering"
-external sampler_binding_type_comparison : unit -> int = "caml_wgpu_sampler_binding_type_comparison"
+  external sampler_binding_type_binding_not_used
+    :  unit
+    -> int
+    = "caml_wgpu_sampler_binding_type_binding_not_used"
+
+  external sampler_binding_type_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_sampler_binding_type_undefined"
+
+  external sampler_binding_type_filtering
+    :  unit
+    -> int
+    = "caml_wgpu_sampler_binding_type_filtering"
+
+  external sampler_binding_type_non_filtering
+    :  unit
+    -> int
+    = "caml_wgpu_sampler_binding_type_non_filtering"
+
+  external sampler_binding_type_comparison
+    :  unit
+    -> int
+    = "caml_wgpu_sampler_binding_type_comparison"
 
   let to_int = function
     | Binding_not_used -> sampler_binding_type_binding_not_used ()
@@ -796,42 +1242,64 @@ external sampler_binding_type_comparison : unit -> int = "caml_wgpu_sampler_bind
     | Filtering -> sampler_binding_type_filtering ()
     | Non_filtering -> sampler_binding_type_non_filtering ()
     | Comparison -> sampler_binding_type_comparison ()
+  ;;
 end
 
 module Status = struct
   type t =
-  | Success
-  | Error
+    | Success
+    | Error
 
-external status_success : unit -> int = "caml_wgpu_status_success"
-external status_error : unit -> int = "caml_wgpu_status_error"
+  external status_success : unit -> int = "caml_wgpu_status_success"
+  external status_error : unit -> int = "caml_wgpu_status_error"
 
   let to_int = function
     | Success -> status_success ()
     | Error -> status_error ()
+  ;;
 end
 
 module Stencil_Operation = struct
   type t =
-  | Undefined
-  | Keep
-  | Zero
-  | Replace
-  | Invert
-  | Increment_clamp
-  | Decrement_clamp
-  | Increment_wrap
-  | Decrement_wrap
+    | Undefined
+    | Keep
+    | Zero
+    | Replace
+    | Invert
+    | Increment_clamp
+    | Decrement_clamp
+    | Increment_wrap
+    | Decrement_wrap
 
-external stencil_operation_undefined : unit -> int = "caml_wgpu_stencil_operation_undefined"
-external stencil_operation_keep : unit -> int = "caml_wgpu_stencil_operation_keep"
-external stencil_operation_zero : unit -> int = "caml_wgpu_stencil_operation_zero"
-external stencil_operation_replace : unit -> int = "caml_wgpu_stencil_operation_replace"
-external stencil_operation_invert : unit -> int = "caml_wgpu_stencil_operation_invert"
-external stencil_operation_increment_clamp : unit -> int = "caml_wgpu_stencil_operation_increment_clamp"
-external stencil_operation_decrement_clamp : unit -> int = "caml_wgpu_stencil_operation_decrement_clamp"
-external stencil_operation_increment_wrap : unit -> int = "caml_wgpu_stencil_operation_increment_wrap"
-external stencil_operation_decrement_wrap : unit -> int = "caml_wgpu_stencil_operation_decrement_wrap"
+  external stencil_operation_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_stencil_operation_undefined"
+
+  external stencil_operation_keep : unit -> int = "caml_wgpu_stencil_operation_keep"
+  external stencil_operation_zero : unit -> int = "caml_wgpu_stencil_operation_zero"
+  external stencil_operation_replace : unit -> int = "caml_wgpu_stencil_operation_replace"
+  external stencil_operation_invert : unit -> int = "caml_wgpu_stencil_operation_invert"
+
+  external stencil_operation_increment_clamp
+    :  unit
+    -> int
+    = "caml_wgpu_stencil_operation_increment_clamp"
+
+  external stencil_operation_decrement_clamp
+    :  unit
+    -> int
+    = "caml_wgpu_stencil_operation_decrement_clamp"
+
+  external stencil_operation_increment_wrap
+    :  unit
+    -> int
+    = "caml_wgpu_stencil_operation_increment_wrap"
+
+  external stencil_operation_decrement_wrap
+    :  unit
+    -> int
+    = "caml_wgpu_stencil_operation_decrement_wrap"
 
   let to_int = function
     | Undefined -> stencil_operation_undefined ()
@@ -843,21 +1311,41 @@ external stencil_operation_decrement_wrap : unit -> int = "caml_wgpu_stencil_ope
     | Decrement_clamp -> stencil_operation_decrement_clamp ()
     | Increment_wrap -> stencil_operation_increment_wrap ()
     | Decrement_wrap -> stencil_operation_decrement_wrap ()
+  ;;
 end
 
 module Storage_Texture_Access = struct
   type t =
-  | Binding_not_used
-  | Undefined
-  | Write_only
-  | Read_only
-  | Read_write
+    | Binding_not_used
+    | Undefined
+    | Write_only
+    | Read_only
+    | Read_write
 
-external storage_texture_access_binding_not_used : unit -> int = "caml_wgpu_storage_texture_access_binding_not_used"
-external storage_texture_access_undefined : unit -> int = "caml_wgpu_storage_texture_access_undefined"
-external storage_texture_access_write_only : unit -> int = "caml_wgpu_storage_texture_access_write_only"
-external storage_texture_access_read_only : unit -> int = "caml_wgpu_storage_texture_access_read_only"
-external storage_texture_access_read_write : unit -> int = "caml_wgpu_storage_texture_access_read_write"
+  external storage_texture_access_binding_not_used
+    :  unit
+    -> int
+    = "caml_wgpu_storage_texture_access_binding_not_used"
+
+  external storage_texture_access_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_storage_texture_access_undefined"
+
+  external storage_texture_access_write_only
+    :  unit
+    -> int
+    = "caml_wgpu_storage_texture_access_write_only"
+
+  external storage_texture_access_read_only
+    :  unit
+    -> int
+    = "caml_wgpu_storage_texture_access_read_only"
+
+  external storage_texture_access_read_write
+    :  unit
+    -> int
+    = "caml_wgpu_storage_texture_access_read_write"
 
   let to_int = function
     | Binding_not_used -> storage_texture_access_binding_not_used ()
@@ -865,43 +1353,76 @@ external storage_texture_access_read_write : unit -> int = "caml_wgpu_storage_te
     | Write_only -> storage_texture_access_write_only ()
     | Read_only -> storage_texture_access_read_only ()
     | Read_write -> storage_texture_access_read_write ()
+  ;;
 end
 
 module Store_Op = struct
   type t =
-  | Undefined
-  | Store
-  | Discard
+    | Undefined
+    | Store
+    | Discard
 
-external store_op_undefined : unit -> int = "caml_wgpu_store_op_undefined"
-external store_op_store : unit -> int = "caml_wgpu_store_op_store"
-external store_op_discard : unit -> int = "caml_wgpu_store_op_discard"
+  external store_op_undefined : unit -> int = "caml_wgpu_store_op_undefined"
+  external store_op_store : unit -> int = "caml_wgpu_store_op_store"
+  external store_op_discard : unit -> int = "caml_wgpu_store_op_discard"
 
   let to_int = function
     | Undefined -> store_op_undefined ()
     | Store -> store_op_store ()
     | Discard -> store_op_discard ()
+  ;;
 end
 
 module Surface_Get_Current_Texture_Status = struct
   type t =
-  | Success_optimal
-  | Success_suboptimal
-  | Timeout
-  | Outdated
-  | Lost
-  | Out_of_memory
-  | Device_lost
-  | Error
+    | Success_optimal
+    | Success_suboptimal
+    | Timeout
+    | Outdated
+    | Lost
+    | Out_of_memory
+    | Device_lost
+    | Error
 
-external surface_get_current_texture_status_success_optimal : unit -> int = "caml_wgpu_surface_get_current_texture_status_success_optimal"
-external surface_get_current_texture_status_success_suboptimal : unit -> int = "caml_wgpu_surface_get_current_texture_status_success_suboptimal"
-external surface_get_current_texture_status_timeout : unit -> int = "caml_wgpu_surface_get_current_texture_status_timeout"
-external surface_get_current_texture_status_outdated : unit -> int = "caml_wgpu_surface_get_current_texture_status_outdated"
-external surface_get_current_texture_status_lost : unit -> int = "caml_wgpu_surface_get_current_texture_status_lost"
-external surface_get_current_texture_status_out_of_memory : unit -> int = "caml_wgpu_surface_get_current_texture_status_out_of_memory"
-external surface_get_current_texture_status_device_lost : unit -> int = "caml_wgpu_surface_get_current_texture_status_device_lost"
-external surface_get_current_texture_status_error : unit -> int = "caml_wgpu_surface_get_current_texture_status_error"
+  external surface_get_current_texture_status_success_optimal
+    :  unit
+    -> int
+    = "caml_wgpu_surface_get_current_texture_status_success_optimal"
+
+  external surface_get_current_texture_status_success_suboptimal
+    :  unit
+    -> int
+    = "caml_wgpu_surface_get_current_texture_status_success_suboptimal"
+
+  external surface_get_current_texture_status_timeout
+    :  unit
+    -> int
+    = "caml_wgpu_surface_get_current_texture_status_timeout"
+
+  external surface_get_current_texture_status_outdated
+    :  unit
+    -> int
+    = "caml_wgpu_surface_get_current_texture_status_outdated"
+
+  external surface_get_current_texture_status_lost
+    :  unit
+    -> int
+    = "caml_wgpu_surface_get_current_texture_status_lost"
+
+  external surface_get_current_texture_status_out_of_memory
+    :  unit
+    -> int
+    = "caml_wgpu_surface_get_current_texture_status_out_of_memory"
+
+  external surface_get_current_texture_status_device_lost
+    :  unit
+    -> int
+    = "caml_wgpu_surface_get_current_texture_status_device_lost"
+
+  external surface_get_current_texture_status_error
+    :  unit
+    -> int
+    = "caml_wgpu_surface_get_current_texture_status_error"
 
   let to_int = function
     | Success_optimal -> surface_get_current_texture_status_success_optimal ()
@@ -912,241 +1433,544 @@ external surface_get_current_texture_status_error : unit -> int = "caml_wgpu_sur
     | Out_of_memory -> surface_get_current_texture_status_out_of_memory ()
     | Device_lost -> surface_get_current_texture_status_device_lost ()
     | Error -> surface_get_current_texture_status_error ()
+  ;;
 end
 
 module Texture_Aspect = struct
   type t =
-  | Undefined
-  | All
-  | Stencil_only
-  | Depth_only
+    | Undefined
+    | All
+    | Stencil_only
+    | Depth_only
 
-external texture_aspect_undefined : unit -> int = "caml_wgpu_texture_aspect_undefined"
-external texture_aspect_all : unit -> int = "caml_wgpu_texture_aspect_all"
-external texture_aspect_stencil_only : unit -> int = "caml_wgpu_texture_aspect_stencil_only"
-external texture_aspect_depth_only : unit -> int = "caml_wgpu_texture_aspect_depth_only"
+  external texture_aspect_undefined : unit -> int = "caml_wgpu_texture_aspect_undefined"
+  external texture_aspect_all : unit -> int = "caml_wgpu_texture_aspect_all"
+
+  external texture_aspect_stencil_only
+    :  unit
+    -> int
+    = "caml_wgpu_texture_aspect_stencil_only"
+
+  external texture_aspect_depth_only : unit -> int = "caml_wgpu_texture_aspect_depth_only"
 
   let to_int = function
     | Undefined -> texture_aspect_undefined ()
     | All -> texture_aspect_all ()
     | Stencil_only -> texture_aspect_stencil_only ()
     | Depth_only -> texture_aspect_depth_only ()
+  ;;
 end
 
 module Texture_Dimension = struct
   type t =
-  | Undefined
-  | N1d
-  | N2d
-  | N3d
+    | Undefined
+    | N1d
+    | N2d
+    | N3d
 
-external texture_dimension_undefined : unit -> int = "caml_wgpu_texture_dimension_undefined"
-external texture_dimension_1d : unit -> int = "caml_wgpu_texture_dimension_1d"
-external texture_dimension_2d : unit -> int = "caml_wgpu_texture_dimension_2d"
-external texture_dimension_3d : unit -> int = "caml_wgpu_texture_dimension_3d"
+  external texture_dimension_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_texture_dimension_undefined"
+
+  external texture_dimension_1d : unit -> int = "caml_wgpu_texture_dimension_1d"
+  external texture_dimension_2d : unit -> int = "caml_wgpu_texture_dimension_2d"
+  external texture_dimension_3d : unit -> int = "caml_wgpu_texture_dimension_3d"
 
   let to_int = function
     | Undefined -> texture_dimension_undefined ()
     | N1d -> texture_dimension_1d ()
     | N2d -> texture_dimension_2d ()
     | N3d -> texture_dimension_3d ()
+  ;;
 end
 
 module Texture_Format = struct
   type t =
-  | Undefined
-  | R8_unorm
-  | R8_snorm
-  | R8_uint
-  | R8_sint
-  | R16_uint
-  | R16_sint
-  | R16_float
-  | Rg8_unorm
-  | Rg8_snorm
-  | Rg8_uint
-  | Rg8_sint
-  | R32_float
-  | R32_uint
-  | R32_sint
-  | Rg16_uint
-  | Rg16_sint
-  | Rg16_float
-  | Rgba8_unorm
-  | Rgba8_unorm_srgb
-  | Rgba8_snorm
-  | Rgba8_uint
-  | Rgba8_sint
-  | Bgra8_unorm
-  | Bgra8_unorm_srgb
-  | Rgb10_a2_uint
-  | Rgb10_a2_unorm
-  | Rg11_b10_ufloat
-  | Rgb9_e5_ufloat
-  | Rg32_float
-  | Rg32_uint
-  | Rg32_sint
-  | Rgba16_uint
-  | Rgba16_sint
-  | Rgba16_float
-  | Rgba32_float
-  | Rgba32_uint
-  | Rgba32_sint
-  | Stencil8
-  | Depth16_unorm
-  | Depth24_plus
-  | Depth24_plus_stencil8
-  | Depth32_float
-  | Depth32_float_stencil8
-  | Bc1_rgba_unorm
-  | Bc1_rgba_unorm_srgb
-  | Bc2_rgba_unorm
-  | Bc2_rgba_unorm_srgb
-  | Bc3_rgba_unorm
-  | Bc3_rgba_unorm_srgb
-  | Bc4_r_unorm
-  | Bc4_r_snorm
-  | Bc5_rg_unorm
-  | Bc5_rg_snorm
-  | Bc6h_rgb_ufloat
-  | Bc6h_rgb_float
-  | Bc7_rgba_unorm
-  | Bc7_rgba_unorm_srgb
-  | Etc2_rgb8_unorm
-  | Etc2_rgb8_unorm_srgb
-  | Etc2_rgb8a1_unorm
-  | Etc2_rgb8a1_unorm_srgb
-  | Etc2_rgba8_unorm
-  | Etc2_rgba8_unorm_srgb
-  | Eac_r11_unorm
-  | Eac_r11_snorm
-  | Eac_rg11_unorm
-  | Eac_rg11_snorm
-  | Astc_4x4_unorm
-  | Astc_4x4_unorm_srgb
-  | Astc_5x4_unorm
-  | Astc_5x4_unorm_srgb
-  | Astc_5x5_unorm
-  | Astc_5x5_unorm_srgb
-  | Astc_6x5_unorm
-  | Astc_6x5_unorm_srgb
-  | Astc_6x6_unorm
-  | Astc_6x6_unorm_srgb
-  | Astc_8x5_unorm
-  | Astc_8x5_unorm_srgb
-  | Astc_8x6_unorm
-  | Astc_8x6_unorm_srgb
-  | Astc_8x8_unorm
-  | Astc_8x8_unorm_srgb
-  | Astc_10x5_unorm
-  | Astc_10x5_unorm_srgb
-  | Astc_10x6_unorm
-  | Astc_10x6_unorm_srgb
-  | Astc_10x8_unorm
-  | Astc_10x8_unorm_srgb
-  | Astc_10x10_unorm
-  | Astc_10x10_unorm_srgb
-  | Astc_12x10_unorm
-  | Astc_12x10_unorm_srgb
-  | Astc_12x12_unorm
-  | Astc_12x12_unorm_srgb
+    | Undefined
+    | R8_unorm
+    | R8_snorm
+    | R8_uint
+    | R8_sint
+    | R16_uint
+    | R16_sint
+    | R16_float
+    | Rg8_unorm
+    | Rg8_snorm
+    | Rg8_uint
+    | Rg8_sint
+    | R32_float
+    | R32_uint
+    | R32_sint
+    | Rg16_uint
+    | Rg16_sint
+    | Rg16_float
+    | Rgba8_unorm
+    | Rgba8_unorm_srgb
+    | Rgba8_snorm
+    | Rgba8_uint
+    | Rgba8_sint
+    | Bgra8_unorm
+    | Bgra8_unorm_srgb
+    | Rgb10_a2_uint
+    | Rgb10_a2_unorm
+    | Rg11_b10_ufloat
+    | Rgb9_e5_ufloat
+    | Rg32_float
+    | Rg32_uint
+    | Rg32_sint
+    | Rgba16_uint
+    | Rgba16_sint
+    | Rgba16_float
+    | Rgba32_float
+    | Rgba32_uint
+    | Rgba32_sint
+    | Stencil8
+    | Depth16_unorm
+    | Depth24_plus
+    | Depth24_plus_stencil8
+    | Depth32_float
+    | Depth32_float_stencil8
+    | Bc1_rgba_unorm
+    | Bc1_rgba_unorm_srgb
+    | Bc2_rgba_unorm
+    | Bc2_rgba_unorm_srgb
+    | Bc3_rgba_unorm
+    | Bc3_rgba_unorm_srgb
+    | Bc4_r_unorm
+    | Bc4_r_snorm
+    | Bc5_rg_unorm
+    | Bc5_rg_snorm
+    | Bc6h_rgb_ufloat
+    | Bc6h_rgb_float
+    | Bc7_rgba_unorm
+    | Bc7_rgba_unorm_srgb
+    | Etc2_rgb8_unorm
+    | Etc2_rgb8_unorm_srgb
+    | Etc2_rgb8a1_unorm
+    | Etc2_rgb8a1_unorm_srgb
+    | Etc2_rgba8_unorm
+    | Etc2_rgba8_unorm_srgb
+    | Eac_r11_unorm
+    | Eac_r11_snorm
+    | Eac_rg11_unorm
+    | Eac_rg11_snorm
+    | Astc_4x4_unorm
+    | Astc_4x4_unorm_srgb
+    | Astc_5x4_unorm
+    | Astc_5x4_unorm_srgb
+    | Astc_5x5_unorm
+    | Astc_5x5_unorm_srgb
+    | Astc_6x5_unorm
+    | Astc_6x5_unorm_srgb
+    | Astc_6x6_unorm
+    | Astc_6x6_unorm_srgb
+    | Astc_8x5_unorm
+    | Astc_8x5_unorm_srgb
+    | Astc_8x6_unorm
+    | Astc_8x6_unorm_srgb
+    | Astc_8x8_unorm
+    | Astc_8x8_unorm_srgb
+    | Astc_10x5_unorm
+    | Astc_10x5_unorm_srgb
+    | Astc_10x6_unorm
+    | Astc_10x6_unorm_srgb
+    | Astc_10x8_unorm
+    | Astc_10x8_unorm_srgb
+    | Astc_10x10_unorm
+    | Astc_10x10_unorm_srgb
+    | Astc_12x10_unorm
+    | Astc_12x10_unorm_srgb
+    | Astc_12x12_unorm
+    | Astc_12x12_unorm_srgb
 
-external texture_format_undefined : unit -> int = "caml_wgpu_texture_format_undefined"
-external texture_format_r8_unorm : unit -> int = "caml_wgpu_texture_format_r8_unorm"
-external texture_format_r8_snorm : unit -> int = "caml_wgpu_texture_format_r8_snorm"
-external texture_format_r8_uint : unit -> int = "caml_wgpu_texture_format_r8_uint"
-external texture_format_r8_sint : unit -> int = "caml_wgpu_texture_format_r8_sint"
-external texture_format_r16_uint : unit -> int = "caml_wgpu_texture_format_r16_uint"
-external texture_format_r16_sint : unit -> int = "caml_wgpu_texture_format_r16_sint"
-external texture_format_r16_float : unit -> int = "caml_wgpu_texture_format_r16_float"
-external texture_format_rg8_unorm : unit -> int = "caml_wgpu_texture_format_rg8_unorm"
-external texture_format_rg8_snorm : unit -> int = "caml_wgpu_texture_format_rg8_snorm"
-external texture_format_rg8_uint : unit -> int = "caml_wgpu_texture_format_rg8_uint"
-external texture_format_rg8_sint : unit -> int = "caml_wgpu_texture_format_rg8_sint"
-external texture_format_r32_float : unit -> int = "caml_wgpu_texture_format_r32_float"
-external texture_format_r32_uint : unit -> int = "caml_wgpu_texture_format_r32_uint"
-external texture_format_r32_sint : unit -> int = "caml_wgpu_texture_format_r32_sint"
-external texture_format_rg16_uint : unit -> int = "caml_wgpu_texture_format_rg16_uint"
-external texture_format_rg16_sint : unit -> int = "caml_wgpu_texture_format_rg16_sint"
-external texture_format_rg16_float : unit -> int = "caml_wgpu_texture_format_rg16_float"
-external texture_format_rgba8_unorm : unit -> int = "caml_wgpu_texture_format_rgba8_unorm"
-external texture_format_rgba8_unorm_srgb : unit -> int = "caml_wgpu_texture_format_rgba8_unorm_srgb"
-external texture_format_rgba8_snorm : unit -> int = "caml_wgpu_texture_format_rgba8_snorm"
-external texture_format_rgba8_uint : unit -> int = "caml_wgpu_texture_format_rgba8_uint"
-external texture_format_rgba8_sint : unit -> int = "caml_wgpu_texture_format_rgba8_sint"
-external texture_format_bgra8_unorm : unit -> int = "caml_wgpu_texture_format_bgra8_unorm"
-external texture_format_bgra8_unorm_srgb : unit -> int = "caml_wgpu_texture_format_bgra8_unorm_srgb"
-external texture_format_rgb10_a2_uint : unit -> int = "caml_wgpu_texture_format_rgb10_a2_uint"
-external texture_format_rgb10_a2_unorm : unit -> int = "caml_wgpu_texture_format_rgb10_a2_unorm"
-external texture_format_rg11_b10_ufloat : unit -> int = "caml_wgpu_texture_format_rg11_b10_ufloat"
-external texture_format_rgb9_e5_ufloat : unit -> int = "caml_wgpu_texture_format_rgb9_e5_ufloat"
-external texture_format_rg32_float : unit -> int = "caml_wgpu_texture_format_rg32_float"
-external texture_format_rg32_uint : unit -> int = "caml_wgpu_texture_format_rg32_uint"
-external texture_format_rg32_sint : unit -> int = "caml_wgpu_texture_format_rg32_sint"
-external texture_format_rgba16_uint : unit -> int = "caml_wgpu_texture_format_rgba16_uint"
-external texture_format_rgba16_sint : unit -> int = "caml_wgpu_texture_format_rgba16_sint"
-external texture_format_rgba16_float : unit -> int = "caml_wgpu_texture_format_rgba16_float"
-external texture_format_rgba32_float : unit -> int = "caml_wgpu_texture_format_rgba32_float"
-external texture_format_rgba32_uint : unit -> int = "caml_wgpu_texture_format_rgba32_uint"
-external texture_format_rgba32_sint : unit -> int = "caml_wgpu_texture_format_rgba32_sint"
-external texture_format_stencil8 : unit -> int = "caml_wgpu_texture_format_stencil8"
-external texture_format_depth16_unorm : unit -> int = "caml_wgpu_texture_format_depth16_unorm"
-external texture_format_depth24_plus : unit -> int = "caml_wgpu_texture_format_depth24_plus"
-external texture_format_depth24_plus_stencil8 : unit -> int = "caml_wgpu_texture_format_depth24_plus_stencil8"
-external texture_format_depth32_float : unit -> int = "caml_wgpu_texture_format_depth32_float"
-external texture_format_depth32_float_stencil8 : unit -> int = "caml_wgpu_texture_format_depth32_float_stencil8"
-external texture_format_bc1_rgba_unorm : unit -> int = "caml_wgpu_texture_format_bc1_rgba_unorm"
-external texture_format_bc1_rgba_unorm_srgb : unit -> int = "caml_wgpu_texture_format_bc1_rgba_unorm_srgb"
-external texture_format_bc2_rgba_unorm : unit -> int = "caml_wgpu_texture_format_bc2_rgba_unorm"
-external texture_format_bc2_rgba_unorm_srgb : unit -> int = "caml_wgpu_texture_format_bc2_rgba_unorm_srgb"
-external texture_format_bc3_rgba_unorm : unit -> int = "caml_wgpu_texture_format_bc3_rgba_unorm"
-external texture_format_bc3_rgba_unorm_srgb : unit -> int = "caml_wgpu_texture_format_bc3_rgba_unorm_srgb"
-external texture_format_bc4_r_unorm : unit -> int = "caml_wgpu_texture_format_bc4_r_unorm"
-external texture_format_bc4_r_snorm : unit -> int = "caml_wgpu_texture_format_bc4_r_snorm"
-external texture_format_bc5_rg_unorm : unit -> int = "caml_wgpu_texture_format_bc5_rg_unorm"
-external texture_format_bc5_rg_snorm : unit -> int = "caml_wgpu_texture_format_bc5_rg_snorm"
-external texture_format_bc6h_rgb_ufloat : unit -> int = "caml_wgpu_texture_format_bc6h_rgb_ufloat"
-external texture_format_bc6h_rgb_float : unit -> int = "caml_wgpu_texture_format_bc6h_rgb_float"
-external texture_format_bc7_rgba_unorm : unit -> int = "caml_wgpu_texture_format_bc7_rgba_unorm"
-external texture_format_bc7_rgba_unorm_srgb : unit -> int = "caml_wgpu_texture_format_bc7_rgba_unorm_srgb"
-external texture_format_etc2_rgb8_unorm : unit -> int = "caml_wgpu_texture_format_etc2_rgb8_unorm"
-external texture_format_etc2_rgb8_unorm_srgb : unit -> int = "caml_wgpu_texture_format_etc2_rgb8_unorm_srgb"
-external texture_format_etc2_rgb8a1_unorm : unit -> int = "caml_wgpu_texture_format_etc2_rgb8a1_unorm"
-external texture_format_etc2_rgb8a1_unorm_srgb : unit -> int = "caml_wgpu_texture_format_etc2_rgb8a1_unorm_srgb"
-external texture_format_etc2_rgba8_unorm : unit -> int = "caml_wgpu_texture_format_etc2_rgba8_unorm"
-external texture_format_etc2_rgba8_unorm_srgb : unit -> int = "caml_wgpu_texture_format_etc2_rgba8_unorm_srgb"
-external texture_format_eac_r11_unorm : unit -> int = "caml_wgpu_texture_format_eac_r11_unorm"
-external texture_format_eac_r11_snorm : unit -> int = "caml_wgpu_texture_format_eac_r11_snorm"
-external texture_format_eac_rg11_unorm : unit -> int = "caml_wgpu_texture_format_eac_rg11_unorm"
-external texture_format_eac_rg11_snorm : unit -> int = "caml_wgpu_texture_format_eac_rg11_snorm"
-external texture_format_astc_4x4_unorm : unit -> int = "caml_wgpu_texture_format_astc_4x4_unorm"
-external texture_format_astc_4x4_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_4x4_unorm_srgb"
-external texture_format_astc_5x4_unorm : unit -> int = "caml_wgpu_texture_format_astc_5x4_unorm"
-external texture_format_astc_5x4_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_5x4_unorm_srgb"
-external texture_format_astc_5x5_unorm : unit -> int = "caml_wgpu_texture_format_astc_5x5_unorm"
-external texture_format_astc_5x5_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_5x5_unorm_srgb"
-external texture_format_astc_6x5_unorm : unit -> int = "caml_wgpu_texture_format_astc_6x5_unorm"
-external texture_format_astc_6x5_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_6x5_unorm_srgb"
-external texture_format_astc_6x6_unorm : unit -> int = "caml_wgpu_texture_format_astc_6x6_unorm"
-external texture_format_astc_6x6_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_6x6_unorm_srgb"
-external texture_format_astc_8x5_unorm : unit -> int = "caml_wgpu_texture_format_astc_8x5_unorm"
-external texture_format_astc_8x5_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_8x5_unorm_srgb"
-external texture_format_astc_8x6_unorm : unit -> int = "caml_wgpu_texture_format_astc_8x6_unorm"
-external texture_format_astc_8x6_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_8x6_unorm_srgb"
-external texture_format_astc_8x8_unorm : unit -> int = "caml_wgpu_texture_format_astc_8x8_unorm"
-external texture_format_astc_8x8_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_8x8_unorm_srgb"
-external texture_format_astc_10x5_unorm : unit -> int = "caml_wgpu_texture_format_astc_10x5_unorm"
-external texture_format_astc_10x5_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_10x5_unorm_srgb"
-external texture_format_astc_10x6_unorm : unit -> int = "caml_wgpu_texture_format_astc_10x6_unorm"
-external texture_format_astc_10x6_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_10x6_unorm_srgb"
-external texture_format_astc_10x8_unorm : unit -> int = "caml_wgpu_texture_format_astc_10x8_unorm"
-external texture_format_astc_10x8_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_10x8_unorm_srgb"
-external texture_format_astc_10x10_unorm : unit -> int = "caml_wgpu_texture_format_astc_10x10_unorm"
-external texture_format_astc_10x10_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_10x10_unorm_srgb"
-external texture_format_astc_12x10_unorm : unit -> int = "caml_wgpu_texture_format_astc_12x10_unorm"
-external texture_format_astc_12x10_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_12x10_unorm_srgb"
-external texture_format_astc_12x12_unorm : unit -> int = "caml_wgpu_texture_format_astc_12x12_unorm"
-external texture_format_astc_12x12_unorm_srgb : unit -> int = "caml_wgpu_texture_format_astc_12x12_unorm_srgb"
+  external texture_format_undefined : unit -> int = "caml_wgpu_texture_format_undefined"
+  external texture_format_r8_unorm : unit -> int = "caml_wgpu_texture_format_r8_unorm"
+  external texture_format_r8_snorm : unit -> int = "caml_wgpu_texture_format_r8_snorm"
+  external texture_format_r8_uint : unit -> int = "caml_wgpu_texture_format_r8_uint"
+  external texture_format_r8_sint : unit -> int = "caml_wgpu_texture_format_r8_sint"
+  external texture_format_r16_uint : unit -> int = "caml_wgpu_texture_format_r16_uint"
+  external texture_format_r16_sint : unit -> int = "caml_wgpu_texture_format_r16_sint"
+  external texture_format_r16_float : unit -> int = "caml_wgpu_texture_format_r16_float"
+  external texture_format_rg8_unorm : unit -> int = "caml_wgpu_texture_format_rg8_unorm"
+  external texture_format_rg8_snorm : unit -> int = "caml_wgpu_texture_format_rg8_snorm"
+  external texture_format_rg8_uint : unit -> int = "caml_wgpu_texture_format_rg8_uint"
+  external texture_format_rg8_sint : unit -> int = "caml_wgpu_texture_format_rg8_sint"
+  external texture_format_r32_float : unit -> int = "caml_wgpu_texture_format_r32_float"
+  external texture_format_r32_uint : unit -> int = "caml_wgpu_texture_format_r32_uint"
+  external texture_format_r32_sint : unit -> int = "caml_wgpu_texture_format_r32_sint"
+  external texture_format_rg16_uint : unit -> int = "caml_wgpu_texture_format_rg16_uint"
+  external texture_format_rg16_sint : unit -> int = "caml_wgpu_texture_format_rg16_sint"
+  external texture_format_rg16_float : unit -> int = "caml_wgpu_texture_format_rg16_float"
+
+  external texture_format_rgba8_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgba8_unorm"
+
+  external texture_format_rgba8_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgba8_unorm_srgb"
+
+  external texture_format_rgba8_snorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgba8_snorm"
+
+  external texture_format_rgba8_uint : unit -> int = "caml_wgpu_texture_format_rgba8_uint"
+  external texture_format_rgba8_sint : unit -> int = "caml_wgpu_texture_format_rgba8_sint"
+
+  external texture_format_bgra8_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bgra8_unorm"
+
+  external texture_format_bgra8_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bgra8_unorm_srgb"
+
+  external texture_format_rgb10_a2_uint
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgb10_a2_uint"
+
+  external texture_format_rgb10_a2_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgb10_a2_unorm"
+
+  external texture_format_rg11_b10_ufloat
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rg11_b10_ufloat"
+
+  external texture_format_rgb9_e5_ufloat
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgb9_e5_ufloat"
+
+  external texture_format_rg32_float : unit -> int = "caml_wgpu_texture_format_rg32_float"
+  external texture_format_rg32_uint : unit -> int = "caml_wgpu_texture_format_rg32_uint"
+  external texture_format_rg32_sint : unit -> int = "caml_wgpu_texture_format_rg32_sint"
+
+  external texture_format_rgba16_uint
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgba16_uint"
+
+  external texture_format_rgba16_sint
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgba16_sint"
+
+  external texture_format_rgba16_float
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgba16_float"
+
+  external texture_format_rgba32_float
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgba32_float"
+
+  external texture_format_rgba32_uint
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgba32_uint"
+
+  external texture_format_rgba32_sint
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_rgba32_sint"
+
+  external texture_format_stencil8 : unit -> int = "caml_wgpu_texture_format_stencil8"
+
+  external texture_format_depth16_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_depth16_unorm"
+
+  external texture_format_depth24_plus
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_depth24_plus"
+
+  external texture_format_depth24_plus_stencil8
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_depth24_plus_stencil8"
+
+  external texture_format_depth32_float
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_depth32_float"
+
+  external texture_format_depth32_float_stencil8
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_depth32_float_stencil8"
+
+  external texture_format_bc1_rgba_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc1_rgba_unorm"
+
+  external texture_format_bc1_rgba_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc1_rgba_unorm_srgb"
+
+  external texture_format_bc2_rgba_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc2_rgba_unorm"
+
+  external texture_format_bc2_rgba_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc2_rgba_unorm_srgb"
+
+  external texture_format_bc3_rgba_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc3_rgba_unorm"
+
+  external texture_format_bc3_rgba_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc3_rgba_unorm_srgb"
+
+  external texture_format_bc4_r_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc4_r_unorm"
+
+  external texture_format_bc4_r_snorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc4_r_snorm"
+
+  external texture_format_bc5_rg_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc5_rg_unorm"
+
+  external texture_format_bc5_rg_snorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc5_rg_snorm"
+
+  external texture_format_bc6h_rgb_ufloat
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc6h_rgb_ufloat"
+
+  external texture_format_bc6h_rgb_float
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc6h_rgb_float"
+
+  external texture_format_bc7_rgba_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc7_rgba_unorm"
+
+  external texture_format_bc7_rgba_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_bc7_rgba_unorm_srgb"
+
+  external texture_format_etc2_rgb8_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_etc2_rgb8_unorm"
+
+  external texture_format_etc2_rgb8_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_etc2_rgb8_unorm_srgb"
+
+  external texture_format_etc2_rgb8a1_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_etc2_rgb8a1_unorm"
+
+  external texture_format_etc2_rgb8a1_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_etc2_rgb8a1_unorm_srgb"
+
+  external texture_format_etc2_rgba8_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_etc2_rgba8_unorm"
+
+  external texture_format_etc2_rgba8_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_etc2_rgba8_unorm_srgb"
+
+  external texture_format_eac_r11_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_eac_r11_unorm"
+
+  external texture_format_eac_r11_snorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_eac_r11_snorm"
+
+  external texture_format_eac_rg11_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_eac_rg11_unorm"
+
+  external texture_format_eac_rg11_snorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_eac_rg11_snorm"
+
+  external texture_format_astc_4x4_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_4x4_unorm"
+
+  external texture_format_astc_4x4_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_4x4_unorm_srgb"
+
+  external texture_format_astc_5x4_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_5x4_unorm"
+
+  external texture_format_astc_5x4_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_5x4_unorm_srgb"
+
+  external texture_format_astc_5x5_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_5x5_unorm"
+
+  external texture_format_astc_5x5_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_5x5_unorm_srgb"
+
+  external texture_format_astc_6x5_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_6x5_unorm"
+
+  external texture_format_astc_6x5_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_6x5_unorm_srgb"
+
+  external texture_format_astc_6x6_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_6x6_unorm"
+
+  external texture_format_astc_6x6_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_6x6_unorm_srgb"
+
+  external texture_format_astc_8x5_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_8x5_unorm"
+
+  external texture_format_astc_8x5_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_8x5_unorm_srgb"
+
+  external texture_format_astc_8x6_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_8x6_unorm"
+
+  external texture_format_astc_8x6_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_8x6_unorm_srgb"
+
+  external texture_format_astc_8x8_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_8x8_unorm"
+
+  external texture_format_astc_8x8_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_8x8_unorm_srgb"
+
+  external texture_format_astc_10x5_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_10x5_unorm"
+
+  external texture_format_astc_10x5_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_10x5_unorm_srgb"
+
+  external texture_format_astc_10x6_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_10x6_unorm"
+
+  external texture_format_astc_10x6_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_10x6_unorm_srgb"
+
+  external texture_format_astc_10x8_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_10x8_unorm"
+
+  external texture_format_astc_10x8_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_10x8_unorm_srgb"
+
+  external texture_format_astc_10x10_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_10x10_unorm"
+
+  external texture_format_astc_10x10_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_10x10_unorm_srgb"
+
+  external texture_format_astc_12x10_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_12x10_unorm"
+
+  external texture_format_astc_12x10_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_12x10_unorm_srgb"
+
+  external texture_format_astc_12x12_unorm
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_12x12_unorm"
+
+  external texture_format_astc_12x12_unorm_srgb
+    :  unit
+    -> int
+    = "caml_wgpu_texture_format_astc_12x12_unorm_srgb"
 
   let to_int = function
     | Undefined -> texture_format_undefined ()
@@ -1245,25 +2069,39 @@ external texture_format_astc_12x12_unorm_srgb : unit -> int = "caml_wgpu_texture
     | Astc_12x10_unorm_srgb -> texture_format_astc_12x10_unorm_srgb ()
     | Astc_12x12_unorm -> texture_format_astc_12x12_unorm ()
     | Astc_12x12_unorm_srgb -> texture_format_astc_12x12_unorm_srgb ()
+  ;;
 end
 
 module Texture_Sample_Type = struct
   type t =
-  | Binding_not_used
-  | Undefined
-  | Float
-  | Unfilterable_float
-  | Depth
-  | Sint
-  | Uint
+    | Binding_not_used
+    | Undefined
+    | Float
+    | Unfilterable_float
+    | Depth
+    | Sint
+    | Uint
 
-external texture_sample_type_binding_not_used : unit -> int = "caml_wgpu_texture_sample_type_binding_not_used"
-external texture_sample_type_undefined : unit -> int = "caml_wgpu_texture_sample_type_undefined"
-external texture_sample_type_float : unit -> int = "caml_wgpu_texture_sample_type_float"
-external texture_sample_type_unfilterable_float : unit -> int = "caml_wgpu_texture_sample_type_unfilterable_float"
-external texture_sample_type_depth : unit -> int = "caml_wgpu_texture_sample_type_depth"
-external texture_sample_type_sint : unit -> int = "caml_wgpu_texture_sample_type_sint"
-external texture_sample_type_uint : unit -> int = "caml_wgpu_texture_sample_type_uint"
+  external texture_sample_type_binding_not_used
+    :  unit
+    -> int
+    = "caml_wgpu_texture_sample_type_binding_not_used"
+
+  external texture_sample_type_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_texture_sample_type_undefined"
+
+  external texture_sample_type_float : unit -> int = "caml_wgpu_texture_sample_type_float"
+
+  external texture_sample_type_unfilterable_float
+    :  unit
+    -> int
+    = "caml_wgpu_texture_sample_type_unfilterable_float"
+
+  external texture_sample_type_depth : unit -> int = "caml_wgpu_texture_sample_type_depth"
+  external texture_sample_type_sint : unit -> int = "caml_wgpu_texture_sample_type_sint"
+  external texture_sample_type_uint : unit -> int = "caml_wgpu_texture_sample_type_uint"
 
   let to_int = function
     | Binding_not_used -> texture_sample_type_binding_not_used ()
@@ -1273,25 +2111,43 @@ external texture_sample_type_uint : unit -> int = "caml_wgpu_texture_sample_type
     | Depth -> texture_sample_type_depth ()
     | Sint -> texture_sample_type_sint ()
     | Uint -> texture_sample_type_uint ()
+  ;;
 end
 
 module Texture_View_Dimension = struct
   type t =
-  | Undefined
-  | N1d
-  | N2d
-  | N2d_array
-  | Cube
-  | Cube_array
-  | N3d
+    | Undefined
+    | N1d
+    | N2d
+    | N2d_array
+    | Cube
+    | Cube_array
+    | N3d
 
-external texture_view_dimension_undefined : unit -> int = "caml_wgpu_texture_view_dimension_undefined"
-external texture_view_dimension_1d : unit -> int = "caml_wgpu_texture_view_dimension_1d"
-external texture_view_dimension_2d : unit -> int = "caml_wgpu_texture_view_dimension_2d"
-external texture_view_dimension_2d_array : unit -> int = "caml_wgpu_texture_view_dimension_2d_array"
-external texture_view_dimension_cube : unit -> int = "caml_wgpu_texture_view_dimension_cube"
-external texture_view_dimension_cube_array : unit -> int = "caml_wgpu_texture_view_dimension_cube_array"
-external texture_view_dimension_3d : unit -> int = "caml_wgpu_texture_view_dimension_3d"
+  external texture_view_dimension_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_texture_view_dimension_undefined"
+
+  external texture_view_dimension_1d : unit -> int = "caml_wgpu_texture_view_dimension_1d"
+  external texture_view_dimension_2d : unit -> int = "caml_wgpu_texture_view_dimension_2d"
+
+  external texture_view_dimension_2d_array
+    :  unit
+    -> int
+    = "caml_wgpu_texture_view_dimension_2d_array"
+
+  external texture_view_dimension_cube
+    :  unit
+    -> int
+    = "caml_wgpu_texture_view_dimension_cube"
+
+  external texture_view_dimension_cube_array
+    :  unit
+    -> int
+    = "caml_wgpu_texture_view_dimension_cube_array"
+
+  external texture_view_dimension_3d : unit -> int = "caml_wgpu_texture_view_dimension_3d"
 
   let to_int = function
     | Undefined -> texture_view_dimension_undefined ()
@@ -1301,93 +2157,102 @@ external texture_view_dimension_3d : unit -> int = "caml_wgpu_texture_view_dimen
     | Cube -> texture_view_dimension_cube ()
     | Cube_array -> texture_view_dimension_cube_array ()
     | N3d -> texture_view_dimension_3d ()
+  ;;
 end
 
 module Vertex_Format = struct
   type t =
-  | Uint8
-  | Uint8x2
-  | Uint8x4
-  | Sint8
-  | Sint8x2
-  | Sint8x4
-  | Unorm8
-  | Unorm8x2
-  | Unorm8x4
-  | Snorm8
-  | Snorm8x2
-  | Snorm8x4
-  | Uint16
-  | Uint16x2
-  | Uint16x4
-  | Sint16
-  | Sint16x2
-  | Sint16x4
-  | Unorm16
-  | Unorm16x2
-  | Unorm16x4
-  | Snorm16
-  | Snorm16x2
-  | Snorm16x4
-  | Float16
-  | Float16x2
-  | Float16x4
-  | Float32
-  | Float32x2
-  | Float32x3
-  | Float32x4
-  | Uint32
-  | Uint32x2
-  | Uint32x3
-  | Uint32x4
-  | Sint32
-  | Sint32x2
-  | Sint32x3
-  | Sint32x4
-  | Unorm10__10__10__2
-  | Unorm8x4_b_g_r_a
+    | Uint8
+    | Uint8x2
+    | Uint8x4
+    | Sint8
+    | Sint8x2
+    | Sint8x4
+    | Unorm8
+    | Unorm8x2
+    | Unorm8x4
+    | Snorm8
+    | Snorm8x2
+    | Snorm8x4
+    | Uint16
+    | Uint16x2
+    | Uint16x4
+    | Sint16
+    | Sint16x2
+    | Sint16x4
+    | Unorm16
+    | Unorm16x2
+    | Unorm16x4
+    | Snorm16
+    | Snorm16x2
+    | Snorm16x4
+    | Float16
+    | Float16x2
+    | Float16x4
+    | Float32
+    | Float32x2
+    | Float32x3
+    | Float32x4
+    | Uint32
+    | Uint32x2
+    | Uint32x3
+    | Uint32x4
+    | Sint32
+    | Sint32x2
+    | Sint32x3
+    | Sint32x4
+    | Unorm10__10__10__2
+    | Unorm8x4_b_g_r_a
 
-external vertex_format_uint8 : unit -> int = "caml_wgpu_vertex_format_uint8"
-external vertex_format_uint8x2 : unit -> int = "caml_wgpu_vertex_format_uint8x2"
-external vertex_format_uint8x4 : unit -> int = "caml_wgpu_vertex_format_uint8x4"
-external vertex_format_sint8 : unit -> int = "caml_wgpu_vertex_format_sint8"
-external vertex_format_sint8x2 : unit -> int = "caml_wgpu_vertex_format_sint8x2"
-external vertex_format_sint8x4 : unit -> int = "caml_wgpu_vertex_format_sint8x4"
-external vertex_format_unorm8 : unit -> int = "caml_wgpu_vertex_format_unorm8"
-external vertex_format_unorm8x2 : unit -> int = "caml_wgpu_vertex_format_unorm8x2"
-external vertex_format_unorm8x4 : unit -> int = "caml_wgpu_vertex_format_unorm8x4"
-external vertex_format_snorm8 : unit -> int = "caml_wgpu_vertex_format_snorm8"
-external vertex_format_snorm8x2 : unit -> int = "caml_wgpu_vertex_format_snorm8x2"
-external vertex_format_snorm8x4 : unit -> int = "caml_wgpu_vertex_format_snorm8x4"
-external vertex_format_uint16 : unit -> int = "caml_wgpu_vertex_format_uint16"
-external vertex_format_uint16x2 : unit -> int = "caml_wgpu_vertex_format_uint16x2"
-external vertex_format_uint16x4 : unit -> int = "caml_wgpu_vertex_format_uint16x4"
-external vertex_format_sint16 : unit -> int = "caml_wgpu_vertex_format_sint16"
-external vertex_format_sint16x2 : unit -> int = "caml_wgpu_vertex_format_sint16x2"
-external vertex_format_sint16x4 : unit -> int = "caml_wgpu_vertex_format_sint16x4"
-external vertex_format_unorm16 : unit -> int = "caml_wgpu_vertex_format_unorm16"
-external vertex_format_unorm16x2 : unit -> int = "caml_wgpu_vertex_format_unorm16x2"
-external vertex_format_unorm16x4 : unit -> int = "caml_wgpu_vertex_format_unorm16x4"
-external vertex_format_snorm16 : unit -> int = "caml_wgpu_vertex_format_snorm16"
-external vertex_format_snorm16x2 : unit -> int = "caml_wgpu_vertex_format_snorm16x2"
-external vertex_format_snorm16x4 : unit -> int = "caml_wgpu_vertex_format_snorm16x4"
-external vertex_format_float16 : unit -> int = "caml_wgpu_vertex_format_float16"
-external vertex_format_float16x2 : unit -> int = "caml_wgpu_vertex_format_float16x2"
-external vertex_format_float16x4 : unit -> int = "caml_wgpu_vertex_format_float16x4"
-external vertex_format_float32 : unit -> int = "caml_wgpu_vertex_format_float32"
-external vertex_format_float32x2 : unit -> int = "caml_wgpu_vertex_format_float32x2"
-external vertex_format_float32x3 : unit -> int = "caml_wgpu_vertex_format_float32x3"
-external vertex_format_float32x4 : unit -> int = "caml_wgpu_vertex_format_float32x4"
-external vertex_format_uint32 : unit -> int = "caml_wgpu_vertex_format_uint32"
-external vertex_format_uint32x2 : unit -> int = "caml_wgpu_vertex_format_uint32x2"
-external vertex_format_uint32x3 : unit -> int = "caml_wgpu_vertex_format_uint32x3"
-external vertex_format_uint32x4 : unit -> int = "caml_wgpu_vertex_format_uint32x4"
-external vertex_format_sint32 : unit -> int = "caml_wgpu_vertex_format_sint32"
-external vertex_format_sint32x2 : unit -> int = "caml_wgpu_vertex_format_sint32x2"
-external vertex_format_sint32x3 : unit -> int = "caml_wgpu_vertex_format_sint32x3"
-external vertex_format_sint32x4 : unit -> int = "caml_wgpu_vertex_format_sint32x4"
-external vertex_format_unorm10__10__10__2 : unit -> int = "caml_wgpu_vertex_format_unorm10__10__10__2"
-external vertex_format_unorm8x4_b_g_r_a : unit -> int = "caml_wgpu_vertex_format_unorm8x4_b_g_r_a"
+  external vertex_format_uint8 : unit -> int = "caml_wgpu_vertex_format_uint8"
+  external vertex_format_uint8x2 : unit -> int = "caml_wgpu_vertex_format_uint8x2"
+  external vertex_format_uint8x4 : unit -> int = "caml_wgpu_vertex_format_uint8x4"
+  external vertex_format_sint8 : unit -> int = "caml_wgpu_vertex_format_sint8"
+  external vertex_format_sint8x2 : unit -> int = "caml_wgpu_vertex_format_sint8x2"
+  external vertex_format_sint8x4 : unit -> int = "caml_wgpu_vertex_format_sint8x4"
+  external vertex_format_unorm8 : unit -> int = "caml_wgpu_vertex_format_unorm8"
+  external vertex_format_unorm8x2 : unit -> int = "caml_wgpu_vertex_format_unorm8x2"
+  external vertex_format_unorm8x4 : unit -> int = "caml_wgpu_vertex_format_unorm8x4"
+  external vertex_format_snorm8 : unit -> int = "caml_wgpu_vertex_format_snorm8"
+  external vertex_format_snorm8x2 : unit -> int = "caml_wgpu_vertex_format_snorm8x2"
+  external vertex_format_snorm8x4 : unit -> int = "caml_wgpu_vertex_format_snorm8x4"
+  external vertex_format_uint16 : unit -> int = "caml_wgpu_vertex_format_uint16"
+  external vertex_format_uint16x2 : unit -> int = "caml_wgpu_vertex_format_uint16x2"
+  external vertex_format_uint16x4 : unit -> int = "caml_wgpu_vertex_format_uint16x4"
+  external vertex_format_sint16 : unit -> int = "caml_wgpu_vertex_format_sint16"
+  external vertex_format_sint16x2 : unit -> int = "caml_wgpu_vertex_format_sint16x2"
+  external vertex_format_sint16x4 : unit -> int = "caml_wgpu_vertex_format_sint16x4"
+  external vertex_format_unorm16 : unit -> int = "caml_wgpu_vertex_format_unorm16"
+  external vertex_format_unorm16x2 : unit -> int = "caml_wgpu_vertex_format_unorm16x2"
+  external vertex_format_unorm16x4 : unit -> int = "caml_wgpu_vertex_format_unorm16x4"
+  external vertex_format_snorm16 : unit -> int = "caml_wgpu_vertex_format_snorm16"
+  external vertex_format_snorm16x2 : unit -> int = "caml_wgpu_vertex_format_snorm16x2"
+  external vertex_format_snorm16x4 : unit -> int = "caml_wgpu_vertex_format_snorm16x4"
+  external vertex_format_float16 : unit -> int = "caml_wgpu_vertex_format_float16"
+  external vertex_format_float16x2 : unit -> int = "caml_wgpu_vertex_format_float16x2"
+  external vertex_format_float16x4 : unit -> int = "caml_wgpu_vertex_format_float16x4"
+  external vertex_format_float32 : unit -> int = "caml_wgpu_vertex_format_float32"
+  external vertex_format_float32x2 : unit -> int = "caml_wgpu_vertex_format_float32x2"
+  external vertex_format_float32x3 : unit -> int = "caml_wgpu_vertex_format_float32x3"
+  external vertex_format_float32x4 : unit -> int = "caml_wgpu_vertex_format_float32x4"
+  external vertex_format_uint32 : unit -> int = "caml_wgpu_vertex_format_uint32"
+  external vertex_format_uint32x2 : unit -> int = "caml_wgpu_vertex_format_uint32x2"
+  external vertex_format_uint32x3 : unit -> int = "caml_wgpu_vertex_format_uint32x3"
+  external vertex_format_uint32x4 : unit -> int = "caml_wgpu_vertex_format_uint32x4"
+  external vertex_format_sint32 : unit -> int = "caml_wgpu_vertex_format_sint32"
+  external vertex_format_sint32x2 : unit -> int = "caml_wgpu_vertex_format_sint32x2"
+  external vertex_format_sint32x3 : unit -> int = "caml_wgpu_vertex_format_sint32x3"
+  external vertex_format_sint32x4 : unit -> int = "caml_wgpu_vertex_format_sint32x4"
+
+  external vertex_format_unorm10__10__10__2
+    :  unit
+    -> int
+    = "caml_wgpu_vertex_format_unorm10__10__10__2"
+
+  external vertex_format_unorm8x4_b_g_r_a
+    :  unit
+    -> int
+    = "caml_wgpu_vertex_format_unorm8x4_b_g_r_a"
 
   let to_int = function
     | Uint8 -> vertex_format_uint8 ()
@@ -1431,40 +2296,62 @@ external vertex_format_unorm8x4_b_g_r_a : unit -> int = "caml_wgpu_vertex_format
     | Sint32x4 -> vertex_format_sint32x4 ()
     | Unorm10__10__10__2 -> vertex_format_unorm10__10__10__2 ()
     | Unorm8x4_b_g_r_a -> vertex_format_unorm8x4_b_g_r_a ()
+  ;;
 end
 
 module Vertex_Step_Mode = struct
   type t =
-  | Vertex_buffer_not_used
-  | Undefined
-  | Vertex
-  | Instance
+    | Vertex_buffer_not_used
+    | Undefined
+    | Vertex
+    | Instance
 
-external vertex_step_mode_vertex_buffer_not_used : unit -> int = "caml_wgpu_vertex_step_mode_vertex_buffer_not_used"
-external vertex_step_mode_undefined : unit -> int = "caml_wgpu_vertex_step_mode_undefined"
-external vertex_step_mode_vertex : unit -> int = "caml_wgpu_vertex_step_mode_vertex"
-external vertex_step_mode_instance : unit -> int = "caml_wgpu_vertex_step_mode_instance"
+  external vertex_step_mode_vertex_buffer_not_used
+    :  unit
+    -> int
+    = "caml_wgpu_vertex_step_mode_vertex_buffer_not_used"
+
+  external vertex_step_mode_undefined
+    :  unit
+    -> int
+    = "caml_wgpu_vertex_step_mode_undefined"
+
+  external vertex_step_mode_vertex : unit -> int = "caml_wgpu_vertex_step_mode_vertex"
+  external vertex_step_mode_instance : unit -> int = "caml_wgpu_vertex_step_mode_instance"
 
   let to_int = function
     | Vertex_buffer_not_used -> vertex_step_mode_vertex_buffer_not_used ()
     | Undefined -> vertex_step_mode_undefined ()
     | Vertex -> vertex_step_mode_vertex ()
     | Instance -> vertex_step_mode_instance ()
+  ;;
 end
 
 module Wait_Status = struct
   type t =
-  | Success
-  | Timed_out
-  | Unsupported_timeout
-  | Unsupported_count
-  | Unsupported_mixed_sources
+    | Success
+    | Timed_out
+    | Unsupported_timeout
+    | Unsupported_count
+    | Unsupported_mixed_sources
 
-external wait_status_success : unit -> int = "caml_wgpu_wait_status_success"
-external wait_status_timed_out : unit -> int = "caml_wgpu_wait_status_timed_out"
-external wait_status_unsupported_timeout : unit -> int = "caml_wgpu_wait_status_unsupported_timeout"
-external wait_status_unsupported_count : unit -> int = "caml_wgpu_wait_status_unsupported_count"
-external wait_status_unsupported_mixed_sources : unit -> int = "caml_wgpu_wait_status_unsupported_mixed_sources"
+  external wait_status_success : unit -> int = "caml_wgpu_wait_status_success"
+  external wait_status_timed_out : unit -> int = "caml_wgpu_wait_status_timed_out"
+
+  external wait_status_unsupported_timeout
+    :  unit
+    -> int
+    = "caml_wgpu_wait_status_unsupported_timeout"
+
+  external wait_status_unsupported_count
+    :  unit
+    -> int
+    = "caml_wgpu_wait_status_unsupported_count"
+
+  external wait_status_unsupported_mixed_sources
+    :  unit
+    -> int
+    = "caml_wgpu_wait_status_unsupported_mixed_sources"
 
   let to_int = function
     | Success -> wait_status_success ()
@@ -1472,51 +2359,76 @@ external wait_status_unsupported_mixed_sources : unit -> int = "caml_wgpu_wait_s
     | Unsupported_timeout -> wait_status_unsupported_timeout ()
     | Unsupported_count -> wait_status_unsupported_count ()
     | Unsupported_mixed_sources -> wait_status_unsupported_mixed_sources ()
+  ;;
 end
 
 module WGSL_Language_Feature_Name = struct
   type t =
-  | Readonly_and_readwrite_storage_textures
-  | Packed4x8_integer_dot_product
-  | Unrestricted_pointer_parameters
-  | Pointer_composite_access
+    | Readonly_and_readwrite_storage_textures
+    | Packed4x8_integer_dot_product
+    | Unrestricted_pointer_parameters
+    | Pointer_composite_access
 
-external wgsl_language_feature_name_readonly_and_readwrite_storage_textures : unit -> int = "caml_wgpu_wgsl_language_feature_name_readonly_and_readwrite_storage_textures"
-external wgsl_language_feature_name_packed4x8_integer_dot_product : unit -> int = "caml_wgpu_wgsl_language_feature_name_packed4x8_integer_dot_product"
-external wgsl_language_feature_name_unrestricted_pointer_parameters : unit -> int = "caml_wgpu_wgsl_language_feature_name_unrestricted_pointer_parameters"
-external wgsl_language_feature_name_pointer_composite_access : unit -> int = "caml_wgpu_wgsl_language_feature_name_pointer_composite_access"
+  external wgsl_language_feature_name_readonly_and_readwrite_storage_textures
+    :  unit
+    -> int
+    = "caml_wgpu_wgsl_language_feature_name_readonly_and_readwrite_storage_textures"
+
+  external wgsl_language_feature_name_packed4x8_integer_dot_product
+    :  unit
+    -> int
+    = "caml_wgpu_wgsl_language_feature_name_packed4x8_integer_dot_product"
+
+  external wgsl_language_feature_name_unrestricted_pointer_parameters
+    :  unit
+    -> int
+    = "caml_wgpu_wgsl_language_feature_name_unrestricted_pointer_parameters"
+
+  external wgsl_language_feature_name_pointer_composite_access
+    :  unit
+    -> int
+    = "caml_wgpu_wgsl_language_feature_name_pointer_composite_access"
 
   let to_int = function
-    | Readonly_and_readwrite_storage_textures -> wgsl_language_feature_name_readonly_and_readwrite_storage_textures ()
-    | Packed4x8_integer_dot_product -> wgsl_language_feature_name_packed4x8_integer_dot_product ()
-    | Unrestricted_pointer_parameters -> wgsl_language_feature_name_unrestricted_pointer_parameters ()
+    | Readonly_and_readwrite_storage_textures ->
+      wgsl_language_feature_name_readonly_and_readwrite_storage_textures ()
+    | Packed4x8_integer_dot_product ->
+      wgsl_language_feature_name_packed4x8_integer_dot_product ()
+    | Unrestricted_pointer_parameters ->
+      wgsl_language_feature_name_unrestricted_pointer_parameters ()
     | Pointer_composite_access -> wgsl_language_feature_name_pointer_composite_access ()
+  ;;
 end
+
 module Buffer_Usage = struct
   type t =
-  | None
-  | Map_read
-  | Map_write
-  | Copy_src
-  | Copy_dst
-  | Index
-  | Vertex
-  | Uniform
-  | Storage
-  | Indirect
-  | Query_resolve
+    | None
+    | Map_read
+    | Map_write
+    | Copy_src
+    | Copy_dst
+    | Index
+    | Vertex
+    | Uniform
+    | Storage
+    | Indirect
+    | Query_resolve
 
-external buffer_usage_none : unit -> int = "caml_wgpu_buffer_usage_none"
-external buffer_usage_map_read : unit -> int = "caml_wgpu_buffer_usage_map_read"
-external buffer_usage_map_write : unit -> int = "caml_wgpu_buffer_usage_map_write"
-external buffer_usage_copy_src : unit -> int = "caml_wgpu_buffer_usage_copy_src"
-external buffer_usage_copy_dst : unit -> int = "caml_wgpu_buffer_usage_copy_dst"
-external buffer_usage_index : unit -> int = "caml_wgpu_buffer_usage_index"
-external buffer_usage_vertex : unit -> int = "caml_wgpu_buffer_usage_vertex"
-external buffer_usage_uniform : unit -> int = "caml_wgpu_buffer_usage_uniform"
-external buffer_usage_storage : unit -> int = "caml_wgpu_buffer_usage_storage"
-external buffer_usage_indirect : unit -> int = "caml_wgpu_buffer_usage_indirect"
-external buffer_usage_query_resolve : unit -> int = "caml_wgpu_buffer_usage_query_resolve"
+  external buffer_usage_none : unit -> int = "caml_wgpu_buffer_usage_none"
+  external buffer_usage_map_read : unit -> int = "caml_wgpu_buffer_usage_map_read"
+  external buffer_usage_map_write : unit -> int = "caml_wgpu_buffer_usage_map_write"
+  external buffer_usage_copy_src : unit -> int = "caml_wgpu_buffer_usage_copy_src"
+  external buffer_usage_copy_dst : unit -> int = "caml_wgpu_buffer_usage_copy_dst"
+  external buffer_usage_index : unit -> int = "caml_wgpu_buffer_usage_index"
+  external buffer_usage_vertex : unit -> int = "caml_wgpu_buffer_usage_vertex"
+  external buffer_usage_uniform : unit -> int = "caml_wgpu_buffer_usage_uniform"
+  external buffer_usage_storage : unit -> int = "caml_wgpu_buffer_usage_storage"
+  external buffer_usage_indirect : unit -> int = "caml_wgpu_buffer_usage_indirect"
+
+  external buffer_usage_query_resolve
+    :  unit
+    -> int
+    = "caml_wgpu_buffer_usage_query_resolve"
 
   let to_int = function
     | None -> buffer_usage_none ()
@@ -1530,26 +2442,26 @@ external buffer_usage_query_resolve : unit -> int = "caml_wgpu_buffer_usage_quer
     | Storage -> buffer_usage_storage ()
     | Indirect -> buffer_usage_indirect ()
     | Query_resolve -> buffer_usage_query_resolve ()
+  ;;
 
-  let list_to_int flags =
-    List.fold_left (fun acc f -> acc lor to_int f) 0 flags
+  let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags
 end
 
 module Color_Write_Mask = struct
   type t =
-  | None
-  | Red
-  | Green
-  | Blue
-  | Alpha
-  | All
+    | None
+    | Red
+    | Green
+    | Blue
+    | Alpha
+    | All
 
-external color_write_mask_none : unit -> int = "caml_wgpu_color_write_mask_none"
-external color_write_mask_red : unit -> int = "caml_wgpu_color_write_mask_red"
-external color_write_mask_green : unit -> int = "caml_wgpu_color_write_mask_green"
-external color_write_mask_blue : unit -> int = "caml_wgpu_color_write_mask_blue"
-external color_write_mask_alpha : unit -> int = "caml_wgpu_color_write_mask_alpha"
-external color_write_mask_all : unit -> int = "caml_wgpu_color_write_mask_all"
+  external color_write_mask_none : unit -> int = "caml_wgpu_color_write_mask_none"
+  external color_write_mask_red : unit -> int = "caml_wgpu_color_write_mask_red"
+  external color_write_mask_green : unit -> int = "caml_wgpu_color_write_mask_green"
+  external color_write_mask_blue : unit -> int = "caml_wgpu_color_write_mask_blue"
+  external color_write_mask_alpha : unit -> int = "caml_wgpu_color_write_mask_alpha"
+  external color_write_mask_all : unit -> int = "caml_wgpu_color_write_mask_all"
 
   let to_int = function
     | None -> color_write_mask_none ()
@@ -1558,67 +2470,79 @@ external color_write_mask_all : unit -> int = "caml_wgpu_color_write_mask_all"
     | Blue -> color_write_mask_blue ()
     | Alpha -> color_write_mask_alpha ()
     | All -> color_write_mask_all ()
+  ;;
 
-  let list_to_int flags =
-    List.fold_left (fun acc f -> acc lor to_int f) 0 flags
+  let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags
 end
 
 module Map_Mode = struct
   type t =
-  | None
-  | Read
-  | Write
+    | None
+    | Read
+    | Write
 
-external map_mode_none : unit -> int = "caml_wgpu_map_mode_none"
-external map_mode_read : unit -> int = "caml_wgpu_map_mode_read"
-external map_mode_write : unit -> int = "caml_wgpu_map_mode_write"
+  external map_mode_none : unit -> int = "caml_wgpu_map_mode_none"
+  external map_mode_read : unit -> int = "caml_wgpu_map_mode_read"
+  external map_mode_write : unit -> int = "caml_wgpu_map_mode_write"
 
   let to_int = function
     | None -> map_mode_none ()
     | Read -> map_mode_read ()
     | Write -> map_mode_write ()
+  ;;
 
-  let list_to_int flags =
-    List.fold_left (fun acc f -> acc lor to_int f) 0 flags
+  let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags
 end
 
 module Shader_Stage = struct
   type t =
-  | None
-  | Vertex
-  | Fragment
-  | Compute
+    | None
+    | Vertex
+    | Fragment
+    | Compute
 
-external shader_stage_none : unit -> int = "caml_wgpu_shader_stage_none"
-external shader_stage_vertex : unit -> int = "caml_wgpu_shader_stage_vertex"
-external shader_stage_fragment : unit -> int = "caml_wgpu_shader_stage_fragment"
-external shader_stage_compute : unit -> int = "caml_wgpu_shader_stage_compute"
+  external shader_stage_none : unit -> int = "caml_wgpu_shader_stage_none"
+  external shader_stage_vertex : unit -> int = "caml_wgpu_shader_stage_vertex"
+  external shader_stage_fragment : unit -> int = "caml_wgpu_shader_stage_fragment"
+  external shader_stage_compute : unit -> int = "caml_wgpu_shader_stage_compute"
 
   let to_int = function
     | None -> shader_stage_none ()
     | Vertex -> shader_stage_vertex ()
     | Fragment -> shader_stage_fragment ()
     | Compute -> shader_stage_compute ()
+  ;;
 
-  let list_to_int flags =
-    List.fold_left (fun acc f -> acc lor to_int f) 0 flags
+  let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags
 end
 
 module Texture_Usage = struct
   type t =
-  | None
-  | Copy_src
-  | Copy_dst
-  | Texture_binding
-  | Storage_binding
-  | Render_attachment
+    | None
+    | Copy_src
+    | Copy_dst
+    | Texture_binding
+    | Storage_binding
+    | Render_attachment
 
-external texture_usage_none : unit -> int = "caml_wgpu_texture_usage_none"
-external texture_usage_copy_src : unit -> int = "caml_wgpu_texture_usage_copy_src"
-external texture_usage_copy_dst : unit -> int = "caml_wgpu_texture_usage_copy_dst"
-external texture_usage_texture_binding : unit -> int = "caml_wgpu_texture_usage_texture_binding"
-external texture_usage_storage_binding : unit -> int = "caml_wgpu_texture_usage_storage_binding"
-external texture_usage_render_attachment : unit -> int = "caml_wgpu_texture_usage_render_attachment"
+  external texture_usage_none : unit -> int = "caml_wgpu_texture_usage_none"
+  external texture_usage_copy_src : unit -> int = "caml_wgpu_texture_usage_copy_src"
+  external texture_usage_copy_dst : unit -> int = "caml_wgpu_texture_usage_copy_dst"
+
+  external texture_usage_texture_binding
+    :  unit
+    -> int
+    = "caml_wgpu_texture_usage_texture_binding"
+
+  external texture_usage_storage_binding
+    :  unit
+    -> int
+    = "caml_wgpu_texture_usage_storage_binding"
+
+  external texture_usage_render_attachment
+    :  unit
+    -> int
+    = "caml_wgpu_texture_usage_render_attachment"
 
   let to_int = function
     | None -> texture_usage_none ()
@@ -1627,186 +2551,526 @@ external texture_usage_render_attachment : unit -> int = "caml_wgpu_texture_usag
     | Texture_binding -> texture_usage_texture_binding ()
     | Storage_binding -> texture_usage_storage_binding ()
     | Render_attachment -> texture_usage_render_attachment ()
+  ;;
 
-  let list_to_int flags =
-    List.fold_left (fun acc f -> acc lor to_int f) 0 flags
+  let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags
 end
+
 module Adapter_Info = struct
   type t = nativeint
 
   external adapter_info_create : unit -> nativeint = "caml_wgpu_adapter_info_create"
-
   external adapter_info_free : nativeint -> unit = "caml_wgpu_adapter_info_free"
 
-  external adapter_info_set_vendor : nativeint -> string -> unit = "caml_wgpu_adapter_info_set_vendor"
-  external adapter_info_set_architecture : nativeint -> string -> unit = "caml_wgpu_adapter_info_set_architecture"
-  external adapter_info_set_device : nativeint -> string -> unit = "caml_wgpu_adapter_info_set_device"
-  external adapter_info_set_description : nativeint -> string -> unit = "caml_wgpu_adapter_info_set_description"
-  external adapter_info_set_backend_type : nativeint -> int -> unit = "caml_wgpu_adapter_info_set_backend_type"
-  external adapter_info_set_adapter_type : nativeint -> int -> unit = "caml_wgpu_adapter_info_set_adapter_type"
-  external adapter_info_set_vendor_ID : nativeint -> int -> unit = "caml_wgpu_adapter_info_set_vendor_id"
-  external adapter_info_set_device_ID : nativeint -> int -> unit = "caml_wgpu_adapter_info_set_device_id"
+  external adapter_info_set_vendor
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_adapter_info_set_vendor"
 
-  external adapter_info_get_vendor : nativeint -> string = "caml_wgpu_adapter_info_get_vendor"
-  external adapter_info_get_architecture : nativeint -> string = "caml_wgpu_adapter_info_get_architecture"
-  external adapter_info_get_device : nativeint -> string = "caml_wgpu_adapter_info_get_device"
-  external adapter_info_get_description : nativeint -> string = "caml_wgpu_adapter_info_get_description"
-  external adapter_info_get_backend_type : nativeint -> int = "caml_wgpu_adapter_info_get_backend_type"
-  external adapter_info_get_adapter_type : nativeint -> int = "caml_wgpu_adapter_info_get_adapter_type"
-  external adapter_info_get_vendor_ID : nativeint -> int = "caml_wgpu_adapter_info_get_vendor_id"
-  external adapter_info_get_device_ID : nativeint -> int = "caml_wgpu_adapter_info_get_device_id"
+  external adapter_info_set_architecture
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_adapter_info_set_architecture"
+
+  external adapter_info_set_device
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_adapter_info_set_device"
+
+  external adapter_info_set_description
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_adapter_info_set_description"
+
+  external adapter_info_set_backend_type
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_adapter_info_set_backend_type"
+
+  external adapter_info_set_adapter_type
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_adapter_info_set_adapter_type"
+
+  external adapter_info_set_vendor_ID
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_adapter_info_set_vendor_id"
+
+  external adapter_info_set_device_ID
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_adapter_info_set_device_id"
+
+  external adapter_info_get_vendor
+    :  nativeint
+    -> string
+    = "caml_wgpu_adapter_info_get_vendor"
+
+  external adapter_info_get_architecture
+    :  nativeint
+    -> string
+    = "caml_wgpu_adapter_info_get_architecture"
+
+  external adapter_info_get_device
+    :  nativeint
+    -> string
+    = "caml_wgpu_adapter_info_get_device"
+
+  external adapter_info_get_description
+    :  nativeint
+    -> string
+    = "caml_wgpu_adapter_info_get_description"
+
+  external adapter_info_get_backend_type
+    :  nativeint
+    -> int
+    = "caml_wgpu_adapter_info_get_backend_type"
+
+  external adapter_info_get_adapter_type
+    :  nativeint
+    -> int
+    = "caml_wgpu_adapter_info_get_adapter_type"
+
+  external adapter_info_get_vendor_ID
+    :  nativeint
+    -> int
+    = "caml_wgpu_adapter_info_get_vendor_id"
+
+  external adapter_info_get_device_ID
+    :  nativeint
+    -> int
+    = "caml_wgpu_adapter_info_get_device_id"
 end
 
 module Bind_Group_Descriptor = struct
   type t = nativeint
 
-  external bind_group_descriptor_create : unit -> nativeint = "caml_wgpu_bind_group_descriptor_create"
+  external bind_group_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_bind_group_descriptor_create"
 
-  external bind_group_descriptor_free : nativeint -> unit = "caml_wgpu_bind_group_descriptor_free"
+  external bind_group_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_bind_group_descriptor_free"
 
-  external bind_group_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_bind_group_descriptor_set_label"
-  external bind_group_descriptor_set_layout : nativeint -> nativeint -> unit = "caml_wgpu_bind_group_descriptor_set_layout"
-  external bind_group_descriptor_set_entries : nativeint -> nativeint array -> unit = "caml_wgpu_bind_group_descriptor_set_entries"
+  external bind_group_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_bind_group_descriptor_set_label"
 
-  external bind_group_descriptor_get_label : nativeint -> string = "caml_wgpu_bind_group_descriptor_get_label"
-  external bind_group_descriptor_get_layout : nativeint -> nativeint = "caml_wgpu_bind_group_descriptor_get_layout"
-  external bind_group_descriptor_get_entries : nativeint -> nativeint = "caml_wgpu_bind_group_descriptor_get_entries"
+  external bind_group_descriptor_set_layout
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_descriptor_set_layout"
+
+  external bind_group_descriptor_set_entries
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_bind_group_descriptor_set_entries"
+
+  external bind_group_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_bind_group_descriptor_get_label"
+
+  external bind_group_descriptor_get_layout
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_descriptor_get_layout"
+
+  external bind_group_descriptor_get_entries
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_descriptor_get_entries"
 end
 
 module Bind_Group_Entry = struct
   type t = nativeint
 
-  external bind_group_entry_create : unit -> nativeint = "caml_wgpu_bind_group_entry_create"
+  external bind_group_entry_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_bind_group_entry_create"
 
   external bind_group_entry_free : nativeint -> unit = "caml_wgpu_bind_group_entry_free"
 
-  external bind_group_entry_set_binding : nativeint -> int -> unit = "caml_wgpu_bind_group_entry_set_binding"
-  external bind_group_entry_set_buffer : nativeint -> nativeint -> unit = "caml_wgpu_bind_group_entry_set_buffer"
-  external bind_group_entry_set_offset : nativeint -> int64 -> unit = "caml_wgpu_bind_group_entry_set_offset"
-  external bind_group_entry_set_size : nativeint -> int64 -> unit = "caml_wgpu_bind_group_entry_set_size"
-  external bind_group_entry_set_sampler : nativeint -> nativeint -> unit = "caml_wgpu_bind_group_entry_set_sampler"
-  external bind_group_entry_set_texture_view : nativeint -> nativeint -> unit = "caml_wgpu_bind_group_entry_set_texture_view"
+  external bind_group_entry_set_binding
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_bind_group_entry_set_binding"
 
-  external bind_group_entry_get_binding : nativeint -> int = "caml_wgpu_bind_group_entry_get_binding"
-  external bind_group_entry_get_buffer : nativeint -> nativeint = "caml_wgpu_bind_group_entry_get_buffer"
-  external bind_group_entry_get_offset : nativeint -> int64 = "caml_wgpu_bind_group_entry_get_offset"
-  external bind_group_entry_get_size : nativeint -> int64 = "caml_wgpu_bind_group_entry_get_size"
-  external bind_group_entry_get_sampler : nativeint -> nativeint = "caml_wgpu_bind_group_entry_get_sampler"
-  external bind_group_entry_get_texture_view : nativeint -> nativeint = "caml_wgpu_bind_group_entry_get_texture_view"
+  external bind_group_entry_set_buffer
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_entry_set_buffer"
+
+  external bind_group_entry_set_offset
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_bind_group_entry_set_offset"
+
+  external bind_group_entry_set_size
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_bind_group_entry_set_size"
+
+  external bind_group_entry_set_sampler
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_entry_set_sampler"
+
+  external bind_group_entry_set_texture_view
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_entry_set_texture_view"
+
+  external bind_group_entry_get_binding
+    :  nativeint
+    -> int
+    = "caml_wgpu_bind_group_entry_get_binding"
+
+  external bind_group_entry_get_buffer
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_entry_get_buffer"
+
+  external bind_group_entry_get_offset
+    :  nativeint
+    -> int64
+    = "caml_wgpu_bind_group_entry_get_offset"
+
+  external bind_group_entry_get_size
+    :  nativeint
+    -> int64
+    = "caml_wgpu_bind_group_entry_get_size"
+
+  external bind_group_entry_get_sampler
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_entry_get_sampler"
+
+  external bind_group_entry_get_texture_view
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_entry_get_texture_view"
 end
 
 module Bind_Group_Layout_Descriptor = struct
   type t = nativeint
 
-  external bind_group_layout_descriptor_create : unit -> nativeint = "caml_wgpu_bind_group_layout_descriptor_create"
+  external bind_group_layout_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_bind_group_layout_descriptor_create"
 
-  external bind_group_layout_descriptor_free : nativeint -> unit = "caml_wgpu_bind_group_layout_descriptor_free"
+  external bind_group_layout_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_bind_group_layout_descriptor_free"
 
-  external bind_group_layout_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_bind_group_layout_descriptor_set_label"
-  external bind_group_layout_descriptor_set_entries : nativeint -> nativeint array -> unit = "caml_wgpu_bind_group_layout_descriptor_set_entries"
+  external bind_group_layout_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_bind_group_layout_descriptor_set_label"
 
-  external bind_group_layout_descriptor_get_label : nativeint -> string = "caml_wgpu_bind_group_layout_descriptor_get_label"
-  external bind_group_layout_descriptor_get_entries : nativeint -> nativeint = "caml_wgpu_bind_group_layout_descriptor_get_entries"
+  external bind_group_layout_descriptor_set_entries
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_bind_group_layout_descriptor_set_entries"
+
+  external bind_group_layout_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_bind_group_layout_descriptor_get_label"
+
+  external bind_group_layout_descriptor_get_entries
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_layout_descriptor_get_entries"
 end
 
 module Bind_Group_Layout_Entry = struct
   type t = nativeint
 
-  external bind_group_layout_entry_create : unit -> nativeint = "caml_wgpu_bind_group_layout_entry_create"
+  external bind_group_layout_entry_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_bind_group_layout_entry_create"
 
-  external bind_group_layout_entry_free : nativeint -> unit = "caml_wgpu_bind_group_layout_entry_free"
+  external bind_group_layout_entry_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_bind_group_layout_entry_free"
 
-  external bind_group_layout_entry_set_binding : nativeint -> int -> unit = "caml_wgpu_bind_group_layout_entry_set_binding"
-  external bind_group_layout_entry_set_visibility : nativeint -> int -> unit = "caml_wgpu_bind_group_layout_entry_set_visibility"
-  external bind_group_layout_entry_set_buffer : nativeint -> nativeint -> unit = "caml_wgpu_bind_group_layout_entry_set_buffer"
-  external bind_group_layout_entry_set_sampler : nativeint -> nativeint -> unit = "caml_wgpu_bind_group_layout_entry_set_sampler"
-  external bind_group_layout_entry_set_texture : nativeint -> nativeint -> unit = "caml_wgpu_bind_group_layout_entry_set_texture"
-  external bind_group_layout_entry_set_storage_texture : nativeint -> nativeint -> unit = "caml_wgpu_bind_group_layout_entry_set_storage_texture"
+  external bind_group_layout_entry_set_binding
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_bind_group_layout_entry_set_binding"
 
-  external bind_group_layout_entry_get_binding : nativeint -> int = "caml_wgpu_bind_group_layout_entry_get_binding"
-  external bind_group_layout_entry_get_visibility : nativeint -> int = "caml_wgpu_bind_group_layout_entry_get_visibility"
-  external bind_group_layout_entry_get_buffer : nativeint -> nativeint = "caml_wgpu_bind_group_layout_entry_get_buffer"
-  external bind_group_layout_entry_get_sampler : nativeint -> nativeint = "caml_wgpu_bind_group_layout_entry_get_sampler"
-  external bind_group_layout_entry_get_texture : nativeint -> nativeint = "caml_wgpu_bind_group_layout_entry_get_texture"
-  external bind_group_layout_entry_get_storage_texture : nativeint -> nativeint = "caml_wgpu_bind_group_layout_entry_get_storage_texture"
+  external bind_group_layout_entry_set_visibility
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_bind_group_layout_entry_set_visibility"
+
+  external bind_group_layout_entry_set_buffer
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_layout_entry_set_buffer"
+
+  external bind_group_layout_entry_set_sampler
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_layout_entry_set_sampler"
+
+  external bind_group_layout_entry_set_texture
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_layout_entry_set_texture"
+
+  external bind_group_layout_entry_set_storage_texture
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_layout_entry_set_storage_texture"
+
+  external bind_group_layout_entry_get_binding
+    :  nativeint
+    -> int
+    = "caml_wgpu_bind_group_layout_entry_get_binding"
+
+  external bind_group_layout_entry_get_visibility
+    :  nativeint
+    -> int
+    = "caml_wgpu_bind_group_layout_entry_get_visibility"
+
+  external bind_group_layout_entry_get_buffer
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_layout_entry_get_buffer"
+
+  external bind_group_layout_entry_get_sampler
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_layout_entry_get_sampler"
+
+  external bind_group_layout_entry_get_texture
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_layout_entry_get_texture"
+
+  external bind_group_layout_entry_get_storage_texture
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_bind_group_layout_entry_get_storage_texture"
 end
 
 module Blend_Component = struct
   type t = nativeint
 
   external blend_component_create : unit -> nativeint = "caml_wgpu_blend_component_create"
-
   external blend_component_free : nativeint -> unit = "caml_wgpu_blend_component_free"
 
-  external blend_component_set_operation : nativeint -> int -> unit = "caml_wgpu_blend_component_set_operation"
-  external blend_component_set_src_factor : nativeint -> int -> unit = "caml_wgpu_blend_component_set_src_factor"
-  external blend_component_set_dst_factor : nativeint -> int -> unit = "caml_wgpu_blend_component_set_dst_factor"
+  external blend_component_set_operation
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_blend_component_set_operation"
 
-  external blend_component_get_operation : nativeint -> int = "caml_wgpu_blend_component_get_operation"
-  external blend_component_get_src_factor : nativeint -> int = "caml_wgpu_blend_component_get_src_factor"
-  external blend_component_get_dst_factor : nativeint -> int = "caml_wgpu_blend_component_get_dst_factor"
+  external blend_component_set_src_factor
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_blend_component_set_src_factor"
+
+  external blend_component_set_dst_factor
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_blend_component_set_dst_factor"
+
+  external blend_component_get_operation
+    :  nativeint
+    -> int
+    = "caml_wgpu_blend_component_get_operation"
+
+  external blend_component_get_src_factor
+    :  nativeint
+    -> int
+    = "caml_wgpu_blend_component_get_src_factor"
+
+  external blend_component_get_dst_factor
+    :  nativeint
+    -> int
+    = "caml_wgpu_blend_component_get_dst_factor"
 end
 
 module Blend_State = struct
   type t = nativeint
 
   external blend_state_create : unit -> nativeint = "caml_wgpu_blend_state_create"
-
   external blend_state_free : nativeint -> unit = "caml_wgpu_blend_state_free"
 
-  external blend_state_set_color : nativeint -> nativeint -> unit = "caml_wgpu_blend_state_set_color"
-  external blend_state_set_alpha : nativeint -> nativeint -> unit = "caml_wgpu_blend_state_set_alpha"
+  external blend_state_set_color
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_blend_state_set_color"
 
-  external blend_state_get_color : nativeint -> nativeint = "caml_wgpu_blend_state_get_color"
-  external blend_state_get_alpha : nativeint -> nativeint = "caml_wgpu_blend_state_get_alpha"
+  external blend_state_set_alpha
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_blend_state_set_alpha"
+
+  external blend_state_get_color
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_blend_state_get_color"
+
+  external blend_state_get_alpha
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_blend_state_get_alpha"
 end
 
 module Buffer_Binding_Layout = struct
   type t = nativeint
 
-  external buffer_binding_layout_create : unit -> nativeint = "caml_wgpu_buffer_binding_layout_create"
+  external buffer_binding_layout_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_buffer_binding_layout_create"
 
-  external buffer_binding_layout_free : nativeint -> unit = "caml_wgpu_buffer_binding_layout_free"
+  external buffer_binding_layout_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_buffer_binding_layout_free"
 
-  external buffer_binding_layout_set_type : nativeint -> int -> unit = "caml_wgpu_buffer_binding_layout_set_type"
-  external buffer_binding_layout_set_has_dynamic_offset : nativeint -> bool -> unit = "caml_wgpu_buffer_binding_layout_set_has_dynamic_offset"
-  external buffer_binding_layout_set_min_binding_size : nativeint -> int64 -> unit = "caml_wgpu_buffer_binding_layout_set_min_binding_size"
+  external buffer_binding_layout_set_type
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_buffer_binding_layout_set_type"
 
-  external buffer_binding_layout_get_type : nativeint -> int = "caml_wgpu_buffer_binding_layout_get_type"
-  external buffer_binding_layout_get_has_dynamic_offset : nativeint -> bool = "caml_wgpu_buffer_binding_layout_get_has_dynamic_offset"
-  external buffer_binding_layout_get_min_binding_size : nativeint -> int64 = "caml_wgpu_buffer_binding_layout_get_min_binding_size"
+  external buffer_binding_layout_set_has_dynamic_offset
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_buffer_binding_layout_set_has_dynamic_offset"
+
+  external buffer_binding_layout_set_min_binding_size
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_buffer_binding_layout_set_min_binding_size"
+
+  external buffer_binding_layout_get_type
+    :  nativeint
+    -> int
+    = "caml_wgpu_buffer_binding_layout_get_type"
+
+  external buffer_binding_layout_get_has_dynamic_offset
+    :  nativeint
+    -> bool
+    = "caml_wgpu_buffer_binding_layout_get_has_dynamic_offset"
+
+  external buffer_binding_layout_get_min_binding_size
+    :  nativeint
+    -> int64
+    = "caml_wgpu_buffer_binding_layout_get_min_binding_size"
 end
 
 module Buffer_Descriptor = struct
   type t = nativeint
 
-  external buffer_descriptor_create : unit -> nativeint = "caml_wgpu_buffer_descriptor_create"
+  external buffer_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_buffer_descriptor_create"
 
   external buffer_descriptor_free : nativeint -> unit = "caml_wgpu_buffer_descriptor_free"
 
-  external buffer_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_buffer_descriptor_set_label"
-  external buffer_descriptor_set_usage : nativeint -> int -> unit = "caml_wgpu_buffer_descriptor_set_usage"
-  external buffer_descriptor_set_size : nativeint -> int64 -> unit = "caml_wgpu_buffer_descriptor_set_size"
-  external buffer_descriptor_set_mapped_at_creation : nativeint -> bool -> unit = "caml_wgpu_buffer_descriptor_set_mapped_at_creation"
+  external buffer_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_buffer_descriptor_set_label"
 
-  external buffer_descriptor_get_label : nativeint -> string = "caml_wgpu_buffer_descriptor_get_label"
-  external buffer_descriptor_get_usage : nativeint -> int = "caml_wgpu_buffer_descriptor_get_usage"
-  external buffer_descriptor_get_size : nativeint -> int64 = "caml_wgpu_buffer_descriptor_get_size"
-  external buffer_descriptor_get_mapped_at_creation : nativeint -> bool = "caml_wgpu_buffer_descriptor_get_mapped_at_creation"
+  external buffer_descriptor_set_usage
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_buffer_descriptor_set_usage"
+
+  external buffer_descriptor_set_size
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_buffer_descriptor_set_size"
+
+  external buffer_descriptor_set_mapped_at_creation
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_buffer_descriptor_set_mapped_at_creation"
+
+  external buffer_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_buffer_descriptor_get_label"
+
+  external buffer_descriptor_get_usage
+    :  nativeint
+    -> int
+    = "caml_wgpu_buffer_descriptor_get_usage"
+
+  external buffer_descriptor_get_size
+    :  nativeint
+    -> int64
+    = "caml_wgpu_buffer_descriptor_get_size"
+
+  external buffer_descriptor_get_mapped_at_creation
+    :  nativeint
+    -> bool
+    = "caml_wgpu_buffer_descriptor_get_mapped_at_creation"
 end
 
 module Color = struct
   type t = nativeint
 
   external color_create : unit -> nativeint = "caml_wgpu_color_create"
-
   external color_free : nativeint -> unit = "caml_wgpu_color_free"
-
   external color_set_r : nativeint -> float -> unit = "caml_wgpu_color_set_r"
   external color_set_g : nativeint -> float -> unit = "caml_wgpu_color_set_g"
   external color_set_b : nativeint -> float -> unit = "caml_wgpu_color_set_b"
   external color_set_a : nativeint -> float -> unit = "caml_wgpu_color_set_a"
-
   external color_get_r : nativeint -> float = "caml_wgpu_color_get_r"
   external color_get_g : nativeint -> float = "caml_wgpu_color_get_g"
   external color_get_b : nativeint -> float = "caml_wgpu_color_get_b"
@@ -1816,374 +3080,1149 @@ end
 module Color_Target_State = struct
   type t = nativeint
 
-  external color_target_state_create : unit -> nativeint = "caml_wgpu_color_target_state_create"
+  external color_target_state_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_color_target_state_create"
 
-  external color_target_state_free : nativeint -> unit = "caml_wgpu_color_target_state_free"
+  external color_target_state_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_color_target_state_free"
 
-  external color_target_state_set_format : nativeint -> int -> unit = "caml_wgpu_color_target_state_set_format"
-  external color_target_state_set_blend : nativeint -> nativeint -> unit = "caml_wgpu_color_target_state_set_blend"
-  external color_target_state_set_write_mask : nativeint -> int -> unit = "caml_wgpu_color_target_state_set_write_mask"
+  external color_target_state_set_format
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_color_target_state_set_format"
 
-  external color_target_state_get_format : nativeint -> int = "caml_wgpu_color_target_state_get_format"
-  external color_target_state_get_blend : nativeint -> nativeint = "caml_wgpu_color_target_state_get_blend"
-  external color_target_state_get_write_mask : nativeint -> int = "caml_wgpu_color_target_state_get_write_mask"
+  external color_target_state_set_blend
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_color_target_state_set_blend"
+
+  external color_target_state_set_write_mask
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_color_target_state_set_write_mask"
+
+  external color_target_state_get_format
+    :  nativeint
+    -> int
+    = "caml_wgpu_color_target_state_get_format"
+
+  external color_target_state_get_blend
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_color_target_state_get_blend"
+
+  external color_target_state_get_write_mask
+    :  nativeint
+    -> int
+    = "caml_wgpu_color_target_state_get_write_mask"
 end
 
 module Command_Buffer_Descriptor = struct
   type t = nativeint
 
-  external command_buffer_descriptor_create : unit -> nativeint = "caml_wgpu_command_buffer_descriptor_create"
+  external command_buffer_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_command_buffer_descriptor_create"
 
-  external command_buffer_descriptor_free : nativeint -> unit = "caml_wgpu_command_buffer_descriptor_free"
+  external command_buffer_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_command_buffer_descriptor_free"
 
-  external command_buffer_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_command_buffer_descriptor_set_label"
+  external command_buffer_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_command_buffer_descriptor_set_label"
 
-  external command_buffer_descriptor_get_label : nativeint -> string = "caml_wgpu_command_buffer_descriptor_get_label"
+  external command_buffer_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_command_buffer_descriptor_get_label"
 end
 
 module Command_Encoder_Descriptor = struct
   type t = nativeint
 
-  external command_encoder_descriptor_create : unit -> nativeint = "caml_wgpu_command_encoder_descriptor_create"
+  external command_encoder_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_command_encoder_descriptor_create"
 
-  external command_encoder_descriptor_free : nativeint -> unit = "caml_wgpu_command_encoder_descriptor_free"
+  external command_encoder_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_command_encoder_descriptor_free"
 
-  external command_encoder_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_command_encoder_descriptor_set_label"
+  external command_encoder_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_command_encoder_descriptor_set_label"
 
-  external command_encoder_descriptor_get_label : nativeint -> string = "caml_wgpu_command_encoder_descriptor_get_label"
+  external command_encoder_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_command_encoder_descriptor_get_label"
 end
 
 module Compilation_Info = struct
   type t = nativeint
 
-  external compilation_info_create : unit -> nativeint = "caml_wgpu_compilation_info_create"
+  external compilation_info_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_compilation_info_create"
 
   external compilation_info_free : nativeint -> unit = "caml_wgpu_compilation_info_free"
 
-  external compilation_info_set_messages : nativeint -> nativeint array -> unit = "caml_wgpu_compilation_info_set_messages"
+  external compilation_info_set_messages
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_compilation_info_set_messages"
 
-  external compilation_info_get_messages : nativeint -> nativeint = "caml_wgpu_compilation_info_get_messages"
+  external compilation_info_get_messages
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_compilation_info_get_messages"
 end
 
 module Compilation_Message = struct
   type t = nativeint
 
-  external compilation_message_create : unit -> nativeint = "caml_wgpu_compilation_message_create"
+  external compilation_message_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_compilation_message_create"
 
-  external compilation_message_free : nativeint -> unit = "caml_wgpu_compilation_message_free"
+  external compilation_message_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_compilation_message_free"
 
-  external compilation_message_set_message : nativeint -> string -> unit = "caml_wgpu_compilation_message_set_message"
-  external compilation_message_set_type : nativeint -> int -> unit = "caml_wgpu_compilation_message_set_type"
-  external compilation_message_set_line_num : nativeint -> int64 -> unit = "caml_wgpu_compilation_message_set_line_num"
-  external compilation_message_set_line_pos : nativeint -> int64 -> unit = "caml_wgpu_compilation_message_set_line_pos"
-  external compilation_message_set_offset : nativeint -> int64 -> unit = "caml_wgpu_compilation_message_set_offset"
-  external compilation_message_set_length : nativeint -> int64 -> unit = "caml_wgpu_compilation_message_set_length"
+  external compilation_message_set_message
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_compilation_message_set_message"
 
-  external compilation_message_get_message : nativeint -> string = "caml_wgpu_compilation_message_get_message"
-  external compilation_message_get_type : nativeint -> int = "caml_wgpu_compilation_message_get_type"
-  external compilation_message_get_line_num : nativeint -> int64 = "caml_wgpu_compilation_message_get_line_num"
-  external compilation_message_get_line_pos : nativeint -> int64 = "caml_wgpu_compilation_message_get_line_pos"
-  external compilation_message_get_offset : nativeint -> int64 = "caml_wgpu_compilation_message_get_offset"
-  external compilation_message_get_length : nativeint -> int64 = "caml_wgpu_compilation_message_get_length"
+  external compilation_message_set_type
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_compilation_message_set_type"
+
+  external compilation_message_set_line_num
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_compilation_message_set_line_num"
+
+  external compilation_message_set_line_pos
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_compilation_message_set_line_pos"
+
+  external compilation_message_set_offset
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_compilation_message_set_offset"
+
+  external compilation_message_set_length
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_compilation_message_set_length"
+
+  external compilation_message_get_message
+    :  nativeint
+    -> string
+    = "caml_wgpu_compilation_message_get_message"
+
+  external compilation_message_get_type
+    :  nativeint
+    -> int
+    = "caml_wgpu_compilation_message_get_type"
+
+  external compilation_message_get_line_num
+    :  nativeint
+    -> int64
+    = "caml_wgpu_compilation_message_get_line_num"
+
+  external compilation_message_get_line_pos
+    :  nativeint
+    -> int64
+    = "caml_wgpu_compilation_message_get_line_pos"
+
+  external compilation_message_get_offset
+    :  nativeint
+    -> int64
+    = "caml_wgpu_compilation_message_get_offset"
+
+  external compilation_message_get_length
+    :  nativeint
+    -> int64
+    = "caml_wgpu_compilation_message_get_length"
 end
 
 module Compute_Pass_Descriptor = struct
   type t = nativeint
 
-  external compute_pass_descriptor_create : unit -> nativeint = "caml_wgpu_compute_pass_descriptor_create"
+  external compute_pass_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_compute_pass_descriptor_create"
 
-  external compute_pass_descriptor_free : nativeint -> unit = "caml_wgpu_compute_pass_descriptor_free"
+  external compute_pass_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_compute_pass_descriptor_free"
 
-  external compute_pass_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_compute_pass_descriptor_set_label"
-  external compute_pass_descriptor_set_timestamp_writes : nativeint -> nativeint -> unit = "caml_wgpu_compute_pass_descriptor_set_timestamp_writes"
+  external compute_pass_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_compute_pass_descriptor_set_label"
 
-  external compute_pass_descriptor_get_label : nativeint -> string = "caml_wgpu_compute_pass_descriptor_get_label"
-  external compute_pass_descriptor_get_timestamp_writes : nativeint -> nativeint = "caml_wgpu_compute_pass_descriptor_get_timestamp_writes"
+  external compute_pass_descriptor_set_timestamp_writes
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_compute_pass_descriptor_set_timestamp_writes"
+
+  external compute_pass_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_compute_pass_descriptor_get_label"
+
+  external compute_pass_descriptor_get_timestamp_writes
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_compute_pass_descriptor_get_timestamp_writes"
 end
 
 module Compute_Pass_Timestamp_Writes = struct
   type t = nativeint
 
-  external compute_pass_timestamp_writes_create : unit -> nativeint = "caml_wgpu_compute_pass_timestamp_writes_create"
+  external compute_pass_timestamp_writes_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_compute_pass_timestamp_writes_create"
 
-  external compute_pass_timestamp_writes_free : nativeint -> unit = "caml_wgpu_compute_pass_timestamp_writes_free"
+  external compute_pass_timestamp_writes_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_compute_pass_timestamp_writes_free"
 
-  external compute_pass_timestamp_writes_set_query_set : nativeint -> nativeint -> unit = "caml_wgpu_compute_pass_timestamp_writes_set_query_set"
-  external compute_pass_timestamp_writes_set_beginning_of_pass_write_index : nativeint -> int -> unit = "caml_wgpu_compute_pass_timestamp_writes_set_beginning_of_pass_write_index"
-  external compute_pass_timestamp_writes_set_end_of_pass_write_index : nativeint -> int -> unit = "caml_wgpu_compute_pass_timestamp_writes_set_end_of_pass_write_index"
+  external compute_pass_timestamp_writes_set_query_set
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_compute_pass_timestamp_writes_set_query_set"
 
-  external compute_pass_timestamp_writes_get_query_set : nativeint -> nativeint = "caml_wgpu_compute_pass_timestamp_writes_get_query_set"
-  external compute_pass_timestamp_writes_get_beginning_of_pass_write_index : nativeint -> int = "caml_wgpu_compute_pass_timestamp_writes_get_beginning_of_pass_write_index"
-  external compute_pass_timestamp_writes_get_end_of_pass_write_index : nativeint -> int = "caml_wgpu_compute_pass_timestamp_writes_get_end_of_pass_write_index"
+  external compute_pass_timestamp_writes_set_beginning_of_pass_write_index
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_compute_pass_timestamp_writes_set_beginning_of_pass_write_index"
+
+  external compute_pass_timestamp_writes_set_end_of_pass_write_index
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_compute_pass_timestamp_writes_set_end_of_pass_write_index"
+
+  external compute_pass_timestamp_writes_get_query_set
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_compute_pass_timestamp_writes_get_query_set"
+
+  external compute_pass_timestamp_writes_get_beginning_of_pass_write_index
+    :  nativeint
+    -> int
+    = "caml_wgpu_compute_pass_timestamp_writes_get_beginning_of_pass_write_index"
+
+  external compute_pass_timestamp_writes_get_end_of_pass_write_index
+    :  nativeint
+    -> int
+    = "caml_wgpu_compute_pass_timestamp_writes_get_end_of_pass_write_index"
 end
 
 module Compute_Pipeline_Descriptor = struct
   type t = nativeint
 
-  external compute_pipeline_descriptor_create : unit -> nativeint = "caml_wgpu_compute_pipeline_descriptor_create"
+  external compute_pipeline_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_compute_pipeline_descriptor_create"
 
-  external compute_pipeline_descriptor_free : nativeint -> unit = "caml_wgpu_compute_pipeline_descriptor_free"
+  external compute_pipeline_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_compute_pipeline_descriptor_free"
 
-  external compute_pipeline_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_compute_pipeline_descriptor_set_label"
-  external compute_pipeline_descriptor_set_layout : nativeint -> nativeint -> unit = "caml_wgpu_compute_pipeline_descriptor_set_layout"
-  external compute_pipeline_descriptor_set_compute : nativeint -> nativeint -> unit = "caml_wgpu_compute_pipeline_descriptor_set_compute"
+  external compute_pipeline_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_compute_pipeline_descriptor_set_label"
 
-  external compute_pipeline_descriptor_get_label : nativeint -> string = "caml_wgpu_compute_pipeline_descriptor_get_label"
-  external compute_pipeline_descriptor_get_layout : nativeint -> nativeint = "caml_wgpu_compute_pipeline_descriptor_get_layout"
-  external compute_pipeline_descriptor_get_compute : nativeint -> nativeint = "caml_wgpu_compute_pipeline_descriptor_get_compute"
+  external compute_pipeline_descriptor_set_layout
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_compute_pipeline_descriptor_set_layout"
+
+  external compute_pipeline_descriptor_set_compute
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_compute_pipeline_descriptor_set_compute"
+
+  external compute_pipeline_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_compute_pipeline_descriptor_get_label"
+
+  external compute_pipeline_descriptor_get_layout
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_compute_pipeline_descriptor_get_layout"
+
+  external compute_pipeline_descriptor_get_compute
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_compute_pipeline_descriptor_get_compute"
 end
 
 module Constant_Entry = struct
   type t = nativeint
 
   external constant_entry_create : unit -> nativeint = "caml_wgpu_constant_entry_create"
-
   external constant_entry_free : nativeint -> unit = "caml_wgpu_constant_entry_free"
 
-  external constant_entry_set_key : nativeint -> string -> unit = "caml_wgpu_constant_entry_set_key"
-  external constant_entry_set_value : nativeint -> float -> unit = "caml_wgpu_constant_entry_set_value"
+  external constant_entry_set_key
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_constant_entry_set_key"
 
-  external constant_entry_get_key : nativeint -> string = "caml_wgpu_constant_entry_get_key"
-  external constant_entry_get_value : nativeint -> float = "caml_wgpu_constant_entry_get_value"
+  external constant_entry_set_value
+    :  nativeint
+    -> float
+    -> unit
+    = "caml_wgpu_constant_entry_set_value"
+
+  external constant_entry_get_key
+    :  nativeint
+    -> string
+    = "caml_wgpu_constant_entry_get_key"
+
+  external constant_entry_get_value
+    :  nativeint
+    -> float
+    = "caml_wgpu_constant_entry_get_value"
 end
 
 module Depth_Stencil_State = struct
   type t = nativeint
 
-  external depth_stencil_state_create : unit -> nativeint = "caml_wgpu_depth_stencil_state_create"
+  external depth_stencil_state_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_depth_stencil_state_create"
 
-  external depth_stencil_state_free : nativeint -> unit = "caml_wgpu_depth_stencil_state_free"
+  external depth_stencil_state_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_depth_stencil_state_free"
 
-  external depth_stencil_state_set_format : nativeint -> int -> unit = "caml_wgpu_depth_stencil_state_set_format"
-  external depth_stencil_state_set_depth_write_enabled : nativeint -> int -> unit = "caml_wgpu_depth_stencil_state_set_depth_write_enabled"
-  external depth_stencil_state_set_depth_compare : nativeint -> int -> unit = "caml_wgpu_depth_stencil_state_set_depth_compare"
-  external depth_stencil_state_set_stencil_front : nativeint -> nativeint -> unit = "caml_wgpu_depth_stencil_state_set_stencil_front"
-  external depth_stencil_state_set_stencil_back : nativeint -> nativeint -> unit = "caml_wgpu_depth_stencil_state_set_stencil_back"
-  external depth_stencil_state_set_stencil_read_mask : nativeint -> int -> unit = "caml_wgpu_depth_stencil_state_set_stencil_read_mask"
-  external depth_stencil_state_set_stencil_write_mask : nativeint -> int -> unit = "caml_wgpu_depth_stencil_state_set_stencil_write_mask"
-  external depth_stencil_state_set_depth_bias : nativeint -> int -> unit = "caml_wgpu_depth_stencil_state_set_depth_bias"
-  external depth_stencil_state_set_depth_bias_slope_scale : nativeint -> float -> unit = "caml_wgpu_depth_stencil_state_set_depth_bias_slope_scale"
-  external depth_stencil_state_set_depth_bias_clamp : nativeint -> float -> unit = "caml_wgpu_depth_stencil_state_set_depth_bias_clamp"
+  external depth_stencil_state_set_format
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_format"
 
-  external depth_stencil_state_get_format : nativeint -> int = "caml_wgpu_depth_stencil_state_get_format"
-  external depth_stencil_state_get_depth_write_enabled : nativeint -> int = "caml_wgpu_depth_stencil_state_get_depth_write_enabled"
-  external depth_stencil_state_get_depth_compare : nativeint -> int = "caml_wgpu_depth_stencil_state_get_depth_compare"
-  external depth_stencil_state_get_stencil_front : nativeint -> nativeint = "caml_wgpu_depth_stencil_state_get_stencil_front"
-  external depth_stencil_state_get_stencil_back : nativeint -> nativeint = "caml_wgpu_depth_stencil_state_get_stencil_back"
-  external depth_stencil_state_get_stencil_read_mask : nativeint -> int = "caml_wgpu_depth_stencil_state_get_stencil_read_mask"
-  external depth_stencil_state_get_stencil_write_mask : nativeint -> int = "caml_wgpu_depth_stencil_state_get_stencil_write_mask"
-  external depth_stencil_state_get_depth_bias : nativeint -> int = "caml_wgpu_depth_stencil_state_get_depth_bias"
-  external depth_stencil_state_get_depth_bias_slope_scale : nativeint -> float = "caml_wgpu_depth_stencil_state_get_depth_bias_slope_scale"
-  external depth_stencil_state_get_depth_bias_clamp : nativeint -> float = "caml_wgpu_depth_stencil_state_get_depth_bias_clamp"
+  external depth_stencil_state_set_depth_write_enabled
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_depth_write_enabled"
+
+  external depth_stencil_state_set_depth_compare
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_depth_compare"
+
+  external depth_stencil_state_set_stencil_front
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_stencil_front"
+
+  external depth_stencil_state_set_stencil_back
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_stencil_back"
+
+  external depth_stencil_state_set_stencil_read_mask
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_stencil_read_mask"
+
+  external depth_stencil_state_set_stencil_write_mask
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_stencil_write_mask"
+
+  external depth_stencil_state_set_depth_bias
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_depth_bias"
+
+  external depth_stencil_state_set_depth_bias_slope_scale
+    :  nativeint
+    -> float
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_depth_bias_slope_scale"
+
+  external depth_stencil_state_set_depth_bias_clamp
+    :  nativeint
+    -> float
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_depth_bias_clamp"
+
+  external depth_stencil_state_get_format
+    :  nativeint
+    -> int
+    = "caml_wgpu_depth_stencil_state_get_format"
+
+  external depth_stencil_state_get_depth_write_enabled
+    :  nativeint
+    -> int
+    = "caml_wgpu_depth_stencil_state_get_depth_write_enabled"
+
+  external depth_stencil_state_get_depth_compare
+    :  nativeint
+    -> int
+    = "caml_wgpu_depth_stencil_state_get_depth_compare"
+
+  external depth_stencil_state_get_stencil_front
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_depth_stencil_state_get_stencil_front"
+
+  external depth_stencil_state_get_stencil_back
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_depth_stencil_state_get_stencil_back"
+
+  external depth_stencil_state_get_stencil_read_mask
+    :  nativeint
+    -> int
+    = "caml_wgpu_depth_stencil_state_get_stencil_read_mask"
+
+  external depth_stencil_state_get_stencil_write_mask
+    :  nativeint
+    -> int
+    = "caml_wgpu_depth_stencil_state_get_stencil_write_mask"
+
+  external depth_stencil_state_get_depth_bias
+    :  nativeint
+    -> int
+    = "caml_wgpu_depth_stencil_state_get_depth_bias"
+
+  external depth_stencil_state_get_depth_bias_slope_scale
+    :  nativeint
+    -> float
+    = "caml_wgpu_depth_stencil_state_get_depth_bias_slope_scale"
+
+  external depth_stencil_state_get_depth_bias_clamp
+    :  nativeint
+    -> float
+    = "caml_wgpu_depth_stencil_state_get_depth_bias_clamp"
 end
 
 module Device_Descriptor = struct
   type t = nativeint
 
-  external device_descriptor_create : unit -> nativeint = "caml_wgpu_device_descriptor_create"
+  external device_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_device_descriptor_create"
 
   external device_descriptor_free : nativeint -> unit = "caml_wgpu_device_descriptor_free"
 
-  external device_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_device_descriptor_set_label"
-  external device_descriptor_set_required_features : nativeint -> int array -> unit = "caml_wgpu_device_descriptor_set_required_features"
-  external device_descriptor_set_required_limits : nativeint -> nativeint -> unit = "caml_wgpu_device_descriptor_set_required_limits"
-  external device_descriptor_set_default_queue : nativeint -> nativeint -> unit = "caml_wgpu_device_descriptor_set_default_queue"
-  external device_descriptor_set_device_lost_callback_info : nativeint -> nativeint -> unit = "caml_wgpu_device_descriptor_set_device_lost_callback_info"
-  external device_descriptor_set_uncaptured_error_callback_info : nativeint -> nativeint -> unit = "caml_wgpu_device_descriptor_set_uncaptured_error_callback_info"
+  external device_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_device_descriptor_set_label"
 
-  external device_descriptor_get_label : nativeint -> string = "caml_wgpu_device_descriptor_get_label"
-  external device_descriptor_get_required_features : nativeint -> nativeint = "caml_wgpu_device_descriptor_get_required_features"
-  external device_descriptor_get_required_limits : nativeint -> nativeint = "caml_wgpu_device_descriptor_get_required_limits"
-  external device_descriptor_get_default_queue : nativeint -> nativeint = "caml_wgpu_device_descriptor_get_default_queue"
-  external device_descriptor_get_device_lost_callback_info : nativeint -> nativeint = "caml_wgpu_device_descriptor_get_device_lost_callback_info"
-  external device_descriptor_get_uncaptured_error_callback_info : nativeint -> nativeint = "caml_wgpu_device_descriptor_get_uncaptured_error_callback_info"
+  external device_descriptor_set_required_features
+    :  nativeint
+    -> int array
+    -> unit
+    = "caml_wgpu_device_descriptor_set_required_features"
+
+  external device_descriptor_set_required_limits
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_device_descriptor_set_required_limits"
+
+  external device_descriptor_set_default_queue
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_device_descriptor_set_default_queue"
+
+  external device_descriptor_set_device_lost_callback_info
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_device_descriptor_set_device_lost_callback_info"
+
+  external device_descriptor_set_uncaptured_error_callback_info
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_device_descriptor_set_uncaptured_error_callback_info"
+
+  external device_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_device_descriptor_get_label"
+
+  external device_descriptor_get_required_features
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_device_descriptor_get_required_features"
+
+  external device_descriptor_get_required_limits
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_device_descriptor_get_required_limits"
+
+  external device_descriptor_get_default_queue
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_device_descriptor_get_default_queue"
+
+  external device_descriptor_get_device_lost_callback_info
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_device_descriptor_get_device_lost_callback_info"
+
+  external device_descriptor_get_uncaptured_error_callback_info
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_device_descriptor_get_uncaptured_error_callback_info"
 end
 
 module Extent_3D = struct
   type t = nativeint
 
   external extent_3D_create : unit -> nativeint = "caml_wgpu_extent_3d_create"
-
   external extent_3D_free : nativeint -> unit = "caml_wgpu_extent_3d_free"
 
-  external extent_3D_set_width : nativeint -> int -> unit = "caml_wgpu_extent_3d_set_width"
-  external extent_3D_set_height : nativeint -> int -> unit = "caml_wgpu_extent_3d_set_height"
-  external extent_3D_set_depth_or_array_layers : nativeint -> int -> unit = "caml_wgpu_extent_3d_set_depth_or_array_layers"
+  external extent_3D_set_width
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_extent_3d_set_width"
+
+  external extent_3D_set_height
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_extent_3d_set_height"
+
+  external extent_3D_set_depth_or_array_layers
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_extent_3d_set_depth_or_array_layers"
 
   external extent_3D_get_width : nativeint -> int = "caml_wgpu_extent_3d_get_width"
   external extent_3D_get_height : nativeint -> int = "caml_wgpu_extent_3d_get_height"
-  external extent_3D_get_depth_or_array_layers : nativeint -> int = "caml_wgpu_extent_3d_get_depth_or_array_layers"
+
+  external extent_3D_get_depth_or_array_layers
+    :  nativeint
+    -> int
+    = "caml_wgpu_extent_3d_get_depth_or_array_layers"
 end
 
 module Fragment_State = struct
   type t = nativeint
 
   external fragment_state_create : unit -> nativeint = "caml_wgpu_fragment_state_create"
-
   external fragment_state_free : nativeint -> unit = "caml_wgpu_fragment_state_free"
 
-  external fragment_state_set_module : nativeint -> nativeint -> unit = "caml_wgpu_fragment_state_set_module"
-  external fragment_state_set_entry_point : nativeint -> string -> unit = "caml_wgpu_fragment_state_set_entry_point"
-  external fragment_state_set_constants : nativeint -> nativeint array -> unit = "caml_wgpu_fragment_state_set_constants"
-  external fragment_state_set_targets : nativeint -> nativeint array -> unit = "caml_wgpu_fragment_state_set_targets"
+  external fragment_state_set_module
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_fragment_state_set_module"
 
-  external fragment_state_get_module : nativeint -> nativeint = "caml_wgpu_fragment_state_get_module"
-  external fragment_state_get_entry_point : nativeint -> string = "caml_wgpu_fragment_state_get_entry_point"
-  external fragment_state_get_constants : nativeint -> nativeint = "caml_wgpu_fragment_state_get_constants"
-  external fragment_state_get_targets : nativeint -> nativeint = "caml_wgpu_fragment_state_get_targets"
+  external fragment_state_set_entry_point
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_fragment_state_set_entry_point"
+
+  external fragment_state_set_constants
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_fragment_state_set_constants"
+
+  external fragment_state_set_targets
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_fragment_state_set_targets"
+
+  external fragment_state_get_module
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_fragment_state_get_module"
+
+  external fragment_state_get_entry_point
+    :  nativeint
+    -> string
+    = "caml_wgpu_fragment_state_get_entry_point"
+
+  external fragment_state_get_constants
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_fragment_state_get_constants"
+
+  external fragment_state_get_targets
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_fragment_state_get_targets"
 end
 
 module Future = struct
   type t = nativeint
 
   external future_create : unit -> nativeint = "caml_wgpu_future_create"
-
   external future_free : nativeint -> unit = "caml_wgpu_future_free"
-
   external future_set_id : nativeint -> int64 -> unit = "caml_wgpu_future_set_id"
-
   external future_get_id : nativeint -> int64 = "caml_wgpu_future_get_id"
 end
 
 module Future_Wait_Info = struct
   type t = nativeint
 
-  external future_wait_info_create : unit -> nativeint = "caml_wgpu_future_wait_info_create"
+  external future_wait_info_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_future_wait_info_create"
 
   external future_wait_info_free : nativeint -> unit = "caml_wgpu_future_wait_info_free"
 
-  external future_wait_info_set_future : nativeint -> nativeint -> unit = "caml_wgpu_future_wait_info_set_future"
-  external future_wait_info_set_completed : nativeint -> bool -> unit = "caml_wgpu_future_wait_info_set_completed"
+  external future_wait_info_set_future
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_future_wait_info_set_future"
 
-  external future_wait_info_get_future : nativeint -> nativeint = "caml_wgpu_future_wait_info_get_future"
-  external future_wait_info_get_completed : nativeint -> bool = "caml_wgpu_future_wait_info_get_completed"
+  external future_wait_info_set_completed
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_future_wait_info_set_completed"
+
+  external future_wait_info_get_future
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_future_wait_info_get_future"
+
+  external future_wait_info_get_completed
+    :  nativeint
+    -> bool
+    = "caml_wgpu_future_wait_info_get_completed"
 end
 
 module Instance_Capabilities = struct
   type t = nativeint
 
-  external instance_capabilities_create : unit -> nativeint = "caml_wgpu_instance_capabilities_create"
+  external instance_capabilities_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_instance_capabilities_create"
 
-  external instance_capabilities_free : nativeint -> unit = "caml_wgpu_instance_capabilities_free"
+  external instance_capabilities_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_instance_capabilities_free"
 
-  external instance_capabilities_set_timed_wait_any_enable : nativeint -> bool -> unit = "caml_wgpu_instance_capabilities_set_timed_wait_any_enable"
-  external instance_capabilities_set_timed_wait_any_max_count : nativeint -> int64 -> unit = "caml_wgpu_instance_capabilities_set_timed_wait_any_max_count"
+  external instance_capabilities_set_timed_wait_any_enable
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_instance_capabilities_set_timed_wait_any_enable"
 
-  external instance_capabilities_get_timed_wait_any_enable : nativeint -> bool = "caml_wgpu_instance_capabilities_get_timed_wait_any_enable"
-  external instance_capabilities_get_timed_wait_any_max_count : nativeint -> int64 = "caml_wgpu_instance_capabilities_get_timed_wait_any_max_count"
+  external instance_capabilities_set_timed_wait_any_max_count
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_instance_capabilities_set_timed_wait_any_max_count"
+
+  external instance_capabilities_get_timed_wait_any_enable
+    :  nativeint
+    -> bool
+    = "caml_wgpu_instance_capabilities_get_timed_wait_any_enable"
+
+  external instance_capabilities_get_timed_wait_any_max_count
+    :  nativeint
+    -> int64
+    = "caml_wgpu_instance_capabilities_get_timed_wait_any_max_count"
 end
 
 module Instance_Descriptor = struct
   type t = nativeint
 
-  external instance_descriptor_create : unit -> nativeint = "caml_wgpu_instance_descriptor_create"
+  external instance_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_instance_descriptor_create"
 
-  external instance_descriptor_free : nativeint -> unit = "caml_wgpu_instance_descriptor_free"
+  external instance_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_instance_descriptor_free"
 
-  external instance_descriptor_set_features : nativeint -> nativeint -> unit = "caml_wgpu_instance_descriptor_set_features"
+  external instance_descriptor_set_features
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_instance_descriptor_set_features"
 
-  external instance_descriptor_get_features : nativeint -> nativeint = "caml_wgpu_instance_descriptor_get_features"
+  external instance_descriptor_get_features
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_instance_descriptor_get_features"
 end
 
 module Limits = struct
   type t = nativeint
 
   external limits_create : unit -> nativeint = "caml_wgpu_limits_create"
-
   external limits_free : nativeint -> unit = "caml_wgpu_limits_free"
 
-  external limits_set_max_texture_dimension_1D : nativeint -> int -> unit = "caml_wgpu_limits_set_max_texture_dimension_1d"
-  external limits_set_max_texture_dimension_2D : nativeint -> int -> unit = "caml_wgpu_limits_set_max_texture_dimension_2d"
-  external limits_set_max_texture_dimension_3D : nativeint -> int -> unit = "caml_wgpu_limits_set_max_texture_dimension_3d"
-  external limits_set_max_texture_array_layers : nativeint -> int -> unit = "caml_wgpu_limits_set_max_texture_array_layers"
-  external limits_set_max_bind_groups : nativeint -> int -> unit = "caml_wgpu_limits_set_max_bind_groups"
-  external limits_set_max_bind_groups_plus_vertex_buffers : nativeint -> int -> unit = "caml_wgpu_limits_set_max_bind_groups_plus_vertex_buffers"
-  external limits_set_max_bindings_per_bind_group : nativeint -> int -> unit = "caml_wgpu_limits_set_max_bindings_per_bind_group"
-  external limits_set_max_dynamic_uniform_buffers_per_pipeline_layout : nativeint -> int -> unit = "caml_wgpu_limits_set_max_dynamic_uniform_buffers_per_pipeline_layout"
-  external limits_set_max_dynamic_storage_buffers_per_pipeline_layout : nativeint -> int -> unit = "caml_wgpu_limits_set_max_dynamic_storage_buffers_per_pipeline_layout"
-  external limits_set_max_sampled_textures_per_shader_stage : nativeint -> int -> unit = "caml_wgpu_limits_set_max_sampled_textures_per_shader_stage"
-  external limits_set_max_samplers_per_shader_stage : nativeint -> int -> unit = "caml_wgpu_limits_set_max_samplers_per_shader_stage"
-  external limits_set_max_storage_buffers_per_shader_stage : nativeint -> int -> unit = "caml_wgpu_limits_set_max_storage_buffers_per_shader_stage"
-  external limits_set_max_storage_textures_per_shader_stage : nativeint -> int -> unit = "caml_wgpu_limits_set_max_storage_textures_per_shader_stage"
-  external limits_set_max_uniform_buffers_per_shader_stage : nativeint -> int -> unit = "caml_wgpu_limits_set_max_uniform_buffers_per_shader_stage"
-  external limits_set_max_uniform_buffer_binding_size : nativeint -> int64 -> unit = "caml_wgpu_limits_set_max_uniform_buffer_binding_size"
-  external limits_set_max_storage_buffer_binding_size : nativeint -> int64 -> unit = "caml_wgpu_limits_set_max_storage_buffer_binding_size"
-  external limits_set_min_uniform_buffer_offset_alignment : nativeint -> int -> unit = "caml_wgpu_limits_set_min_uniform_buffer_offset_alignment"
-  external limits_set_min_storage_buffer_offset_alignment : nativeint -> int -> unit = "caml_wgpu_limits_set_min_storage_buffer_offset_alignment"
-  external limits_set_max_vertex_buffers : nativeint -> int -> unit = "caml_wgpu_limits_set_max_vertex_buffers"
-  external limits_set_max_buffer_size : nativeint -> int64 -> unit = "caml_wgpu_limits_set_max_buffer_size"
-  external limits_set_max_vertex_attributes : nativeint -> int -> unit = "caml_wgpu_limits_set_max_vertex_attributes"
-  external limits_set_max_vertex_buffer_array_stride : nativeint -> int -> unit = "caml_wgpu_limits_set_max_vertex_buffer_array_stride"
-  external limits_set_max_inter_stage_shader_variables : nativeint -> int -> unit = "caml_wgpu_limits_set_max_inter_stage_shader_variables"
-  external limits_set_max_color_attachments : nativeint -> int -> unit = "caml_wgpu_limits_set_max_color_attachments"
-  external limits_set_max_color_attachment_bytes_per_sample : nativeint -> int -> unit = "caml_wgpu_limits_set_max_color_attachment_bytes_per_sample"
-  external limits_set_max_compute_workgroup_storage_size : nativeint -> int -> unit = "caml_wgpu_limits_set_max_compute_workgroup_storage_size"
-  external limits_set_max_compute_invocations_per_workgroup : nativeint -> int -> unit = "caml_wgpu_limits_set_max_compute_invocations_per_workgroup"
-  external limits_set_max_compute_workgroup_size_x : nativeint -> int -> unit = "caml_wgpu_limits_set_max_compute_workgroup_size_x"
-  external limits_set_max_compute_workgroup_size_y : nativeint -> int -> unit = "caml_wgpu_limits_set_max_compute_workgroup_size_y"
-  external limits_set_max_compute_workgroup_size_z : nativeint -> int -> unit = "caml_wgpu_limits_set_max_compute_workgroup_size_z"
-  external limits_set_max_compute_workgroups_per_dimension : nativeint -> int -> unit = "caml_wgpu_limits_set_max_compute_workgroups_per_dimension"
+  external limits_set_max_texture_dimension_1D
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_texture_dimension_1d"
 
-  external limits_get_max_texture_dimension_1D : nativeint -> int = "caml_wgpu_limits_get_max_texture_dimension_1d"
-  external limits_get_max_texture_dimension_2D : nativeint -> int = "caml_wgpu_limits_get_max_texture_dimension_2d"
-  external limits_get_max_texture_dimension_3D : nativeint -> int = "caml_wgpu_limits_get_max_texture_dimension_3d"
-  external limits_get_max_texture_array_layers : nativeint -> int = "caml_wgpu_limits_get_max_texture_array_layers"
-  external limits_get_max_bind_groups : nativeint -> int = "caml_wgpu_limits_get_max_bind_groups"
-  external limits_get_max_bind_groups_plus_vertex_buffers : nativeint -> int = "caml_wgpu_limits_get_max_bind_groups_plus_vertex_buffers"
-  external limits_get_max_bindings_per_bind_group : nativeint -> int = "caml_wgpu_limits_get_max_bindings_per_bind_group"
-  external limits_get_max_dynamic_uniform_buffers_per_pipeline_layout : nativeint -> int = "caml_wgpu_limits_get_max_dynamic_uniform_buffers_per_pipeline_layout"
-  external limits_get_max_dynamic_storage_buffers_per_pipeline_layout : nativeint -> int = "caml_wgpu_limits_get_max_dynamic_storage_buffers_per_pipeline_layout"
-  external limits_get_max_sampled_textures_per_shader_stage : nativeint -> int = "caml_wgpu_limits_get_max_sampled_textures_per_shader_stage"
-  external limits_get_max_samplers_per_shader_stage : nativeint -> int = "caml_wgpu_limits_get_max_samplers_per_shader_stage"
-  external limits_get_max_storage_buffers_per_shader_stage : nativeint -> int = "caml_wgpu_limits_get_max_storage_buffers_per_shader_stage"
-  external limits_get_max_storage_textures_per_shader_stage : nativeint -> int = "caml_wgpu_limits_get_max_storage_textures_per_shader_stage"
-  external limits_get_max_uniform_buffers_per_shader_stage : nativeint -> int = "caml_wgpu_limits_get_max_uniform_buffers_per_shader_stage"
-  external limits_get_max_uniform_buffer_binding_size : nativeint -> int64 = "caml_wgpu_limits_get_max_uniform_buffer_binding_size"
-  external limits_get_max_storage_buffer_binding_size : nativeint -> int64 = "caml_wgpu_limits_get_max_storage_buffer_binding_size"
-  external limits_get_min_uniform_buffer_offset_alignment : nativeint -> int = "caml_wgpu_limits_get_min_uniform_buffer_offset_alignment"
-  external limits_get_min_storage_buffer_offset_alignment : nativeint -> int = "caml_wgpu_limits_get_min_storage_buffer_offset_alignment"
-  external limits_get_max_vertex_buffers : nativeint -> int = "caml_wgpu_limits_get_max_vertex_buffers"
-  external limits_get_max_buffer_size : nativeint -> int64 = "caml_wgpu_limits_get_max_buffer_size"
-  external limits_get_max_vertex_attributes : nativeint -> int = "caml_wgpu_limits_get_max_vertex_attributes"
-  external limits_get_max_vertex_buffer_array_stride : nativeint -> int = "caml_wgpu_limits_get_max_vertex_buffer_array_stride"
-  external limits_get_max_inter_stage_shader_variables : nativeint -> int = "caml_wgpu_limits_get_max_inter_stage_shader_variables"
-  external limits_get_max_color_attachments : nativeint -> int = "caml_wgpu_limits_get_max_color_attachments"
-  external limits_get_max_color_attachment_bytes_per_sample : nativeint -> int = "caml_wgpu_limits_get_max_color_attachment_bytes_per_sample"
-  external limits_get_max_compute_workgroup_storage_size : nativeint -> int = "caml_wgpu_limits_get_max_compute_workgroup_storage_size"
-  external limits_get_max_compute_invocations_per_workgroup : nativeint -> int = "caml_wgpu_limits_get_max_compute_invocations_per_workgroup"
-  external limits_get_max_compute_workgroup_size_x : nativeint -> int = "caml_wgpu_limits_get_max_compute_workgroup_size_x"
-  external limits_get_max_compute_workgroup_size_y : nativeint -> int = "caml_wgpu_limits_get_max_compute_workgroup_size_y"
-  external limits_get_max_compute_workgroup_size_z : nativeint -> int = "caml_wgpu_limits_get_max_compute_workgroup_size_z"
-  external limits_get_max_compute_workgroups_per_dimension : nativeint -> int = "caml_wgpu_limits_get_max_compute_workgroups_per_dimension"
+  external limits_set_max_texture_dimension_2D
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_texture_dimension_2d"
+
+  external limits_set_max_texture_dimension_3D
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_texture_dimension_3d"
+
+  external limits_set_max_texture_array_layers
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_texture_array_layers"
+
+  external limits_set_max_bind_groups
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_bind_groups"
+
+  external limits_set_max_bind_groups_plus_vertex_buffers
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_bind_groups_plus_vertex_buffers"
+
+  external limits_set_max_bindings_per_bind_group
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_bindings_per_bind_group"
+
+  external limits_set_max_dynamic_uniform_buffers_per_pipeline_layout
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_dynamic_uniform_buffers_per_pipeline_layout"
+
+  external limits_set_max_dynamic_storage_buffers_per_pipeline_layout
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_dynamic_storage_buffers_per_pipeline_layout"
+
+  external limits_set_max_sampled_textures_per_shader_stage
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_sampled_textures_per_shader_stage"
+
+  external limits_set_max_samplers_per_shader_stage
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_samplers_per_shader_stage"
+
+  external limits_set_max_storage_buffers_per_shader_stage
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_storage_buffers_per_shader_stage"
+
+  external limits_set_max_storage_textures_per_shader_stage
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_storage_textures_per_shader_stage"
+
+  external limits_set_max_uniform_buffers_per_shader_stage
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_uniform_buffers_per_shader_stage"
+
+  external limits_set_max_uniform_buffer_binding_size
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_limits_set_max_uniform_buffer_binding_size"
+
+  external limits_set_max_storage_buffer_binding_size
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_limits_set_max_storage_buffer_binding_size"
+
+  external limits_set_min_uniform_buffer_offset_alignment
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_min_uniform_buffer_offset_alignment"
+
+  external limits_set_min_storage_buffer_offset_alignment
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_min_storage_buffer_offset_alignment"
+
+  external limits_set_max_vertex_buffers
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_vertex_buffers"
+
+  external limits_set_max_buffer_size
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_limits_set_max_buffer_size"
+
+  external limits_set_max_vertex_attributes
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_vertex_attributes"
+
+  external limits_set_max_vertex_buffer_array_stride
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_vertex_buffer_array_stride"
+
+  external limits_set_max_inter_stage_shader_variables
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_inter_stage_shader_variables"
+
+  external limits_set_max_color_attachments
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_color_attachments"
+
+  external limits_set_max_color_attachment_bytes_per_sample
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_color_attachment_bytes_per_sample"
+
+  external limits_set_max_compute_workgroup_storage_size
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_compute_workgroup_storage_size"
+
+  external limits_set_max_compute_invocations_per_workgroup
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_compute_invocations_per_workgroup"
+
+  external limits_set_max_compute_workgroup_size_x
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_compute_workgroup_size_x"
+
+  external limits_set_max_compute_workgroup_size_y
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_compute_workgroup_size_y"
+
+  external limits_set_max_compute_workgroup_size_z
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_compute_workgroup_size_z"
+
+  external limits_set_max_compute_workgroups_per_dimension
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_limits_set_max_compute_workgroups_per_dimension"
+
+  external limits_get_max_texture_dimension_1D
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_texture_dimension_1d"
+
+  external limits_get_max_texture_dimension_2D
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_texture_dimension_2d"
+
+  external limits_get_max_texture_dimension_3D
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_texture_dimension_3d"
+
+  external limits_get_max_texture_array_layers
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_texture_array_layers"
+
+  external limits_get_max_bind_groups
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_bind_groups"
+
+  external limits_get_max_bind_groups_plus_vertex_buffers
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_bind_groups_plus_vertex_buffers"
+
+  external limits_get_max_bindings_per_bind_group
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_bindings_per_bind_group"
+
+  external limits_get_max_dynamic_uniform_buffers_per_pipeline_layout
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_dynamic_uniform_buffers_per_pipeline_layout"
+
+  external limits_get_max_dynamic_storage_buffers_per_pipeline_layout
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_dynamic_storage_buffers_per_pipeline_layout"
+
+  external limits_get_max_sampled_textures_per_shader_stage
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_sampled_textures_per_shader_stage"
+
+  external limits_get_max_samplers_per_shader_stage
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_samplers_per_shader_stage"
+
+  external limits_get_max_storage_buffers_per_shader_stage
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_storage_buffers_per_shader_stage"
+
+  external limits_get_max_storage_textures_per_shader_stage
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_storage_textures_per_shader_stage"
+
+  external limits_get_max_uniform_buffers_per_shader_stage
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_uniform_buffers_per_shader_stage"
+
+  external limits_get_max_uniform_buffer_binding_size
+    :  nativeint
+    -> int64
+    = "caml_wgpu_limits_get_max_uniform_buffer_binding_size"
+
+  external limits_get_max_storage_buffer_binding_size
+    :  nativeint
+    -> int64
+    = "caml_wgpu_limits_get_max_storage_buffer_binding_size"
+
+  external limits_get_min_uniform_buffer_offset_alignment
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_min_uniform_buffer_offset_alignment"
+
+  external limits_get_min_storage_buffer_offset_alignment
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_min_storage_buffer_offset_alignment"
+
+  external limits_get_max_vertex_buffers
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_vertex_buffers"
+
+  external limits_get_max_buffer_size
+    :  nativeint
+    -> int64
+    = "caml_wgpu_limits_get_max_buffer_size"
+
+  external limits_get_max_vertex_attributes
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_vertex_attributes"
+
+  external limits_get_max_vertex_buffer_array_stride
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_vertex_buffer_array_stride"
+
+  external limits_get_max_inter_stage_shader_variables
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_inter_stage_shader_variables"
+
+  external limits_get_max_color_attachments
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_color_attachments"
+
+  external limits_get_max_color_attachment_bytes_per_sample
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_color_attachment_bytes_per_sample"
+
+  external limits_get_max_compute_workgroup_storage_size
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_compute_workgroup_storage_size"
+
+  external limits_get_max_compute_invocations_per_workgroup
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_compute_invocations_per_workgroup"
+
+  external limits_get_max_compute_workgroup_size_x
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_compute_workgroup_size_x"
+
+  external limits_get_max_compute_workgroup_size_y
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_compute_workgroup_size_y"
+
+  external limits_get_max_compute_workgroup_size_z
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_compute_workgroup_size_z"
+
+  external limits_get_max_compute_workgroups_per_dimension
+    :  nativeint
+    -> int
+    = "caml_wgpu_limits_get_max_compute_workgroups_per_dimension"
 end
 
 module Multisample_State = struct
   type t = nativeint
 
-  external multisample_state_create : unit -> nativeint = "caml_wgpu_multisample_state_create"
+  external multisample_state_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_multisample_state_create"
 
   external multisample_state_free : nativeint -> unit = "caml_wgpu_multisample_state_free"
 
-  external multisample_state_set_count : nativeint -> int -> unit = "caml_wgpu_multisample_state_set_count"
-  external multisample_state_set_mask : nativeint -> int -> unit = "caml_wgpu_multisample_state_set_mask"
-  external multisample_state_set_alpha_to_coverage_enabled : nativeint -> bool -> unit = "caml_wgpu_multisample_state_set_alpha_to_coverage_enabled"
+  external multisample_state_set_count
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_multisample_state_set_count"
 
-  external multisample_state_get_count : nativeint -> int = "caml_wgpu_multisample_state_get_count"
-  external multisample_state_get_mask : nativeint -> int = "caml_wgpu_multisample_state_get_mask"
-  external multisample_state_get_alpha_to_coverage_enabled : nativeint -> bool = "caml_wgpu_multisample_state_get_alpha_to_coverage_enabled"
+  external multisample_state_set_mask
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_multisample_state_set_mask"
+
+  external multisample_state_set_alpha_to_coverage_enabled
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_multisample_state_set_alpha_to_coverage_enabled"
+
+  external multisample_state_get_count
+    :  nativeint
+    -> int
+    = "caml_wgpu_multisample_state_get_count"
+
+  external multisample_state_get_mask
+    :  nativeint
+    -> int
+    = "caml_wgpu_multisample_state_get_mask"
+
+  external multisample_state_get_alpha_to_coverage_enabled
+    :  nativeint
+    -> bool
+    = "caml_wgpu_multisample_state_get_alpha_to_coverage_enabled"
 end
 
 module Origin_3D = struct
   type t = nativeint
 
   external origin_3D_create : unit -> nativeint = "caml_wgpu_origin_3d_create"
-
   external origin_3D_free : nativeint -> unit = "caml_wgpu_origin_3d_free"
-
   external origin_3D_set_x : nativeint -> int -> unit = "caml_wgpu_origin_3d_set_x"
   external origin_3D_set_y : nativeint -> int -> unit = "caml_wgpu_origin_3d_set_y"
   external origin_3D_set_z : nativeint -> int -> unit = "caml_wgpu_origin_3d_set_z"
-
   external origin_3D_get_x : nativeint -> int = "caml_wgpu_origin_3d_get_x"
   external origin_3D_get_y : nativeint -> int = "caml_wgpu_origin_3d_get_y"
   external origin_3D_get_z : nativeint -> int = "caml_wgpu_origin_3d_get_z"
@@ -2192,714 +4231,2170 @@ end
 module Pipeline_Layout_Descriptor = struct
   type t = nativeint
 
-  external pipeline_layout_descriptor_create : unit -> nativeint = "caml_wgpu_pipeline_layout_descriptor_create"
+  external pipeline_layout_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_pipeline_layout_descriptor_create"
 
-  external pipeline_layout_descriptor_free : nativeint -> unit = "caml_wgpu_pipeline_layout_descriptor_free"
+  external pipeline_layout_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_pipeline_layout_descriptor_free"
 
-  external pipeline_layout_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_pipeline_layout_descriptor_set_label"
-  external pipeline_layout_descriptor_set_bind_group_layouts : nativeint -> nativeint array -> unit = "caml_wgpu_pipeline_layout_descriptor_set_bind_group_layouts"
+  external pipeline_layout_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_pipeline_layout_descriptor_set_label"
 
-  external pipeline_layout_descriptor_get_label : nativeint -> string = "caml_wgpu_pipeline_layout_descriptor_get_label"
-  external pipeline_layout_descriptor_get_bind_group_layouts : nativeint -> nativeint = "caml_wgpu_pipeline_layout_descriptor_get_bind_group_layouts"
+  external pipeline_layout_descriptor_set_bind_group_layouts
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_pipeline_layout_descriptor_set_bind_group_layouts"
+
+  external pipeline_layout_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_pipeline_layout_descriptor_get_label"
+
+  external pipeline_layout_descriptor_get_bind_group_layouts
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_pipeline_layout_descriptor_get_bind_group_layouts"
 end
 
 module Primitive_State = struct
   type t = nativeint
 
   external primitive_state_create : unit -> nativeint = "caml_wgpu_primitive_state_create"
-
   external primitive_state_free : nativeint -> unit = "caml_wgpu_primitive_state_free"
 
-  external primitive_state_set_topology : nativeint -> int -> unit = "caml_wgpu_primitive_state_set_topology"
-  external primitive_state_set_strip_index_format : nativeint -> int -> unit = "caml_wgpu_primitive_state_set_strip_index_format"
-  external primitive_state_set_front_face : nativeint -> int -> unit = "caml_wgpu_primitive_state_set_front_face"
-  external primitive_state_set_cull_mode : nativeint -> int -> unit = "caml_wgpu_primitive_state_set_cull_mode"
-  external primitive_state_set_unclipped_depth : nativeint -> bool -> unit = "caml_wgpu_primitive_state_set_unclipped_depth"
+  external primitive_state_set_topology
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_primitive_state_set_topology"
 
-  external primitive_state_get_topology : nativeint -> int = "caml_wgpu_primitive_state_get_topology"
-  external primitive_state_get_strip_index_format : nativeint -> int = "caml_wgpu_primitive_state_get_strip_index_format"
-  external primitive_state_get_front_face : nativeint -> int = "caml_wgpu_primitive_state_get_front_face"
-  external primitive_state_get_cull_mode : nativeint -> int = "caml_wgpu_primitive_state_get_cull_mode"
-  external primitive_state_get_unclipped_depth : nativeint -> bool = "caml_wgpu_primitive_state_get_unclipped_depth"
+  external primitive_state_set_strip_index_format
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_primitive_state_set_strip_index_format"
+
+  external primitive_state_set_front_face
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_primitive_state_set_front_face"
+
+  external primitive_state_set_cull_mode
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_primitive_state_set_cull_mode"
+
+  external primitive_state_set_unclipped_depth
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_primitive_state_set_unclipped_depth"
+
+  external primitive_state_get_topology
+    :  nativeint
+    -> int
+    = "caml_wgpu_primitive_state_get_topology"
+
+  external primitive_state_get_strip_index_format
+    :  nativeint
+    -> int
+    = "caml_wgpu_primitive_state_get_strip_index_format"
+
+  external primitive_state_get_front_face
+    :  nativeint
+    -> int
+    = "caml_wgpu_primitive_state_get_front_face"
+
+  external primitive_state_get_cull_mode
+    :  nativeint
+    -> int
+    = "caml_wgpu_primitive_state_get_cull_mode"
+
+  external primitive_state_get_unclipped_depth
+    :  nativeint
+    -> bool
+    = "caml_wgpu_primitive_state_get_unclipped_depth"
 end
 
 module Programmable_Stage_Descriptor = struct
   type t = nativeint
 
-  external programmable_stage_descriptor_create : unit -> nativeint = "caml_wgpu_programmable_stage_descriptor_create"
+  external programmable_stage_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_programmable_stage_descriptor_create"
 
-  external programmable_stage_descriptor_free : nativeint -> unit = "caml_wgpu_programmable_stage_descriptor_free"
+  external programmable_stage_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_programmable_stage_descriptor_free"
 
-  external programmable_stage_descriptor_set_module : nativeint -> nativeint -> unit = "caml_wgpu_programmable_stage_descriptor_set_module"
-  external programmable_stage_descriptor_set_entry_point : nativeint -> string -> unit = "caml_wgpu_programmable_stage_descriptor_set_entry_point"
-  external programmable_stage_descriptor_set_constants : nativeint -> nativeint array -> unit = "caml_wgpu_programmable_stage_descriptor_set_constants"
+  external programmable_stage_descriptor_set_module
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_programmable_stage_descriptor_set_module"
 
-  external programmable_stage_descriptor_get_module : nativeint -> nativeint = "caml_wgpu_programmable_stage_descriptor_get_module"
-  external programmable_stage_descriptor_get_entry_point : nativeint -> string = "caml_wgpu_programmable_stage_descriptor_get_entry_point"
-  external programmable_stage_descriptor_get_constants : nativeint -> nativeint = "caml_wgpu_programmable_stage_descriptor_get_constants"
+  external programmable_stage_descriptor_set_entry_point
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_programmable_stage_descriptor_set_entry_point"
+
+  external programmable_stage_descriptor_set_constants
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_programmable_stage_descriptor_set_constants"
+
+  external programmable_stage_descriptor_get_module
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_programmable_stage_descriptor_get_module"
+
+  external programmable_stage_descriptor_get_entry_point
+    :  nativeint
+    -> string
+    = "caml_wgpu_programmable_stage_descriptor_get_entry_point"
+
+  external programmable_stage_descriptor_get_constants
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_programmable_stage_descriptor_get_constants"
 end
 
 module Query_Set_Descriptor = struct
   type t = nativeint
 
-  external query_set_descriptor_create : unit -> nativeint = "caml_wgpu_query_set_descriptor_create"
+  external query_set_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_query_set_descriptor_create"
 
-  external query_set_descriptor_free : nativeint -> unit = "caml_wgpu_query_set_descriptor_free"
+  external query_set_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_query_set_descriptor_free"
 
-  external query_set_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_query_set_descriptor_set_label"
-  external query_set_descriptor_set_type : nativeint -> int -> unit = "caml_wgpu_query_set_descriptor_set_type"
-  external query_set_descriptor_set_count : nativeint -> int -> unit = "caml_wgpu_query_set_descriptor_set_count"
+  external query_set_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_query_set_descriptor_set_label"
 
-  external query_set_descriptor_get_label : nativeint -> string = "caml_wgpu_query_set_descriptor_get_label"
-  external query_set_descriptor_get_type : nativeint -> int = "caml_wgpu_query_set_descriptor_get_type"
-  external query_set_descriptor_get_count : nativeint -> int = "caml_wgpu_query_set_descriptor_get_count"
+  external query_set_descriptor_set_type
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_query_set_descriptor_set_type"
+
+  external query_set_descriptor_set_count
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_query_set_descriptor_set_count"
+
+  external query_set_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_query_set_descriptor_get_label"
+
+  external query_set_descriptor_get_type
+    :  nativeint
+    -> int
+    = "caml_wgpu_query_set_descriptor_get_type"
+
+  external query_set_descriptor_get_count
+    :  nativeint
+    -> int
+    = "caml_wgpu_query_set_descriptor_get_count"
 end
 
 module Queue_Descriptor = struct
   type t = nativeint
 
-  external queue_descriptor_create : unit -> nativeint = "caml_wgpu_queue_descriptor_create"
+  external queue_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_queue_descriptor_create"
 
   external queue_descriptor_free : nativeint -> unit = "caml_wgpu_queue_descriptor_free"
 
-  external queue_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_queue_descriptor_set_label"
+  external queue_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_queue_descriptor_set_label"
 
-  external queue_descriptor_get_label : nativeint -> string = "caml_wgpu_queue_descriptor_get_label"
+  external queue_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_queue_descriptor_get_label"
 end
 
 module Render_Bundle_Descriptor = struct
   type t = nativeint
 
-  external render_bundle_descriptor_create : unit -> nativeint = "caml_wgpu_render_bundle_descriptor_create"
+  external render_bundle_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_render_bundle_descriptor_create"
 
-  external render_bundle_descriptor_free : nativeint -> unit = "caml_wgpu_render_bundle_descriptor_free"
+  external render_bundle_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_render_bundle_descriptor_free"
 
-  external render_bundle_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_render_bundle_descriptor_set_label"
+  external render_bundle_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_render_bundle_descriptor_set_label"
 
-  external render_bundle_descriptor_get_label : nativeint -> string = "caml_wgpu_render_bundle_descriptor_get_label"
+  external render_bundle_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_render_bundle_descriptor_get_label"
 end
 
 module Render_Bundle_Encoder_Descriptor = struct
   type t = nativeint
 
-  external render_bundle_encoder_descriptor_create : unit -> nativeint = "caml_wgpu_render_bundle_encoder_descriptor_create"
+  external render_bundle_encoder_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_render_bundle_encoder_descriptor_create"
 
-  external render_bundle_encoder_descriptor_free : nativeint -> unit = "caml_wgpu_render_bundle_encoder_descriptor_free"
+  external render_bundle_encoder_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_render_bundle_encoder_descriptor_free"
 
-  external render_bundle_encoder_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_render_bundle_encoder_descriptor_set_label"
-  external render_bundle_encoder_descriptor_set_color_formats : nativeint -> int array -> unit = "caml_wgpu_render_bundle_encoder_descriptor_set_color_formats"
-  external render_bundle_encoder_descriptor_set_depth_stencil_format : nativeint -> int -> unit = "caml_wgpu_render_bundle_encoder_descriptor_set_depth_stencil_format"
-  external render_bundle_encoder_descriptor_set_sample_count : nativeint -> int -> unit = "caml_wgpu_render_bundle_encoder_descriptor_set_sample_count"
-  external render_bundle_encoder_descriptor_set_depth_read_only : nativeint -> bool -> unit = "caml_wgpu_render_bundle_encoder_descriptor_set_depth_read_only"
-  external render_bundle_encoder_descriptor_set_stencil_read_only : nativeint -> bool -> unit = "caml_wgpu_render_bundle_encoder_descriptor_set_stencil_read_only"
+  external render_bundle_encoder_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_render_bundle_encoder_descriptor_set_label"
 
-  external render_bundle_encoder_descriptor_get_label : nativeint -> string = "caml_wgpu_render_bundle_encoder_descriptor_get_label"
-  external render_bundle_encoder_descriptor_get_color_formats : nativeint -> nativeint = "caml_wgpu_render_bundle_encoder_descriptor_get_color_formats"
-  external render_bundle_encoder_descriptor_get_depth_stencil_format : nativeint -> int = "caml_wgpu_render_bundle_encoder_descriptor_get_depth_stencil_format"
-  external render_bundle_encoder_descriptor_get_sample_count : nativeint -> int = "caml_wgpu_render_bundle_encoder_descriptor_get_sample_count"
-  external render_bundle_encoder_descriptor_get_depth_read_only : nativeint -> bool = "caml_wgpu_render_bundle_encoder_descriptor_get_depth_read_only"
-  external render_bundle_encoder_descriptor_get_stencil_read_only : nativeint -> bool = "caml_wgpu_render_bundle_encoder_descriptor_get_stencil_read_only"
+  external render_bundle_encoder_descriptor_set_color_formats
+    :  nativeint
+    -> int array
+    -> unit
+    = "caml_wgpu_render_bundle_encoder_descriptor_set_color_formats"
+
+  external render_bundle_encoder_descriptor_set_depth_stencil_format
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_bundle_encoder_descriptor_set_depth_stencil_format"
+
+  external render_bundle_encoder_descriptor_set_sample_count
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_bundle_encoder_descriptor_set_sample_count"
+
+  external render_bundle_encoder_descriptor_set_depth_read_only
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_render_bundle_encoder_descriptor_set_depth_read_only"
+
+  external render_bundle_encoder_descriptor_set_stencil_read_only
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_render_bundle_encoder_descriptor_set_stencil_read_only"
+
+  external render_bundle_encoder_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_render_bundle_encoder_descriptor_get_label"
+
+  external render_bundle_encoder_descriptor_get_color_formats
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_bundle_encoder_descriptor_get_color_formats"
+
+  external render_bundle_encoder_descriptor_get_depth_stencil_format
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_bundle_encoder_descriptor_get_depth_stencil_format"
+
+  external render_bundle_encoder_descriptor_get_sample_count
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_bundle_encoder_descriptor_get_sample_count"
+
+  external render_bundle_encoder_descriptor_get_depth_read_only
+    :  nativeint
+    -> bool
+    = "caml_wgpu_render_bundle_encoder_descriptor_get_depth_read_only"
+
+  external render_bundle_encoder_descriptor_get_stencil_read_only
+    :  nativeint
+    -> bool
+    = "caml_wgpu_render_bundle_encoder_descriptor_get_stencil_read_only"
 end
 
 module Render_Pass_Color_Attachment = struct
   type t = nativeint
 
-  external render_pass_color_attachment_create : unit -> nativeint = "caml_wgpu_render_pass_color_attachment_create"
+  external render_pass_color_attachment_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_render_pass_color_attachment_create"
 
-  external render_pass_color_attachment_free : nativeint -> unit = "caml_wgpu_render_pass_color_attachment_free"
+  external render_pass_color_attachment_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_render_pass_color_attachment_free"
 
-  external render_pass_color_attachment_set_view : nativeint -> nativeint -> unit = "caml_wgpu_render_pass_color_attachment_set_view"
-  external render_pass_color_attachment_set_depth_slice : nativeint -> int -> unit = "caml_wgpu_render_pass_color_attachment_set_depth_slice"
-  external render_pass_color_attachment_set_resolve_target : nativeint -> nativeint -> unit = "caml_wgpu_render_pass_color_attachment_set_resolve_target"
-  external render_pass_color_attachment_set_load_op : nativeint -> int -> unit = "caml_wgpu_render_pass_color_attachment_set_load_op"
-  external render_pass_color_attachment_set_store_op : nativeint -> int -> unit = "caml_wgpu_render_pass_color_attachment_set_store_op"
-  external render_pass_color_attachment_set_clear_value : nativeint -> nativeint -> unit = "caml_wgpu_render_pass_color_attachment_set_clear_value"
+  external render_pass_color_attachment_set_view
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_color_attachment_set_view"
 
-  external render_pass_color_attachment_get_view : nativeint -> nativeint = "caml_wgpu_render_pass_color_attachment_get_view"
-  external render_pass_color_attachment_get_depth_slice : nativeint -> int = "caml_wgpu_render_pass_color_attachment_get_depth_slice"
-  external render_pass_color_attachment_get_resolve_target : nativeint -> nativeint = "caml_wgpu_render_pass_color_attachment_get_resolve_target"
-  external render_pass_color_attachment_get_load_op : nativeint -> int = "caml_wgpu_render_pass_color_attachment_get_load_op"
-  external render_pass_color_attachment_get_store_op : nativeint -> int = "caml_wgpu_render_pass_color_attachment_get_store_op"
-  external render_pass_color_attachment_get_clear_value : nativeint -> nativeint = "caml_wgpu_render_pass_color_attachment_get_clear_value"
+  external render_pass_color_attachment_set_depth_slice
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_color_attachment_set_depth_slice"
+
+  external render_pass_color_attachment_set_resolve_target
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_color_attachment_set_resolve_target"
+
+  external render_pass_color_attachment_set_load_op
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_color_attachment_set_load_op"
+
+  external render_pass_color_attachment_set_store_op
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_color_attachment_set_store_op"
+
+  external render_pass_color_attachment_set_clear_value
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_color_attachment_set_clear_value"
+
+  external render_pass_color_attachment_get_view
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_color_attachment_get_view"
+
+  external render_pass_color_attachment_get_depth_slice
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_color_attachment_get_depth_slice"
+
+  external render_pass_color_attachment_get_resolve_target
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_color_attachment_get_resolve_target"
+
+  external render_pass_color_attachment_get_load_op
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_color_attachment_get_load_op"
+
+  external render_pass_color_attachment_get_store_op
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_color_attachment_get_store_op"
+
+  external render_pass_color_attachment_get_clear_value
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_color_attachment_get_clear_value"
 end
 
 module Render_Pass_Depth_Stencil_Attachment = struct
   type t = nativeint
 
-  external render_pass_depth_stencil_attachment_create : unit -> nativeint = "caml_wgpu_render_pass_depth_stencil_attachment_create"
+  external render_pass_depth_stencil_attachment_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_render_pass_depth_stencil_attachment_create"
 
-  external render_pass_depth_stencil_attachment_free : nativeint -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_free"
+  external render_pass_depth_stencil_attachment_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_free"
 
-  external render_pass_depth_stencil_attachment_set_view : nativeint -> nativeint -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_set_view"
-  external render_pass_depth_stencil_attachment_set_depth_load_op : nativeint -> int -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_set_depth_load_op"
-  external render_pass_depth_stencil_attachment_set_depth_store_op : nativeint -> int -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_set_depth_store_op"
-  external render_pass_depth_stencil_attachment_set_depth_clear_value : nativeint -> float -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_set_depth_clear_value"
-  external render_pass_depth_stencil_attachment_set_depth_read_only : nativeint -> bool -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_set_depth_read_only"
-  external render_pass_depth_stencil_attachment_set_stencil_load_op : nativeint -> int -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_set_stencil_load_op"
-  external render_pass_depth_stencil_attachment_set_stencil_store_op : nativeint -> int -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_set_stencil_store_op"
-  external render_pass_depth_stencil_attachment_set_stencil_clear_value : nativeint -> int -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_set_stencil_clear_value"
-  external render_pass_depth_stencil_attachment_set_stencil_read_only : nativeint -> bool -> unit = "caml_wgpu_render_pass_depth_stencil_attachment_set_stencil_read_only"
+  external render_pass_depth_stencil_attachment_set_view
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_set_view"
 
-  external render_pass_depth_stencil_attachment_get_view : nativeint -> nativeint = "caml_wgpu_render_pass_depth_stencil_attachment_get_view"
-  external render_pass_depth_stencil_attachment_get_depth_load_op : nativeint -> int = "caml_wgpu_render_pass_depth_stencil_attachment_get_depth_load_op"
-  external render_pass_depth_stencil_attachment_get_depth_store_op : nativeint -> int = "caml_wgpu_render_pass_depth_stencil_attachment_get_depth_store_op"
-  external render_pass_depth_stencil_attachment_get_depth_clear_value : nativeint -> float = "caml_wgpu_render_pass_depth_stencil_attachment_get_depth_clear_value"
-  external render_pass_depth_stencil_attachment_get_depth_read_only : nativeint -> bool = "caml_wgpu_render_pass_depth_stencil_attachment_get_depth_read_only"
-  external render_pass_depth_stencil_attachment_get_stencil_load_op : nativeint -> int = "caml_wgpu_render_pass_depth_stencil_attachment_get_stencil_load_op"
-  external render_pass_depth_stencil_attachment_get_stencil_store_op : nativeint -> int = "caml_wgpu_render_pass_depth_stencil_attachment_get_stencil_store_op"
-  external render_pass_depth_stencil_attachment_get_stencil_clear_value : nativeint -> int = "caml_wgpu_render_pass_depth_stencil_attachment_get_stencil_clear_value"
-  external render_pass_depth_stencil_attachment_get_stencil_read_only : nativeint -> bool = "caml_wgpu_render_pass_depth_stencil_attachment_get_stencil_read_only"
+  external render_pass_depth_stencil_attachment_set_depth_load_op
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_set_depth_load_op"
+
+  external render_pass_depth_stencil_attachment_set_depth_store_op
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_set_depth_store_op"
+
+  external render_pass_depth_stencil_attachment_set_depth_clear_value
+    :  nativeint
+    -> float
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_set_depth_clear_value"
+
+  external render_pass_depth_stencil_attachment_set_depth_read_only
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_set_depth_read_only"
+
+  external render_pass_depth_stencil_attachment_set_stencil_load_op
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_set_stencil_load_op"
+
+  external render_pass_depth_stencil_attachment_set_stencil_store_op
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_set_stencil_store_op"
+
+  external render_pass_depth_stencil_attachment_set_stencil_clear_value
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_set_stencil_clear_value"
+
+  external render_pass_depth_stencil_attachment_set_stencil_read_only
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_render_pass_depth_stencil_attachment_set_stencil_read_only"
+
+  external render_pass_depth_stencil_attachment_get_view
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_depth_stencil_attachment_get_view"
+
+  external render_pass_depth_stencil_attachment_get_depth_load_op
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_depth_stencil_attachment_get_depth_load_op"
+
+  external render_pass_depth_stencil_attachment_get_depth_store_op
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_depth_stencil_attachment_get_depth_store_op"
+
+  external render_pass_depth_stencil_attachment_get_depth_clear_value
+    :  nativeint
+    -> float
+    = "caml_wgpu_render_pass_depth_stencil_attachment_get_depth_clear_value"
+
+  external render_pass_depth_stencil_attachment_get_depth_read_only
+    :  nativeint
+    -> bool
+    = "caml_wgpu_render_pass_depth_stencil_attachment_get_depth_read_only"
+
+  external render_pass_depth_stencil_attachment_get_stencil_load_op
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_depth_stencil_attachment_get_stencil_load_op"
+
+  external render_pass_depth_stencil_attachment_get_stencil_store_op
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_depth_stencil_attachment_get_stencil_store_op"
+
+  external render_pass_depth_stencil_attachment_get_stencil_clear_value
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_depth_stencil_attachment_get_stencil_clear_value"
+
+  external render_pass_depth_stencil_attachment_get_stencil_read_only
+    :  nativeint
+    -> bool
+    = "caml_wgpu_render_pass_depth_stencil_attachment_get_stencil_read_only"
 end
 
 module Render_Pass_Descriptor = struct
   type t = nativeint
 
-  external render_pass_descriptor_create : unit -> nativeint = "caml_wgpu_render_pass_descriptor_create"
+  external render_pass_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_render_pass_descriptor_create"
 
-  external render_pass_descriptor_free : nativeint -> unit = "caml_wgpu_render_pass_descriptor_free"
+  external render_pass_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_render_pass_descriptor_free"
 
-  external render_pass_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_render_pass_descriptor_set_label"
-  external render_pass_descriptor_set_color_attachments : nativeint -> nativeint array -> unit = "caml_wgpu_render_pass_descriptor_set_color_attachments"
-  external render_pass_descriptor_set_depth_stencil_attachment : nativeint -> nativeint -> unit = "caml_wgpu_render_pass_descriptor_set_depth_stencil_attachment"
-  external render_pass_descriptor_set_occlusion_query_set : nativeint -> nativeint -> unit = "caml_wgpu_render_pass_descriptor_set_occlusion_query_set"
-  external render_pass_descriptor_set_timestamp_writes : nativeint -> nativeint -> unit = "caml_wgpu_render_pass_descriptor_set_timestamp_writes"
+  external render_pass_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_render_pass_descriptor_set_label"
 
-  external render_pass_descriptor_get_label : nativeint -> string = "caml_wgpu_render_pass_descriptor_get_label"
-  external render_pass_descriptor_get_color_attachments : nativeint -> nativeint = "caml_wgpu_render_pass_descriptor_get_color_attachments"
-  external render_pass_descriptor_get_depth_stencil_attachment : nativeint -> nativeint = "caml_wgpu_render_pass_descriptor_get_depth_stencil_attachment"
-  external render_pass_descriptor_get_occlusion_query_set : nativeint -> nativeint = "caml_wgpu_render_pass_descriptor_get_occlusion_query_set"
-  external render_pass_descriptor_get_timestamp_writes : nativeint -> nativeint = "caml_wgpu_render_pass_descriptor_get_timestamp_writes"
+  external render_pass_descriptor_set_color_attachments
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_render_pass_descriptor_set_color_attachments"
+
+  external render_pass_descriptor_set_depth_stencil_attachment
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_descriptor_set_depth_stencil_attachment"
+
+  external render_pass_descriptor_set_occlusion_query_set
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_descriptor_set_occlusion_query_set"
+
+  external render_pass_descriptor_set_timestamp_writes
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_descriptor_set_timestamp_writes"
+
+  external render_pass_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_render_pass_descriptor_get_label"
+
+  external render_pass_descriptor_get_color_attachments
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_descriptor_get_color_attachments"
+
+  external render_pass_descriptor_get_depth_stencil_attachment
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_descriptor_get_depth_stencil_attachment"
+
+  external render_pass_descriptor_get_occlusion_query_set
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_descriptor_get_occlusion_query_set"
+
+  external render_pass_descriptor_get_timestamp_writes
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_descriptor_get_timestamp_writes"
 end
 
 module Render_Pass_Max_Draw_Count = struct
   type t = nativeint
 
-  external render_pass_max_draw_count_create : unit -> nativeint = "caml_wgpu_render_pass_max_draw_count_create"
+  external render_pass_max_draw_count_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_render_pass_max_draw_count_create"
 
-  external render_pass_max_draw_count_free : nativeint -> unit = "caml_wgpu_render_pass_max_draw_count_free"
+  external render_pass_max_draw_count_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_render_pass_max_draw_count_free"
 
-  external render_pass_max_draw_count_set_max_draw_count : nativeint -> int64 -> unit = "caml_wgpu_render_pass_max_draw_count_set_max_draw_count"
+  external render_pass_max_draw_count_set_max_draw_count
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_render_pass_max_draw_count_set_max_draw_count"
 
-  external render_pass_max_draw_count_get_max_draw_count : nativeint -> int64 = "caml_wgpu_render_pass_max_draw_count_get_max_draw_count"
+  external render_pass_max_draw_count_get_max_draw_count
+    :  nativeint
+    -> int64
+    = "caml_wgpu_render_pass_max_draw_count_get_max_draw_count"
 end
 
 module Render_Pass_Timestamp_Writes = struct
   type t = nativeint
 
-  external render_pass_timestamp_writes_create : unit -> nativeint = "caml_wgpu_render_pass_timestamp_writes_create"
+  external render_pass_timestamp_writes_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_render_pass_timestamp_writes_create"
 
-  external render_pass_timestamp_writes_free : nativeint -> unit = "caml_wgpu_render_pass_timestamp_writes_free"
+  external render_pass_timestamp_writes_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_render_pass_timestamp_writes_free"
 
-  external render_pass_timestamp_writes_set_query_set : nativeint -> nativeint -> unit = "caml_wgpu_render_pass_timestamp_writes_set_query_set"
-  external render_pass_timestamp_writes_set_beginning_of_pass_write_index : nativeint -> int -> unit = "caml_wgpu_render_pass_timestamp_writes_set_beginning_of_pass_write_index"
-  external render_pass_timestamp_writes_set_end_of_pass_write_index : nativeint -> int -> unit = "caml_wgpu_render_pass_timestamp_writes_set_end_of_pass_write_index"
+  external render_pass_timestamp_writes_set_query_set
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_timestamp_writes_set_query_set"
 
-  external render_pass_timestamp_writes_get_query_set : nativeint -> nativeint = "caml_wgpu_render_pass_timestamp_writes_get_query_set"
-  external render_pass_timestamp_writes_get_beginning_of_pass_write_index : nativeint -> int = "caml_wgpu_render_pass_timestamp_writes_get_beginning_of_pass_write_index"
-  external render_pass_timestamp_writes_get_end_of_pass_write_index : nativeint -> int = "caml_wgpu_render_pass_timestamp_writes_get_end_of_pass_write_index"
+  external render_pass_timestamp_writes_set_beginning_of_pass_write_index
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_timestamp_writes_set_beginning_of_pass_write_index"
+
+  external render_pass_timestamp_writes_set_end_of_pass_write_index
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_timestamp_writes_set_end_of_pass_write_index"
+
+  external render_pass_timestamp_writes_get_query_set
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_timestamp_writes_get_query_set"
+
+  external render_pass_timestamp_writes_get_beginning_of_pass_write_index
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_timestamp_writes_get_beginning_of_pass_write_index"
+
+  external render_pass_timestamp_writes_get_end_of_pass_write_index
+    :  nativeint
+    -> int
+    = "caml_wgpu_render_pass_timestamp_writes_get_end_of_pass_write_index"
 end
 
 module Render_Pipeline_Descriptor = struct
   type t = nativeint
 
-  external render_pipeline_descriptor_create : unit -> nativeint = "caml_wgpu_render_pipeline_descriptor_create"
+  external render_pipeline_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_render_pipeline_descriptor_create"
 
-  external render_pipeline_descriptor_free : nativeint -> unit = "caml_wgpu_render_pipeline_descriptor_free"
+  external render_pipeline_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_render_pipeline_descriptor_free"
 
-  external render_pipeline_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_render_pipeline_descriptor_set_label"
-  external render_pipeline_descriptor_set_layout : nativeint -> nativeint -> unit = "caml_wgpu_render_pipeline_descriptor_set_layout"
-  external render_pipeline_descriptor_set_vertex : nativeint -> nativeint -> unit = "caml_wgpu_render_pipeline_descriptor_set_vertex"
-  external render_pipeline_descriptor_set_primitive : nativeint -> nativeint -> unit = "caml_wgpu_render_pipeline_descriptor_set_primitive"
-  external render_pipeline_descriptor_set_depth_stencil : nativeint -> nativeint -> unit = "caml_wgpu_render_pipeline_descriptor_set_depth_stencil"
-  external render_pipeline_descriptor_set_multisample : nativeint -> nativeint -> unit = "caml_wgpu_render_pipeline_descriptor_set_multisample"
-  external render_pipeline_descriptor_set_fragment : nativeint -> nativeint -> unit = "caml_wgpu_render_pipeline_descriptor_set_fragment"
+  external render_pipeline_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_render_pipeline_descriptor_set_label"
 
-  external render_pipeline_descriptor_get_label : nativeint -> string = "caml_wgpu_render_pipeline_descriptor_get_label"
-  external render_pipeline_descriptor_get_layout : nativeint -> nativeint = "caml_wgpu_render_pipeline_descriptor_get_layout"
-  external render_pipeline_descriptor_get_vertex : nativeint -> nativeint = "caml_wgpu_render_pipeline_descriptor_get_vertex"
-  external render_pipeline_descriptor_get_primitive : nativeint -> nativeint = "caml_wgpu_render_pipeline_descriptor_get_primitive"
-  external render_pipeline_descriptor_get_depth_stencil : nativeint -> nativeint = "caml_wgpu_render_pipeline_descriptor_get_depth_stencil"
-  external render_pipeline_descriptor_get_multisample : nativeint -> nativeint = "caml_wgpu_render_pipeline_descriptor_get_multisample"
-  external render_pipeline_descriptor_get_fragment : nativeint -> nativeint = "caml_wgpu_render_pipeline_descriptor_get_fragment"
+  external render_pipeline_descriptor_set_layout
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pipeline_descriptor_set_layout"
+
+  external render_pipeline_descriptor_set_vertex
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pipeline_descriptor_set_vertex"
+
+  external render_pipeline_descriptor_set_primitive
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pipeline_descriptor_set_primitive"
+
+  external render_pipeline_descriptor_set_depth_stencil
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pipeline_descriptor_set_depth_stencil"
+
+  external render_pipeline_descriptor_set_multisample
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pipeline_descriptor_set_multisample"
+
+  external render_pipeline_descriptor_set_fragment
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pipeline_descriptor_set_fragment"
+
+  external render_pipeline_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_render_pipeline_descriptor_get_label"
+
+  external render_pipeline_descriptor_get_layout
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pipeline_descriptor_get_layout"
+
+  external render_pipeline_descriptor_get_vertex
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pipeline_descriptor_get_vertex"
+
+  external render_pipeline_descriptor_get_primitive
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pipeline_descriptor_get_primitive"
+
+  external render_pipeline_descriptor_get_depth_stencil
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pipeline_descriptor_get_depth_stencil"
+
+  external render_pipeline_descriptor_get_multisample
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pipeline_descriptor_get_multisample"
+
+  external render_pipeline_descriptor_get_fragment
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pipeline_descriptor_get_fragment"
 end
 
 module Request_Adapter_Options = struct
   type t = nativeint
 
-  external request_adapter_options_create : unit -> nativeint = "caml_wgpu_request_adapter_options_create"
+  external request_adapter_options_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_request_adapter_options_create"
 
-  external request_adapter_options_free : nativeint -> unit = "caml_wgpu_request_adapter_options_free"
+  external request_adapter_options_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_request_adapter_options_free"
 
-  external request_adapter_options_set_feature_level : nativeint -> int -> unit = "caml_wgpu_request_adapter_options_set_feature_level"
-  external request_adapter_options_set_power_preference : nativeint -> int -> unit = "caml_wgpu_request_adapter_options_set_power_preference"
-  external request_adapter_options_set_force_fallback_adapter : nativeint -> bool -> unit = "caml_wgpu_request_adapter_options_set_force_fallback_adapter"
-  external request_adapter_options_set_backend_type : nativeint -> int -> unit = "caml_wgpu_request_adapter_options_set_backend_type"
-  external request_adapter_options_set_compatible_surface : nativeint -> nativeint -> unit = "caml_wgpu_request_adapter_options_set_compatible_surface"
+  external request_adapter_options_set_feature_level
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_request_adapter_options_set_feature_level"
 
-  external request_adapter_options_get_feature_level : nativeint -> int = "caml_wgpu_request_adapter_options_get_feature_level"
-  external request_adapter_options_get_power_preference : nativeint -> int = "caml_wgpu_request_adapter_options_get_power_preference"
-  external request_adapter_options_get_force_fallback_adapter : nativeint -> bool = "caml_wgpu_request_adapter_options_get_force_fallback_adapter"
-  external request_adapter_options_get_backend_type : nativeint -> int = "caml_wgpu_request_adapter_options_get_backend_type"
-  external request_adapter_options_get_compatible_surface : nativeint -> nativeint = "caml_wgpu_request_adapter_options_get_compatible_surface"
+  external request_adapter_options_set_power_preference
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_request_adapter_options_set_power_preference"
+
+  external request_adapter_options_set_force_fallback_adapter
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_request_adapter_options_set_force_fallback_adapter"
+
+  external request_adapter_options_set_backend_type
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_request_adapter_options_set_backend_type"
+
+  external request_adapter_options_set_compatible_surface
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_request_adapter_options_set_compatible_surface"
+
+  external request_adapter_options_get_feature_level
+    :  nativeint
+    -> int
+    = "caml_wgpu_request_adapter_options_get_feature_level"
+
+  external request_adapter_options_get_power_preference
+    :  nativeint
+    -> int
+    = "caml_wgpu_request_adapter_options_get_power_preference"
+
+  external request_adapter_options_get_force_fallback_adapter
+    :  nativeint
+    -> bool
+    = "caml_wgpu_request_adapter_options_get_force_fallback_adapter"
+
+  external request_adapter_options_get_backend_type
+    :  nativeint
+    -> int
+    = "caml_wgpu_request_adapter_options_get_backend_type"
+
+  external request_adapter_options_get_compatible_surface
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_request_adapter_options_get_compatible_surface"
 end
 
 module Sampler_Binding_Layout = struct
   type t = nativeint
 
-  external sampler_binding_layout_create : unit -> nativeint = "caml_wgpu_sampler_binding_layout_create"
+  external sampler_binding_layout_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_sampler_binding_layout_create"
 
-  external sampler_binding_layout_free : nativeint -> unit = "caml_wgpu_sampler_binding_layout_free"
+  external sampler_binding_layout_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_sampler_binding_layout_free"
 
-  external sampler_binding_layout_set_type : nativeint -> int -> unit = "caml_wgpu_sampler_binding_layout_set_type"
+  external sampler_binding_layout_set_type
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_sampler_binding_layout_set_type"
 
-  external sampler_binding_layout_get_type : nativeint -> int = "caml_wgpu_sampler_binding_layout_get_type"
+  external sampler_binding_layout_get_type
+    :  nativeint
+    -> int
+    = "caml_wgpu_sampler_binding_layout_get_type"
 end
 
 module Sampler_Descriptor = struct
   type t = nativeint
 
-  external sampler_descriptor_create : unit -> nativeint = "caml_wgpu_sampler_descriptor_create"
+  external sampler_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_sampler_descriptor_create"
 
-  external sampler_descriptor_free : nativeint -> unit = "caml_wgpu_sampler_descriptor_free"
+  external sampler_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_sampler_descriptor_free"
 
-  external sampler_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_sampler_descriptor_set_label"
-  external sampler_descriptor_set_address_mode_u : nativeint -> int -> unit = "caml_wgpu_sampler_descriptor_set_address_mode_u"
-  external sampler_descriptor_set_address_mode_v : nativeint -> int -> unit = "caml_wgpu_sampler_descriptor_set_address_mode_v"
-  external sampler_descriptor_set_address_mode_w : nativeint -> int -> unit = "caml_wgpu_sampler_descriptor_set_address_mode_w"
-  external sampler_descriptor_set_mag_filter : nativeint -> int -> unit = "caml_wgpu_sampler_descriptor_set_mag_filter"
-  external sampler_descriptor_set_min_filter : nativeint -> int -> unit = "caml_wgpu_sampler_descriptor_set_min_filter"
-  external sampler_descriptor_set_mipmap_filter : nativeint -> int -> unit = "caml_wgpu_sampler_descriptor_set_mipmap_filter"
-  external sampler_descriptor_set_lod_min_clamp : nativeint -> float -> unit = "caml_wgpu_sampler_descriptor_set_lod_min_clamp"
-  external sampler_descriptor_set_lod_max_clamp : nativeint -> float -> unit = "caml_wgpu_sampler_descriptor_set_lod_max_clamp"
-  external sampler_descriptor_set_compare : nativeint -> int -> unit = "caml_wgpu_sampler_descriptor_set_compare"
-  external sampler_descriptor_set_max_anisotropy : nativeint -> int -> unit = "caml_wgpu_sampler_descriptor_set_max_anisotropy"
+  external sampler_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_label"
 
-  external sampler_descriptor_get_label : nativeint -> string = "caml_wgpu_sampler_descriptor_get_label"
-  external sampler_descriptor_get_address_mode_u : nativeint -> int = "caml_wgpu_sampler_descriptor_get_address_mode_u"
-  external sampler_descriptor_get_address_mode_v : nativeint -> int = "caml_wgpu_sampler_descriptor_get_address_mode_v"
-  external sampler_descriptor_get_address_mode_w : nativeint -> int = "caml_wgpu_sampler_descriptor_get_address_mode_w"
-  external sampler_descriptor_get_mag_filter : nativeint -> int = "caml_wgpu_sampler_descriptor_get_mag_filter"
-  external sampler_descriptor_get_min_filter : nativeint -> int = "caml_wgpu_sampler_descriptor_get_min_filter"
-  external sampler_descriptor_get_mipmap_filter : nativeint -> int = "caml_wgpu_sampler_descriptor_get_mipmap_filter"
-  external sampler_descriptor_get_lod_min_clamp : nativeint -> float = "caml_wgpu_sampler_descriptor_get_lod_min_clamp"
-  external sampler_descriptor_get_lod_max_clamp : nativeint -> float = "caml_wgpu_sampler_descriptor_get_lod_max_clamp"
-  external sampler_descriptor_get_compare : nativeint -> int = "caml_wgpu_sampler_descriptor_get_compare"
-  external sampler_descriptor_get_max_anisotropy : nativeint -> int = "caml_wgpu_sampler_descriptor_get_max_anisotropy"
+  external sampler_descriptor_set_address_mode_u
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_address_mode_u"
+
+  external sampler_descriptor_set_address_mode_v
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_address_mode_v"
+
+  external sampler_descriptor_set_address_mode_w
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_address_mode_w"
+
+  external sampler_descriptor_set_mag_filter
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_mag_filter"
+
+  external sampler_descriptor_set_min_filter
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_min_filter"
+
+  external sampler_descriptor_set_mipmap_filter
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_mipmap_filter"
+
+  external sampler_descriptor_set_lod_min_clamp
+    :  nativeint
+    -> float
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_lod_min_clamp"
+
+  external sampler_descriptor_set_lod_max_clamp
+    :  nativeint
+    -> float
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_lod_max_clamp"
+
+  external sampler_descriptor_set_compare
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_compare"
+
+  external sampler_descriptor_set_max_anisotropy
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_max_anisotropy"
+
+  external sampler_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_sampler_descriptor_get_label"
+
+  external sampler_descriptor_get_address_mode_u
+    :  nativeint
+    -> int
+    = "caml_wgpu_sampler_descriptor_get_address_mode_u"
+
+  external sampler_descriptor_get_address_mode_v
+    :  nativeint
+    -> int
+    = "caml_wgpu_sampler_descriptor_get_address_mode_v"
+
+  external sampler_descriptor_get_address_mode_w
+    :  nativeint
+    -> int
+    = "caml_wgpu_sampler_descriptor_get_address_mode_w"
+
+  external sampler_descriptor_get_mag_filter
+    :  nativeint
+    -> int
+    = "caml_wgpu_sampler_descriptor_get_mag_filter"
+
+  external sampler_descriptor_get_min_filter
+    :  nativeint
+    -> int
+    = "caml_wgpu_sampler_descriptor_get_min_filter"
+
+  external sampler_descriptor_get_mipmap_filter
+    :  nativeint
+    -> int
+    = "caml_wgpu_sampler_descriptor_get_mipmap_filter"
+
+  external sampler_descriptor_get_lod_min_clamp
+    :  nativeint
+    -> float
+    = "caml_wgpu_sampler_descriptor_get_lod_min_clamp"
+
+  external sampler_descriptor_get_lod_max_clamp
+    :  nativeint
+    -> float
+    = "caml_wgpu_sampler_descriptor_get_lod_max_clamp"
+
+  external sampler_descriptor_get_compare
+    :  nativeint
+    -> int
+    = "caml_wgpu_sampler_descriptor_get_compare"
+
+  external sampler_descriptor_get_max_anisotropy
+    :  nativeint
+    -> int
+    = "caml_wgpu_sampler_descriptor_get_max_anisotropy"
 end
 
 module Shader_Module_Descriptor = struct
   type t = nativeint
 
-  external shader_module_descriptor_create : unit -> nativeint = "caml_wgpu_shader_module_descriptor_create"
+  external shader_module_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_shader_module_descriptor_create"
 
-  external shader_module_descriptor_free : nativeint -> unit = "caml_wgpu_shader_module_descriptor_free"
+  external shader_module_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_shader_module_descriptor_free"
 
-  external shader_module_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_shader_module_descriptor_set_label"
+  external shader_module_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_shader_module_descriptor_set_label"
 
-  external shader_module_descriptor_get_label : nativeint -> string = "caml_wgpu_shader_module_descriptor_get_label"
+  external shader_module_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_shader_module_descriptor_get_label"
 end
 
 module Shader_Source_SPIRV = struct
   type t = nativeint
 
-  external shader_source_SPIRV_create : unit -> nativeint = "caml_wgpu_shader_source_spirv_create"
+  external shader_source_SPIRV_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_shader_source_spirv_create"
 
-  external shader_source_SPIRV_free : nativeint -> unit = "caml_wgpu_shader_source_spirv_free"
+  external shader_source_SPIRV_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_shader_source_spirv_free"
 
-  external shader_source_SPIRV_set_code_size : nativeint -> int -> unit = "caml_wgpu_shader_source_spirv_set_code_size"
-  external shader_source_SPIRV_set_code : nativeint -> nativeint -> unit = "caml_wgpu_shader_source_spirv_set_code"
+  external shader_source_SPIRV_set_code_size
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_shader_source_spirv_set_code_size"
 
-  external shader_source_SPIRV_get_code_size : nativeint -> int = "caml_wgpu_shader_source_spirv_get_code_size"
-  external shader_source_SPIRV_get_code : nativeint -> nativeint = "caml_wgpu_shader_source_spirv_get_code"
+  external shader_source_SPIRV_set_code
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_shader_source_spirv_set_code"
+
+  external shader_source_SPIRV_get_code_size
+    :  nativeint
+    -> int
+    = "caml_wgpu_shader_source_spirv_get_code_size"
+
+  external shader_source_SPIRV_get_code
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_shader_source_spirv_get_code"
 end
 
 module Shader_Source_WGSL = struct
   type t = nativeint
 
-  external shader_source_WGSL_create : unit -> nativeint = "caml_wgpu_shader_source_wgsl_create"
+  external shader_source_WGSL_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_shader_source_wgsl_create"
 
-  external shader_source_WGSL_free : nativeint -> unit = "caml_wgpu_shader_source_wgsl_free"
+  external shader_source_WGSL_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_shader_source_wgsl_free"
 
-  external shader_source_WGSL_set_code : nativeint -> string -> unit = "caml_wgpu_shader_source_wgsl_set_code"
+  external shader_source_WGSL_set_code
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_shader_source_wgsl_set_code"
 
-  external shader_source_WGSL_get_code : nativeint -> string = "caml_wgpu_shader_source_wgsl_get_code"
+  external shader_source_WGSL_get_code
+    :  nativeint
+    -> string
+    = "caml_wgpu_shader_source_wgsl_get_code"
 end
 
 module Stencil_Face_State = struct
   type t = nativeint
 
-  external stencil_face_state_create : unit -> nativeint = "caml_wgpu_stencil_face_state_create"
+  external stencil_face_state_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_stencil_face_state_create"
 
-  external stencil_face_state_free : nativeint -> unit = "caml_wgpu_stencil_face_state_free"
+  external stencil_face_state_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_stencil_face_state_free"
 
-  external stencil_face_state_set_compare : nativeint -> int -> unit = "caml_wgpu_stencil_face_state_set_compare"
-  external stencil_face_state_set_fail_op : nativeint -> int -> unit = "caml_wgpu_stencil_face_state_set_fail_op"
-  external stencil_face_state_set_depth_fail_op : nativeint -> int -> unit = "caml_wgpu_stencil_face_state_set_depth_fail_op"
-  external stencil_face_state_set_pass_op : nativeint -> int -> unit = "caml_wgpu_stencil_face_state_set_pass_op"
+  external stencil_face_state_set_compare
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_stencil_face_state_set_compare"
 
-  external stencil_face_state_get_compare : nativeint -> int = "caml_wgpu_stencil_face_state_get_compare"
-  external stencil_face_state_get_fail_op : nativeint -> int = "caml_wgpu_stencil_face_state_get_fail_op"
-  external stencil_face_state_get_depth_fail_op : nativeint -> int = "caml_wgpu_stencil_face_state_get_depth_fail_op"
-  external stencil_face_state_get_pass_op : nativeint -> int = "caml_wgpu_stencil_face_state_get_pass_op"
+  external stencil_face_state_set_fail_op
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_stencil_face_state_set_fail_op"
+
+  external stencil_face_state_set_depth_fail_op
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_stencil_face_state_set_depth_fail_op"
+
+  external stencil_face_state_set_pass_op
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_stencil_face_state_set_pass_op"
+
+  external stencil_face_state_get_compare
+    :  nativeint
+    -> int
+    = "caml_wgpu_stencil_face_state_get_compare"
+
+  external stencil_face_state_get_fail_op
+    :  nativeint
+    -> int
+    = "caml_wgpu_stencil_face_state_get_fail_op"
+
+  external stencil_face_state_get_depth_fail_op
+    :  nativeint
+    -> int
+    = "caml_wgpu_stencil_face_state_get_depth_fail_op"
+
+  external stencil_face_state_get_pass_op
+    :  nativeint
+    -> int
+    = "caml_wgpu_stencil_face_state_get_pass_op"
 end
 
 module Storage_Texture_Binding_Layout = struct
   type t = nativeint
 
-  external storage_texture_binding_layout_create : unit -> nativeint = "caml_wgpu_storage_texture_binding_layout_create"
+  external storage_texture_binding_layout_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_storage_texture_binding_layout_create"
 
-  external storage_texture_binding_layout_free : nativeint -> unit = "caml_wgpu_storage_texture_binding_layout_free"
+  external storage_texture_binding_layout_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_storage_texture_binding_layout_free"
 
-  external storage_texture_binding_layout_set_access : nativeint -> int -> unit = "caml_wgpu_storage_texture_binding_layout_set_access"
-  external storage_texture_binding_layout_set_format : nativeint -> int -> unit = "caml_wgpu_storage_texture_binding_layout_set_format"
-  external storage_texture_binding_layout_set_view_dimension : nativeint -> int -> unit = "caml_wgpu_storage_texture_binding_layout_set_view_dimension"
+  external storage_texture_binding_layout_set_access
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_storage_texture_binding_layout_set_access"
 
-  external storage_texture_binding_layout_get_access : nativeint -> int = "caml_wgpu_storage_texture_binding_layout_get_access"
-  external storage_texture_binding_layout_get_format : nativeint -> int = "caml_wgpu_storage_texture_binding_layout_get_format"
-  external storage_texture_binding_layout_get_view_dimension : nativeint -> int = "caml_wgpu_storage_texture_binding_layout_get_view_dimension"
+  external storage_texture_binding_layout_set_format
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_storage_texture_binding_layout_set_format"
+
+  external storage_texture_binding_layout_set_view_dimension
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_storage_texture_binding_layout_set_view_dimension"
+
+  external storage_texture_binding_layout_get_access
+    :  nativeint
+    -> int
+    = "caml_wgpu_storage_texture_binding_layout_get_access"
+
+  external storage_texture_binding_layout_get_format
+    :  nativeint
+    -> int
+    = "caml_wgpu_storage_texture_binding_layout_get_format"
+
+  external storage_texture_binding_layout_get_view_dimension
+    :  nativeint
+    -> int
+    = "caml_wgpu_storage_texture_binding_layout_get_view_dimension"
 end
 
 module Supported_Features = struct
   type t = nativeint
 
-  external supported_features_create : unit -> nativeint = "caml_wgpu_supported_features_create"
+  external supported_features_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_supported_features_create"
 
-  external supported_features_free : nativeint -> unit = "caml_wgpu_supported_features_free"
+  external supported_features_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_supported_features_free"
 
-  external supported_features_set_features : nativeint -> int array -> unit = "caml_wgpu_supported_features_set_features"
+  external supported_features_set_features
+    :  nativeint
+    -> int array
+    -> unit
+    = "caml_wgpu_supported_features_set_features"
 
-  external supported_features_get_features : nativeint -> nativeint = "caml_wgpu_supported_features_get_features"
+  external supported_features_get_features
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_supported_features_get_features"
 end
 
 module Supported_WGSL_Language_Features = struct
   type t = nativeint
 
-  external supported_WGSL_language_features_create : unit -> nativeint = "caml_wgpu_supported_wgsl_language_features_create"
+  external supported_WGSL_language_features_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_supported_wgsl_language_features_create"
 
-  external supported_WGSL_language_features_free : nativeint -> unit = "caml_wgpu_supported_wgsl_language_features_free"
+  external supported_WGSL_language_features_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_supported_wgsl_language_features_free"
 
-  external supported_WGSL_language_features_set_features : nativeint -> int array -> unit = "caml_wgpu_supported_wgsl_language_features_set_features"
+  external supported_WGSL_language_features_set_features
+    :  nativeint
+    -> int array
+    -> unit
+    = "caml_wgpu_supported_wgsl_language_features_set_features"
 
-  external supported_WGSL_language_features_get_features : nativeint -> nativeint = "caml_wgpu_supported_wgsl_language_features_get_features"
+  external supported_WGSL_language_features_get_features
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_supported_wgsl_language_features_get_features"
 end
 
 module Surface_Capabilities = struct
   type t = nativeint
 
-  external surface_capabilities_create : unit -> nativeint = "caml_wgpu_surface_capabilities_create"
+  external surface_capabilities_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_surface_capabilities_create"
 
-  external surface_capabilities_free : nativeint -> unit = "caml_wgpu_surface_capabilities_free"
+  external surface_capabilities_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_surface_capabilities_free"
 
-  external surface_capabilities_set_usages : nativeint -> int -> unit = "caml_wgpu_surface_capabilities_set_usages"
-  external surface_capabilities_set_formats : nativeint -> int array -> unit = "caml_wgpu_surface_capabilities_set_formats"
-  external surface_capabilities_set_present_modes : nativeint -> int array -> unit = "caml_wgpu_surface_capabilities_set_present_modes"
-  external surface_capabilities_set_alpha_modes : nativeint -> int array -> unit = "caml_wgpu_surface_capabilities_set_alpha_modes"
+  external surface_capabilities_set_usages
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_capabilities_set_usages"
 
-  external surface_capabilities_get_usages : nativeint -> int = "caml_wgpu_surface_capabilities_get_usages"
-  external surface_capabilities_get_formats : nativeint -> nativeint = "caml_wgpu_surface_capabilities_get_formats"
-  external surface_capabilities_get_present_modes : nativeint -> nativeint = "caml_wgpu_surface_capabilities_get_present_modes"
-  external surface_capabilities_get_alpha_modes : nativeint -> nativeint = "caml_wgpu_surface_capabilities_get_alpha_modes"
+  external surface_capabilities_set_formats
+    :  nativeint
+    -> int array
+    -> unit
+    = "caml_wgpu_surface_capabilities_set_formats"
+
+  external surface_capabilities_set_present_modes
+    :  nativeint
+    -> int array
+    -> unit
+    = "caml_wgpu_surface_capabilities_set_present_modes"
+
+  external surface_capabilities_set_alpha_modes
+    :  nativeint
+    -> int array
+    -> unit
+    = "caml_wgpu_surface_capabilities_set_alpha_modes"
+
+  external surface_capabilities_get_usages
+    :  nativeint
+    -> int
+    = "caml_wgpu_surface_capabilities_get_usages"
+
+  external surface_capabilities_get_formats
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_capabilities_get_formats"
+
+  external surface_capabilities_get_present_modes
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_capabilities_get_present_modes"
+
+  external surface_capabilities_get_alpha_modes
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_capabilities_get_alpha_modes"
 end
 
 module Surface_Configuration = struct
   type t = nativeint
 
-  external surface_configuration_create : unit -> nativeint = "caml_wgpu_surface_configuration_create"
+  external surface_configuration_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_surface_configuration_create"
 
-  external surface_configuration_free : nativeint -> unit = "caml_wgpu_surface_configuration_free"
+  external surface_configuration_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_surface_configuration_free"
 
-  external surface_configuration_set_device : nativeint -> nativeint -> unit = "caml_wgpu_surface_configuration_set_device"
-  external surface_configuration_set_format : nativeint -> int -> unit = "caml_wgpu_surface_configuration_set_format"
-  external surface_configuration_set_usage : nativeint -> int -> unit = "caml_wgpu_surface_configuration_set_usage"
-  external surface_configuration_set_width : nativeint -> int -> unit = "caml_wgpu_surface_configuration_set_width"
-  external surface_configuration_set_height : nativeint -> int -> unit = "caml_wgpu_surface_configuration_set_height"
-  external surface_configuration_set_view_formats : nativeint -> int array -> unit = "caml_wgpu_surface_configuration_set_view_formats"
-  external surface_configuration_set_alpha_mode : nativeint -> int -> unit = "caml_wgpu_surface_configuration_set_alpha_mode"
-  external surface_configuration_set_present_mode : nativeint -> int -> unit = "caml_wgpu_surface_configuration_set_present_mode"
+  external surface_configuration_set_device
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_configuration_set_device"
 
-  external surface_configuration_get_device : nativeint -> nativeint = "caml_wgpu_surface_configuration_get_device"
-  external surface_configuration_get_format : nativeint -> int = "caml_wgpu_surface_configuration_get_format"
-  external surface_configuration_get_usage : nativeint -> int = "caml_wgpu_surface_configuration_get_usage"
-  external surface_configuration_get_width : nativeint -> int = "caml_wgpu_surface_configuration_get_width"
-  external surface_configuration_get_height : nativeint -> int = "caml_wgpu_surface_configuration_get_height"
-  external surface_configuration_get_view_formats : nativeint -> nativeint = "caml_wgpu_surface_configuration_get_view_formats"
-  external surface_configuration_get_alpha_mode : nativeint -> int = "caml_wgpu_surface_configuration_get_alpha_mode"
-  external surface_configuration_get_present_mode : nativeint -> int = "caml_wgpu_surface_configuration_get_present_mode"
+  external surface_configuration_set_format
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_configuration_set_format"
+
+  external surface_configuration_set_usage
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_configuration_set_usage"
+
+  external surface_configuration_set_width
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_configuration_set_width"
+
+  external surface_configuration_set_height
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_configuration_set_height"
+
+  external surface_configuration_set_view_formats
+    :  nativeint
+    -> int array
+    -> unit
+    = "caml_wgpu_surface_configuration_set_view_formats"
+
+  external surface_configuration_set_alpha_mode
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_configuration_set_alpha_mode"
+
+  external surface_configuration_set_present_mode
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_configuration_set_present_mode"
+
+  external surface_configuration_get_device
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_configuration_get_device"
+
+  external surface_configuration_get_format
+    :  nativeint
+    -> int
+    = "caml_wgpu_surface_configuration_get_format"
+
+  external surface_configuration_get_usage
+    :  nativeint
+    -> int
+    = "caml_wgpu_surface_configuration_get_usage"
+
+  external surface_configuration_get_width
+    :  nativeint
+    -> int
+    = "caml_wgpu_surface_configuration_get_width"
+
+  external surface_configuration_get_height
+    :  nativeint
+    -> int
+    = "caml_wgpu_surface_configuration_get_height"
+
+  external surface_configuration_get_view_formats
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_configuration_get_view_formats"
+
+  external surface_configuration_get_alpha_mode
+    :  nativeint
+    -> int
+    = "caml_wgpu_surface_configuration_get_alpha_mode"
+
+  external surface_configuration_get_present_mode
+    :  nativeint
+    -> int
+    = "caml_wgpu_surface_configuration_get_present_mode"
 end
 
 module Surface_Descriptor = struct
   type t = nativeint
 
-  external surface_descriptor_create : unit -> nativeint = "caml_wgpu_surface_descriptor_create"
+  external surface_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_surface_descriptor_create"
 
-  external surface_descriptor_free : nativeint -> unit = "caml_wgpu_surface_descriptor_free"
+  external surface_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_surface_descriptor_free"
 
-  external surface_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_surface_descriptor_set_label"
+  external surface_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_surface_descriptor_set_label"
 
-  external surface_descriptor_get_label : nativeint -> string = "caml_wgpu_surface_descriptor_get_label"
+  external surface_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_surface_descriptor_get_label"
 end
 
 module Surface_Source_Android_Native_Window = struct
   type t = nativeint
 
-  external surface_source_android_native_window_create : unit -> nativeint = "caml_wgpu_surface_source_android_native_window_create"
+  external surface_source_android_native_window_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_surface_source_android_native_window_create"
 
-  external surface_source_android_native_window_free : nativeint -> unit = "caml_wgpu_surface_source_android_native_window_free"
+  external surface_source_android_native_window_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_surface_source_android_native_window_free"
 
-  external surface_source_android_native_window_set_window : nativeint -> nativeint -> unit = "caml_wgpu_surface_source_android_native_window_set_window"
+  external surface_source_android_native_window_set_window
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_source_android_native_window_set_window"
 
-  external surface_source_android_native_window_get_window : nativeint -> nativeint = "caml_wgpu_surface_source_android_native_window_get_window"
+  external surface_source_android_native_window_get_window
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_android_native_window_get_window"
 end
 
 module Surface_Source_Metal_Layer = struct
   type t = nativeint
 
-  external surface_source_metal_layer_create : unit -> nativeint = "caml_wgpu_surface_source_metal_layer_create"
+  external surface_source_metal_layer_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_surface_source_metal_layer_create"
 
-  external surface_source_metal_layer_free : nativeint -> unit = "caml_wgpu_surface_source_metal_layer_free"
+  external surface_source_metal_layer_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_surface_source_metal_layer_free"
 
-  external surface_source_metal_layer_set_layer : nativeint -> nativeint -> unit = "caml_wgpu_surface_source_metal_layer_set_layer"
+  external surface_source_metal_layer_set_layer
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_source_metal_layer_set_layer"
 
-  external surface_source_metal_layer_get_layer : nativeint -> nativeint = "caml_wgpu_surface_source_metal_layer_get_layer"
+  external surface_source_metal_layer_get_layer
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_metal_layer_get_layer"
 end
 
 module Surface_Source_Wayland_Surface = struct
   type t = nativeint
 
-  external surface_source_wayland_surface_create : unit -> nativeint = "caml_wgpu_surface_source_wayland_surface_create"
+  external surface_source_wayland_surface_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_surface_source_wayland_surface_create"
 
-  external surface_source_wayland_surface_free : nativeint -> unit = "caml_wgpu_surface_source_wayland_surface_free"
+  external surface_source_wayland_surface_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_surface_source_wayland_surface_free"
 
-  external surface_source_wayland_surface_set_display : nativeint -> nativeint -> unit = "caml_wgpu_surface_source_wayland_surface_set_display"
-  external surface_source_wayland_surface_set_surface : nativeint -> nativeint -> unit = "caml_wgpu_surface_source_wayland_surface_set_surface"
+  external surface_source_wayland_surface_set_display
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_source_wayland_surface_set_display"
 
-  external surface_source_wayland_surface_get_display : nativeint -> nativeint = "caml_wgpu_surface_source_wayland_surface_get_display"
-  external surface_source_wayland_surface_get_surface : nativeint -> nativeint = "caml_wgpu_surface_source_wayland_surface_get_surface"
+  external surface_source_wayland_surface_set_surface
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_source_wayland_surface_set_surface"
+
+  external surface_source_wayland_surface_get_display
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_wayland_surface_get_display"
+
+  external surface_source_wayland_surface_get_surface
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_wayland_surface_get_surface"
 end
 
 module Surface_Source_Windows_HWND = struct
   type t = nativeint
 
-  external surface_source_windows_HWND_create : unit -> nativeint = "caml_wgpu_surface_source_windows_hwnd_create"
+  external surface_source_windows_HWND_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_surface_source_windows_hwnd_create"
 
-  external surface_source_windows_HWND_free : nativeint -> unit = "caml_wgpu_surface_source_windows_hwnd_free"
+  external surface_source_windows_HWND_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_surface_source_windows_hwnd_free"
 
-  external surface_source_windows_HWND_set_hinstance : nativeint -> nativeint -> unit = "caml_wgpu_surface_source_windows_hwnd_set_hinstance"
-  external surface_source_windows_HWND_set_hwnd : nativeint -> nativeint -> unit = "caml_wgpu_surface_source_windows_hwnd_set_hwnd"
+  external surface_source_windows_HWND_set_hinstance
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_source_windows_hwnd_set_hinstance"
 
-  external surface_source_windows_HWND_get_hinstance : nativeint -> nativeint = "caml_wgpu_surface_source_windows_hwnd_get_hinstance"
-  external surface_source_windows_HWND_get_hwnd : nativeint -> nativeint = "caml_wgpu_surface_source_windows_hwnd_get_hwnd"
+  external surface_source_windows_HWND_set_hwnd
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_source_windows_hwnd_set_hwnd"
+
+  external surface_source_windows_HWND_get_hinstance
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_windows_hwnd_get_hinstance"
+
+  external surface_source_windows_HWND_get_hwnd
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_windows_hwnd_get_hwnd"
 end
 
 module Surface_Source_XCB_Window = struct
   type t = nativeint
 
-  external surface_source_XCB_window_create : unit -> nativeint = "caml_wgpu_surface_source_xcb_window_create"
+  external surface_source_XCB_window_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_surface_source_xcb_window_create"
 
-  external surface_source_XCB_window_free : nativeint -> unit = "caml_wgpu_surface_source_xcb_window_free"
+  external surface_source_XCB_window_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_surface_source_xcb_window_free"
 
-  external surface_source_XCB_window_set_connection : nativeint -> nativeint -> unit = "caml_wgpu_surface_source_xcb_window_set_connection"
-  external surface_source_XCB_window_set_window : nativeint -> int -> unit = "caml_wgpu_surface_source_xcb_window_set_window"
+  external surface_source_XCB_window_set_connection
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_source_xcb_window_set_connection"
 
-  external surface_source_XCB_window_get_connection : nativeint -> nativeint = "caml_wgpu_surface_source_xcb_window_get_connection"
-  external surface_source_XCB_window_get_window : nativeint -> int = "caml_wgpu_surface_source_xcb_window_get_window"
+  external surface_source_XCB_window_set_window
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_source_xcb_window_set_window"
+
+  external surface_source_XCB_window_get_connection
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_xcb_window_get_connection"
+
+  external surface_source_XCB_window_get_window
+    :  nativeint
+    -> int
+    = "caml_wgpu_surface_source_xcb_window_get_window"
 end
 
 module Surface_Source_Xlib_Window = struct
   type t = nativeint
 
-  external surface_source_xlib_window_create : unit -> nativeint = "caml_wgpu_surface_source_xlib_window_create"
+  external surface_source_xlib_window_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_surface_source_xlib_window_create"
 
-  external surface_source_xlib_window_free : nativeint -> unit = "caml_wgpu_surface_source_xlib_window_free"
+  external surface_source_xlib_window_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_surface_source_xlib_window_free"
 
-  external surface_source_xlib_window_set_display : nativeint -> nativeint -> unit = "caml_wgpu_surface_source_xlib_window_set_display"
-  external surface_source_xlib_window_set_window : nativeint -> int64 -> unit = "caml_wgpu_surface_source_xlib_window_set_window"
+  external surface_source_xlib_window_set_display
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_source_xlib_window_set_display"
 
-  external surface_source_xlib_window_get_display : nativeint -> nativeint = "caml_wgpu_surface_source_xlib_window_get_display"
-  external surface_source_xlib_window_get_window : nativeint -> int64 = "caml_wgpu_surface_source_xlib_window_get_window"
+  external surface_source_xlib_window_set_window
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_surface_source_xlib_window_set_window"
+
+  external surface_source_xlib_window_get_display
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_xlib_window_get_display"
+
+  external surface_source_xlib_window_get_window
+    :  nativeint
+    -> int64
+    = "caml_wgpu_surface_source_xlib_window_get_window"
 end
 
 module Surface_Texture = struct
   type t = nativeint
 
   external surface_texture_create : unit -> nativeint = "caml_wgpu_surface_texture_create"
-
   external surface_texture_free : nativeint -> unit = "caml_wgpu_surface_texture_free"
 
-  external surface_texture_set_texture : nativeint -> nativeint -> unit = "caml_wgpu_surface_texture_set_texture"
-  external surface_texture_set_status : nativeint -> int -> unit = "caml_wgpu_surface_texture_set_status"
+  external surface_texture_set_texture
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_texture_set_texture"
 
-  external surface_texture_get_texture : nativeint -> nativeint = "caml_wgpu_surface_texture_get_texture"
-  external surface_texture_get_status : nativeint -> int = "caml_wgpu_surface_texture_get_status"
+  external surface_texture_set_status
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_texture_set_status"
+
+  external surface_texture_get_texture
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_texture_get_texture"
+
+  external surface_texture_get_status
+    :  nativeint
+    -> int
+    = "caml_wgpu_surface_texture_get_status"
 end
 
 module Texel_Copy_Buffer_Info = struct
   type t = nativeint
 
-  external texel_copy_buffer_info_create : unit -> nativeint = "caml_wgpu_texel_copy_buffer_info_create"
+  external texel_copy_buffer_info_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_texel_copy_buffer_info_create"
 
-  external texel_copy_buffer_info_free : nativeint -> unit = "caml_wgpu_texel_copy_buffer_info_free"
+  external texel_copy_buffer_info_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_texel_copy_buffer_info_free"
 
-  external texel_copy_buffer_info_set_layout : nativeint -> nativeint -> unit = "caml_wgpu_texel_copy_buffer_info_set_layout"
-  external texel_copy_buffer_info_set_buffer : nativeint -> nativeint -> unit = "caml_wgpu_texel_copy_buffer_info_set_buffer"
+  external texel_copy_buffer_info_set_layout
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_texel_copy_buffer_info_set_layout"
 
-  external texel_copy_buffer_info_get_layout : nativeint -> nativeint = "caml_wgpu_texel_copy_buffer_info_get_layout"
-  external texel_copy_buffer_info_get_buffer : nativeint -> nativeint = "caml_wgpu_texel_copy_buffer_info_get_buffer"
+  external texel_copy_buffer_info_set_buffer
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_texel_copy_buffer_info_set_buffer"
+
+  external texel_copy_buffer_info_get_layout
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_texel_copy_buffer_info_get_layout"
+
+  external texel_copy_buffer_info_get_buffer
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_texel_copy_buffer_info_get_buffer"
 end
 
 module Texel_Copy_Buffer_Layout = struct
   type t = nativeint
 
-  external texel_copy_buffer_layout_create : unit -> nativeint = "caml_wgpu_texel_copy_buffer_layout_create"
+  external texel_copy_buffer_layout_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_texel_copy_buffer_layout_create"
 
-  external texel_copy_buffer_layout_free : nativeint -> unit = "caml_wgpu_texel_copy_buffer_layout_free"
+  external texel_copy_buffer_layout_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_texel_copy_buffer_layout_free"
 
-  external texel_copy_buffer_layout_set_offset : nativeint -> int64 -> unit = "caml_wgpu_texel_copy_buffer_layout_set_offset"
-  external texel_copy_buffer_layout_set_bytes_per_row : nativeint -> int -> unit = "caml_wgpu_texel_copy_buffer_layout_set_bytes_per_row"
-  external texel_copy_buffer_layout_set_rows_per_image : nativeint -> int -> unit = "caml_wgpu_texel_copy_buffer_layout_set_rows_per_image"
+  external texel_copy_buffer_layout_set_offset
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_texel_copy_buffer_layout_set_offset"
 
-  external texel_copy_buffer_layout_get_offset : nativeint -> int64 = "caml_wgpu_texel_copy_buffer_layout_get_offset"
-  external texel_copy_buffer_layout_get_bytes_per_row : nativeint -> int = "caml_wgpu_texel_copy_buffer_layout_get_bytes_per_row"
-  external texel_copy_buffer_layout_get_rows_per_image : nativeint -> int = "caml_wgpu_texel_copy_buffer_layout_get_rows_per_image"
+  external texel_copy_buffer_layout_set_bytes_per_row
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texel_copy_buffer_layout_set_bytes_per_row"
+
+  external texel_copy_buffer_layout_set_rows_per_image
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texel_copy_buffer_layout_set_rows_per_image"
+
+  external texel_copy_buffer_layout_get_offset
+    :  nativeint
+    -> int64
+    = "caml_wgpu_texel_copy_buffer_layout_get_offset"
+
+  external texel_copy_buffer_layout_get_bytes_per_row
+    :  nativeint
+    -> int
+    = "caml_wgpu_texel_copy_buffer_layout_get_bytes_per_row"
+
+  external texel_copy_buffer_layout_get_rows_per_image
+    :  nativeint
+    -> int
+    = "caml_wgpu_texel_copy_buffer_layout_get_rows_per_image"
 end
 
 module Texel_Copy_Texture_Info = struct
   type t = nativeint
 
-  external texel_copy_texture_info_create : unit -> nativeint = "caml_wgpu_texel_copy_texture_info_create"
+  external texel_copy_texture_info_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_texel_copy_texture_info_create"
 
-  external texel_copy_texture_info_free : nativeint -> unit = "caml_wgpu_texel_copy_texture_info_free"
+  external texel_copy_texture_info_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_texel_copy_texture_info_free"
 
-  external texel_copy_texture_info_set_texture : nativeint -> nativeint -> unit = "caml_wgpu_texel_copy_texture_info_set_texture"
-  external texel_copy_texture_info_set_mip_level : nativeint -> int -> unit = "caml_wgpu_texel_copy_texture_info_set_mip_level"
-  external texel_copy_texture_info_set_origin : nativeint -> nativeint -> unit = "caml_wgpu_texel_copy_texture_info_set_origin"
-  external texel_copy_texture_info_set_aspect : nativeint -> int -> unit = "caml_wgpu_texel_copy_texture_info_set_aspect"
+  external texel_copy_texture_info_set_texture
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_texel_copy_texture_info_set_texture"
 
-  external texel_copy_texture_info_get_texture : nativeint -> nativeint = "caml_wgpu_texel_copy_texture_info_get_texture"
-  external texel_copy_texture_info_get_mip_level : nativeint -> int = "caml_wgpu_texel_copy_texture_info_get_mip_level"
-  external texel_copy_texture_info_get_origin : nativeint -> nativeint = "caml_wgpu_texel_copy_texture_info_get_origin"
-  external texel_copy_texture_info_get_aspect : nativeint -> int = "caml_wgpu_texel_copy_texture_info_get_aspect"
+  external texel_copy_texture_info_set_mip_level
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texel_copy_texture_info_set_mip_level"
+
+  external texel_copy_texture_info_set_origin
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_texel_copy_texture_info_set_origin"
+
+  external texel_copy_texture_info_set_aspect
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texel_copy_texture_info_set_aspect"
+
+  external texel_copy_texture_info_get_texture
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_texel_copy_texture_info_get_texture"
+
+  external texel_copy_texture_info_get_mip_level
+    :  nativeint
+    -> int
+    = "caml_wgpu_texel_copy_texture_info_get_mip_level"
+
+  external texel_copy_texture_info_get_origin
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_texel_copy_texture_info_get_origin"
+
+  external texel_copy_texture_info_get_aspect
+    :  nativeint
+    -> int
+    = "caml_wgpu_texel_copy_texture_info_get_aspect"
 end
 
 module Texture_Binding_Layout = struct
   type t = nativeint
 
-  external texture_binding_layout_create : unit -> nativeint = "caml_wgpu_texture_binding_layout_create"
+  external texture_binding_layout_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_texture_binding_layout_create"
 
-  external texture_binding_layout_free : nativeint -> unit = "caml_wgpu_texture_binding_layout_free"
+  external texture_binding_layout_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_texture_binding_layout_free"
 
-  external texture_binding_layout_set_sample_type : nativeint -> int -> unit = "caml_wgpu_texture_binding_layout_set_sample_type"
-  external texture_binding_layout_set_view_dimension : nativeint -> int -> unit = "caml_wgpu_texture_binding_layout_set_view_dimension"
-  external texture_binding_layout_set_multisampled : nativeint -> bool -> unit = "caml_wgpu_texture_binding_layout_set_multisampled"
+  external texture_binding_layout_set_sample_type
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_binding_layout_set_sample_type"
 
-  external texture_binding_layout_get_sample_type : nativeint -> int = "caml_wgpu_texture_binding_layout_get_sample_type"
-  external texture_binding_layout_get_view_dimension : nativeint -> int = "caml_wgpu_texture_binding_layout_get_view_dimension"
-  external texture_binding_layout_get_multisampled : nativeint -> bool = "caml_wgpu_texture_binding_layout_get_multisampled"
+  external texture_binding_layout_set_view_dimension
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_binding_layout_set_view_dimension"
+
+  external texture_binding_layout_set_multisampled
+    :  nativeint
+    -> bool
+    -> unit
+    = "caml_wgpu_texture_binding_layout_set_multisampled"
+
+  external texture_binding_layout_get_sample_type
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_binding_layout_get_sample_type"
+
+  external texture_binding_layout_get_view_dimension
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_binding_layout_get_view_dimension"
+
+  external texture_binding_layout_get_multisampled
+    :  nativeint
+    -> bool
+    = "caml_wgpu_texture_binding_layout_get_multisampled"
 end
 
 module Texture_Descriptor = struct
   type t = nativeint
 
-  external texture_descriptor_create : unit -> nativeint = "caml_wgpu_texture_descriptor_create"
+  external texture_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_texture_descriptor_create"
 
-  external texture_descriptor_free : nativeint -> unit = "caml_wgpu_texture_descriptor_free"
+  external texture_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_texture_descriptor_free"
 
-  external texture_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_texture_descriptor_set_label"
-  external texture_descriptor_set_usage : nativeint -> int -> unit = "caml_wgpu_texture_descriptor_set_usage"
-  external texture_descriptor_set_dimension : nativeint -> int -> unit = "caml_wgpu_texture_descriptor_set_dimension"
-  external texture_descriptor_set_size : nativeint -> nativeint -> unit = "caml_wgpu_texture_descriptor_set_size"
-  external texture_descriptor_set_format : nativeint -> int -> unit = "caml_wgpu_texture_descriptor_set_format"
-  external texture_descriptor_set_mip_level_count : nativeint -> int -> unit = "caml_wgpu_texture_descriptor_set_mip_level_count"
-  external texture_descriptor_set_sample_count : nativeint -> int -> unit = "caml_wgpu_texture_descriptor_set_sample_count"
-  external texture_descriptor_set_view_formats : nativeint -> int array -> unit = "caml_wgpu_texture_descriptor_set_view_formats"
+  external texture_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_texture_descriptor_set_label"
 
-  external texture_descriptor_get_label : nativeint -> string = "caml_wgpu_texture_descriptor_get_label"
-  external texture_descriptor_get_usage : nativeint -> int = "caml_wgpu_texture_descriptor_get_usage"
-  external texture_descriptor_get_dimension : nativeint -> int = "caml_wgpu_texture_descriptor_get_dimension"
-  external texture_descriptor_get_size : nativeint -> nativeint = "caml_wgpu_texture_descriptor_get_size"
-  external texture_descriptor_get_format : nativeint -> int = "caml_wgpu_texture_descriptor_get_format"
-  external texture_descriptor_get_mip_level_count : nativeint -> int = "caml_wgpu_texture_descriptor_get_mip_level_count"
-  external texture_descriptor_get_sample_count : nativeint -> int = "caml_wgpu_texture_descriptor_get_sample_count"
-  external texture_descriptor_get_view_formats : nativeint -> nativeint = "caml_wgpu_texture_descriptor_get_view_formats"
+  external texture_descriptor_set_usage
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_descriptor_set_usage"
+
+  external texture_descriptor_set_dimension
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_descriptor_set_dimension"
+
+  external texture_descriptor_set_size
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_texture_descriptor_set_size"
+
+  external texture_descriptor_set_format
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_descriptor_set_format"
+
+  external texture_descriptor_set_mip_level_count
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_descriptor_set_mip_level_count"
+
+  external texture_descriptor_set_sample_count
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_descriptor_set_sample_count"
+
+  external texture_descriptor_set_view_formats
+    :  nativeint
+    -> int array
+    -> unit
+    = "caml_wgpu_texture_descriptor_set_view_formats"
+
+  external texture_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_texture_descriptor_get_label"
+
+  external texture_descriptor_get_usage
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_descriptor_get_usage"
+
+  external texture_descriptor_get_dimension
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_descriptor_get_dimension"
+
+  external texture_descriptor_get_size
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_texture_descriptor_get_size"
+
+  external texture_descriptor_get_format
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_descriptor_get_format"
+
+  external texture_descriptor_get_mip_level_count
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_descriptor_get_mip_level_count"
+
+  external texture_descriptor_get_sample_count
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_descriptor_get_sample_count"
+
+  external texture_descriptor_get_view_formats
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_texture_descriptor_get_view_formats"
 end
 
 module Texture_View_Descriptor = struct
   type t = nativeint
 
-  external texture_view_descriptor_create : unit -> nativeint = "caml_wgpu_texture_view_descriptor_create"
+  external texture_view_descriptor_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_texture_view_descriptor_create"
 
-  external texture_view_descriptor_free : nativeint -> unit = "caml_wgpu_texture_view_descriptor_free"
+  external texture_view_descriptor_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_free"
 
-  external texture_view_descriptor_set_label : nativeint -> string -> unit = "caml_wgpu_texture_view_descriptor_set_label"
-  external texture_view_descriptor_set_format : nativeint -> int -> unit = "caml_wgpu_texture_view_descriptor_set_format"
-  external texture_view_descriptor_set_dimension : nativeint -> int -> unit = "caml_wgpu_texture_view_descriptor_set_dimension"
-  external texture_view_descriptor_set_base_mip_level : nativeint -> int -> unit = "caml_wgpu_texture_view_descriptor_set_base_mip_level"
-  external texture_view_descriptor_set_mip_level_count : nativeint -> int -> unit = "caml_wgpu_texture_view_descriptor_set_mip_level_count"
-  external texture_view_descriptor_set_base_array_layer : nativeint -> int -> unit = "caml_wgpu_texture_view_descriptor_set_base_array_layer"
-  external texture_view_descriptor_set_array_layer_count : nativeint -> int -> unit = "caml_wgpu_texture_view_descriptor_set_array_layer_count"
-  external texture_view_descriptor_set_aspect : nativeint -> int -> unit = "caml_wgpu_texture_view_descriptor_set_aspect"
-  external texture_view_descriptor_set_usage : nativeint -> int -> unit = "caml_wgpu_texture_view_descriptor_set_usage"
+  external texture_view_descriptor_set_label
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_label"
 
-  external texture_view_descriptor_get_label : nativeint -> string = "caml_wgpu_texture_view_descriptor_get_label"
-  external texture_view_descriptor_get_format : nativeint -> int = "caml_wgpu_texture_view_descriptor_get_format"
-  external texture_view_descriptor_get_dimension : nativeint -> int = "caml_wgpu_texture_view_descriptor_get_dimension"
-  external texture_view_descriptor_get_base_mip_level : nativeint -> int = "caml_wgpu_texture_view_descriptor_get_base_mip_level"
-  external texture_view_descriptor_get_mip_level_count : nativeint -> int = "caml_wgpu_texture_view_descriptor_get_mip_level_count"
-  external texture_view_descriptor_get_base_array_layer : nativeint -> int = "caml_wgpu_texture_view_descriptor_get_base_array_layer"
-  external texture_view_descriptor_get_array_layer_count : nativeint -> int = "caml_wgpu_texture_view_descriptor_get_array_layer_count"
-  external texture_view_descriptor_get_aspect : nativeint -> int = "caml_wgpu_texture_view_descriptor_get_aspect"
-  external texture_view_descriptor_get_usage : nativeint -> int = "caml_wgpu_texture_view_descriptor_get_usage"
+  external texture_view_descriptor_set_format
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_format"
+
+  external texture_view_descriptor_set_dimension
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_dimension"
+
+  external texture_view_descriptor_set_base_mip_level
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_base_mip_level"
+
+  external texture_view_descriptor_set_mip_level_count
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_mip_level_count"
+
+  external texture_view_descriptor_set_base_array_layer
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_base_array_layer"
+
+  external texture_view_descriptor_set_array_layer_count
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_array_layer_count"
+
+  external texture_view_descriptor_set_aspect
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_aspect"
+
+  external texture_view_descriptor_set_usage
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_usage"
+
+  external texture_view_descriptor_get_label
+    :  nativeint
+    -> string
+    = "caml_wgpu_texture_view_descriptor_get_label"
+
+  external texture_view_descriptor_get_format
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_view_descriptor_get_format"
+
+  external texture_view_descriptor_get_dimension
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_view_descriptor_get_dimension"
+
+  external texture_view_descriptor_get_base_mip_level
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_view_descriptor_get_base_mip_level"
+
+  external texture_view_descriptor_get_mip_level_count
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_view_descriptor_get_mip_level_count"
+
+  external texture_view_descriptor_get_base_array_layer
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_view_descriptor_get_base_array_layer"
+
+  external texture_view_descriptor_get_array_layer_count
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_view_descriptor_get_array_layer_count"
+
+  external texture_view_descriptor_get_aspect
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_view_descriptor_get_aspect"
+
+  external texture_view_descriptor_get_usage
+    :  nativeint
+    -> int
+    = "caml_wgpu_texture_view_descriptor_get_usage"
 end
 
 module Vertex_Attribute = struct
   type t = nativeint
 
-  external vertex_attribute_create : unit -> nativeint = "caml_wgpu_vertex_attribute_create"
+  external vertex_attribute_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_vertex_attribute_create"
 
   external vertex_attribute_free : nativeint -> unit = "caml_wgpu_vertex_attribute_free"
 
-  external vertex_attribute_set_format : nativeint -> int -> unit = "caml_wgpu_vertex_attribute_set_format"
-  external vertex_attribute_set_offset : nativeint -> int64 -> unit = "caml_wgpu_vertex_attribute_set_offset"
-  external vertex_attribute_set_shader_location : nativeint -> int -> unit = "caml_wgpu_vertex_attribute_set_shader_location"
+  external vertex_attribute_set_format
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_vertex_attribute_set_format"
 
-  external vertex_attribute_get_format : nativeint -> int = "caml_wgpu_vertex_attribute_get_format"
-  external vertex_attribute_get_offset : nativeint -> int64 = "caml_wgpu_vertex_attribute_get_offset"
-  external vertex_attribute_get_shader_location : nativeint -> int = "caml_wgpu_vertex_attribute_get_shader_location"
+  external vertex_attribute_set_offset
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_vertex_attribute_set_offset"
+
+  external vertex_attribute_set_shader_location
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_vertex_attribute_set_shader_location"
+
+  external vertex_attribute_get_format
+    :  nativeint
+    -> int
+    = "caml_wgpu_vertex_attribute_get_format"
+
+  external vertex_attribute_get_offset
+    :  nativeint
+    -> int64
+    = "caml_wgpu_vertex_attribute_get_offset"
+
+  external vertex_attribute_get_shader_location
+    :  nativeint
+    -> int
+    = "caml_wgpu_vertex_attribute_get_shader_location"
 end
 
 module Vertex_Buffer_Layout = struct
   type t = nativeint
 
-  external vertex_buffer_layout_create : unit -> nativeint = "caml_wgpu_vertex_buffer_layout_create"
+  external vertex_buffer_layout_create
+    :  unit
+    -> nativeint
+    = "caml_wgpu_vertex_buffer_layout_create"
 
-  external vertex_buffer_layout_free : nativeint -> unit = "caml_wgpu_vertex_buffer_layout_free"
+  external vertex_buffer_layout_free
+    :  nativeint
+    -> unit
+    = "caml_wgpu_vertex_buffer_layout_free"
 
-  external vertex_buffer_layout_set_step_mode : nativeint -> int -> unit = "caml_wgpu_vertex_buffer_layout_set_step_mode"
-  external vertex_buffer_layout_set_array_stride : nativeint -> int64 -> unit = "caml_wgpu_vertex_buffer_layout_set_array_stride"
-  external vertex_buffer_layout_set_attributes : nativeint -> nativeint array -> unit = "caml_wgpu_vertex_buffer_layout_set_attributes"
+  external vertex_buffer_layout_set_step_mode
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_vertex_buffer_layout_set_step_mode"
 
-  external vertex_buffer_layout_get_step_mode : nativeint -> int = "caml_wgpu_vertex_buffer_layout_get_step_mode"
-  external vertex_buffer_layout_get_array_stride : nativeint -> int64 = "caml_wgpu_vertex_buffer_layout_get_array_stride"
-  external vertex_buffer_layout_get_attributes : nativeint -> nativeint = "caml_wgpu_vertex_buffer_layout_get_attributes"
+  external vertex_buffer_layout_set_array_stride
+    :  nativeint
+    -> int64
+    -> unit
+    = "caml_wgpu_vertex_buffer_layout_set_array_stride"
+
+  external vertex_buffer_layout_set_attributes
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_vertex_buffer_layout_set_attributes"
+
+  external vertex_buffer_layout_get_step_mode
+    :  nativeint
+    -> int
+    = "caml_wgpu_vertex_buffer_layout_get_step_mode"
+
+  external vertex_buffer_layout_get_array_stride
+    :  nativeint
+    -> int64
+    = "caml_wgpu_vertex_buffer_layout_get_array_stride"
+
+  external vertex_buffer_layout_get_attributes
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_vertex_buffer_layout_get_attributes"
 end
 
 module Vertex_State = struct
   type t = nativeint
 
   external vertex_state_create : unit -> nativeint = "caml_wgpu_vertex_state_create"
-
   external vertex_state_free : nativeint -> unit = "caml_wgpu_vertex_state_free"
 
-  external vertex_state_set_module : nativeint -> nativeint -> unit = "caml_wgpu_vertex_state_set_module"
-  external vertex_state_set_entry_point : nativeint -> string -> unit = "caml_wgpu_vertex_state_set_entry_point"
-  external vertex_state_set_constants : nativeint -> nativeint array -> unit = "caml_wgpu_vertex_state_set_constants"
-  external vertex_state_set_buffers : nativeint -> nativeint array -> unit = "caml_wgpu_vertex_state_set_buffers"
+  external vertex_state_set_module
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_vertex_state_set_module"
 
-  external vertex_state_get_module : nativeint -> nativeint = "caml_wgpu_vertex_state_get_module"
-  external vertex_state_get_entry_point : nativeint -> string = "caml_wgpu_vertex_state_get_entry_point"
-  external vertex_state_get_constants : nativeint -> nativeint = "caml_wgpu_vertex_state_get_constants"
-  external vertex_state_get_buffers : nativeint -> nativeint = "caml_wgpu_vertex_state_get_buffers"
+  external vertex_state_set_entry_point
+    :  nativeint
+    -> string
+    -> unit
+    = "caml_wgpu_vertex_state_set_entry_point"
+
+  external vertex_state_set_constants
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_vertex_state_set_constants"
+
+  external vertex_state_set_buffers
+    :  nativeint
+    -> nativeint array
+    -> unit
+    = "caml_wgpu_vertex_state_set_buffers"
+
+  external vertex_state_get_module
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_vertex_state_get_module"
+
+  external vertex_state_get_entry_point
+    :  nativeint
+    -> string
+    = "caml_wgpu_vertex_state_get_entry_point"
+
+  external vertex_state_get_constants
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_vertex_state_get_constants"
+
+  external vertex_state_get_buffers
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_vertex_state_get_buffers"
 end
+
 type adapter = nativeint
 type bind_group = nativeint
 type bind_group_layout = nativeint
@@ -2926,170 +6421,783 @@ type texture_view = nativeint
 external adapter_release : adapter -> unit = "caml_wgpu_adapter_release"
 external adapter_get_limits : adapter -> nativeint -> int = "caml_wgpu_adapter_get_limits"
 external adapter_has_feature : adapter -> int -> bool = "caml_wgpu_adapter_has_feature"
-external adapter_get_features : adapter -> nativeint -> unit = "caml_wgpu_adapter_get_features"
+
+external adapter_get_features
+  :  adapter
+  -> nativeint
+  -> unit
+  = "caml_wgpu_adapter_get_features"
+
 (* TODO: async method adapter_request_device *)
 external bind_group_release : bind_group -> unit = "caml_wgpu_bind_group_release"
-external bind_group_set_label : bind_group -> string -> unit = "caml_wgpu_bind_group_set_label"
-external bind_group_layout_release : bind_group_layout -> unit = "caml_wgpu_bind_group_layout_release"
-external bind_group_layout_set_label : bind_group_layout -> string -> unit = "caml_wgpu_bind_group_layout_set_label"
+
+external bind_group_set_label
+  :  bind_group
+  -> string
+  -> unit
+  = "caml_wgpu_bind_group_set_label"
+
+external bind_group_layout_release
+  :  bind_group_layout
+  -> unit
+  = "caml_wgpu_bind_group_layout_release"
+
+external bind_group_layout_set_label
+  :  bind_group_layout
+  -> string
+  -> unit
+  = "caml_wgpu_bind_group_layout_set_label"
+
 external buffer_release : buffer -> unit = "caml_wgpu_buffer_release"
+
 (* TODO: async method buffer_map_async *)
-external buffer_get_mapped_range : buffer -> int64 -> int64 -> nativeint = "caml_wgpu_buffer_get_mapped_range"
-external buffer_get_const_mapped_range : buffer -> int64 -> int64 -> nativeint = "caml_wgpu_buffer_get_const_mapped_range"
+external buffer_get_mapped_range
+  :  buffer
+  -> int64
+  -> int64
+  -> nativeint
+  = "caml_wgpu_buffer_get_mapped_range"
+
+external buffer_get_const_mapped_range
+  :  buffer
+  -> int64
+  -> int64
+  -> nativeint
+  = "caml_wgpu_buffer_get_const_mapped_range"
+
 external buffer_set_label : buffer -> string -> unit = "caml_wgpu_buffer_set_label"
 external buffer_get_usage : buffer -> int = "caml_wgpu_buffer_get_usage"
 external buffer_get_size : buffer -> int64 = "caml_wgpu_buffer_get_size"
 external buffer_get_map_state : buffer -> int = "caml_wgpu_buffer_get_map_state"
 external buffer_unmap : buffer -> unit = "caml_wgpu_buffer_unmap"
 external buffer_destroy : buffer -> unit = "caml_wgpu_buffer_destroy"
-external command_buffer_release : command_buffer -> unit = "caml_wgpu_command_buffer_release"
-external command_buffer_set_label : command_buffer -> string -> unit = "caml_wgpu_command_buffer_set_label"
-external command_encoder_release : command_encoder -> unit = "caml_wgpu_command_encoder_release"
-external command_encoder_finish : command_encoder -> nativeint -> command_buffer = "caml_wgpu_command_encoder_finish"
-external command_encoder_begin_compute_pass : command_encoder -> nativeint -> compute_pass_encoder = "caml_wgpu_command_encoder_begin_compute_pass"
-external command_encoder_begin_render_pass : command_encoder -> nativeint -> render_pass_encoder = "caml_wgpu_command_encoder_begin_render_pass"
-external command_encoder_copy_buffer_to_buffer : command_encoder -> buffer -> int64 -> buffer -> int64 -> int64 -> unit = "caml_wgpu_command_encoder_copy_buffer_to_buffer_bytecode" "caml_wgpu_command_encoder_copy_buffer_to_buffer"
-external command_encoder_copy_buffer_to_texture : command_encoder -> nativeint -> nativeint -> nativeint -> unit = "caml_wgpu_command_encoder_copy_buffer_to_texture"
-external command_encoder_copy_texture_to_buffer : command_encoder -> nativeint -> nativeint -> nativeint -> unit = "caml_wgpu_command_encoder_copy_texture_to_buffer"
-external command_encoder_copy_texture_to_texture : command_encoder -> nativeint -> nativeint -> nativeint -> unit = "caml_wgpu_command_encoder_copy_texture_to_texture"
-external command_encoder_clear_buffer : command_encoder -> buffer -> int64 -> int64 -> unit = "caml_wgpu_command_encoder_clear_buffer"
-external command_encoder_insert_debug_marker : command_encoder -> string -> unit = "caml_wgpu_command_encoder_insert_debug_marker"
-external command_encoder_pop_debug_group : command_encoder -> unit = "caml_wgpu_command_encoder_pop_debug_group"
-external command_encoder_push_debug_group : command_encoder -> string -> unit = "caml_wgpu_command_encoder_push_debug_group"
-external command_encoder_resolve_query_set : command_encoder -> query_set -> int -> int -> buffer -> int64 -> unit = "caml_wgpu_command_encoder_resolve_query_set_bytecode" "caml_wgpu_command_encoder_resolve_query_set"
-external command_encoder_write_timestamp : command_encoder -> query_set -> int -> unit = "caml_wgpu_command_encoder_write_timestamp"
-external command_encoder_set_label : command_encoder -> string -> unit = "caml_wgpu_command_encoder_set_label"
-external compute_pass_encoder_release : compute_pass_encoder -> unit = "caml_wgpu_compute_pass_encoder_release"
-external compute_pass_encoder_insert_debug_marker : compute_pass_encoder -> string -> unit = "caml_wgpu_compute_pass_encoder_insert_debug_marker"
-external compute_pass_encoder_pop_debug_group : compute_pass_encoder -> unit = "caml_wgpu_compute_pass_encoder_pop_debug_group"
-external compute_pass_encoder_push_debug_group : compute_pass_encoder -> string -> unit = "caml_wgpu_compute_pass_encoder_push_debug_group"
-external compute_pass_encoder_set_pipeline : compute_pass_encoder -> compute_pipeline -> unit = "caml_wgpu_compute_pass_encoder_set_pipeline"
-external compute_pass_encoder_set_bind_group : compute_pass_encoder -> int -> bind_group -> int array -> unit = "caml_wgpu_compute_pass_encoder_set_bind_group"
-external compute_pass_encoder_dispatch_workgroups : compute_pass_encoder -> int -> int -> int -> unit = "caml_wgpu_compute_pass_encoder_dispatch_workgroups"
-external compute_pass_encoder_dispatch_workgroups_indirect : compute_pass_encoder -> buffer -> int64 -> unit = "caml_wgpu_compute_pass_encoder_dispatch_workgroups_indirect"
-external compute_pass_encoder_end : compute_pass_encoder -> unit = "caml_wgpu_compute_pass_encoder_end"
-external compute_pass_encoder_set_label : compute_pass_encoder -> string -> unit = "caml_wgpu_compute_pass_encoder_set_label"
-external compute_pipeline_release : compute_pipeline -> unit = "caml_wgpu_compute_pipeline_release"
-external compute_pipeline_get_bind_group_layout : compute_pipeline -> int -> bind_group_layout = "caml_wgpu_compute_pipeline_get_bind_group_layout"
-external compute_pipeline_set_label : compute_pipeline -> string -> unit = "caml_wgpu_compute_pipeline_set_label"
+
+external command_buffer_release
+  :  command_buffer
+  -> unit
+  = "caml_wgpu_command_buffer_release"
+
+external command_buffer_set_label
+  :  command_buffer
+  -> string
+  -> unit
+  = "caml_wgpu_command_buffer_set_label"
+
+external command_encoder_release
+  :  command_encoder
+  -> unit
+  = "caml_wgpu_command_encoder_release"
+
+external command_encoder_finish
+  :  command_encoder
+  -> nativeint
+  -> command_buffer
+  = "caml_wgpu_command_encoder_finish"
+
+external command_encoder_begin_compute_pass
+  :  command_encoder
+  -> nativeint
+  -> compute_pass_encoder
+  = "caml_wgpu_command_encoder_begin_compute_pass"
+
+external command_encoder_begin_render_pass
+  :  command_encoder
+  -> nativeint
+  -> render_pass_encoder
+  = "caml_wgpu_command_encoder_begin_render_pass"
+
+external command_encoder_copy_buffer_to_buffer
+  :  command_encoder
+  -> buffer
+  -> int64
+  -> buffer
+  -> int64
+  -> int64
+  -> unit
+  = "caml_wgpu_command_encoder_copy_buffer_to_buffer_bytecode"
+    "caml_wgpu_command_encoder_copy_buffer_to_buffer"
+
+external command_encoder_copy_buffer_to_texture
+  :  command_encoder
+  -> nativeint
+  -> nativeint
+  -> nativeint
+  -> unit
+  = "caml_wgpu_command_encoder_copy_buffer_to_texture"
+
+external command_encoder_copy_texture_to_buffer
+  :  command_encoder
+  -> nativeint
+  -> nativeint
+  -> nativeint
+  -> unit
+  = "caml_wgpu_command_encoder_copy_texture_to_buffer"
+
+external command_encoder_copy_texture_to_texture
+  :  command_encoder
+  -> nativeint
+  -> nativeint
+  -> nativeint
+  -> unit
+  = "caml_wgpu_command_encoder_copy_texture_to_texture"
+
+external command_encoder_clear_buffer
+  :  command_encoder
+  -> buffer
+  -> int64
+  -> int64
+  -> unit
+  = "caml_wgpu_command_encoder_clear_buffer"
+
+external command_encoder_insert_debug_marker
+  :  command_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_command_encoder_insert_debug_marker"
+
+external command_encoder_pop_debug_group
+  :  command_encoder
+  -> unit
+  = "caml_wgpu_command_encoder_pop_debug_group"
+
+external command_encoder_push_debug_group
+  :  command_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_command_encoder_push_debug_group"
+
+external command_encoder_resolve_query_set
+  :  command_encoder
+  -> query_set
+  -> int
+  -> int
+  -> buffer
+  -> int64
+  -> unit
+  = "caml_wgpu_command_encoder_resolve_query_set_bytecode"
+    "caml_wgpu_command_encoder_resolve_query_set"
+
+external command_encoder_write_timestamp
+  :  command_encoder
+  -> query_set
+  -> int
+  -> unit
+  = "caml_wgpu_command_encoder_write_timestamp"
+
+external command_encoder_set_label
+  :  command_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_command_encoder_set_label"
+
+external compute_pass_encoder_release
+  :  compute_pass_encoder
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_release"
+
+external compute_pass_encoder_insert_debug_marker
+  :  compute_pass_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_insert_debug_marker"
+
+external compute_pass_encoder_pop_debug_group
+  :  compute_pass_encoder
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_pop_debug_group"
+
+external compute_pass_encoder_push_debug_group
+  :  compute_pass_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_push_debug_group"
+
+external compute_pass_encoder_set_pipeline
+  :  compute_pass_encoder
+  -> compute_pipeline
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_set_pipeline"
+
+external compute_pass_encoder_set_bind_group
+  :  compute_pass_encoder
+  -> int
+  -> bind_group
+  -> int array
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_set_bind_group"
+
+external compute_pass_encoder_dispatch_workgroups
+  :  compute_pass_encoder
+  -> int
+  -> int
+  -> int
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_dispatch_workgroups"
+
+external compute_pass_encoder_dispatch_workgroups_indirect
+  :  compute_pass_encoder
+  -> buffer
+  -> int64
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_dispatch_workgroups_indirect"
+
+external compute_pass_encoder_end
+  :  compute_pass_encoder
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_end"
+
+external compute_pass_encoder_set_label
+  :  compute_pass_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_compute_pass_encoder_set_label"
+
+external compute_pipeline_release
+  :  compute_pipeline
+  -> unit
+  = "caml_wgpu_compute_pipeline_release"
+
+external compute_pipeline_get_bind_group_layout
+  :  compute_pipeline
+  -> int
+  -> bind_group_layout
+  = "caml_wgpu_compute_pipeline_get_bind_group_layout"
+
+external compute_pipeline_set_label
+  :  compute_pipeline
+  -> string
+  -> unit
+  = "caml_wgpu_compute_pipeline_set_label"
+
 external device_release : device -> unit = "caml_wgpu_device_release"
-external device_create_bind_group : device -> nativeint -> bind_group = "caml_wgpu_device_create_bind_group"
-external device_create_bind_group_layout : device -> nativeint -> bind_group_layout = "caml_wgpu_device_create_bind_group_layout"
-external device_create_buffer : device -> nativeint -> buffer = "caml_wgpu_device_create_buffer"
-external device_create_command_encoder : device -> nativeint -> command_encoder = "caml_wgpu_device_create_command_encoder"
-external device_create_compute_pipeline : device -> nativeint -> compute_pipeline = "caml_wgpu_device_create_compute_pipeline"
+
+external device_create_bind_group
+  :  device
+  -> nativeint
+  -> bind_group
+  = "caml_wgpu_device_create_bind_group"
+
+external device_create_bind_group_layout
+  :  device
+  -> nativeint
+  -> bind_group_layout
+  = "caml_wgpu_device_create_bind_group_layout"
+
+external device_create_buffer
+  :  device
+  -> nativeint
+  -> buffer
+  = "caml_wgpu_device_create_buffer"
+
+external device_create_command_encoder
+  :  device
+  -> nativeint
+  -> command_encoder
+  = "caml_wgpu_device_create_command_encoder"
+
+external device_create_compute_pipeline
+  :  device
+  -> nativeint
+  -> compute_pipeline
+  = "caml_wgpu_device_create_compute_pipeline"
+
 (* TODO: async method device_create_compute_pipeline_async *)
-external device_create_pipeline_layout : device -> nativeint -> pipeline_layout = "caml_wgpu_device_create_pipeline_layout"
-external device_create_query_set : device -> nativeint -> query_set = "caml_wgpu_device_create_query_set"
+external device_create_pipeline_layout
+  :  device
+  -> nativeint
+  -> pipeline_layout
+  = "caml_wgpu_device_create_pipeline_layout"
+
+external device_create_query_set
+  :  device
+  -> nativeint
+  -> query_set
+  = "caml_wgpu_device_create_query_set"
+
 (* TODO: async method device_create_render_pipeline_async *)
-external device_create_render_bundle_encoder : device -> nativeint -> render_bundle_encoder = "caml_wgpu_device_create_render_bundle_encoder"
-external device_create_render_pipeline : device -> nativeint -> render_pipeline = "caml_wgpu_device_create_render_pipeline"
-external device_create_sampler : device -> nativeint -> sampler = "caml_wgpu_device_create_sampler"
-external device_create_shader_module : device -> nativeint -> shader_module = "caml_wgpu_device_create_shader_module"
-external device_create_texture : device -> nativeint -> texture = "caml_wgpu_device_create_texture"
+external device_create_render_bundle_encoder
+  :  device
+  -> nativeint
+  -> render_bundle_encoder
+  = "caml_wgpu_device_create_render_bundle_encoder"
+
+external device_create_render_pipeline
+  :  device
+  -> nativeint
+  -> render_pipeline
+  = "caml_wgpu_device_create_render_pipeline"
+
+external device_create_sampler
+  :  device
+  -> nativeint
+  -> sampler
+  = "caml_wgpu_device_create_sampler"
+
+external device_create_shader_module
+  :  device
+  -> nativeint
+  -> shader_module
+  = "caml_wgpu_device_create_shader_module"
+
+external device_create_texture
+  :  device
+  -> nativeint
+  -> texture
+  = "caml_wgpu_device_create_texture"
+
 external device_destroy : device -> unit = "caml_wgpu_device_destroy"
 external device_get_lost_future : device -> nativeint = "caml_wgpu_device_get_lost_future"
 external device_get_limits : device -> nativeint -> int = "caml_wgpu_device_get_limits"
 external device_has_feature : device -> int -> bool = "caml_wgpu_device_has_feature"
-external device_get_features : device -> nativeint -> unit = "caml_wgpu_device_get_features"
-external device_get_adapter_info : device -> nativeint = "caml_wgpu_device_get_adapter_info"
-external device_push_error_scope : device -> int -> unit = "caml_wgpu_device_push_error_scope"
+
+external device_get_features
+  :  device
+  -> nativeint
+  -> unit
+  = "caml_wgpu_device_get_features"
+
+external device_get_adapter_info
+  :  device
+  -> nativeint
+  = "caml_wgpu_device_get_adapter_info"
+
+external device_get_queue : device -> queue = "caml_wgpu_device_get_queue"
+
+external device_push_error_scope
+  :  device
+  -> int
+  -> unit
+  = "caml_wgpu_device_push_error_scope"
+
 (* TODO: async method device_pop_error_scope *)
 external device_set_label : device -> string -> unit = "caml_wgpu_device_set_label"
 external instance_release : instance -> unit = "caml_wgpu_instance_release"
-external instance_create_surface : instance -> nativeint -> surface = "caml_wgpu_instance_create_surface"
-external instance_get_WGSL_language_features : instance -> nativeint -> int = "caml_wgpu_instance_get_wgsl_language_features"
-external instance_has_WGSL_language_feature : instance -> int -> bool = "caml_wgpu_instance_has_wgsl_language_feature"
+
+external instance_create_surface
+  :  instance
+  -> nativeint
+  -> surface
+  = "caml_wgpu_instance_create_surface"
+
+external instance_get_WGSL_language_features
+  :  instance
+  -> nativeint
+  -> int
+  = "caml_wgpu_instance_get_wgsl_language_features"
+
+external instance_has_WGSL_language_feature
+  :  instance
+  -> int
+  -> bool
+  = "caml_wgpu_instance_has_wgsl_language_feature"
+
 external instance_process_events : instance -> unit = "caml_wgpu_instance_process_events"
+
 (* TODO: async method instance_request_adapter *)
-external instance_wait_any : instance -> int64 -> nativeint -> int64 -> int = "caml_wgpu_instance_wait_any"
-external pipeline_layout_release : pipeline_layout -> unit = "caml_wgpu_pipeline_layout_release"
-external pipeline_layout_set_label : pipeline_layout -> string -> unit = "caml_wgpu_pipeline_layout_set_label"
+external instance_wait_any
+  :  instance
+  -> int64
+  -> nativeint
+  -> int64
+  -> int
+  = "caml_wgpu_instance_wait_any"
+
+external pipeline_layout_release
+  :  pipeline_layout
+  -> unit
+  = "caml_wgpu_pipeline_layout_release"
+
+external pipeline_layout_set_label
+  :  pipeline_layout
+  -> string
+  -> unit
+  = "caml_wgpu_pipeline_layout_set_label"
+
 external query_set_release : query_set -> unit = "caml_wgpu_query_set_release"
-external query_set_set_label : query_set -> string -> unit = "caml_wgpu_query_set_set_label"
+
+external query_set_set_label
+  :  query_set
+  -> string
+  -> unit
+  = "caml_wgpu_query_set_set_label"
+
 external query_set_get_type : query_set -> int = "caml_wgpu_query_set_get_type"
 external query_set_get_count : query_set -> int = "caml_wgpu_query_set_get_count"
 external query_set_destroy : query_set -> unit = "caml_wgpu_query_set_destroy"
 external queue_release : queue -> unit = "caml_wgpu_queue_release"
 external queue_submit : queue -> command_buffer array -> unit = "caml_wgpu_queue_submit"
+
 (* TODO: async method queue_on_submitted_work_done *)
-external queue_write_buffer : queue -> buffer -> int64 -> nativeint -> int64 -> unit = "caml_wgpu_queue_write_buffer"
-external queue_write_texture : queue -> nativeint -> nativeint -> int64 -> nativeint -> nativeint -> unit = "caml_wgpu_queue_write_texture_bytecode" "caml_wgpu_queue_write_texture"
+external queue_write_buffer
+  :  queue
+  -> buffer
+  -> int64
+  -> nativeint
+  -> int64
+  -> unit
+  = "caml_wgpu_queue_write_buffer"
+
+external queue_write_texture
+  :  queue
+  -> nativeint
+  -> nativeint
+  -> int64
+  -> nativeint
+  -> nativeint
+  -> unit
+  = "caml_wgpu_queue_write_texture_bytecode" "caml_wgpu_queue_write_texture"
+
 external queue_set_label : queue -> string -> unit = "caml_wgpu_queue_set_label"
 external render_bundle_release : render_bundle -> unit = "caml_wgpu_render_bundle_release"
-external render_bundle_set_label : render_bundle -> string -> unit = "caml_wgpu_render_bundle_set_label"
-external render_bundle_encoder_release : render_bundle_encoder -> unit = "caml_wgpu_render_bundle_encoder_release"
-external render_bundle_encoder_set_pipeline : render_bundle_encoder -> render_pipeline -> unit = "caml_wgpu_render_bundle_encoder_set_pipeline"
-external render_bundle_encoder_set_bind_group : render_bundle_encoder -> int -> bind_group -> int array -> unit = "caml_wgpu_render_bundle_encoder_set_bind_group"
-external render_bundle_encoder_draw : render_bundle_encoder -> int -> int -> int -> int -> unit = "caml_wgpu_render_bundle_encoder_draw"
-external render_bundle_encoder_draw_indexed : render_bundle_encoder -> int -> int -> int -> int -> int -> unit = "caml_wgpu_render_bundle_encoder_draw_indexed_bytecode" "caml_wgpu_render_bundle_encoder_draw_indexed"
-external render_bundle_encoder_draw_indirect : render_bundle_encoder -> buffer -> int64 -> unit = "caml_wgpu_render_bundle_encoder_draw_indirect"
-external render_bundle_encoder_draw_indexed_indirect : render_bundle_encoder -> buffer -> int64 -> unit = "caml_wgpu_render_bundle_encoder_draw_indexed_indirect"
-external render_bundle_encoder_insert_debug_marker : render_bundle_encoder -> string -> unit = "caml_wgpu_render_bundle_encoder_insert_debug_marker"
-external render_bundle_encoder_pop_debug_group : render_bundle_encoder -> unit = "caml_wgpu_render_bundle_encoder_pop_debug_group"
-external render_bundle_encoder_push_debug_group : render_bundle_encoder -> string -> unit = "caml_wgpu_render_bundle_encoder_push_debug_group"
-external render_bundle_encoder_set_vertex_buffer : render_bundle_encoder -> int -> buffer -> int64 -> int64 -> unit = "caml_wgpu_render_bundle_encoder_set_vertex_buffer"
-external render_bundle_encoder_set_index_buffer : render_bundle_encoder -> buffer -> int -> int64 -> int64 -> unit = "caml_wgpu_render_bundle_encoder_set_index_buffer"
-external render_bundle_encoder_finish : render_bundle_encoder -> nativeint -> render_bundle = "caml_wgpu_render_bundle_encoder_finish"
-external render_bundle_encoder_set_label : render_bundle_encoder -> string -> unit = "caml_wgpu_render_bundle_encoder_set_label"
-external render_pass_encoder_release : render_pass_encoder -> unit = "caml_wgpu_render_pass_encoder_release"
-external render_pass_encoder_set_pipeline : render_pass_encoder -> render_pipeline -> unit = "caml_wgpu_render_pass_encoder_set_pipeline"
-external render_pass_encoder_set_bind_group : render_pass_encoder -> int -> bind_group -> int array -> unit = "caml_wgpu_render_pass_encoder_set_bind_group"
-external render_pass_encoder_draw : render_pass_encoder -> int -> int -> int -> int -> unit = "caml_wgpu_render_pass_encoder_draw"
-external render_pass_encoder_draw_indexed : render_pass_encoder -> int -> int -> int -> int -> int -> unit = "caml_wgpu_render_pass_encoder_draw_indexed_bytecode" "caml_wgpu_render_pass_encoder_draw_indexed"
-external render_pass_encoder_draw_indirect : render_pass_encoder -> buffer -> int64 -> unit = "caml_wgpu_render_pass_encoder_draw_indirect"
-external render_pass_encoder_draw_indexed_indirect : render_pass_encoder -> buffer -> int64 -> unit = "caml_wgpu_render_pass_encoder_draw_indexed_indirect"
-external render_pass_encoder_execute_bundles : render_pass_encoder -> render_bundle array -> unit = "caml_wgpu_render_pass_encoder_execute_bundles"
-external render_pass_encoder_insert_debug_marker : render_pass_encoder -> string -> unit = "caml_wgpu_render_pass_encoder_insert_debug_marker"
-external render_pass_encoder_pop_debug_group : render_pass_encoder -> unit = "caml_wgpu_render_pass_encoder_pop_debug_group"
-external render_pass_encoder_push_debug_group : render_pass_encoder -> string -> unit = "caml_wgpu_render_pass_encoder_push_debug_group"
-external render_pass_encoder_set_stencil_reference : render_pass_encoder -> int -> unit = "caml_wgpu_render_pass_encoder_set_stencil_reference"
-external render_pass_encoder_set_blend_constant : render_pass_encoder -> nativeint -> unit = "caml_wgpu_render_pass_encoder_set_blend_constant"
-external render_pass_encoder_set_viewport : render_pass_encoder -> float -> float -> float -> float -> float -> float -> unit = "caml_wgpu_render_pass_encoder_set_viewport_bytecode" "caml_wgpu_render_pass_encoder_set_viewport"
-external render_pass_encoder_set_scissor_rect : render_pass_encoder -> int -> int -> int -> int -> unit = "caml_wgpu_render_pass_encoder_set_scissor_rect"
-external render_pass_encoder_set_vertex_buffer : render_pass_encoder -> int -> buffer -> int64 -> int64 -> unit = "caml_wgpu_render_pass_encoder_set_vertex_buffer"
-external render_pass_encoder_set_index_buffer : render_pass_encoder -> buffer -> int -> int64 -> int64 -> unit = "caml_wgpu_render_pass_encoder_set_index_buffer"
-external render_pass_encoder_begin_occlusion_query : render_pass_encoder -> int -> unit = "caml_wgpu_render_pass_encoder_begin_occlusion_query"
-external render_pass_encoder_end_occlusion_query : render_pass_encoder -> unit = "caml_wgpu_render_pass_encoder_end_occlusion_query"
-external render_pass_encoder_end : render_pass_encoder -> unit = "caml_wgpu_render_pass_encoder_end"
-external render_pass_encoder_set_label : render_pass_encoder -> string -> unit = "caml_wgpu_render_pass_encoder_set_label"
-external render_pipeline_release : render_pipeline -> unit = "caml_wgpu_render_pipeline_release"
-external render_pipeline_get_bind_group_layout : render_pipeline -> int -> bind_group_layout = "caml_wgpu_render_pipeline_get_bind_group_layout"
-external render_pipeline_set_label : render_pipeline -> string -> unit = "caml_wgpu_render_pipeline_set_label"
+
+external render_bundle_set_label
+  :  render_bundle
+  -> string
+  -> unit
+  = "caml_wgpu_render_bundle_set_label"
+
+external render_bundle_encoder_release
+  :  render_bundle_encoder
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_release"
+
+external render_bundle_encoder_set_pipeline
+  :  render_bundle_encoder
+  -> render_pipeline
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_set_pipeline"
+
+external render_bundle_encoder_set_bind_group
+  :  render_bundle_encoder
+  -> int
+  -> bind_group
+  -> int array
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_set_bind_group"
+
+external render_bundle_encoder_draw
+  :  render_bundle_encoder
+  -> int
+  -> int
+  -> int
+  -> int
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_draw"
+
+external render_bundle_encoder_draw_indexed
+  :  render_bundle_encoder
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_draw_indexed_bytecode"
+    "caml_wgpu_render_bundle_encoder_draw_indexed"
+
+external render_bundle_encoder_draw_indirect
+  :  render_bundle_encoder
+  -> buffer
+  -> int64
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_draw_indirect"
+
+external render_bundle_encoder_draw_indexed_indirect
+  :  render_bundle_encoder
+  -> buffer
+  -> int64
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_draw_indexed_indirect"
+
+external render_bundle_encoder_insert_debug_marker
+  :  render_bundle_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_insert_debug_marker"
+
+external render_bundle_encoder_pop_debug_group
+  :  render_bundle_encoder
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_pop_debug_group"
+
+external render_bundle_encoder_push_debug_group
+  :  render_bundle_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_push_debug_group"
+
+external render_bundle_encoder_set_vertex_buffer
+  :  render_bundle_encoder
+  -> int
+  -> buffer
+  -> int64
+  -> int64
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_set_vertex_buffer"
+
+external render_bundle_encoder_set_index_buffer
+  :  render_bundle_encoder
+  -> buffer
+  -> int
+  -> int64
+  -> int64
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_set_index_buffer"
+
+external render_bundle_encoder_finish
+  :  render_bundle_encoder
+  -> nativeint
+  -> render_bundle
+  = "caml_wgpu_render_bundle_encoder_finish"
+
+external render_bundle_encoder_set_label
+  :  render_bundle_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_render_bundle_encoder_set_label"
+
+external render_pass_encoder_release
+  :  render_pass_encoder
+  -> unit
+  = "caml_wgpu_render_pass_encoder_release"
+
+external render_pass_encoder_set_pipeline
+  :  render_pass_encoder
+  -> render_pipeline
+  -> unit
+  = "caml_wgpu_render_pass_encoder_set_pipeline"
+
+external render_pass_encoder_set_bind_group
+  :  render_pass_encoder
+  -> int
+  -> bind_group
+  -> int array
+  -> unit
+  = "caml_wgpu_render_pass_encoder_set_bind_group"
+
+external render_pass_encoder_draw
+  :  render_pass_encoder
+  -> int
+  -> int
+  -> int
+  -> int
+  -> unit
+  = "caml_wgpu_render_pass_encoder_draw"
+
+external render_pass_encoder_draw_indexed
+  :  render_pass_encoder
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> unit
+  = "caml_wgpu_render_pass_encoder_draw_indexed_bytecode"
+    "caml_wgpu_render_pass_encoder_draw_indexed"
+
+external render_pass_encoder_draw_indirect
+  :  render_pass_encoder
+  -> buffer
+  -> int64
+  -> unit
+  = "caml_wgpu_render_pass_encoder_draw_indirect"
+
+external render_pass_encoder_draw_indexed_indirect
+  :  render_pass_encoder
+  -> buffer
+  -> int64
+  -> unit
+  = "caml_wgpu_render_pass_encoder_draw_indexed_indirect"
+
+external render_pass_encoder_execute_bundles
+  :  render_pass_encoder
+  -> render_bundle array
+  -> unit
+  = "caml_wgpu_render_pass_encoder_execute_bundles"
+
+external render_pass_encoder_insert_debug_marker
+  :  render_pass_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_render_pass_encoder_insert_debug_marker"
+
+external render_pass_encoder_pop_debug_group
+  :  render_pass_encoder
+  -> unit
+  = "caml_wgpu_render_pass_encoder_pop_debug_group"
+
+external render_pass_encoder_push_debug_group
+  :  render_pass_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_render_pass_encoder_push_debug_group"
+
+external render_pass_encoder_set_stencil_reference
+  :  render_pass_encoder
+  -> int
+  -> unit
+  = "caml_wgpu_render_pass_encoder_set_stencil_reference"
+
+external render_pass_encoder_set_blend_constant
+  :  render_pass_encoder
+  -> nativeint
+  -> unit
+  = "caml_wgpu_render_pass_encoder_set_blend_constant"
+
+external render_pass_encoder_set_viewport
+  :  render_pass_encoder
+  -> float
+  -> float
+  -> float
+  -> float
+  -> float
+  -> float
+  -> unit
+  = "caml_wgpu_render_pass_encoder_set_viewport_bytecode"
+    "caml_wgpu_render_pass_encoder_set_viewport"
+
+external render_pass_encoder_set_scissor_rect
+  :  render_pass_encoder
+  -> int
+  -> int
+  -> int
+  -> int
+  -> unit
+  = "caml_wgpu_render_pass_encoder_set_scissor_rect"
+
+external render_pass_encoder_set_vertex_buffer
+  :  render_pass_encoder
+  -> int
+  -> buffer
+  -> int64
+  -> int64
+  -> unit
+  = "caml_wgpu_render_pass_encoder_set_vertex_buffer"
+
+external render_pass_encoder_set_index_buffer
+  :  render_pass_encoder
+  -> buffer
+  -> int
+  -> int64
+  -> int64
+  -> unit
+  = "caml_wgpu_render_pass_encoder_set_index_buffer"
+
+external render_pass_encoder_begin_occlusion_query
+  :  render_pass_encoder
+  -> int
+  -> unit
+  = "caml_wgpu_render_pass_encoder_begin_occlusion_query"
+
+external render_pass_encoder_end_occlusion_query
+  :  render_pass_encoder
+  -> unit
+  = "caml_wgpu_render_pass_encoder_end_occlusion_query"
+
+external render_pass_encoder_end
+  :  render_pass_encoder
+  -> unit
+  = "caml_wgpu_render_pass_encoder_end"
+
+external render_pass_encoder_set_label
+  :  render_pass_encoder
+  -> string
+  -> unit
+  = "caml_wgpu_render_pass_encoder_set_label"
+
+external render_pipeline_release
+  :  render_pipeline
+  -> unit
+  = "caml_wgpu_render_pipeline_release"
+
+external render_pipeline_get_bind_group_layout
+  :  render_pipeline
+  -> int
+  -> bind_group_layout
+  = "caml_wgpu_render_pipeline_get_bind_group_layout"
+
+external render_pipeline_set_label
+  :  render_pipeline
+  -> string
+  -> unit
+  = "caml_wgpu_render_pipeline_set_label"
+
 external sampler_release : sampler -> unit = "caml_wgpu_sampler_release"
 external sampler_set_label : sampler -> string -> unit = "caml_wgpu_sampler_set_label"
 external shader_module_release : shader_module -> unit = "caml_wgpu_shader_module_release"
+
 (* TODO: async method shader_module_get_compilation_info *)
-external shader_module_set_label : shader_module -> string -> unit = "caml_wgpu_shader_module_set_label"
+external shader_module_set_label
+  :  shader_module
+  -> string
+  -> unit
+  = "caml_wgpu_shader_module_set_label"
+
 external surface_release : surface -> unit = "caml_wgpu_surface_release"
 external surface_configure : surface -> nativeint -> unit = "caml_wgpu_surface_configure"
-external surface_get_capabilities : surface -> adapter -> nativeint -> int = "caml_wgpu_surface_get_capabilities"
-external surface_get_current_texture : surface -> nativeint -> unit = "caml_wgpu_surface_get_current_texture"
+
+external surface_get_capabilities
+  :  surface
+  -> adapter
+  -> nativeint
+  -> int
+  = "caml_wgpu_surface_get_capabilities"
+
+external surface_get_current_texture
+  :  surface
+  -> nativeint
+  -> unit
+  = "caml_wgpu_surface_get_current_texture"
+
 external surface_present : surface -> int = "caml_wgpu_surface_present"
 external surface_unconfigure : surface -> unit = "caml_wgpu_surface_unconfigure"
 external surface_set_label : surface -> string -> unit = "caml_wgpu_surface_set_label"
 external texture_release : texture -> unit = "caml_wgpu_texture_release"
-external texture_create_view : texture -> nativeint -> texture_view = "caml_wgpu_texture_create_view"
+
+external texture_create_view
+  :  texture
+  -> nativeint
+  -> texture_view
+  = "caml_wgpu_texture_create_view"
+
 external texture_set_label : texture -> string -> unit = "caml_wgpu_texture_set_label"
 external texture_get_width : texture -> int = "caml_wgpu_texture_get_width"
 external texture_get_height : texture -> int = "caml_wgpu_texture_get_height"
-external texture_get_depth_or_array_layers : texture -> int = "caml_wgpu_texture_get_depth_or_array_layers"
-external texture_get_mip_level_count : texture -> int = "caml_wgpu_texture_get_mip_level_count"
+
+external texture_get_depth_or_array_layers
+  :  texture
+  -> int
+  = "caml_wgpu_texture_get_depth_or_array_layers"
+
+external texture_get_mip_level_count
+  :  texture
+  -> int
+  = "caml_wgpu_texture_get_mip_level_count"
+
 external texture_get_sample_count : texture -> int = "caml_wgpu_texture_get_sample_count"
 external texture_get_dimension : texture -> int = "caml_wgpu_texture_get_dimension"
 external texture_get_format : texture -> int = "caml_wgpu_texture_get_format"
 external texture_get_usage : texture -> int = "caml_wgpu_texture_get_usage"
 external texture_destroy : texture -> unit = "caml_wgpu_texture_destroy"
 external texture_view_release : texture_view -> unit = "caml_wgpu_texture_view_release"
-external texture_view_set_label : texture_view -> string -> unit = "caml_wgpu_texture_view_set_label"external create_instance : unit -> instance = "caml_wgpu_create_instance"
 
-external instance_request_adapter_sync : instance -> adapter
+external texture_view_set_label
+  :  texture_view
+  -> string
+  -> unit
+  = "caml_wgpu_texture_view_set_label"
+
+external create_instance : unit -> instance = "caml_wgpu_create_instance"
+
+external instance_request_adapter_sync
+  :  instance
+  -> adapter
   = "caml_wgpu_instance_request_adapter_sync"
 
-external adapter_request_device_sync : adapter -> device
+external adapter_request_device_sync
+  :  adapter
+  -> device
   = "caml_wgpu_adapter_request_device_sync"
-
-external device_get_queue : device -> queue = "caml_wgpu_device_get_queue"
 
 type adapter_info =
   { vendor : string
@@ -3100,8 +7208,9 @@ type adapter_info =
   ; adapter_type : int
   }
 
-external adapter_get_info_raw :
-  adapter -> string * string * string * string * int * int
+external adapter_get_info_raw
+  :  adapter
+  -> string * string * string * string * int * int
   = "caml_wgpu_adapter_get_info"
 
 let adapter_get_info adapter =
@@ -3109,74 +7218,160 @@ let adapter_get_info adapter =
     adapter_get_info_raw adapter
   in
   { vendor; architecture; device; description; backend_type; adapter_type }
+;;
 
-external device_create_shader_module_wgsl : device -> string -> string -> shader_module
+external device_create_shader_module_wgsl
+  :  device
+  -> string
+  -> string
+  -> shader_module
   = "caml_wgpu_device_create_shader_module_wgsl"
 
-external device_create_command_encoder_simple : device -> string -> command_encoder
+external device_create_command_encoder_simple
+  :  device
+  -> string
+  -> command_encoder
   = "caml_wgpu_device_create_command_encoder_simple"
 
-external command_encoder_begin_compute_pass_simple : command_encoder -> string -> compute_pass_encoder
+external command_encoder_begin_compute_pass_simple
+  :  command_encoder
+  -> string
+  -> compute_pass_encoder
   = "caml_wgpu_command_encoder_begin_compute_pass_simple"
 
-external command_encoder_finish_simple : command_encoder -> string -> command_buffer
+external command_encoder_finish_simple
+  :  command_encoder
+  -> string
+  -> command_buffer
   = "caml_wgpu_command_encoder_finish_simple"
 
-external queue_submit_single : queue -> command_buffer -> unit
+external queue_submit_single
+  :  queue
+  -> command_buffer
+  -> unit
   = "caml_wgpu_queue_submit_single"
 
-external compute_pass_encoder_set_bind_group_simple : compute_pass_encoder -> int -> bind_group -> unit
+external compute_pass_encoder_set_bind_group_simple
+  :  compute_pass_encoder
+  -> int
+  -> bind_group
+  -> unit
   = "caml_wgpu_compute_pass_encoder_set_bind_group_simple"
 
-external device_poll : device -> bool -> unit
-  = "caml_wgpu_device_poll"
+external device_poll : device -> bool -> unit = "caml_wgpu_device_poll"
 
-external buffer_map_sync : buffer -> int -> int64 -> int64 -> int
+external buffer_map_sync
+  :  buffer
+  -> int
+  -> int64
+  -> int64
+  -> int
   = "caml_wgpu_buffer_map_sync"
 
-external buffer_get_mapped_range_bigarray :
-  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+external buffer_get_mapped_range_bigarray
+  :  buffer
+  -> int64
+  -> int64
+  -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
   = "caml_wgpu_buffer_get_mapped_range_bigarray"
 
-external buffer_get_const_mapped_range_bigarray :
-  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+external buffer_get_const_mapped_range_bigarray
+  :  buffer
+  -> int64
+  -> int64
+  -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
   = "caml_wgpu_buffer_get_const_mapped_range_bigarray"
 
-external queue_write_buffer_bigarray :
-  queue -> buffer -> int64 -> (_, _, Bigarray.c_layout) Bigarray.Array1.t -> unit
+external queue_write_buffer_bigarray
+  :  queue
+  -> buffer
+  -> int64
+  -> (_, _, Bigarray.c_layout) Bigarray.Array1.t
+  -> unit
   = "caml_wgpu_queue_write_buffer_bigarray"
 
-external device_create_bind_group_layout_storage :
-  device -> string -> int -> bool -> bind_group_layout
+external device_create_bind_group_layout_storage
+  :  device
+  -> string
+  -> int
+  -> bool
+  -> bind_group_layout
   = "caml_wgpu_device_create_bind_group_layout_storage"
 
-external device_create_bind_group_buffer :
-  device -> string -> bind_group_layout -> int -> buffer -> int64 -> int64 -> bind_group
-  = "caml_wgpu_device_create_bind_group_buffer_bytecode" "caml_wgpu_device_create_bind_group_buffer"
+external device_create_bind_group_buffer
+  :  device
+  -> string
+  -> bind_group_layout
+  -> int
+  -> buffer
+  -> int64
+  -> int64
+  -> bind_group
+  = "caml_wgpu_device_create_bind_group_buffer_bytecode"
+    "caml_wgpu_device_create_bind_group_buffer"
 
-external device_create_pipeline_layout_single :
-  device -> string -> bind_group_layout -> pipeline_layout
+external device_create_pipeline_layout_single
+  :  device
+  -> string
+  -> bind_group_layout
+  -> pipeline_layout
   = "caml_wgpu_device_create_pipeline_layout_single"
 
-external device_create_compute_pipeline_simple :
-  device -> string -> pipeline_layout -> shader_module -> string -> compute_pipeline
+external device_create_compute_pipeline_simple
+  :  device
+  -> string
+  -> pipeline_layout
+  -> shader_module
+  -> string
+  -> compute_pipeline
   = "caml_wgpu_device_create_compute_pipeline_simple"
 
-external device_create_texture_2d :
-  device -> string -> int -> int -> int -> int -> texture
+external device_create_texture_2d
+  :  device
+  -> string
+  -> int
+  -> int
+  -> int
+  -> int
+  -> texture
   = "caml_wgpu_device_create_texture_2d_bytecode" "caml_wgpu_device_create_texture_2d"
 
-external texture_create_view_simple : texture -> string -> texture_view
+external texture_create_view_simple
+  :  texture
+  -> string
+  -> texture_view
   = "caml_wgpu_texture_create_view_simple"
 
-external command_encoder_begin_render_pass_simple :
-  command_encoder -> string -> texture_view -> float -> float -> float -> float -> render_pass_encoder
-  = "caml_wgpu_command_encoder_begin_render_pass_simple_bytecode" "caml_wgpu_command_encoder_begin_render_pass_simple"
+external command_encoder_begin_render_pass_simple
+  :  command_encoder
+  -> string
+  -> texture_view
+  -> float
+  -> float
+  -> float
+  -> float
+  -> render_pass_encoder
+  = "caml_wgpu_command_encoder_begin_render_pass_simple_bytecode"
+    "caml_wgpu_command_encoder_begin_render_pass_simple"
 
-external command_encoder_copy_texture_to_buffer_simple :
-  command_encoder -> texture -> buffer -> int -> int -> int -> unit
-  = "caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode" "caml_wgpu_command_encoder_copy_texture_to_buffer_simple"
+external command_encoder_copy_texture_to_buffer_simple
+  :  command_encoder
+  -> texture
+  -> buffer
+  -> int
+  -> int
+  -> int
+  -> unit
+  = "caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode"
+    "caml_wgpu_command_encoder_copy_texture_to_buffer_simple"
 
-external device_create_render_pipeline_simple :
-  device -> string -> shader_module -> string -> string -> int -> render_pipeline
-  = "caml_wgpu_device_create_render_pipeline_simple_bytecode" "caml_wgpu_device_create_render_pipeline_simple"
+external device_create_render_pipeline_simple
+  :  device
+  -> string
+  -> shader_module
+  -> string
+  -> string
+  -> int
+  -> render_pipeline
+  = "caml_wgpu_device_create_render_pipeline_simple_bytecode"
+    "caml_wgpu_device_create_render_pipeline_simple"
