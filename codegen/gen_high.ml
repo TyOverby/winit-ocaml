@@ -36,9 +36,12 @@ let manual_implementations =
     ; "device", "create_texture" (* uses descriptor struct *)
     ; "device", "create_sampler" (* uses descriptor struct *)
     ; "device", "create_compute_pipeline" (* uses descriptor struct *)
-    ; "device", "create_render_pipeline" (* uses descriptor struct *)
-    ; "device", "create_bind_group_layout" (* uses descriptor with arrays *)
-    ; "device", "create_bind_group" (* uses descriptor with arrays *)
+    ; "device", "create_render_pipeline"
+      (* uses descriptor struct *)
+      (* Now auto-generated with array-of-struct support:
+       ; "device", "create_bind_group_layout"
+       ; "device", "create_bind_group"
+      *)
     ; "device", "create_query_set" (* uses descriptor struct *)
     ; "device", "create_render_bundle_encoder" (* uses descriptor struct *)
     ; "device", "pop_error_scope" (* async callback *)
@@ -267,6 +270,24 @@ let member_is_nested_struct (type_ref : Ir.type_ref) : string option =
   match type_ref with
   | Struct name -> Some name
   | _ -> None
+;;
+
+(** Check if a member type is an array of structs. Returns the struct name if so. *)
+let member_is_array_of_structs (type_ref : Ir.type_ref) : string option =
+  match type_ref with
+  | Array { elem = Struct name; _ } -> Some name
+  | Pointer { inner = Array { elem = Struct name; _ }; _ } -> Some name
+  | _ -> None
+;;
+
+(** Get all entry structs that appear in arrays within a struct *)
+let get_array_entry_structs (structs : Ir.struct_ list) (struct_ : Ir.struct_)
+  : Ir.struct_ list
+  =
+  List.filter_map struct_.members ~f:(fun member ->
+    match member_is_array_of_structs member.type_ with
+    | Some name -> List.find structs ~f:(fun s -> String.equal s.name name)
+    | None -> None)
 ;;
 
 (** Collect all nested struct members from a struct, recursively. Returns a list of (path,
@@ -570,7 +591,9 @@ let default_value_for_type (type_ref : Ir.type_ref) : string =
 
 (** Recursively collect all parameters from a struct, including nested structs. Returns
     (param_name, member, is_optional, nested_var_name option) list. nested_var_name is
-    Some if this parameter belongs to a nested struct. *)
+    Some if this parameter belongs to a nested struct.
+
+    For array-of-struct members, we don't recurse - the parameter is a list of records. *)
 let rec collect_struct_params
   (structs : Ir.struct_ list)
   (prefix : string)
@@ -579,28 +602,48 @@ let rec collect_struct_params
   : (string * Ir.struct_member * bool * string option) list
   =
   List.concat_map struct_.members ~f:(fun member ->
-    match member_is_nested_struct member.type_ with
-    | Some nested_name ->
-      (* This member is a nested struct - collect its parameters *)
-      (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
-       | None -> []
-       | Some nested_struct ->
-         let nested_prefix = prefix ^ member.name ^ "_" in
-         let nested_var_name = prefix ^ member.name ^ "_nested" in
-         collect_struct_params structs nested_prefix nested_struct (Some nested_var_name))
-    | None ->
-      (* Regular member - create parameter *)
+    (* First check if this is an array-of-structs - these are NOT flattened *)
+    match member_is_array_of_structs member.type_ with
+    | Some _ ->
+      (* Array of structs - parameter is a list of records, don't recurse *)
       let param_name = escape_keyword (prefix ^ member.name) in
       let is_optional =
         member.optional
         ||
         match member.type_ with
-        | Primitive String_with_default_empty -> true
-        | Optional _ -> true
-        | Array _ -> true
+        | Array _ | Pointer { inner = Array _; _ } -> true
         | _ -> false
       in
-      [ param_name, member, is_optional, nested_var ])
+      [ param_name, member, is_optional, nested_var ]
+    | None ->
+      (* Check for direct nested struct *)
+      (match member_is_nested_struct member.type_ with
+       | Some nested_name ->
+         (* This member is a nested struct - collect its parameters *)
+         (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
+          | None -> []
+          | Some nested_struct ->
+            let nested_prefix = prefix ^ member.name ^ "_" in
+            let nested_var_name = prefix ^ member.name ^ "_nested" in
+            collect_struct_params
+              structs
+              nested_prefix
+              nested_struct
+              (Some nested_var_name))
+       | None ->
+         (* Regular member - create parameter *)
+         let param_name = escape_keyword (prefix ^ member.name) in
+         let is_optional =
+           member.optional
+           ||
+           match member.type_ with
+           | Primitive String_with_default_empty -> true
+           | Optional _ -> true
+           | Array _ -> true
+           | Pointer { inner = Array _; _ } -> true
+           | _ -> false
+         in
+         [ param_name, member, is_optional, nested_var ]))
 ;;
 
 (** Generate code to create a struct and all its nested structs. Returns list of
@@ -636,51 +679,221 @@ let rec generate_struct_creates
   (var_name, struct_) :: nested_vars, nested_creates @ [ create_line ]
 ;;
 
+(** Generate code to convert a nested struct record field to a C struct. Returns
+    (create_code, set_code, free_vars) where:
+    - create_code creates the C struct
+    - set_code sets all fields on the struct
+    - free_vars is a list of (var_name, struct_name) pairs for later freeing *)
+let gen_nested_struct_conversion
+  (_structs : Ir.struct_ list)
+  (entry_var : string)
+  (field_name : string)
+  (nested_struct : Ir.struct_)
+  (parent_var : string)
+  : string list * string list * (string * Ir.struct_) list
+  =
+  let nested_module = ocaml_module_name nested_struct.name in
+  let nested_var = parent_var ^ "_" ^ field_name in
+  (* Create the nested struct *)
+  let create_code =
+    [ sprintf
+        "let %s = Wgpu_low.%s.%s_create () in"
+        nested_var
+        nested_module
+        nested_struct.name
+    ]
+  in
+  (* Set fields from the record *)
+  let set_code =
+    List.filter_map nested_struct.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let member_field = escape_keyword member.name in
+        let value_expr = sprintf "%s.%s.%s" entry_var field_name member_field in
+        let converted = member_to_low_level value_expr member.type_ in
+        Some
+          (sprintf
+             "Wgpu_low.%s.%s_set_%s %s %s;"
+             nested_module
+             nested_struct.name
+             member.name
+             nested_var
+             converted)))
+  in
+  create_code, set_code, [ nested_var, nested_struct ]
+;;
+
+(** Convert an entry struct member value to low-level, handling the optional flag *)
+let entry_member_to_low_level (field_access : string) (member : Ir.struct_member) : string
+  =
+  match member.type_, member.optional with
+  | Object name, true ->
+    (* Optional object - wrap in match *)
+    sprintf
+      "(match %s with Some x -> x.%s.handle | None -> 0n)"
+      field_access
+      (ocaml_module_name name)
+  | _ -> member_to_low_level field_access member.type_
+;;
+
+(** Generate code to convert a list of entry struct records to C structs. Returns
+    (code_lines, vars_to_free) where vars_to_free is a list of (var_name, struct) pairs
+    that need to be freed. *)
+let generate_array_of_structs_conversion
+  (structs : Ir.struct_ list)
+  (param_name : string)
+  (entry_struct : Ir.struct_)
+  (parent_var : string)
+  (parent_struct : Ir.struct_)
+  (member_name : string)
+  : string list * (string * Ir.struct_) list
+  =
+  let entry_module = ocaml_module_name entry_struct.name in
+  let parent_module = ocaml_module_name parent_struct.name in
+  let entries_var = param_name ^ "_structs" in
+  let array_var = param_name ^ "_array" in
+  (* Generate code to convert each entry record to a C struct *)
+  let loop_code =
+    [ sprintf "let %s = List.map (fun entry ->" entries_var ]
+    @ [ sprintf "    let e = Wgpu_low.%s.%s_create () in" entry_module entry_struct.name ]
+    @ List.concat_map entry_struct.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then []
+      else (
+        match member_is_nested_struct member.type_ with
+        | Some nested_name ->
+          (* Nested struct - wrap in Option.iter *)
+          (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
+           | None -> []
+           | Some nested_struct ->
+             let nested_module = ocaml_module_name nested_struct.name in
+             let nested_var = "nested_" ^ member.name in
+             [ sprintf "    (match entry.%s with" (escape_keyword member.name)
+             ; sprintf "     | Some %s_rec ->" member.name
+             ; sprintf
+                 "       let %s = Wgpu_low.%s.%s_create () in"
+                 nested_var
+                 nested_module
+                 nested_struct.name
+             ]
+             @ List.filter_map nested_struct.members ~f:(fun nm ->
+               if String.equal nm.name "nextInChain"
+               then None
+               else (
+                 let field_access =
+                   sprintf "%s_rec.%s" member.name (escape_keyword nm.name)
+                 in
+                 let converted = member_to_low_level field_access nm.type_ in
+                 Some
+                   (sprintf
+                      "       Wgpu_low.%s.%s_set_%s %s %s;"
+                      nested_module
+                      nested_struct.name
+                      nm.name
+                      nested_var
+                      converted)))
+             @ [ sprintf
+                   "       Wgpu_low.%s.%s_set_%s e %s"
+                   entry_module
+                   entry_struct.name
+                   member.name
+                   nested_var
+               ; "     | None -> ());"
+               ])
+        | None ->
+          (* Regular member - use entry_member_to_low_level for proper optional handling *)
+          let field_access = sprintf "entry.%s" (escape_keyword member.name) in
+          let converted = entry_member_to_low_level field_access member in
+          [ sprintf
+              "    Wgpu_low.%s.%s_set_%s e %s;"
+              entry_module
+              entry_struct.name
+              member.name
+              converted
+          ]))
+    @ [ "    e) " ^ param_name ^ " in" ]
+    @ [ sprintf "let %s = Array.of_list %s in" array_var entries_var ]
+    @ [ sprintf
+          "Wgpu_low.%s.%s_set_%s %s %s;"
+          parent_module
+          parent_struct.name
+          member_name
+          parent_var
+          array_var
+      ]
+  in
+  (* The entry structs will need to be freed later *)
+  loop_code, [ entries_var, entry_struct ]
+;;
+
 (** Generate code to set fields on a struct, including assigning nested structs. prefix is
-    the parameter prefix for this struct. *)
+    the parameter prefix for this struct. Returns (set_code, vars_to_free). *)
 let rec generate_struct_sets
   (structs : Ir.struct_ list)
   (prefix : string)
   (struct_ : Ir.struct_)
   (var_name : string)
-  : string list
+  : string list * (string * Ir.struct_) list
   =
   let struct_module = ocaml_module_name struct_.name in
-  List.concat_map struct_.members ~f:(fun member ->
-    match member_is_nested_struct member.type_ with
-    | Some nested_name ->
-      (* First, recursively set fields on the nested struct *)
-      (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
-       | None -> []
-       | Some nested_struct ->
-         let nested_var = prefix ^ member.name ^ "_nested" in
-         let nested_prefix = prefix ^ member.name ^ "_" in
-         let nested_sets =
-           generate_struct_sets structs nested_prefix nested_struct nested_var
-         in
-         (* Then, set the nested struct on the parent *)
-         let set_nested =
-           sprintf
-             "Wgpu_low.%s.%s_set_%s %s %s;"
-             struct_module
-             struct_.name
-             member.name
+  let results =
+    List.map struct_.members ~f:(fun member ->
+      (* First check for array-of-structs *)
+      match member_is_array_of_structs member.type_ with
+      | Some entry_name ->
+        (match List.find structs ~f:(fun s -> String.equal s.name entry_name) with
+         | Some entry_struct ->
+           let param_name = escape_keyword (prefix ^ member.name) in
+           generate_array_of_structs_conversion
+             structs
+             param_name
+             entry_struct
              var_name
-             nested_var
-         in
-         nested_sets @ [ set_nested ])
-    | None ->
-      (* Regular member - set the value *)
-      let param_name = escape_keyword (prefix ^ member.name) in
-      let converted = member_to_low_level param_name member.type_ in
-      [ sprintf
-          "Wgpu_low.%s.%s_set_%s %s %s;"
-          struct_module
-          struct_.name
-          member.name
-          var_name
-          converted
-      ])
+             struct_
+             member.name
+         | None -> [], [])
+      | None ->
+        (* Check for direct nested struct *)
+        (match member_is_nested_struct member.type_ with
+         | Some nested_name ->
+           (* First, recursively set fields on the nested struct *)
+           (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
+            | None -> [], []
+            | Some nested_struct ->
+              let nested_var = prefix ^ member.name ^ "_nested" in
+              let nested_prefix = prefix ^ member.name ^ "_" in
+              let nested_sets, nested_vars =
+                generate_struct_sets structs nested_prefix nested_struct nested_var
+              in
+              (* Then, set the nested struct on the parent *)
+              let set_nested =
+                sprintf
+                  "Wgpu_low.%s.%s_set_%s %s %s;"
+                  struct_module
+                  struct_.name
+                  member.name
+                  var_name
+                  nested_var
+              in
+              nested_sets @ [ set_nested ], nested_vars)
+         | None ->
+           (* Regular member - set the value *)
+           let param_name = escape_keyword (prefix ^ member.name) in
+           let converted = member_to_low_level param_name member.type_ in
+           ( [ sprintf
+                 "Wgpu_low.%s.%s_set_%s %s %s;"
+                 struct_module
+                 struct_.name
+                 member.name
+                 var_name
+                 converted
+             ]
+           , [] )))
+  in
+  let code = List.concat_map results ~f:fst in
+  let vars = List.concat_map results ~f:snd in
+  code, vars
 ;;
 
 (** Generate ML implementation for a method with one or more struct arguments *)
@@ -731,11 +944,14 @@ let gen_ml_method_with_structs
   in
   let create_structs = create_structs_lists in
   (* Generate field setting for each struct (including nested structs) *)
-  let set_fields =
-    List.concat_map struct_args ~f:(fun (arg, struct_) ->
+  let set_fields, entry_struct_lists =
+    List.fold struct_args ~init:([], []) ~f:(fun (fields, entry_lists) (arg, struct_) ->
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       let desc_var = "desc_" ^ arg.name in
-      generate_struct_sets structs base_prefix struct_ desc_var)
+      let field_code, entry_vars =
+        generate_struct_sets structs base_prefix struct_ desc_var
+      in
+      fields @ field_code, entry_lists @ entry_vars)
   in
   (* Build the call args, mapping each struct arg to its desc variable *)
   let struct_arg_names =
@@ -754,6 +970,17 @@ let gen_ml_method_with_structs
       method_.name
       (String.concat ~sep:" " call_args)
   in
+  (* Generate code to free entry struct lists *)
+  let free_entry_lists =
+    List.concat_map entry_struct_lists ~f:(fun (list_var, entry_struct) ->
+      let entry_module = ocaml_module_name entry_struct.name in
+      [ sprintf
+          "List.iter (fun e -> Wgpu_low.%s.%s_free e) %s;"
+          entry_module
+          entry_struct.name
+          list_var
+      ])
+  in
   (* Generate struct freeing (reverse order: parent structs first, then nested) *)
   let free_structs =
     List.map (List.rev all_struct_vars) ~f:(fun (var_name, struct_) ->
@@ -761,11 +988,12 @@ let gen_ml_method_with_structs
       sprintf "Wgpu_low.%s.%s_free %s;" struct_module struct_.name var_name)
   in
   (* Generate result handling *)
+  let all_frees = free_entry_lists @ free_structs in
   let result_and_free =
     match method_.returns with
-    | None -> String.concat ~sep:"\n    " ([ call ^ ";" ] @ free_structs @ [ "()" ])
+    | None -> String.concat ~sep:"\n    " ([ call ^ ";" ] @ all_frees @ [ "()" ])
     | Some ret ->
-      let free_lines = String.concat ~sep:"\n    " free_structs in
+      let free_lines = String.concat ~sep:"\n    " all_frees in
       sprintf
         "let result = %s in\n    %s\n    %s"
         call
@@ -923,13 +1151,18 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
 ;;
 
 (** Get high-level OCaml type for a struct member *)
-let high_level_member_type (member : Ir.struct_member) : string =
-  match member.type_ with
+let rec high_level_member_type (member : Ir.struct_member) : string =
+  high_level_member_type_of_type member.type_
+
+(** Get high-level OCaml type for a type_ref (for struct members) *)
+and high_level_member_type_of_type (type_ref : Ir.type_ref) : string =
+  match type_ref with
   | Primitive Bool -> "bool"
   | Primitive (Uint32 | Int32) -> "int"
   | Primitive (Uint64 | Int64 | Usize) -> "int64"
   | Primitive (Float32 | Float64) -> "float"
   | Primitive (String | Out_string | String_with_default_empty) -> "string"
+  | Primitive C_void -> "nativeint"
   | Enum name -> ocaml_module_name name ^ ".t"
   | Bitflag name -> ocaml_module_name name ^ ".t list"
   | Object name -> ocaml_module_name name ^ ".t"
@@ -937,6 +1170,7 @@ let high_level_member_type (member : Ir.struct_member) : string =
   | Optional (Object name) -> ocaml_module_name name ^ ".t option"
   | Optional inner -> high_level_arg_type inner ^ " option"
   | Array { elem = Object name; _ } -> ocaml_module_name name ^ ".t list"
+  | Array { elem = Struct name; _ } -> ocaml_module_name name ^ ".t list"
   | Array { elem = Enum name; _ } -> ocaml_module_name name ^ ".t list"
   | Array { elem = Bitflag name; _ } -> ocaml_module_name name ^ ".t list list"
   | Array { elem = Primitive Bool; _ } -> "bool list"
@@ -945,6 +1179,13 @@ let high_level_member_type (member : Ir.struct_member) : string =
   | Array { elem = Primitive (Float32 | Float64); _ } -> "float list"
   | Array { elem = Primitive (String | Out_string | String_with_default_empty); _ } ->
     "string list"
+  | Pointer { inner = Array { elem = Struct name; _ }; _ } ->
+    (* Array of structs passed by pointer *)
+    ocaml_module_name name ^ ".t list"
+  | Pointer { inner = Array { elem; _ }; _ } ->
+    (* Other array types passed by pointer *)
+    high_level_member_type_of_type (Array { elem; pointer = None })
+  | Struct name -> ocaml_module_name name ^ ".t"
   | _ -> "nativeint"
 ;;
 
@@ -961,6 +1202,136 @@ let gen_output_struct_record_type (struct_ : Ir.struct_) : string =
         Some (sprintf "  %s : %s" field_name field_type)))
   in
   sprintf "type %s = {\n%s\n}\n" type_name (String.concat ~sep:";\n" fields)
+;;
+
+(** Get high-level type for an entry struct member, including handling nested structs as
+    records and respecting the optional flag *)
+let rec entry_struct_member_type (_structs : Ir.struct_ list) (member : Ir.struct_member)
+  : string
+  =
+  match member.type_ with
+  | Struct nested_name ->
+    (* Nested struct becomes an optional record type *)
+    let nested_module = ocaml_module_name nested_name in
+    sprintf "%s.t option" nested_module
+  | Object name when member.optional ->
+    (* Optional object becomes an option type *)
+    sprintf "%s.t option" (ocaml_module_name name)
+  | _ -> high_level_member_type member
+
+(** Generate a record type module for an entry struct (a struct that appears in arrays).
+    Also generates record types for any nested structs. *)
+and gen_entry_struct_module (structs : Ir.struct_ list) (struct_ : Ir.struct_) : string =
+  let module_name = ocaml_module_name struct_.name in
+  (* First, generate modules for any nested structs *)
+  let nested_modules =
+    List.filter_map struct_.members ~f:(fun member ->
+      match member_is_nested_struct member.type_ with
+      | Some nested_name ->
+        List.find structs ~f:(fun s -> String.equal s.name nested_name)
+        |> Option.map ~f:(gen_nested_struct_module structs)
+      | None -> None)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+  in
+  (* Generate the record type for this struct *)
+  let fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let field_name = escape_keyword member.name in
+        let field_type = entry_struct_member_type structs member in
+        Some (sprintf "      %s : %s" field_name field_type)))
+  in
+  let record_type =
+    sprintf "    type t = {\n%s\n    }" (String.concat ~sep:";\n" fields)
+  in
+  sprintf
+    "  module %s = struct\n%s%s\n  end\n"
+    module_name
+    (if String.is_empty nested_modules then "" else nested_modules ^ "\n")
+    record_type
+
+(** Generate a simple record module for a nested struct (struct that is a member of an
+    entry struct) *)
+and gen_nested_struct_module (_structs : Ir.struct_ list) (struct_ : Ir.struct_) : string =
+  let module_name = ocaml_module_name struct_.name in
+  let fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let field_name = escape_keyword member.name in
+        let field_type = high_level_member_type member in
+        Some (sprintf "        %s : %s" field_name field_type)))
+  in
+  sprintf
+    "    module %s = struct\n      type t = {\n%s\n      }\n    end\n"
+    module_name
+    (String.concat ~sep:";\n" fields)
+;;
+
+(** Check if a struct contains array-of-struct members *)
+let struct_has_array_of_structs (struct_ : Ir.struct_) : bool =
+  List.exists struct_.members ~f:(fun member ->
+    Option.is_some (member_is_array_of_structs member.type_))
+;;
+
+(** Generate MLI for a nested struct module *)
+let gen_nested_struct_module_mli (_structs : Ir.struct_ list) (struct_ : Ir.struct_)
+  : string
+  =
+  let module_name = ocaml_module_name struct_.name in
+  let fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let field_name = escape_keyword member.name in
+        let field_type = high_level_member_type member in
+        Some (sprintf "        %s : %s" field_name field_type)))
+  in
+  sprintf
+    "    module %s : sig\n      type t = {\n%s\n      }\n    end\n"
+    module_name
+    (String.concat ~sep:";\n" fields)
+;;
+
+(** Generate MLI for an entry struct module *)
+let gen_entry_struct_module_mli (structs : Ir.struct_ list) (struct_ : Ir.struct_)
+  : string
+  =
+  let module_name = ocaml_module_name struct_.name in
+  (* First, generate module signatures for any nested structs *)
+  let nested_modules =
+    List.filter_map struct_.members ~f:(fun member ->
+      match member_is_nested_struct member.type_ with
+      | Some nested_name ->
+        List.find structs ~f:(fun s -> String.equal s.name nested_name)
+        |> Option.map ~f:(gen_nested_struct_module_mli structs)
+      | None -> None)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+  in
+  (* Generate the record type for this struct *)
+  let fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let field_name = escape_keyword member.name in
+        let field_type = entry_struct_member_type structs member in
+        Some (sprintf "      %s : %s" field_name field_type)))
+  in
+  let record_type =
+    sprintf "    type t = {\n%s\n    }" (String.concat ~sep:";\n" fields)
+  in
+  sprintf
+    "  module %s : sig\n%s%s\n  end\n"
+    module_name
+    (if String.is_empty nested_modules then "" else nested_modules ^ "\n")
+    record_type
 ;;
 
 (** Generate MLI signature for a method with one or more struct arguments *)
@@ -1305,11 +1676,42 @@ let sort_objects (structs : Ir.struct_ list) (objects : Ir.object_ list) : Ir.ob
     Int.compare a_order b_order)
 ;;
 
+(** Collect all entry structs (structs that appear in arrays within other structs).
+    Returns a deduplicated list of (entry_struct, nested_structs) pairs. *)
+let collect_entry_structs (api : Ir.api) : (Ir.struct_ * Ir.struct_ list) list =
+  let entry_struct_names =
+    List.concat_map api.structs ~f:(fun struct_ ->
+      List.filter_map struct_.members ~f:(fun member ->
+        member_is_array_of_structs member.type_))
+    |> List.dedup_and_sort ~compare:String.compare
+  in
+  List.filter_map entry_struct_names ~f:(fun name ->
+    match List.find api.structs ~f:(fun s -> String.equal s.name name) with
+    | Some entry_struct ->
+      (* Find nested structs within this entry struct *)
+      let nested =
+        List.filter_map entry_struct.members ~f:(fun member ->
+          match member_is_nested_struct member.type_ with
+          | Some nested_name ->
+            List.find api.structs ~f:(fun s -> String.equal s.name nested_name)
+          | None -> None)
+      in
+      Some (entry_struct, nested)
+    | None -> None)
+;;
+
 (** Generate all high-level OCaml code *)
 let gen_ml (api : Ir.api) : string =
   let header = "(* Generated by gen_bindings - high-level OCaml bindings *)\n\n" in
   let enums = List.map api.enums ~f:gen_ml_enum |> String.concat ~sep:"\n" in
   let bitflags = List.map api.bitflags ~f:gen_ml_bitflag |> String.concat ~sep:"\n" in
+  (* Generate entry struct modules (for array-of-struct parameters) *)
+  let entry_struct_modules =
+    collect_entry_structs api
+    |> List.map ~f:(fun (entry_struct, _nested) ->
+      gen_entry_struct_module api.structs entry_struct)
+    |> String.concat ~sep:"\n"
+  in
   (* Filter out objects we handle specially *)
   let special_objects = [ "instance"; "adapter"; "device"; "queue" ] in
   let regular_objects =
@@ -1487,9 +1889,100 @@ module Device = struct
       label binding read_only in
     ({ Bind_group_layout.handle = layout } : Bind_group_layout.t)
 
+  (** Create a bind group layout from a list of entry descriptors.
+      This is the full API that supports all binding types. *)
+  let create_bind_group_layout t ?(label = "") ~entries () =
+    let desc = Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_create () in
+    Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_set_label desc label;
+    (* Convert entries to C structs *)
+    let entry_structs = List.map (fun (entry : Bind_group_layout_entry.t) ->
+      let e = Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_create () in
+      Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_binding e entry.binding;
+      Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_visibility e
+        (Shader_stage.list_to_int entry.visibility);
+      (* Handle nested struct: buffer *)
+      (match entry.buffer with
+       | Some buffer_rec ->
+         let nested = Wgpu_low.Buffer_binding_layout.buffer_binding_layout_create () in
+         Wgpu_low.Buffer_binding_layout.buffer_binding_layout_set_type nested
+           (Buffer_binding_type.to_int buffer_rec.type_);
+         Wgpu_low.Buffer_binding_layout.buffer_binding_layout_set_has_dynamic_offset nested
+           buffer_rec.has_dynamic_offset;
+         Wgpu_low.Buffer_binding_layout.buffer_binding_layout_set_min_binding_size nested
+           buffer_rec.min_binding_size;
+         Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_buffer e nested
+       | None -> ());
+      (* Handle nested struct: sampler *)
+      (match entry.sampler with
+       | Some sampler_rec ->
+         let nested = Wgpu_low.Sampler_binding_layout.sampler_binding_layout_create () in
+         Wgpu_low.Sampler_binding_layout.sampler_binding_layout_set_type nested
+           (Sampler_binding_type.to_int sampler_rec.type_);
+         Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_sampler e nested
+       | None -> ());
+      (* Handle nested struct: texture *)
+      (match entry.texture with
+       | Some texture_rec ->
+         let nested = Wgpu_low.Texture_binding_layout.texture_binding_layout_create () in
+         Wgpu_low.Texture_binding_layout.texture_binding_layout_set_sample_type nested
+           (Texture_sample_type.to_int texture_rec.sample_type);
+         Wgpu_low.Texture_binding_layout.texture_binding_layout_set_view_dimension nested
+           (Texture_view_dimension.to_int texture_rec.view_dimension);
+         Wgpu_low.Texture_binding_layout.texture_binding_layout_set_multisampled nested
+           texture_rec.multisampled;
+         Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_texture e nested
+       | None -> ());
+      (* Handle nested struct: storage_texture *)
+      (match entry.storage_texture with
+       | Some storage_rec ->
+         let nested = Wgpu_low.Storage_texture_binding_layout.storage_texture_binding_layout_create () in
+         Wgpu_low.Storage_texture_binding_layout.storage_texture_binding_layout_set_access nested
+           (Storage_texture_access.to_int storage_rec.access);
+         Wgpu_low.Storage_texture_binding_layout.storage_texture_binding_layout_set_format nested
+           (Texture_format.to_int storage_rec.format);
+         Wgpu_low.Storage_texture_binding_layout.storage_texture_binding_layout_set_view_dimension nested
+           (Texture_view_dimension.to_int storage_rec.view_dimension);
+         Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_storage_texture e nested
+       | None -> ());
+      e) entries in
+    let entries_array = Array.of_list entry_structs in
+    Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_set_entries desc entries_array;
+    let layout = Wgpu_low.device_create_bind_group_layout t.handle desc in
+    (* Free entry structs *)
+    List.iter (fun e -> Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_free e) entry_structs;
+    Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_free desc;
+    ({ Bind_group_layout.handle = layout } : Bind_group_layout.t)
+
   let create_bind_group t ?(label = "") ~layout ~binding ~buffer ~offset ~size () =
     let bind_group = Wgpu_low.device_create_bind_group_buffer t.handle
       label layout.Bind_group_layout.handle binding buffer.Buffer.handle offset size in
+    ({ Bind_group.handle = bind_group } : Bind_group.t)
+
+  (** Create a bind group from a list of entry descriptors.
+      This is the full API that supports all binding types. *)
+  let create_bind_group_full t ?(label = "") ~layout ~entries () =
+    let desc = Wgpu_low.Bind_group_descriptor.bind_group_descriptor_create () in
+    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_set_label desc label;
+    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_set_layout desc layout.Bind_group_layout.handle;
+    (* Convert entries to C structs *)
+    let entry_structs = List.map (fun (entry : Bind_group_entry.t) ->
+      let e = Wgpu_low.Bind_group_entry.bind_group_entry_create () in
+      Wgpu_low.Bind_group_entry.bind_group_entry_set_binding e entry.binding;
+      Wgpu_low.Bind_group_entry.bind_group_entry_set_buffer e
+        (match entry.buffer with Some x -> x.Buffer.handle | None -> 0n);
+      Wgpu_low.Bind_group_entry.bind_group_entry_set_offset e entry.offset;
+      Wgpu_low.Bind_group_entry.bind_group_entry_set_size e entry.size;
+      Wgpu_low.Bind_group_entry.bind_group_entry_set_sampler e
+        (match entry.sampler with Some x -> x.Sampler.handle | None -> 0n);
+      Wgpu_low.Bind_group_entry.bind_group_entry_set_texture_view e
+        (match entry.texture_view with Some x -> x.Texture_view.handle | None -> 0n);
+      e) entries in
+    let entries_array = Array.of_list entry_structs in
+    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_set_entries desc entries_array;
+    let bind_group = Wgpu_low.device_create_bind_group t.handle desc in
+    (* Free entry structs *)
+    List.iter (fun e -> Wgpu_low.Bind_group_entry.bind_group_entry_free e) entry_structs;
+    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_free desc;
     ({ Bind_group.handle = bind_group } : Bind_group.t)
 
   let create_pipeline_layout t ?(label = "") ~bind_group_layouts () =
@@ -1607,7 +2100,15 @@ let create_texture_view (texture : Texture.t) ?(label = "")
   ({ Texture_view.handle = view } : Texture_view.t)
 |}
   in
-  String.concat [ header; enums; bitflags; objects; adapter_module; instance_module ]
+  String.concat
+    [ header
+    ; enums
+    ; bitflags
+    ; objects
+    ; entry_struct_modules
+    ; adapter_module
+    ; instance_module
+    ]
 ;;
 
 (** Generate all high-level OCaml interface *)
@@ -1615,6 +2116,13 @@ let gen_mli (api : Ir.api) : string =
   let header = "(* Generated by gen_bindings - high-level OCaml interface *)\n\n" in
   let enums = List.map api.enums ~f:gen_mli_enum |> String.concat ~sep:"\n" in
   let bitflags = List.map api.bitflags ~f:gen_mli_bitflag |> String.concat ~sep:"\n" in
+  (* Generate entry struct module signatures (for array-of-struct parameters) *)
+  let entry_struct_modules =
+    collect_entry_structs api
+    |> List.map ~f:(fun (entry_struct, _nested) ->
+      gen_entry_struct_module_mli api.structs entry_struct)
+    |> String.concat ~sep:"\n"
+  in
   (* Filter out objects we handle specially *)
   let special_objects = [ "instance"; "adapter"; "device"; "queue" ] in
   let regular_objects =
@@ -1705,9 +2213,19 @@ module Device : sig
   val create_bind_group_layout_for_storage_buffer : t -> ?label:string -> binding:int ->
     ?read_only:bool -> unit -> Bind_group_layout.t
 
+  (** Create a bind group layout from a list of entry descriptors.
+      This is the full API that supports all binding types. *)
+  val create_bind_group_layout : t -> ?label:string ->
+    entries:Bind_group_layout_entry.t list -> unit -> Bind_group_layout.t
+
   (** Create a bind group with a single buffer binding *)
   val create_bind_group : t -> ?label:string -> layout:Bind_group_layout.t ->
     binding:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit -> Bind_group.t
+
+  (** Create a bind group from a list of entry descriptors.
+      This is the full API that supports all binding types. *)
+  val create_bind_group_full : t -> ?label:string -> layout:Bind_group_layout.t ->
+    entries:Bind_group_entry.t list -> unit -> Bind_group.t
 
   (** Create a pipeline layout from a list of bind group layouts *)
   val create_pipeline_layout : t -> ?label:string -> bind_group_layouts:Bind_group_layout.t list ->
@@ -1777,7 +2295,15 @@ val create_texture_view : Texture.t -> ?label:string ->
   ?base_array_layer:int -> ?array_layer_count:int -> unit -> Texture_view.t
 |}
   in
-  String.concat [ header; enums; bitflags; objects; adapter_module; instance_module ]
+  String.concat
+    [ header
+    ; enums
+    ; bitflags
+    ; objects
+    ; entry_struct_modules
+    ; adapter_module
+    ; instance_module
+    ]
 ;;
 
 (** Validate that all non-auto-generated methods are accounted for. Returns a list of

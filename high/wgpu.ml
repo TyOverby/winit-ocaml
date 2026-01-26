@@ -472,9 +472,9 @@ module Surface = struct
 
   type surface_capabilities =
     { usages : Texture_usage.t list
-    ; formats : nativeint
-    ; present_modes : nativeint
-    ; alpha_modes : nativeint
+    ; formats : Texture_format.t list
+    ; present_modes : Present_mode.t list
+    ; alpha_modes : Composite_alpha_mode.t list
     }
 
   type surface_texture =
@@ -807,6 +807,118 @@ module Command_encoder = struct
   let set_label t ~label = Wgpu_low.command_encoder_set_label t.handle label
 end
 
+module Bind_group_entry = struct
+  type t =
+    { binding : int
+    ; buffer : Buffer.t option
+    ; offset : int64
+    ; size : int64
+    ; sampler : Sampler.t option
+    ; texture_view : Texture_view.t option
+    }
+end
+
+module Bind_group_layout_entry = struct
+  module Buffer_binding_layout = struct
+    type t =
+      { type_ : Buffer_binding_type.t
+      ; has_dynamic_offset : bool
+      ; min_binding_size : int64
+      }
+  end
+
+  module Sampler_binding_layout = struct
+    type t = { type_ : Sampler_binding_type.t }
+  end
+
+  module Storage_texture_binding_layout = struct
+    type t =
+      { access : Storage_texture_access.t
+      ; format : Texture_format.t
+      ; view_dimension : Texture_view_dimension.t
+      }
+  end
+
+  module Texture_binding_layout = struct
+    type t =
+      { sample_type : Texture_sample_type.t
+      ; view_dimension : Texture_view_dimension.t
+      ; multisampled : bool
+      }
+  end
+
+  type t =
+    { binding : int
+    ; visibility : Shader_stage.t list
+    ; buffer : Buffer_binding_layout.t option
+    ; sampler : Sampler_binding_layout.t option
+    ; texture : Texture_binding_layout.t option
+    ; storage_texture : Storage_texture_binding_layout.t option
+    }
+end
+
+module Color_target_state = struct
+  type t =
+    { format : Texture_format.t
+    ; blend : nativeint
+    ; write_mask : Color_write_mask.t list
+    }
+end
+
+module Compilation_message = struct
+  type t =
+    { message : string
+    ; type_ : Compilation_message_type.t
+    ; line_num : int64
+    ; line_pos : int64
+    ; offset : int64
+    ; length : int64
+    }
+end
+
+module Constant_entry = struct
+  type t =
+    { key : string
+    ; value : float
+    }
+end
+
+module Render_pass_color_attachment = struct
+  module Color = struct
+    type t =
+      { r : float
+      ; g : float
+      ; b : float
+      ; a : float
+      }
+  end
+
+  type t =
+    { view : Texture_view.t option
+    ; depth_slice : int
+    ; resolve_target : Texture_view.t option
+    ; load_op : Load_op.t
+    ; store_op : Store_op.t
+    ; clear_value : Color.t option
+    }
+end
+
+module Vertex_attribute = struct
+  type t =
+    { format : Vertex_format.t
+    ; offset : int64
+    ; shader_location : int
+    }
+end
+
+module Vertex_buffer_layout = struct
+  type t =
+    { step_mode : Vertex_step_mode.t
+    ; array_stride : int64
+    ; attributes : Vertex_attribute.t list
+    }
+end
+
 module Adapter_info = struct
   type t =
     { vendor : string
@@ -1074,6 +1186,111 @@ module Device = struct
     ({ Bind_group_layout.handle = layout } : Bind_group_layout.t)
   ;;
 
+  (** Create a bind group layout from a list of entry descriptors. This is the full API
+      that supports all binding types. *)
+  let create_bind_group_layout t ?(label = "") ~entries () =
+    let desc =
+      Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_create ()
+    in
+    Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_set_label
+      desc
+      label;
+    (* Convert entries to C structs *)
+    let entry_structs =
+      List.map
+        (fun (entry : Bind_group_layout_entry.t) ->
+          let e = Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_create () in
+          Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_binding
+            e
+            entry.binding;
+          Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_visibility
+            e
+            (Shader_stage.list_to_int entry.visibility);
+          (* Handle nested struct: buffer *)
+          (match entry.buffer with
+           | Some buffer_rec ->
+             let nested =
+               Wgpu_low.Buffer_binding_layout.buffer_binding_layout_create ()
+             in
+             Wgpu_low.Buffer_binding_layout.buffer_binding_layout_set_type
+               nested
+               (Buffer_binding_type.to_int buffer_rec.type_);
+             Wgpu_low.Buffer_binding_layout.buffer_binding_layout_set_has_dynamic_offset
+               nested
+               buffer_rec.has_dynamic_offset;
+             Wgpu_low.Buffer_binding_layout.buffer_binding_layout_set_min_binding_size
+               nested
+               buffer_rec.min_binding_size;
+             Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_buffer e nested
+           | None -> ());
+          (* Handle nested struct: sampler *)
+          (match entry.sampler with
+           | Some sampler_rec ->
+             let nested =
+               Wgpu_low.Sampler_binding_layout.sampler_binding_layout_create ()
+             in
+             Wgpu_low.Sampler_binding_layout.sampler_binding_layout_set_type
+               nested
+               (Sampler_binding_type.to_int sampler_rec.type_);
+             Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_sampler e nested
+           | None -> ());
+          (* Handle nested struct: texture *)
+          (match entry.texture with
+           | Some texture_rec ->
+             let nested =
+               Wgpu_low.Texture_binding_layout.texture_binding_layout_create ()
+             in
+             Wgpu_low.Texture_binding_layout.texture_binding_layout_set_sample_type
+               nested
+               (Texture_sample_type.to_int texture_rec.sample_type);
+             Wgpu_low.Texture_binding_layout.texture_binding_layout_set_view_dimension
+               nested
+               (Texture_view_dimension.to_int texture_rec.view_dimension);
+             Wgpu_low.Texture_binding_layout.texture_binding_layout_set_multisampled
+               nested
+               texture_rec.multisampled;
+             Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_texture e nested
+           | None -> ());
+          (* Handle nested struct: storage_texture *)
+          (match entry.storage_texture with
+           | Some storage_rec ->
+             let nested =
+               Wgpu_low.Storage_texture_binding_layout
+               .storage_texture_binding_layout_create
+                 ()
+             in
+             Wgpu_low.Storage_texture_binding_layout
+             .storage_texture_binding_layout_set_access
+               nested
+               (Storage_texture_access.to_int storage_rec.access);
+             Wgpu_low.Storage_texture_binding_layout
+             .storage_texture_binding_layout_set_format
+               nested
+               (Texture_format.to_int storage_rec.format);
+             Wgpu_low.Storage_texture_binding_layout
+             .storage_texture_binding_layout_set_view_dimension
+               nested
+               (Texture_view_dimension.to_int storage_rec.view_dimension);
+             Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_set_storage_texture
+               e
+               nested
+           | None -> ());
+          e)
+        entries
+    in
+    let entries_array = Array.of_list entry_structs in
+    Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_set_entries
+      desc
+      entries_array;
+    let layout = Wgpu_low.device_create_bind_group_layout t.handle desc in
+    (* Free entry structs *)
+    List.iter
+      (fun e -> Wgpu_low.Bind_group_layout_entry.bind_group_layout_entry_free e)
+      entry_structs;
+    Wgpu_low.Bind_group_layout_descriptor.bind_group_layout_descriptor_free desc;
+    ({ Bind_group_layout.handle = layout } : Bind_group_layout.t)
+  ;;
+
   let create_bind_group t ?(label = "") ~layout ~binding ~buffer ~offset ~size () =
     let bind_group =
       Wgpu_low.device_create_bind_group_buffer
@@ -1085,6 +1302,49 @@ module Device = struct
         offset
         size
     in
+    ({ Bind_group.handle = bind_group } : Bind_group.t)
+  ;;
+
+  (** Create a bind group from a list of entry descriptors. This is the full API that
+      supports all binding types. *)
+  let create_bind_group_full t ?(label = "") ~layout ~entries () =
+    let desc = Wgpu_low.Bind_group_descriptor.bind_group_descriptor_create () in
+    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_set_label desc label;
+    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_set_layout
+      desc
+      layout.Bind_group_layout.handle;
+    (* Convert entries to C structs *)
+    let entry_structs =
+      List.map
+        (fun (entry : Bind_group_entry.t) ->
+          let e = Wgpu_low.Bind_group_entry.bind_group_entry_create () in
+          Wgpu_low.Bind_group_entry.bind_group_entry_set_binding e entry.binding;
+          Wgpu_low.Bind_group_entry.bind_group_entry_set_buffer
+            e
+            (match entry.buffer with
+             | Some x -> x.Buffer.handle
+             | None -> 0n);
+          Wgpu_low.Bind_group_entry.bind_group_entry_set_offset e entry.offset;
+          Wgpu_low.Bind_group_entry.bind_group_entry_set_size e entry.size;
+          Wgpu_low.Bind_group_entry.bind_group_entry_set_sampler
+            e
+            (match entry.sampler with
+             | Some x -> x.Sampler.handle
+             | None -> 0n);
+          Wgpu_low.Bind_group_entry.bind_group_entry_set_texture_view
+            e
+            (match entry.texture_view with
+             | Some x -> x.Texture_view.handle
+             | None -> 0n);
+          e)
+        entries
+    in
+    let entries_array = Array.of_list entry_structs in
+    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_set_entries desc entries_array;
+    let bind_group = Wgpu_low.device_create_bind_group t.handle desc in
+    (* Free entry structs *)
+    List.iter (fun e -> Wgpu_low.Bind_group_entry.bind_group_entry_free e) entry_structs;
+    Wgpu_low.Bind_group_descriptor.bind_group_descriptor_free desc;
     ({ Bind_group.handle = bind_group } : Bind_group.t)
   ;;
 

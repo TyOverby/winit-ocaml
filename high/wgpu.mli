@@ -1081,9 +1081,9 @@ module Surface : sig
 
   type surface_capabilities =
     { usages : Texture_usage.t list
-    ; formats : nativeint
-    ; present_modes : nativeint
-    ; alpha_modes : nativeint
+    ; formats : Texture_format.t list
+    ; present_modes : Present_mode.t list
+    ; alpha_modes : Composite_alpha_mode.t list
     }
 
   type surface_texture =
@@ -1185,6 +1185,118 @@ module Command_encoder : sig
 
   val write_timestamp : t -> query_set:Query_set.t -> query_index:int -> unit
   val set_label : t -> label:string -> unit
+end
+
+module Bind_group_entry : sig
+  type t =
+    { binding : int
+    ; buffer : Buffer.t option
+    ; offset : int64
+    ; size : int64
+    ; sampler : Sampler.t option
+    ; texture_view : Texture_view.t option
+    }
+end
+
+module Bind_group_layout_entry : sig
+  module Buffer_binding_layout : sig
+    type t =
+      { type_ : Buffer_binding_type.t
+      ; has_dynamic_offset : bool
+      ; min_binding_size : int64
+      }
+  end
+
+  module Sampler_binding_layout : sig
+    type t = { type_ : Sampler_binding_type.t }
+  end
+
+  module Storage_texture_binding_layout : sig
+    type t =
+      { access : Storage_texture_access.t
+      ; format : Texture_format.t
+      ; view_dimension : Texture_view_dimension.t
+      }
+  end
+
+  module Texture_binding_layout : sig
+    type t =
+      { sample_type : Texture_sample_type.t
+      ; view_dimension : Texture_view_dimension.t
+      ; multisampled : bool
+      }
+  end
+
+  type t =
+    { binding : int
+    ; visibility : Shader_stage.t list
+    ; buffer : Buffer_binding_layout.t option
+    ; sampler : Sampler_binding_layout.t option
+    ; texture : Texture_binding_layout.t option
+    ; storage_texture : Storage_texture_binding_layout.t option
+    }
+end
+
+module Color_target_state : sig
+  type t =
+    { format : Texture_format.t
+    ; blend : nativeint
+    ; write_mask : Color_write_mask.t list
+    }
+end
+
+module Compilation_message : sig
+  type t =
+    { message : string
+    ; type_ : Compilation_message_type.t
+    ; line_num : int64
+    ; line_pos : int64
+    ; offset : int64
+    ; length : int64
+    }
+end
+
+module Constant_entry : sig
+  type t =
+    { key : string
+    ; value : float
+    }
+end
+
+module Render_pass_color_attachment : sig
+  module Color : sig
+    type t =
+      { r : float
+      ; g : float
+      ; b : float
+      ; a : float
+      }
+  end
+
+  type t =
+    { view : Texture_view.t option
+    ; depth_slice : int
+    ; resolve_target : Texture_view.t option
+    ; load_op : Load_op.t
+    ; store_op : Store_op.t
+    ; clear_value : Color.t option
+    }
+end
+
+module Vertex_attribute : sig
+  type t =
+    { format : Vertex_format.t
+    ; offset : int64
+    ; shader_location : int
+    }
+end
+
+module Vertex_buffer_layout : sig
+  type t =
+    { step_mode : Vertex_step_mode.t
+    ; array_stride : int64
+    ; attributes : Vertex_attribute.t list
+    }
 end
 
 module Adapter_info : sig
@@ -1312,6 +1424,15 @@ module Device : sig
     -> unit
     -> Bind_group_layout.t
 
+  (** Create a bind group layout from a list of entry descriptors. This is the full API
+      that supports all binding types. *)
+  val create_bind_group_layout
+    :  t
+    -> ?label:string
+    -> entries:Bind_group_layout_entry.t list
+    -> unit
+    -> Bind_group_layout.t
+
   (** Create a bind group with a single buffer binding *)
   val create_bind_group
     :  t
@@ -1321,6 +1442,16 @@ module Device : sig
     -> buffer:Buffer.t
     -> offset:int64
     -> size:int64
+    -> unit
+    -> Bind_group.t
+
+  (** Create a bind group from a list of entry descriptors. This is the full API that
+      supports all binding types. *)
+  val create_bind_group_full
+    :  t
+    -> ?label:string
+    -> layout:Bind_group_layout.t
+    -> entries:Bind_group_entry.t list
     -> unit
     -> Bind_group.t
 

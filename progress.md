@@ -890,5 +890,86 @@ where each struct has nested struct members. This requires:
 - Handling nested struct creation/setting/freeing for each array element
 
 ### Next Steps
-1. Continue support for arrays of structs with nested struct members
+1. ~~Continue support for arrays of structs with nested struct members~~ ✅
 2. Add chained struct support (nextInChain pattern)
+
+---
+
+## 2026-01-26: Array-of-Struct Support Complete
+
+### Accomplished
+- **Full array-of-struct support for descriptors**: Methods like `create_bind_group_layout` and `create_bind_group` can now use the full API with entry lists
+
+- **Entry struct record types generated**:
+  - `Bind_group_layout_entry.t` with nested struct fields for buffer/sampler/texture/storage_texture bindings
+  - `Bind_group_entry.t` with optional object fields for buffer/sampler/texture_view
+  - Nested struct modules: `Buffer_binding_layout`, `Sampler_binding_layout`, `Texture_binding_layout`, `Storage_texture_binding_layout`
+  - All types properly handle optional fields (objects marked optional in spec become `option` types)
+
+- **Key additions to gen_high.ml**:
+  - `member_is_array_of_structs`: Detects array-of-struct member types
+  - `get_array_entry_structs`: Finds entry structs used in arrays
+  - `gen_entry_struct_module`: Generates OCaml record modules for entry structs
+  - `gen_nested_struct_module`: Generates nested struct record modules
+  - `entry_struct_member_type`: Handles type mapping for entry struct fields (including optional objects)
+  - `entry_member_to_low_level`: Converts entry struct fields to low-level values
+  - `generate_array_of_structs_conversion`: Generates code to convert record lists to C struct arrays
+  - `collect_entry_structs`: Collects all entry structs from API for generation
+
+- **New Device methods** (hand-written but using generated infrastructure):
+  - `create_bind_group_layout`: Takes `entries:Bind_group_layout_entry.t list`
+  - `create_bind_group_full`: Takes `entries:Bind_group_entry.t list`
+
+### Generated Entry Struct Types
+```ocaml
+module Bind_group_layout_entry = struct
+  module Buffer_binding_layout = struct
+    type t = { type_ : Buffer_binding_type.t; has_dynamic_offset : bool; min_binding_size : int64 }
+  end
+  module Sampler_binding_layout = struct
+    type t = { type_ : Sampler_binding_type.t }
+  end
+  module Texture_binding_layout = struct
+    type t = { sample_type : Texture_sample_type.t; view_dimension : Texture_view_dimension.t; multisampled : bool }
+  end
+  module Storage_texture_binding_layout = struct
+    type t = { access : Storage_texture_access.t; format : Texture_format.t; view_dimension : Texture_view_dimension.t }
+  end
+  type t = {
+    binding : int;
+    visibility : Shader_stage.t list;
+    buffer : Buffer_binding_layout.t option;
+    sampler : Sampler_binding_layout.t option;
+    texture : Texture_binding_layout.t option;
+    storage_texture : Storage_texture_binding_layout.t option
+  }
+end
+```
+
+### Usage Example
+```ocaml
+(* Create a bind group layout with full API *)
+let layout = Wgpu.Device.create_bind_group_layout device
+  ~entries:[
+    { Wgpu.Bind_group_layout_entry.
+      binding = 0;
+      visibility = [Wgpu.Shader_stage.Compute];
+      buffer = Some { type_ = Wgpu.Buffer_binding_type.Storage; has_dynamic_offset = false; min_binding_size = 0L };
+      sampler = None;
+      texture = None;
+      storage_texture = None
+    }
+  ]
+  ()
+```
+
+### Technical Details
+- Entry struct modules are generated after object modules (to resolve object type dependencies)
+- Optional object fields use match expressions: `(match entry.buffer with Some x -> x.Buffer.handle | None -> 0n)`
+- Nested struct fields in entries use option types and are created conditionally
+- Entry struct arrays are freed after the create call completes
+
+### Next Steps
+1. Write tests using the new full API methods
+2. Add chained struct support (nextInChain pattern)
+3. Document the complete high-level API
