@@ -7517,7 +7517,19 @@ CAMLprim value caml_wgpu_compute_pass_encoder_set_pipeline(value self, value pip
   CAMLreturn(Val_unit);
 }
 
-/* TODO: array args compute_pass_encoder.set_bind_group */
+CAMLprim value caml_wgpu_compute_pass_encoder_set_bind_group(value self, value group_index, value group, value dynamic_offsets) {
+  CAMLparam4(self, group_index, group, dynamic_offsets);
+  WGPUComputePassEncoder c_self = (WGPUComputePassEncoder)Nativeint_val(self);
+  uint32_t c_group_index = Int_val(group_index);
+  WGPUBindGroup c_group = (WGPUBindGroup)Nativeint_val(group);
+  size_t c_dynamic_offsets_count = Wosize_val(dynamic_offsets);
+  uint32_t* c_dynamic_offsets = (c_dynamic_offsets_count > 0) ? alloca(c_dynamic_offsets_count * sizeof(uint32_t)) : NULL;
+  for (size_t i = 0; i < c_dynamic_offsets_count; i++) {
+    c_dynamic_offsets[i] = (uint32_t)Int_val(Field(dynamic_offsets, i));
+  }
+  wgpuComputePassEncoderSetBindGroup(c_self, c_group_index, c_group, c_dynamic_offsets_count, c_dynamic_offsets);
+  CAMLreturn(Val_unit);
+}
 
 CAMLprim value caml_wgpu_compute_pass_encoder_dispatch_workgroups(value self, value workgroupCountX, value workgroupCountY, value workgroupCountZ) {
   CAMLparam4(self, workgroupCountX, workgroupCountY, workgroupCountZ);
@@ -7884,7 +7896,17 @@ CAMLprim value caml_wgpu_queue_release(value handle) {
   CAMLreturn(Val_unit);
 }
 
-/* TODO: array args queue.submit */
+CAMLprim value caml_wgpu_queue_submit(value self, value commands) {
+  CAMLparam2(self, commands);
+  WGPUQueue c_self = (WGPUQueue)Nativeint_val(self);
+  size_t c_commands_count = Wosize_val(commands);
+  WGPUCommandBuffer* c_commands = (c_commands_count > 0) ? alloca(c_commands_count * sizeof(WGPUCommandBuffer)) : NULL;
+  for (size_t i = 0; i < c_commands_count; i++) {
+    c_commands[i] = (WGPUCommandBuffer)Nativeint_val(Field(commands, i));
+  }
+  wgpuQueueSubmit(c_self, c_commands_count, c_commands);
+  CAMLreturn(Val_unit);
+}
 
 /* TODO: async method queue.on_submitted_work_done */
 
@@ -7960,7 +7982,19 @@ CAMLprim value caml_wgpu_render_bundle_encoder_set_pipeline(value self, value pi
   CAMLreturn(Val_unit);
 }
 
-/* TODO: array args render_bundle_encoder.set_bind_group */
+CAMLprim value caml_wgpu_render_bundle_encoder_set_bind_group(value self, value group_index, value group, value dynamic_offsets) {
+  CAMLparam4(self, group_index, group, dynamic_offsets);
+  WGPURenderBundleEncoder c_self = (WGPURenderBundleEncoder)Nativeint_val(self);
+  uint32_t c_group_index = Int_val(group_index);
+  WGPUBindGroup c_group = (WGPUBindGroup)Nativeint_val(group);
+  size_t c_dynamic_offsets_count = Wosize_val(dynamic_offsets);
+  uint32_t* c_dynamic_offsets = (c_dynamic_offsets_count > 0) ? alloca(c_dynamic_offsets_count * sizeof(uint32_t)) : NULL;
+  for (size_t i = 0; i < c_dynamic_offsets_count; i++) {
+    c_dynamic_offsets[i] = (uint32_t)Int_val(Field(dynamic_offsets, i));
+  }
+  wgpuRenderBundleEncoderSetBindGroup(c_self, c_group_index, c_group, c_dynamic_offsets_count, c_dynamic_offsets);
+  CAMLreturn(Val_unit);
+}
 
 CAMLprim value caml_wgpu_render_bundle_encoder_draw(value self, value vertex_count, value instance_count, value first_vertex, value first_instance) {
   CAMLparam5(self, vertex_count, instance_count, first_vertex, first_instance);
@@ -8088,7 +8122,19 @@ CAMLprim value caml_wgpu_render_pass_encoder_set_pipeline(value self, value pipe
   CAMLreturn(Val_unit);
 }
 
-/* TODO: array args render_pass_encoder.set_bind_group */
+CAMLprim value caml_wgpu_render_pass_encoder_set_bind_group(value self, value group_index, value group, value dynamic_offsets) {
+  CAMLparam4(self, group_index, group, dynamic_offsets);
+  WGPURenderPassEncoder c_self = (WGPURenderPassEncoder)Nativeint_val(self);
+  uint32_t c_group_index = Int_val(group_index);
+  WGPUBindGroup c_group = (WGPUBindGroup)Nativeint_val(group);
+  size_t c_dynamic_offsets_count = Wosize_val(dynamic_offsets);
+  uint32_t* c_dynamic_offsets = (c_dynamic_offsets_count > 0) ? alloca(c_dynamic_offsets_count * sizeof(uint32_t)) : NULL;
+  for (size_t i = 0; i < c_dynamic_offsets_count; i++) {
+    c_dynamic_offsets[i] = (uint32_t)Int_val(Field(dynamic_offsets, i));
+  }
+  wgpuRenderPassEncoderSetBindGroup(c_self, c_group_index, c_group, c_dynamic_offsets_count, c_dynamic_offsets);
+  CAMLreturn(Val_unit);
+}
 
 CAMLprim value caml_wgpu_render_pass_encoder_draw(value self, value vertex_count, value instance_count, value first_vertex, value first_instance) {
   CAMLparam5(self, vertex_count, instance_count, first_vertex, first_instance);
@@ -8136,7 +8182,17 @@ CAMLprim value caml_wgpu_render_pass_encoder_draw_indexed_indirect(value self, v
   CAMLreturn(Val_unit);
 }
 
-/* TODO: array args render_pass_encoder.execute_bundles */
+CAMLprim value caml_wgpu_render_pass_encoder_execute_bundles(value self, value bundles) {
+  CAMLparam2(self, bundles);
+  WGPURenderPassEncoder c_self = (WGPURenderPassEncoder)Nativeint_val(self);
+  size_t c_bundles_count = Wosize_val(bundles);
+  WGPURenderBundle* c_bundles = (c_bundles_count > 0) ? alloca(c_bundles_count * sizeof(WGPURenderBundle)) : NULL;
+  for (size_t i = 0; i < c_bundles_count; i++) {
+    c_bundles[i] = (WGPURenderBundle)Nativeint_val(Field(bundles, i));
+  }
+  wgpuRenderPassEncoderExecuteBundles(c_self, c_bundles_count, c_bundles);
+  CAMLreturn(Val_unit);
+}
 
 CAMLprim value caml_wgpu_render_pass_encoder_insert_debug_marker(value self, value marker_label) {
   CAMLparam2(self, marker_label);

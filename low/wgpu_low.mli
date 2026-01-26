@@ -1793,6 +1793,7 @@ val compute_pass_encoder_insert_debug_marker : compute_pass_encoder -> string ->
 val compute_pass_encoder_pop_debug_group : compute_pass_encoder -> unit
 val compute_pass_encoder_push_debug_group : compute_pass_encoder -> string -> unit
 val compute_pass_encoder_set_pipeline : compute_pass_encoder -> compute_pipeline -> unit
+val compute_pass_encoder_set_bind_group : compute_pass_encoder -> int -> bind_group -> int array -> unit
 val compute_pass_encoder_dispatch_workgroups : compute_pass_encoder -> int -> int -> int -> unit
 val compute_pass_encoder_dispatch_workgroups_indirect : compute_pass_encoder -> buffer -> int64 -> unit
 val compute_pass_encoder_end : compute_pass_encoder -> unit
@@ -1841,6 +1842,7 @@ val query_set_get_count : query_set -> int
 val query_set_destroy : query_set -> unit
 
 val queue_release : queue -> unit
+val queue_submit : queue -> command_buffer array -> unit
 val queue_write_buffer : queue -> buffer -> int64 -> nativeint -> int64 -> unit
 val queue_write_texture : queue -> nativeint -> nativeint -> int64 -> nativeint -> nativeint -> unit
 val queue_set_label : queue -> string -> unit
@@ -1850,6 +1852,7 @@ val render_bundle_set_label : render_bundle -> string -> unit
 
 val render_bundle_encoder_release : render_bundle_encoder -> unit
 val render_bundle_encoder_set_pipeline : render_bundle_encoder -> render_pipeline -> unit
+val render_bundle_encoder_set_bind_group : render_bundle_encoder -> int -> bind_group -> int array -> unit
 val render_bundle_encoder_draw : render_bundle_encoder -> int -> int -> int -> int -> unit
 val render_bundle_encoder_draw_indexed : render_bundle_encoder -> int -> int -> int -> int -> int -> unit
 val render_bundle_encoder_draw_indirect : render_bundle_encoder -> buffer -> int64 -> unit
@@ -1864,10 +1867,12 @@ val render_bundle_encoder_set_label : render_bundle_encoder -> string -> unit
 
 val render_pass_encoder_release : render_pass_encoder -> unit
 val render_pass_encoder_set_pipeline : render_pass_encoder -> render_pipeline -> unit
+val render_pass_encoder_set_bind_group : render_pass_encoder -> int -> bind_group -> int array -> unit
 val render_pass_encoder_draw : render_pass_encoder -> int -> int -> int -> int -> unit
 val render_pass_encoder_draw_indexed : render_pass_encoder -> int -> int -> int -> int -> int -> unit
 val render_pass_encoder_draw_indirect : render_pass_encoder -> buffer -> int64 -> unit
 val render_pass_encoder_draw_indexed_indirect : render_pass_encoder -> buffer -> int64 -> unit
+val render_pass_encoder_execute_bundles : render_pass_encoder -> render_bundle array -> unit
 val render_pass_encoder_insert_debug_marker : render_pass_encoder -> string -> unit
 val render_pass_encoder_pop_debug_group : render_pass_encoder -> unit
 val render_pass_encoder_push_debug_group : render_pass_encoder -> string -> unit

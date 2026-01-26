@@ -215,7 +215,8 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
   let command_buffer =
     Wgpu_low.command_encoder_finish_simple encoder "compute_commands"
   in
-  Wgpu_low.queue_submit_single queue command_buffer;
+  (* Use the auto-generated queue_submit with array argument *)
+  Wgpu_low.queue_submit queue [| command_buffer |];
   print_endline "Commands submitted.";
   (* Poll device to ensure work completes *)
   Wgpu_low.device_poll device true;

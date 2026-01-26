@@ -2964,7 +2964,7 @@ external compute_pass_encoder_insert_debug_marker : compute_pass_encoder -> stri
 external compute_pass_encoder_pop_debug_group : compute_pass_encoder -> unit = "caml_wgpu_compute_pass_encoder_pop_debug_group"
 external compute_pass_encoder_push_debug_group : compute_pass_encoder -> string -> unit = "caml_wgpu_compute_pass_encoder_push_debug_group"
 external compute_pass_encoder_set_pipeline : compute_pass_encoder -> compute_pipeline -> unit = "caml_wgpu_compute_pass_encoder_set_pipeline"
-(* TODO: array args compute_pass_encoder_set_bind_group *)
+external compute_pass_encoder_set_bind_group : compute_pass_encoder -> int -> bind_group -> int array -> unit = "caml_wgpu_compute_pass_encoder_set_bind_group"
 external compute_pass_encoder_dispatch_workgroups : compute_pass_encoder -> int -> int -> int -> unit = "caml_wgpu_compute_pass_encoder_dispatch_workgroups"
 external compute_pass_encoder_dispatch_workgroups_indirect : compute_pass_encoder -> buffer -> int64 -> unit = "caml_wgpu_compute_pass_encoder_dispatch_workgroups_indirect"
 external compute_pass_encoder_end : compute_pass_encoder -> unit = "caml_wgpu_compute_pass_encoder_end"
@@ -3011,7 +3011,7 @@ external query_set_get_type : query_set -> int = "caml_wgpu_query_set_get_type"
 external query_set_get_count : query_set -> int = "caml_wgpu_query_set_get_count"
 external query_set_destroy : query_set -> unit = "caml_wgpu_query_set_destroy"
 external queue_release : queue -> unit = "caml_wgpu_queue_release"
-(* TODO: array args queue_submit *)
+external queue_submit : queue -> command_buffer array -> unit = "caml_wgpu_queue_submit"
 (* TODO: async method queue_on_submitted_work_done *)
 external queue_write_buffer : queue -> buffer -> int64 -> nativeint -> int64 -> unit = "caml_wgpu_queue_write_buffer"
 external queue_write_texture : queue -> nativeint -> nativeint -> int64 -> nativeint -> nativeint -> unit = "caml_wgpu_queue_write_texture_bytecode" "caml_wgpu_queue_write_texture"
@@ -3020,7 +3020,7 @@ external render_bundle_release : render_bundle -> unit = "caml_wgpu_render_bundl
 external render_bundle_set_label : render_bundle -> string -> unit = "caml_wgpu_render_bundle_set_label"
 external render_bundle_encoder_release : render_bundle_encoder -> unit = "caml_wgpu_render_bundle_encoder_release"
 external render_bundle_encoder_set_pipeline : render_bundle_encoder -> render_pipeline -> unit = "caml_wgpu_render_bundle_encoder_set_pipeline"
-(* TODO: array args render_bundle_encoder_set_bind_group *)
+external render_bundle_encoder_set_bind_group : render_bundle_encoder -> int -> bind_group -> int array -> unit = "caml_wgpu_render_bundle_encoder_set_bind_group"
 external render_bundle_encoder_draw : render_bundle_encoder -> int -> int -> int -> int -> unit = "caml_wgpu_render_bundle_encoder_draw"
 external render_bundle_encoder_draw_indexed : render_bundle_encoder -> int -> int -> int -> int -> int -> unit = "caml_wgpu_render_bundle_encoder_draw_indexed_bytecode" "caml_wgpu_render_bundle_encoder_draw_indexed"
 external render_bundle_encoder_draw_indirect : render_bundle_encoder -> buffer -> int64 -> unit = "caml_wgpu_render_bundle_encoder_draw_indirect"
@@ -3034,12 +3034,12 @@ external render_bundle_encoder_finish : render_bundle_encoder -> nativeint -> re
 external render_bundle_encoder_set_label : render_bundle_encoder -> string -> unit = "caml_wgpu_render_bundle_encoder_set_label"
 external render_pass_encoder_release : render_pass_encoder -> unit = "caml_wgpu_render_pass_encoder_release"
 external render_pass_encoder_set_pipeline : render_pass_encoder -> render_pipeline -> unit = "caml_wgpu_render_pass_encoder_set_pipeline"
-(* TODO: array args render_pass_encoder_set_bind_group *)
+external render_pass_encoder_set_bind_group : render_pass_encoder -> int -> bind_group -> int array -> unit = "caml_wgpu_render_pass_encoder_set_bind_group"
 external render_pass_encoder_draw : render_pass_encoder -> int -> int -> int -> int -> unit = "caml_wgpu_render_pass_encoder_draw"
 external render_pass_encoder_draw_indexed : render_pass_encoder -> int -> int -> int -> int -> int -> unit = "caml_wgpu_render_pass_encoder_draw_indexed_bytecode" "caml_wgpu_render_pass_encoder_draw_indexed"
 external render_pass_encoder_draw_indirect : render_pass_encoder -> buffer -> int64 -> unit = "caml_wgpu_render_pass_encoder_draw_indirect"
 external render_pass_encoder_draw_indexed_indirect : render_pass_encoder -> buffer -> int64 -> unit = "caml_wgpu_render_pass_encoder_draw_indexed_indirect"
-(* TODO: array args render_pass_encoder_execute_bundles *)
+external render_pass_encoder_execute_bundles : render_pass_encoder -> render_bundle array -> unit = "caml_wgpu_render_pass_encoder_execute_bundles"
 external render_pass_encoder_insert_debug_marker : render_pass_encoder -> string -> unit = "caml_wgpu_render_pass_encoder_insert_debug_marker"
 external render_pass_encoder_pop_debug_group : render_pass_encoder -> unit = "caml_wgpu_render_pass_encoder_pop_debug_group"
 external render_pass_encoder_push_debug_group : render_pass_encoder -> string -> unit = "caml_wgpu_render_pass_encoder_push_debug_group"

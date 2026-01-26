@@ -519,14 +519,6 @@ let gen_mli_struct (struct_ : Ir.struct_) : string =
 (** Check if a method uses callbacks (async) *)
 let method_is_async (method_ : Ir.method_) : bool = Option.is_some method_.callback
 
-(** Check if a method uses arrays in args (need special handling) *)
-let method_has_array_args (method_ : Ir.method_) : bool =
-  List.exists method_.args ~f:(fun arg ->
-    match arg.type_ with
-    | Array _ -> true
-    | _ -> false)
-;;
-
 (** Check if method is manually implemented in sync helpers *)
 let method_is_manual (obj_name : string) (method_name : string) : bool =
   match obj_name, method_name with
@@ -535,13 +527,100 @@ let method_is_manual (obj_name : string) (method_name : string) : bool =
   | _ -> false
 ;;
 
+(** Get the element type of an array type_ref *)
+let array_elem_c_type (type_ref : Ir.type_ref) : string =
+  match type_ref with
+  | Array { elem; _ } -> c_type_of_type_ref elem
+  | _ -> "void*"
+;;
+
+(** Generate C code for array argument conversion *)
+let gen_c_array_conversion (arg : Ir.arg) : string =
+  match arg.type_ with
+  | Array { elem; _ } ->
+    let elem_c_type = c_type_of_type_ref elem in
+    let count_var = sprintf "c_%s_count" arg.name in
+    let array_var = sprintf "c_%s" arg.name in
+    let copy_code =
+      match elem with
+      | Object _ ->
+        sprintf
+          "  for (size_t i = 0; i < %s; i++) {\n\
+          \    %s[i] = (%s)Nativeint_val(Field(%s, i));\n\
+          \  }"
+          count_var
+          array_var
+          elem_c_type
+          arg.name
+      | Struct name ->
+        (* For structs, we need to copy the struct contents, not just pointers *)
+        sprintf
+          "  for (size_t i = 0; i < %s; i++) {\n\
+          \    %s *src = (%s*)Nativeint_val(Field(%s, i));\n\
+          \    %s[i] = *src;\n\
+          \  }"
+          count_var
+          (c_type_name name)
+          (c_type_name name)
+          arg.name
+          array_var
+      | Enum _ | Bitflag _ ->
+        sprintf
+          "  for (size_t i = 0; i < %s; i++) {\n\
+          \    %s[i] = (%s)Int_val(Field(%s, i));\n\
+          \  }"
+          count_var
+          array_var
+          elem_c_type
+          arg.name
+      | Primitive (Uint32 | Int32) ->
+        sprintf
+          "  for (size_t i = 0; i < %s; i++) {\n\
+          \    %s[i] = (%s)Int_val(Field(%s, i));\n\
+          \  }"
+          count_var
+          array_var
+          elem_c_type
+          arg.name
+      | Primitive (Uint64 | Int64) ->
+        sprintf
+          "  for (size_t i = 0; i < %s; i++) {\n\
+          \    %s[i] = (%s)Int64_val(Field(%s, i));\n\
+          \  }"
+          count_var
+          array_var
+          elem_c_type
+          arg.name
+      | _ ->
+        sprintf
+          "  for (size_t i = 0; i < %s; i++) {\n\
+          \    %s[i] = (%s)Nativeint_val(Field(%s, i));\n\
+          \  }"
+          count_var
+          array_var
+          elem_c_type
+          arg.name
+    in
+    sprintf
+      "  size_t %s = Wosize_val(%s);\n\
+      \  %s* %s = (%s > 0) ? alloca(%s * sizeof(%s)) : NULL;\n\
+       %s"
+      count_var
+      arg.name
+      elem_c_type
+      array_var
+      count_var
+      count_var
+      elem_c_type
+      copy_code
+  | _ -> ""
+;;
+
 (** Generate C stub for a single method *)
 let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
-  (* Skip async methods, array args, and manually implemented methods *)
+  (* Skip async methods and manually implemented methods *)
   if method_is_async method_
   then sprintf "/* TODO: async method %s.%s */\n" obj.name method_.name
-  else if method_has_array_args method_
-  then sprintf "/* TODO: array args %s.%s */\n" obj.name method_.name
   else if method_is_manual obj.name method_.name
   then sprintf "/* Manually implemented: %s.%s */\n" obj.name method_.name
   else (
@@ -604,29 +683,26 @@ let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
           sprintf "  %s* c_%s = (%s*)Nativeint_val(%s);" c_type arg.name c_type arg.name
         | Pointer { inner = Struct _; _ } ->
           sprintf "  %s c_%s = (%s)Nativeint_val(%s);" c_type arg.name c_type arg.name
+        | Array _ -> gen_c_array_conversion arg
         | _ -> sprintf "  /* TODO: convert %s */" arg.name)
       |> String.concat ~sep:"\n"
     in
-    (* Build C function call arguments *)
+    (* Build C function call arguments - arrays need count + pointer *)
     let c_args =
       "c_self"
-      :: List.map method_.args ~f:(fun arg ->
-        (* Struct and Pointer types are already pointers from the conversion *)
-        sprintf "c_%s" arg.name)
+      :: List.concat_map method_.args ~f:(fun arg ->
+        match arg.type_ with
+        | Array _ ->
+          (* Array args become count, pointer pair in C API *)
+          [ sprintf "c_%s_count" arg.name; sprintf "c_%s" arg.name ]
+        | _ -> [ sprintf "c_%s" arg.name ])
     in
     let c_call_args = String.concat ~sep:", " c_args in
     (* Build return handling *)
     let return_code =
       match method_.returns with
       | None ->
-        sprintf
-          "  %s(c_self%s);\n  CAMLreturn(Val_unit);"
-          c_func
-          (if List.is_empty method_.args
-           then ""
-           else
-             ", "
-             ^ String.concat ~sep:", " (List.map method_.args ~f:(fun a -> "c_" ^ a.name)))
+        sprintf "  %s(%s);\n  CAMLreturn(Val_unit);" c_func c_call_args
       | Some ret ->
         let ret_c_type = c_type_of_type_ref ret.type_ in
         (match ret.type_ with
@@ -745,7 +821,13 @@ let rec ml_type_of_type_ref (type_ref : Ir.type_ref) : string =
   | Object name -> name
   | Struct _ -> "nativeint"
   | Callback _ -> "nativeint"
-  | Array _ -> "nativeint"
+  | Array { elem; _ } ->
+    (* Arrays of objects become object arrays, others become nativeint arrays *)
+    (match elem with
+     | Object name -> name ^ " array"
+     | Enum _ | Bitflag _ -> "int array"
+     | Primitive (Uint32 | Int32) -> "int array"
+     | _ -> "nativeint array")
   | Optional inner -> ml_type_of_type_ref inner
   | Pointer _ -> "nativeint"
 ;;
@@ -754,8 +836,6 @@ let rec ml_type_of_type_ref (type_ref : Ir.type_ref) : string =
 let gen_ml_method (obj : Ir.object_) (method_ : Ir.method_) : string =
   if method_is_async method_
   then sprintf "(* TODO: async method %s_%s *)" obj.name method_.name
-  else if method_has_array_args method_
-  then sprintf "(* TODO: array args %s_%s *)" obj.name method_.name
   else if method_is_manual obj.name method_.name
   then "" (* Already defined manually *)
   else (
@@ -817,9 +897,7 @@ let gen_ml_object (obj : Ir.object_) : string =
 
 (** Generate MLI declaration for a method *)
 let gen_mli_method (obj : Ir.object_) (method_ : Ir.method_) : string =
-  if method_is_async method_
-     || method_has_array_args method_
-     || method_is_manual obj.name method_.name
+  if method_is_async method_ || method_is_manual obj.name method_.name
   then ""
   else (
     let func_name = sprintf "%s_%s" obj.name method_.name in
