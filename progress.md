@@ -973,3 +973,33 @@ let layout = Wgpu.Device.create_bind_group_layout device
 1. Write tests using the new full API methods
 2. Add chained struct support (nextInChain pattern)
 3. Document the complete high-level API
+
+---
+
+## 2026-01-26: Special Object Auto-Method Infrastructure
+
+### Accomplished
+- **Complete manual_implementations tracking**: Added all manually-implemented methods for special objects
+  - Instance: `release`, `create_surface`, `process_events`, `request_adapter`, `get_WGSL_language_features`, `wait_any`
+  - Adapter: `release`, `has_feature`, `get_info`, `request_device`, `get_features`
+  - Device: 23 methods (release, destroy, has_feature, push_error_scope, set_label, poll, get_features, create_buffer, create_shader_module, create_command_encoder, create_texture, create_sampler, create_compute_pipeline, create_render_pipeline, create_bind_group_layout_for_storage_buffer, create_bind_group_layout, create_bind_group, create_bind_group_full, create_pipeline_layout, create_query_set, create_render_bundle_encoder, pop_error_scope, get_queue, get_lost_future, get_adapter_info)
+  - Queue: `release`, `set_label`, `submit`, `write_buffer`, `write_texture`, `on_submitted_work_done`
+
+- **Tuple return for auto-method generators**: `gen_special_object_auto_methods` and `gen_special_object_auto_methods_mli` now return `(output_struct_types, methods)` tuples
+  - Output struct types placed inside Device module
+  - Methods injected at the marked position
+
+- **Triage tickets created** for methods that can't use standard generator:
+  - `tasks/triage/async-methods.md`: Callback-based async methods (request_adapter, request_device, etc.)
+  - `tasks/triage/output-struct-arrays.md`: Methods returning structs with dynamic arrays (get_features, get_capabilities)
+  - `tasks/triage/pointer-data-methods.md`: Methods with raw pointer/size data patterns (write_buffer, get_mapped_range)
+  - `tasks/triage/complex-descriptor-structs.md`: Methods with deeply nested descriptor structs (create_render_pipeline, begin_render_pass)
+
+### Technical Details
+The generator now has infrastructure to inject auto-generated methods into special object modules (Device, Queue, Adapter, Instance). While all methods are currently manually implemented for these objects, this infrastructure enables future migration of simpler methods to auto-generation.
+
+### Next Steps
+1. Write tests using the new full API methods
+2. Add chained struct support (nextInChain pattern)
+3. Document the complete high-level API
+4. Gradually migrate simple special object methods to auto-generation
