@@ -312,6 +312,13 @@ module Queue = struct
 
   let release t = Wgpu_low.queue_release t.handle
   let set_label t ~label = Wgpu_low.queue_set_label t.handle label
+
+  let submit t ~command_buffers =
+    let handles = List.map (fun (cb : Command_Buffer.t) -> cb.handle) command_buffers in
+    Wgpu_low.queue_submit t.handle (Array.of_list handles)
+
+  let write_buffer t ~buffer ~offset ~data =
+    Wgpu_low.queue_write_buffer_bigarray t.handle buffer.Buffer.handle offset data
 end
 
 module Device = struct
@@ -323,6 +330,78 @@ module Device = struct
   let has_feature t ~feature = Wgpu_low.device_has_feature t.handle (Feature_Name.to_int feature)
   let push_error_scope t ~filter = Wgpu_low.device_push_error_scope t.handle (Error_Filter.to_int filter)
   let set_label t ~label = Wgpu_low.device_set_label t.handle label
+
+  let create_buffer t ?(label = "") ~size ~usage ?(mapped_at_creation = false) () =
+    let desc = Wgpu_low.Buffer_Descriptor.buffer_descriptor_create () in
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_label desc label;
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_size desc size;
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_usage desc (Buffer_Usage.list_to_int usage);
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_mapped_at_creation desc mapped_at_creation;
+    let buffer = Wgpu_low.device_create_buffer t.handle desc in
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_free desc;
+    ({ Buffer.handle = buffer } : Buffer.t)
+
+  let create_shader_module t ?(label = "") ~wgsl () =
+    let shader = Wgpu_low.device_create_shader_module_wgsl t.handle label wgsl in
+    ({ Shader_Module.handle = shader } : Shader_Module.t)
+
+  let create_command_encoder t ?(label = "") () =
+    let encoder = Wgpu_low.device_create_command_encoder_simple t.handle label in
+    ({ Command_Encoder.handle = encoder } : Command_Encoder.t)
+
+  let create_texture t ?(label = "") ~size ~format ~usage ?(dimension = Texture_Dimension.N2d)
+      ?(mip_level_count = 1) ?(sample_count = 1) () =
+    let desc = Wgpu_low.Texture_Descriptor.texture_descriptor_create () in
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_label desc label;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_dimension desc (Texture_Dimension.to_int dimension);
+    let extent = Wgpu_low.Extent_3D.extent_3D_create () in
+    let (width, height, depth) = size in
+    Wgpu_low.Extent_3D.extent_3D_set_width extent width;
+    Wgpu_low.Extent_3D.extent_3D_set_height extent height;
+    Wgpu_low.Extent_3D.extent_3D_set_depth_or_array_layers extent depth;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_size desc extent;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_format desc (Texture_Format.to_int format);
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_usage desc (Texture_Usage.list_to_int usage);
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_mip_level_count desc mip_level_count;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_sample_count desc sample_count;
+    let texture = Wgpu_low.device_create_texture t.handle desc in
+    Wgpu_low.Extent_3D.extent_3D_free extent;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_free desc;
+    ({ Texture.handle = texture } : Texture.t)
+
+  let create_sampler t ?(label = "") () =
+    ignore (label : string);
+    let sampler = Wgpu_low.device_create_sampler t.handle 0n in
+    ({ Sampler.handle = sampler } : Sampler.t)
+
+  let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
+    let pipeline = Wgpu_low.device_create_compute_pipeline_simple t.handle
+      label layout.Pipeline_Layout.handle module_.Shader_Module.handle entry_point in
+    ({ Compute_Pipeline.handle = pipeline } : Compute_Pipeline.t)
+
+  let create_render_pipeline t ?(label = "") ~shader_module ~vertex_entry_point
+      ~fragment_entry_point ~color_format () =
+    let pipeline = Wgpu_low.device_create_render_pipeline_simple t.handle
+      label shader_module.Shader_Module.handle vertex_entry_point
+      fragment_entry_point (Texture_Format.to_int color_format) in
+    ({ Render_Pipeline.handle = pipeline } : Render_Pipeline.t)
+
+  let create_bind_group_layout_for_storage_buffer t ?(label = "") ~binding ?(read_only = false) () =
+    let layout = Wgpu_low.device_create_bind_group_layout_storage t.handle
+      label binding read_only in
+    ({ Bind_Group_Layout.handle = layout } : Bind_Group_Layout.t)
+
+  let create_bind_group t ?(label = "") ~layout ~binding ~buffer ~offset ~size () =
+    let bind_group = Wgpu_low.device_create_bind_group_buffer t.handle
+      label layout.Bind_Group_Layout.handle binding buffer.Buffer.handle offset size in
+    ({ Bind_Group.handle = bind_group } : Bind_Group.t)
+
+  let create_pipeline_layout t ?(label = "") ~bind_group_layout () =
+    let layout = Wgpu_low.device_create_pipeline_layout_single t.handle
+      label bind_group_layout.Bind_Group_Layout.handle in
+    ({ Pipeline_Layout.handle = layout } : Pipeline_Layout.t)
+
+  let poll t ?(wait = false) () = Wgpu_low.device_poll t.handle wait
 end
 
 module Adapter = struct
@@ -345,3 +424,36 @@ module Instance = struct
     let adapter = Wgpu_low.instance_request_adapter_sync t.handle in
     { Adapter.handle = adapter }
 end
+
+(* Convenience functions for methods that take complex descriptors *)
+
+let begin_compute_pass (encoder : Command_Encoder.t) ?(label = "") () =
+  let pass = Wgpu_low.command_encoder_begin_compute_pass_simple encoder.handle label in
+  ({ Compute_Pass_Encoder.handle = pass } : Compute_Pass_Encoder.t)
+
+let begin_render_pass (encoder : Command_Encoder.t) ?(label = "") ~color_view ~clear_color () =
+  let (r, g, b, a) = clear_color in
+  let pass = Wgpu_low.command_encoder_begin_render_pass_simple encoder.handle
+    label color_view.Texture_View.handle r g b a in
+  ({ Render_Pass_Encoder.handle = pass } : Render_Pass_Encoder.t)
+
+let finish (encoder : Command_Encoder.t) ?(label = "") () =
+  let cmd_buffer = Wgpu_low.command_encoder_finish_simple encoder.handle label in
+  ({ Command_Buffer.handle = cmd_buffer } : Command_Buffer.t)
+
+let set_bind_group (pass : Compute_Pass_Encoder.t) ~index ~bind_group =
+  Wgpu_low.compute_pass_encoder_set_bind_group_simple pass.handle index bind_group.Bind_Group.handle
+
+let set_bind_group_render (pass : Render_Pass_Encoder.t) ~index ~bind_group =
+  Wgpu_low.render_pass_encoder_set_bind_group pass.handle index bind_group.Bind_Group.handle [||]
+
+let copy_texture_to_buffer (encoder : Command_Encoder.t) ~texture ~buffer ~size ~bytes_per_row () =
+  let (width, height) = size in
+  Wgpu_low.command_encoder_copy_texture_to_buffer_simple encoder.handle
+    texture.Texture.handle buffer.Buffer.handle width height bytes_per_row
+
+let map_buffer (buffer : Buffer.t) ~mode ~offset ~size =
+  ignore (Wgpu_low.buffer_map_sync buffer.handle (Map_Mode.list_to_int mode) offset size : int)
+
+let get_mapped_range (buffer : Buffer.t) ~offset ~size =
+  Wgpu_low.buffer_get_mapped_range_bigarray buffer.handle offset size

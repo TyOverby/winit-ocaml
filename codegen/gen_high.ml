@@ -127,7 +127,9 @@ let method_is_high_level (method_ : Ir.method_) : bool =
   if method_is_async method_
   then false
   else (
-    let args_ok = List.for_all method_.args ~f:(fun arg -> is_simple_arg_type arg.type_) in
+    let args_ok =
+      List.for_all method_.args ~f:(fun arg -> is_simple_arg_type arg.type_)
+    in
     let return_ok =
       match method_.returns with
       | None -> true
@@ -178,7 +180,10 @@ let arg_to_low_level (arg_name : string) (type_ref : Ir.type_ref) : string =
   | Bitflag name -> sprintf "(%s.list_to_int %s)" (ocaml_module_name name) arg_name
   | Object name -> sprintf "%s.%s.handle" arg_name (ocaml_module_name name)
   | Optional (Object name) ->
-    sprintf "(match %s with Some x -> x.%s.handle | None -> 0n)" arg_name (ocaml_module_name name)
+    sprintf
+      "(match %s with Some x -> x.%s.handle | None -> 0n)"
+      arg_name
+      (ocaml_module_name name)
   | Optional _ -> arg_name (* shouldn't happen for simple types *)
   | _ -> arg_name
 ;;
@@ -190,7 +195,11 @@ let return_to_high_level (result_expr : string) (type_ref : Ir.type_ref) : strin
   | Enum _ -> result_expr (* enums return as ints for now *)
   | Bitflag _ -> result_expr (* bitflags return as ints for now *)
   | Object name ->
-    sprintf "({ %s.handle = %s } : %s.t)" (ocaml_module_name name) result_expr (ocaml_module_name name)
+    sprintf
+      "({ %s.handle = %s } : %s.t)"
+      (ocaml_module_name name)
+      result_expr
+      (ocaml_module_name name)
   | _ -> result_expr
 ;;
 
@@ -318,8 +327,7 @@ let gen_ml_object (obj : Ir.object_) : string =
     "module %s = struct\n\
     \  type t = { handle : Wgpu_low.%s }\n\n\
     \  let release t = Wgpu_low.%s_release t.handle\n\
-     %s\
-     end\n"
+     %send\n"
     module_name
     obj.name
     obj.name
@@ -344,7 +352,8 @@ let gen_mli_object (obj : Ir.object_) : string =
     methods
 ;;
 
-(** Order objects so dependencies come first. Objects that don't depend on others come first. *)
+(** Order objects so dependencies come first. Objects that don't depend on others come
+    first. *)
 let object_order =
   [ (* Leaf objects - no dependencies on other objects in methods *)
     "bind_group"
@@ -360,8 +369,7 @@ let object_order =
   ; "shader_module"
   ; "surface"
   ; "texture"
-  ; "texture_view"
-    (* Objects that depend on above *)
+  ; "texture_view" (* Objects that depend on above *)
   ; "command_encoder"
   ; "compute_pass_encoder"
   ; "render_bundle_encoder"
@@ -411,6 +419,13 @@ module Queue = struct
 
   let release t = Wgpu_low.queue_release t.handle
   let set_label t ~label = Wgpu_low.queue_set_label t.handle label
+
+  let submit t ~command_buffers =
+    let handles = List.map (fun (cb : Command_Buffer.t) -> cb.handle) command_buffers in
+    Wgpu_low.queue_submit t.handle (Array.of_list handles)
+
+  let write_buffer t ~buffer ~offset ~data =
+    Wgpu_low.queue_write_buffer_bigarray t.handle buffer.Buffer.handle offset data
 end
 
 module Device = struct
@@ -422,6 +437,78 @@ module Device = struct
   let has_feature t ~feature = Wgpu_low.device_has_feature t.handle (Feature_Name.to_int feature)
   let push_error_scope t ~filter = Wgpu_low.device_push_error_scope t.handle (Error_Filter.to_int filter)
   let set_label t ~label = Wgpu_low.device_set_label t.handle label
+
+  let create_buffer t ?(label = "") ~size ~usage ?(mapped_at_creation = false) () =
+    let desc = Wgpu_low.Buffer_Descriptor.buffer_descriptor_create () in
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_label desc label;
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_size desc size;
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_usage desc (Buffer_Usage.list_to_int usage);
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_mapped_at_creation desc mapped_at_creation;
+    let buffer = Wgpu_low.device_create_buffer t.handle desc in
+    Wgpu_low.Buffer_Descriptor.buffer_descriptor_free desc;
+    ({ Buffer.handle = buffer } : Buffer.t)
+
+  let create_shader_module t ?(label = "") ~wgsl () =
+    let shader = Wgpu_low.device_create_shader_module_wgsl t.handle label wgsl in
+    ({ Shader_Module.handle = shader } : Shader_Module.t)
+
+  let create_command_encoder t ?(label = "") () =
+    let encoder = Wgpu_low.device_create_command_encoder_simple t.handle label in
+    ({ Command_Encoder.handle = encoder } : Command_Encoder.t)
+
+  let create_texture t ?(label = "") ~size ~format ~usage ?(dimension = Texture_Dimension.N2d)
+      ?(mip_level_count = 1) ?(sample_count = 1) () =
+    let desc = Wgpu_low.Texture_Descriptor.texture_descriptor_create () in
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_label desc label;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_dimension desc (Texture_Dimension.to_int dimension);
+    let extent = Wgpu_low.Extent_3D.extent_3D_create () in
+    let (width, height, depth) = size in
+    Wgpu_low.Extent_3D.extent_3D_set_width extent width;
+    Wgpu_low.Extent_3D.extent_3D_set_height extent height;
+    Wgpu_low.Extent_3D.extent_3D_set_depth_or_array_layers extent depth;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_size desc extent;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_format desc (Texture_Format.to_int format);
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_usage desc (Texture_Usage.list_to_int usage);
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_mip_level_count desc mip_level_count;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_set_sample_count desc sample_count;
+    let texture = Wgpu_low.device_create_texture t.handle desc in
+    Wgpu_low.Extent_3D.extent_3D_free extent;
+    Wgpu_low.Texture_Descriptor.texture_descriptor_free desc;
+    ({ Texture.handle = texture } : Texture.t)
+
+  let create_sampler t ?(label = "") () =
+    ignore (label : string);
+    let sampler = Wgpu_low.device_create_sampler t.handle 0n in
+    ({ Sampler.handle = sampler } : Sampler.t)
+
+  let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
+    let pipeline = Wgpu_low.device_create_compute_pipeline_simple t.handle
+      label layout.Pipeline_Layout.handle module_.Shader_Module.handle entry_point in
+    ({ Compute_Pipeline.handle = pipeline } : Compute_Pipeline.t)
+
+  let create_render_pipeline t ?(label = "") ~shader_module ~vertex_entry_point
+      ~fragment_entry_point ~color_format () =
+    let pipeline = Wgpu_low.device_create_render_pipeline_simple t.handle
+      label shader_module.Shader_Module.handle vertex_entry_point
+      fragment_entry_point (Texture_Format.to_int color_format) in
+    ({ Render_Pipeline.handle = pipeline } : Render_Pipeline.t)
+
+  let create_bind_group_layout_for_storage_buffer t ?(label = "") ~binding ?(read_only = false) () =
+    let layout = Wgpu_low.device_create_bind_group_layout_storage t.handle
+      label binding read_only in
+    ({ Bind_Group_Layout.handle = layout } : Bind_Group_Layout.t)
+
+  let create_bind_group t ?(label = "") ~layout ~binding ~buffer ~offset ~size () =
+    let bind_group = Wgpu_low.device_create_bind_group_buffer t.handle
+      label layout.Bind_Group_Layout.handle binding buffer.Buffer.handle offset size in
+    ({ Bind_Group.handle = bind_group } : Bind_Group.t)
+
+  let create_pipeline_layout t ?(label = "") ~bind_group_layout () =
+    let layout = Wgpu_low.device_create_pipeline_layout_single t.handle
+      label bind_group_layout.Bind_Group_Layout.handle in
+    ({ Pipeline_Layout.handle = layout } : Pipeline_Layout.t)
+
+  let poll t ?(wait = false) () = Wgpu_low.device_poll t.handle wait
 end
 
 module Adapter = struct
@@ -448,6 +535,39 @@ end
     let adapter = Wgpu_low.instance_request_adapter_sync t.handle in
     { Adapter.handle = adapter }
 end
+
+(* Convenience functions for methods that take complex descriptors *)
+
+let begin_compute_pass (encoder : Command_Encoder.t) ?(label = "") () =
+  let pass = Wgpu_low.command_encoder_begin_compute_pass_simple encoder.handle label in
+  ({ Compute_Pass_Encoder.handle = pass } : Compute_Pass_Encoder.t)
+
+let begin_render_pass (encoder : Command_Encoder.t) ?(label = "") ~color_view ~clear_color () =
+  let (r, g, b, a) = clear_color in
+  let pass = Wgpu_low.command_encoder_begin_render_pass_simple encoder.handle
+    label color_view.Texture_View.handle r g b a in
+  ({ Render_Pass_Encoder.handle = pass } : Render_Pass_Encoder.t)
+
+let finish (encoder : Command_Encoder.t) ?(label = "") () =
+  let cmd_buffer = Wgpu_low.command_encoder_finish_simple encoder.handle label in
+  ({ Command_Buffer.handle = cmd_buffer } : Command_Buffer.t)
+
+let set_bind_group (pass : Compute_Pass_Encoder.t) ~index ~bind_group =
+  Wgpu_low.compute_pass_encoder_set_bind_group_simple pass.handle index bind_group.Bind_Group.handle
+
+let set_bind_group_render (pass : Render_Pass_Encoder.t) ~index ~bind_group =
+  Wgpu_low.render_pass_encoder_set_bind_group pass.handle index bind_group.Bind_Group.handle [||]
+
+let copy_texture_to_buffer (encoder : Command_Encoder.t) ~texture ~buffer ~size ~bytes_per_row () =
+  let (width, height) = size in
+  Wgpu_low.command_encoder_copy_texture_to_buffer_simple encoder.handle
+    texture.Texture.handle buffer.Buffer.handle width height bytes_per_row
+
+let map_buffer (buffer : Buffer.t) ~mode ~offset ~size =
+  ignore (Wgpu_low.buffer_map_sync buffer.handle (Map_Mode.list_to_int mode) offset size : int)
+
+let get_mapped_range (buffer : Buffer.t) ~offset ~size =
+  Wgpu_low.buffer_get_mapped_range_bigarray buffer.handle offset size
 |}
   in
   String.concat [ header; enums; bitflags; objects; adapter_module; instance_module ]
@@ -485,6 +605,9 @@ module Queue : sig
 
   val release : t -> unit
   val set_label : t -> label:string -> unit
+  val submit : t -> command_buffers:Command_Buffer.t list -> unit
+  val write_buffer : t -> buffer:Buffer.t -> offset:int64 ->
+    data:(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t -> unit
 end
 
 module Device : sig
@@ -496,6 +619,49 @@ module Device : sig
   val has_feature : t -> feature:Feature_Name.t -> bool
   val push_error_scope : t -> filter:Error_Filter.t -> unit
   val set_label : t -> label:string -> unit
+
+  (** Create a GPU buffer *)
+  val create_buffer : t -> ?label:string -> size:int64 -> usage:Buffer_Usage.t list ->
+    ?mapped_at_creation:bool -> unit -> Buffer.t
+
+  (** Create a shader module from WGSL source *)
+  val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_Module.t
+
+  (** Create a command encoder *)
+  val create_command_encoder : t -> ?label:string -> unit -> Command_Encoder.t
+
+  (** Create a texture *)
+  val create_texture : t -> ?label:string -> size:(int * int * int) ->
+    format:Texture_Format.t -> usage:Texture_Usage.t list ->
+    ?dimension:Texture_Dimension.t -> ?mip_level_count:int -> ?sample_count:int ->
+    unit -> Texture.t
+
+  (** Create a sampler with default settings *)
+  val create_sampler : t -> ?label:string -> unit -> Sampler.t
+
+  (** Create a compute pipeline *)
+  val create_compute_pipeline : t -> ?label:string -> layout:Pipeline_Layout.t ->
+    module_:Shader_Module.t -> entry_point:string -> unit -> Compute_Pipeline.t
+
+  (** Create a render pipeline (uses single shader module for vertex and fragment) *)
+  val create_render_pipeline : t -> ?label:string -> shader_module:Shader_Module.t ->
+    vertex_entry_point:string -> fragment_entry_point:string ->
+    color_format:Texture_Format.t -> unit -> Render_Pipeline.t
+
+  (** Create a bind group layout for a single storage buffer *)
+  val create_bind_group_layout_for_storage_buffer : t -> ?label:string -> binding:int ->
+    ?read_only:bool -> unit -> Bind_Group_Layout.t
+
+  (** Create a bind group with a single buffer binding *)
+  val create_bind_group : t -> ?label:string -> layout:Bind_Group_Layout.t ->
+    binding:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit -> Bind_Group.t
+
+  (** Create a pipeline layout (currently supports single bind group layout) *)
+  val create_pipeline_layout : t -> ?label:string -> bind_group_layout:Bind_Group_Layout.t ->
+    unit -> Pipeline_Layout.t
+
+  (** Poll the device for completed work *)
+  val poll : t -> ?wait:bool -> unit -> unit
 end
 
 module Adapter : sig
@@ -517,6 +683,33 @@ end
   val release : t -> unit
   val request_adapter : t -> Adapter.t
 end
+
+(** Begin a compute pass on a command encoder *)
+val begin_compute_pass : Command_Encoder.t -> ?label:string -> unit -> Compute_Pass_Encoder.t
+
+(** Begin a render pass on a command encoder with a single color attachment *)
+val begin_render_pass : Command_Encoder.t -> ?label:string -> color_view:Texture_View.t ->
+  clear_color:(float * float * float * float) -> unit -> Render_Pass_Encoder.t
+
+(** Finish recording commands and get a command buffer *)
+val finish : Command_Encoder.t -> ?label:string -> unit -> Command_Buffer.t
+
+(** Set a bind group on a compute pass encoder *)
+val set_bind_group : Compute_Pass_Encoder.t -> index:int -> bind_group:Bind_Group.t -> unit
+
+(** Set a bind group on a render pass encoder *)
+val set_bind_group_render : Render_Pass_Encoder.t -> index:int -> bind_group:Bind_Group.t -> unit
+
+(** Copy texture to buffer (for readback) *)
+val copy_texture_to_buffer : Command_Encoder.t -> texture:Texture.t ->
+  buffer:Buffer.t -> size:(int * int) -> bytes_per_row:int -> unit -> unit
+
+(** Map a buffer for CPU access (synchronous) *)
+val map_buffer : Buffer.t -> mode:Map_Mode.t list -> offset:int64 -> size:int64 -> unit
+
+(** Get mapped buffer data as a bigarray *)
+val get_mapped_range : Buffer.t -> offset:int64 -> size:int64 ->
+  (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 |}
   in
   String.concat [ header; enums; bitflags; objects; adapter_module; instance_module ]

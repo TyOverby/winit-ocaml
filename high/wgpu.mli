@@ -959,6 +959,9 @@ module Queue : sig
 
   val release : t -> unit
   val set_label : t -> label:string -> unit
+  val submit : t -> command_buffers:Command_Buffer.t list -> unit
+  val write_buffer : t -> buffer:Buffer.t -> offset:int64 ->
+    data:(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t -> unit
 end
 
 module Device : sig
@@ -970,6 +973,49 @@ module Device : sig
   val has_feature : t -> feature:Feature_Name.t -> bool
   val push_error_scope : t -> filter:Error_Filter.t -> unit
   val set_label : t -> label:string -> unit
+
+  (** Create a GPU buffer *)
+  val create_buffer : t -> ?label:string -> size:int64 -> usage:Buffer_Usage.t list ->
+    ?mapped_at_creation:bool -> unit -> Buffer.t
+
+  (** Create a shader module from WGSL source *)
+  val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_Module.t
+
+  (** Create a command encoder *)
+  val create_command_encoder : t -> ?label:string -> unit -> Command_Encoder.t
+
+  (** Create a texture *)
+  val create_texture : t -> ?label:string -> size:(int * int * int) ->
+    format:Texture_Format.t -> usage:Texture_Usage.t list ->
+    ?dimension:Texture_Dimension.t -> ?mip_level_count:int -> ?sample_count:int ->
+    unit -> Texture.t
+
+  (** Create a sampler with default settings *)
+  val create_sampler : t -> ?label:string -> unit -> Sampler.t
+
+  (** Create a compute pipeline *)
+  val create_compute_pipeline : t -> ?label:string -> layout:Pipeline_Layout.t ->
+    module_:Shader_Module.t -> entry_point:string -> unit -> Compute_Pipeline.t
+
+  (** Create a render pipeline (uses single shader module for vertex and fragment) *)
+  val create_render_pipeline : t -> ?label:string -> shader_module:Shader_Module.t ->
+    vertex_entry_point:string -> fragment_entry_point:string ->
+    color_format:Texture_Format.t -> unit -> Render_Pipeline.t
+
+  (** Create a bind group layout for a single storage buffer *)
+  val create_bind_group_layout_for_storage_buffer : t -> ?label:string -> binding:int ->
+    ?read_only:bool -> unit -> Bind_Group_Layout.t
+
+  (** Create a bind group with a single buffer binding *)
+  val create_bind_group : t -> ?label:string -> layout:Bind_Group_Layout.t ->
+    binding:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit -> Bind_Group.t
+
+  (** Create a pipeline layout (currently supports single bind group layout) *)
+  val create_pipeline_layout : t -> ?label:string -> bind_group_layout:Bind_Group_Layout.t ->
+    unit -> Pipeline_Layout.t
+
+  (** Poll the device for completed work *)
+  val poll : t -> ?wait:bool -> unit -> unit
 end
 
 module Adapter : sig
@@ -987,3 +1033,30 @@ module Instance : sig
   val release : t -> unit
   val request_adapter : t -> Adapter.t
 end
+
+(** Begin a compute pass on a command encoder *)
+val begin_compute_pass : Command_Encoder.t -> ?label:string -> unit -> Compute_Pass_Encoder.t
+
+(** Begin a render pass on a command encoder with a single color attachment *)
+val begin_render_pass : Command_Encoder.t -> ?label:string -> color_view:Texture_View.t ->
+  clear_color:(float * float * float * float) -> unit -> Render_Pass_Encoder.t
+
+(** Finish recording commands and get a command buffer *)
+val finish : Command_Encoder.t -> ?label:string -> unit -> Command_Buffer.t
+
+(** Set a bind group on a compute pass encoder *)
+val set_bind_group : Compute_Pass_Encoder.t -> index:int -> bind_group:Bind_Group.t -> unit
+
+(** Set a bind group on a render pass encoder *)
+val set_bind_group_render : Render_Pass_Encoder.t -> index:int -> bind_group:Bind_Group.t -> unit
+
+(** Copy texture to buffer (for readback) *)
+val copy_texture_to_buffer : Command_Encoder.t -> texture:Texture.t ->
+  buffer:Buffer.t -> size:(int * int) -> bytes_per_row:int -> unit -> unit
+
+(** Map a buffer for CPU access (synchronous) *)
+val map_buffer : Buffer.t -> mode:Map_Mode.t list -> offset:int64 -> size:int64 -> unit
+
+(** Get mapped buffer data as a bigarray *)
+val get_mapped_range : Buffer.t -> offset:int64 -> size:int64 ->
+  (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
