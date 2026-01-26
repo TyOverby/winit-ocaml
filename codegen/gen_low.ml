@@ -1566,47 +1566,6 @@ CAMLprim value caml_wgpu_command_encoder_begin_render_pass_configurable_bytecode
     argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8]);
 }
 
-/* Copy texture to buffer (simplified - full texture from origin 0,0) */
-CAMLprim value caml_wgpu_command_encoder_copy_texture_to_buffer_simple(
-    value encoder_val, value texture_val, value buffer_val,
-    value width_val, value height_val, value bytes_per_row_val) {
-  CAMLparam5(encoder_val, texture_val, buffer_val, width_val, height_val);
-  CAMLxparam1(bytes_per_row_val);
-  WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
-  WGPUTexture texture = (WGPUTexture)Nativeint_val(texture_val);
-  WGPUBuffer buffer = (WGPUBuffer)Nativeint_val(buffer_val);
-  uint32_t width = Int_val(width_val);
-  uint32_t height = Int_val(height_val);
-  uint32_t bytes_per_row = Int_val(bytes_per_row_val);
-
-  WGPUTexelCopyTextureInfo source = {
-    .texture = texture,
-    .mipLevel = 0,
-    .origin = { .x = 0, .y = 0, .z = 0 },
-    .aspect = WGPUTextureAspect_All,
-  };
-
-  WGPUTexelCopyBufferInfo destination = {
-    .layout = {
-      .offset = 0,
-      .bytesPerRow = bytes_per_row,
-      .rowsPerImage = height,
-    },
-    .buffer = buffer,
-  };
-
-  WGPUExtent3D extent = { .width = width, .height = height, .depthOrArrayLayers = 1 };
-
-  wgpuCommandEncoderCopyTextureToBuffer(encoder, &source, &destination, &extent);
-  CAMLreturn(Val_unit);
-}
-
-CAMLprim value caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode(value *argv, int argn) {
-  (void)argn;
-  return caml_wgpu_command_encoder_copy_texture_to_buffer_simple(
-    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
-}
-
 /* Create a render pipeline with full configuration */
 CAMLprim value caml_wgpu_device_create_render_pipeline_full(
     value device_val, value label_val, value shader_val,
@@ -1873,10 +1832,6 @@ external command_encoder_begin_render_pass_configurable :
   command_encoder -> string -> texture_view -> int -> int -> float -> float -> float -> float -> render_pass_encoder
   = "caml_wgpu_command_encoder_begin_render_pass_configurable_bytecode" "caml_wgpu_command_encoder_begin_render_pass_configurable"
 
-external command_encoder_copy_texture_to_buffer_simple :
-  command_encoder -> texture -> buffer -> int -> int -> int -> unit
-  = "caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode" "caml_wgpu_command_encoder_copy_texture_to_buffer_simple"
-
 external device_create_render_pipeline_full :
   device -> string -> shader_module -> string -> string -> int -> int -> int -> int ->
   bool -> int -> int -> int -> int -> int -> int -> int -> render_pipeline
@@ -1963,9 +1918,6 @@ val texture_create_view_configurable :
 
 val command_encoder_begin_render_pass_configurable :
   command_encoder -> string -> texture_view -> int -> int -> float -> float -> float -> float -> render_pass_encoder
-
-val command_encoder_copy_texture_to_buffer_simple :
-  command_encoder -> texture -> buffer -> int -> int -> int -> unit
 
 val device_create_render_pipeline_full :
   device -> string -> shader_module -> string -> string -> int -> int -> int -> int ->

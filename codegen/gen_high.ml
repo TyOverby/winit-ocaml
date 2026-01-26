@@ -1541,8 +1541,21 @@ let set_bind_group_render (pass : Render_pass_encoder.t) ~index ~bind_group =
 
 let copy_texture_to_buffer (encoder : Command_encoder.t) ~texture ~buffer ~size ~bytes_per_row () =
   let (width, height) = size in
-  Wgpu_low.command_encoder_copy_texture_to_buffer_simple encoder.handle
-    texture.Texture.handle buffer.Buffer.handle width height bytes_per_row
+  Command_encoder.copy_texture_to_buffer encoder
+    ~source_texture:texture
+    ~source_mip_level:0
+    ~source_origin_x:0
+    ~source_origin_y:0
+    ~source_origin_z:0
+    ~source_aspect:Texture_aspect.All
+    ~destination_layout_offset:0L
+    ~destination_layout_bytes_per_row:bytes_per_row
+    ~destination_layout_rows_per_image:height
+    ~destination_buffer:buffer
+    ~copy_size_width:width
+    ~copy_size_height:height
+    ~copy_size_depth_or_array_layers:1
+    ()
 
 let map_buffer (buffer : Buffer.t) ~mode ~offset ~size =
   ignore (Wgpu_low.buffer_map_sync buffer.handle (Map_mode.list_to_int mode) offset size : int)

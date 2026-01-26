@@ -2300,15 +2300,6 @@ val command_encoder_begin_render_pass_configurable
   -> float
   -> render_pass_encoder
 
-val command_encoder_copy_texture_to_buffer_simple
-  :  command_encoder
-  -> texture
-  -> buffer
-  -> int
-  -> int
-  -> int
-  -> unit
-
 val device_create_render_pipeline_full
   :  device
   -> string

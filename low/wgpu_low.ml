@@ -7962,17 +7962,6 @@ external command_encoder_begin_render_pass_configurable
   = "caml_wgpu_command_encoder_begin_render_pass_configurable_bytecode"
     "caml_wgpu_command_encoder_begin_render_pass_configurable"
 
-external command_encoder_copy_texture_to_buffer_simple
-  :  command_encoder
-  -> texture
-  -> buffer
-  -> int
-  -> int
-  -> int
-  -> unit
-  = "caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode"
-    "caml_wgpu_command_encoder_copy_texture_to_buffer_simple"
-
 external device_create_render_pipeline_full
   :  device
   -> string
