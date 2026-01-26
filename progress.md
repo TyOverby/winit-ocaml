@@ -621,3 +621,49 @@ Wgpu.map_buffer buffer ~mode:[ Wgpu.Map_Mode.Read ] ~offset:0L ~size:256L
 2. Add texture sampling support
 3. Document the complete high-level API
 4. Consider adding more complex examples (textured quad, etc.)
+
+---
+
+## 2026-01-25: Method Validation for High-Level API
+
+### Accomplished
+- **Added method coverage validation** to the code generator
+  - The generator now tracks all methods that aren't auto-generated
+  - Methods must be explicitly listed in either:
+    - `manual_implementations`: methods that will be hand-written
+    - `intentionally_skipped`: methods that shouldn't be exposed
+  - Build fails with helpful error message if any method is unaccounted for
+
+### Validation Output Example
+```
+=== UNACCOUNTED METHODS ===
+The following methods are not auto-generated and not listed in
+manual_implementations or intentionally_skipped:
+
+  UNACCOUNTED: device.get_lost_future (returns: non-simple)
+  UNACCOUNTED: instance.wait_any (futures: Struct(future_wait_info))
+
+Please add these methods to either:
+  - manual_implementations (if you will implement them)
+  - intentionally_skipped (if they should not be exposed)
+```
+
+### Benefits
+- **No silent API gaps**: Every method in the WebGPU spec is explicitly accounted for
+- **Clear documentation**: The `manual_implementations` list documents which methods need hand-written code
+- **Future-proof**: When the WebGPU spec adds new methods, the build will fail until they're addressed
+
+### Currently Tracked Methods
+- **78 manually implemented methods** across all object types
+- **6 intentionally skipped methods** (deprecated or internal APIs)
+- Methods skipped for various reasons:
+  - Async callbacks (e.g., `request_adapter`, `map_async`)
+  - Struct input/output parameters (e.g., `create_buffer`, `get_limits`)
+  - Array arguments with dynamic offsets (e.g., `set_bind_group`)
+  - Pointer return types (e.g., `get_mapped_range`)
+
+### Next Steps
+1. Add vertex buffer support for custom geometry
+2. Add texture sampling support
+3. Document the complete high-level API
+4. Consider adding more complex examples (textured quad, etc.)
