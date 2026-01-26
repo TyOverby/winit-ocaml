@@ -1463,6 +1463,43 @@ module Device : sig
     -> unit
     -> Pipeline_layout.t
 
+  (* AUTO-GENERATED DEVICE METHOD SIGNATURES INJECTED HERE *)
+  type limits =
+    { max_texture_dimension_1D : int
+    ; max_texture_dimension_2D : int
+    ; max_texture_dimension_3D : int
+    ; max_texture_array_layers : int
+    ; max_bind_groups : int
+    ; max_bind_groups_plus_vertex_buffers : int
+    ; max_bindings_per_bind_group : int
+    ; max_dynamic_uniform_buffers_per_pipeline_layout : int
+    ; max_dynamic_storage_buffers_per_pipeline_layout : int
+    ; max_sampled_textures_per_shader_stage : int
+    ; max_samplers_per_shader_stage : int
+    ; max_storage_buffers_per_shader_stage : int
+    ; max_storage_textures_per_shader_stage : int
+    ; max_uniform_buffers_per_shader_stage : int
+    ; max_uniform_buffer_binding_size : int64
+    ; max_storage_buffer_binding_size : int64
+    ; min_uniform_buffer_offset_alignment : int
+    ; min_storage_buffer_offset_alignment : int
+    ; max_vertex_buffers : int
+    ; max_buffer_size : int64
+    ; max_vertex_attributes : int
+    ; max_vertex_buffer_array_stride : int
+    ; max_inter_stage_shader_variables : int
+    ; max_color_attachments : int
+    ; max_color_attachment_bytes_per_sample : int
+    ; max_compute_workgroup_storage_size : int
+    ; max_compute_invocations_per_workgroup : int
+    ; max_compute_workgroup_size_x : int
+    ; max_compute_workgroup_size_y : int
+    ; max_compute_workgroup_size_z : int
+    ; max_compute_workgroups_per_dimension : int
+    }
+
+  val get_limits : t -> limits
+
   (** Poll the device for completed work *)
   val poll : t -> ?wait:bool -> unit -> unit
 end

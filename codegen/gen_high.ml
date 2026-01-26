@@ -16,19 +16,29 @@ end
 let manual_implementations =
   Set.of_list
     (module Method_key)
-    [ (* Instance methods *)
-      "instance", "create_surface"
+    [ (* Instance methods - some manually implemented in instance_module *)
+      "instance", "release" (* manually implemented *)
+    ; "instance", "create_surface"
     ; "instance", "process_events"
-    ; "instance", "request_adapter" (* async, we have sync wrapper *)
+    ; ( "instance"
+      , "request_adapter" (* async, we have sync wrapper, manually implemented *) )
     ; "instance", "get_WGSL_language_features" (* uses struct output parameter *)
     ; "instance", "wait_any"
       (* uses struct input parameter *)
-      (* Adapter methods *)
-    ; "adapter", "get_info" (* uses special struct return *)
-    ; "adapter", "request_device" (* async, we have sync wrapper *)
+      (* Adapter methods - some manually implemented in adapter_module_suffix *)
+    ; "adapter", "release" (* manually implemented *)
+    ; "adapter", "has_feature" (* manually implemented *)
+    ; "adapter", "get_info" (* uses special struct return, manually implemented *)
+    ; "adapter", "request_device" (* async, we have sync wrapper, manually implemented *)
     ; "adapter", "get_features"
       (* output struct with array member *)
-      (* Device methods *)
+      (* Device methods - manually implemented in adapter_module_prefix *)
+    ; "device", "release" (* manually implemented *)
+    ; "device", "destroy" (* manually implemented *)
+    ; "device", "has_feature" (* manually implemented *)
+    ; "device", "push_error_scope" (* manually implemented *)
+    ; "device", "set_label" (* manually implemented *)
+    ; "device", "poll" (* manually implemented *)
     ; "device", "get_features" (* output struct with array member *)
     ; "device", "create_buffer" (* uses descriptor struct *)
     ; "device", "create_shader_module" (* uses descriptor struct *)
@@ -36,12 +46,12 @@ let manual_implementations =
     ; "device", "create_texture" (* uses descriptor struct *)
     ; "device", "create_sampler" (* uses descriptor struct *)
     ; "device", "create_compute_pipeline" (* uses descriptor struct *)
-    ; "device", "create_render_pipeline"
-      (* uses descriptor struct *)
-      (* Now auto-generated with array-of-struct support:
-       ; "device", "create_bind_group_layout"
-       ; "device", "create_bind_group"
-      *)
+    ; "device", "create_render_pipeline" (* uses descriptor struct *)
+    ; "device", "create_bind_group_layout_for_storage_buffer" (* manually implemented *)
+    ; "device", "create_bind_group_layout" (* manually implemented with array-of-struct *)
+    ; "device", "create_bind_group" (* manually implemented simple version *)
+    ; "device", "create_bind_group_full" (* manually implemented with array-of-struct *)
+    ; "device", "create_pipeline_layout" (* manually implemented *)
     ; "device", "create_query_set" (* uses descriptor struct *)
     ; "device", "create_render_bundle_encoder" (* uses descriptor struct *)
     ; "device", "pop_error_scope" (* async callback *)
@@ -49,9 +59,11 @@ let manual_implementations =
     ; "device", "get_lost_future" (* returns Future struct *)
     ; "device", "get_adapter_info"
       (* returns struct *)
-      (* Queue methods *)
-    ; "queue", "submit" (* uses array argument *)
-    ; "queue", "write_buffer" (* uses pointer + size *)
+      (* Queue methods - some manually implemented in adapter_module_prefix *)
+    ; "queue", "release" (* manually implemented *)
+    ; "queue", "set_label" (* manually implemented *)
+    ; "queue", "submit" (* uses array argument, manually implemented *)
+    ; "queue", "write_buffer" (* uses pointer + size, manually implemented *)
     ; "queue", "write_texture" (* uses structs and pointer *)
     ; "queue", "on_submitted_work_done"
       (* async callback *)
@@ -1700,6 +1712,62 @@ let collect_entry_structs (api : Ir.api) : (Ir.struct_ * Ir.struct_ list) list =
     | None -> None)
 ;;
 
+(** Generate auto-generated ML methods for a special object (one that is partially
+    hand-written). Returns (output_struct_types, methods) as strings. *)
+let gen_special_object_auto_methods (structs : Ir.struct_ list) (obj : Ir.object_)
+  : string * string
+  =
+  let methods_to_generate =
+    List.filter obj.methods ~f:(fun method_ ->
+      let key : Method_key.t = obj.name, method_.name in
+      (not (Set.mem manual_implementations key))
+      && not (Set.mem intentionally_skipped key))
+  in
+  (* Collect output struct types from methods that will be auto-generated *)
+  let output_struct_types =
+    List.filter_map methods_to_generate ~f:(fun method_ ->
+      match method_has_output_struct_arg structs method_ with
+      | Some (_arg, struct_) -> Some (gen_output_struct_record_type struct_)
+      | None -> None)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+  in
+  let methods =
+    List.filter_map methods_to_generate ~f:(fun method_ ->
+      gen_ml_method structs obj method_)
+    |> String.concat ~sep:""
+  in
+  output_struct_types, methods
+;;
+
+(** Generate auto-generated MLI signatures for a special object. Returns
+    (output_struct_types, methods). *)
+let gen_special_object_auto_methods_mli (structs : Ir.struct_ list) (obj : Ir.object_)
+  : string * string
+  =
+  let methods_to_generate =
+    List.filter obj.methods ~f:(fun method_ ->
+      let key : Method_key.t = obj.name, method_.name in
+      (not (Set.mem manual_implementations key))
+      && not (Set.mem intentionally_skipped key))
+  in
+  (* Collect output struct types from methods that will be auto-generated *)
+  let output_struct_types =
+    List.filter_map methods_to_generate ~f:(fun method_ ->
+      match method_has_output_struct_arg structs method_ with
+      | Some (_arg, struct_) -> Some (gen_output_struct_record_type struct_)
+      | None -> None)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+  in
+  let methods =
+    List.filter_map methods_to_generate ~f:(fun method_ ->
+      gen_mli_method structs obj method_)
+    |> String.concat ~sep:""
+  in
+  output_struct_types, methods
+;;
+
 (** Generate all high-level OCaml code *)
 let gen_ml (api : Ir.api) : string =
   let header = "(* Generated by gen_bindings - high-level OCaml bindings *)\n\n" in
@@ -1724,8 +1792,14 @@ let gen_ml (api : Ir.api) : string =
     |> List.map ~f:(gen_ml_object api.structs)
     |> String.concat ~sep:"\n"
   in
+  (* Generate auto-generated methods for Device *)
+  let device_output_types, device_auto_methods =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "device") with
+    | Some device_obj -> gen_special_object_auto_methods api.structs device_obj
+    | None -> "", ""
+  in
   (* Adapter module *)
-  let adapter_module =
+  let adapter_module_prefix =
     {|module Adapter_info = struct
   type t =
     { vendor : string
@@ -1994,6 +2068,11 @@ module Device = struct
     Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_free desc;
     ({ Pipeline_layout.handle = layout } : Pipeline_layout.t)
 
+  (* AUTO-GENERATED DEVICE METHODS INJECTED HERE *)
+|}
+  in
+  let adapter_module_suffix =
+    {|
   let poll t ?(wait = false) () = Wgpu_low.device_poll t.handle wait
 end
 
@@ -2008,6 +2087,13 @@ module Adapter = struct
   let has_feature t ~feature = Wgpu_low.adapter_has_feature t.handle (Feature_name.to_int feature)
 end
 |}
+  in
+  let adapter_module =
+    adapter_module_prefix
+    ^ device_output_types
+    ^ "\n"
+    ^ device_auto_methods
+    ^ adapter_module_suffix
   in
   (* Instance module with create function - special handling *)
   let instance_module =
@@ -2123,6 +2209,12 @@ let gen_mli (api : Ir.api) : string =
       gen_entry_struct_module_mli api.structs entry_struct)
     |> String.concat ~sep:"\n"
   in
+  (* Generate auto-generated method signatures for Device *)
+  let device_output_types_mli, device_auto_methods_mli =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "device") with
+    | Some device_obj -> gen_special_object_auto_methods_mli api.structs device_obj
+    | None -> "", ""
+  in
   (* Filter out objects we handle specially *)
   let special_objects = [ "instance"; "adapter"; "device"; "queue" ] in
   let regular_objects =
@@ -2136,7 +2228,7 @@ let gen_mli (api : Ir.api) : string =
     |> String.concat ~sep:"\n"
   in
   (* Adapter module *)
-  let adapter_module =
+  let adapter_module_prefix =
     {|module Adapter_info : sig
   type t =
     { vendor : string
@@ -2231,6 +2323,11 @@ module Device : sig
   val create_pipeline_layout : t -> ?label:string -> bind_group_layouts:Bind_group_layout.t list ->
     unit -> Pipeline_layout.t
 
+  (* AUTO-GENERATED DEVICE METHOD SIGNATURES INJECTED HERE *)
+|}
+  in
+  let adapter_module_suffix =
+    {|
   (** Poll the device for completed work *)
   val poll : t -> ?wait:bool -> unit -> unit
 end
@@ -2244,6 +2341,13 @@ module Adapter : sig
   val has_feature : t -> feature:Feature_name.t -> bool
 end
 |}
+  in
+  let adapter_module =
+    adapter_module_prefix
+    ^ device_output_types_mli
+    ^ "\n"
+    ^ device_auto_methods_mli
+    ^ adapter_module_suffix
   in
   (* Instance module interface - special handling *)
   let instance_module =
