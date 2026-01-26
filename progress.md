@@ -358,3 +358,63 @@ SUCCESS: All generated struct APIs worked correctly!
 1. Continue reducing hand-coded helpers
 2. Consider generating high-level OCaml builder functions for common patterns
 3. Document the struct API usage patterns
+
+---
+
+## 2026-01-25: Reducing Hand-Coded Helpers
+
+### Accomplished
+- **Auto-generated `device_get_queue`**: Removed hand-coded version, now fully auto-generated
+  - Removed from `method_is_manual` list
+  - Removed C function `caml_wgpu_device_get_queue` from sync helpers
+  - Removed manual external/val declarations from ML/MLI helpers
+  - Method is now auto-generated from YAML spec
+
+### Generator State Analysis
+The generator now produces working bindings for:
+- **All enums and bitflags** (58 enums, 6 bitflags)
+- **All structs** with create/free/setters/getters (82 struct types)
+- **Most object methods** that don't use callbacks
+- **Methods with array arguments** (converted to count+pointer pairs)
+
+### Remaining Hand-Coded Helpers
+1. **Async Wrappers** (required - callbacks not supported):
+   - `instance_request_adapter_sync`
+   - `adapter_request_device_sync`
+   - `buffer_map_sync`
+
+2. **Special Return Types** (required - complex conversion):
+   - `adapter_get_info` - returns OCaml record from C struct
+
+3. **Bigarray Integration** (required - special memory handling):
+   - `buffer_get_mapped_range_bigarray`
+   - `buffer_get_const_mapped_range_bigarray`
+   - `queue_write_buffer_bigarray`
+
+4. **Convenience Helpers** (optional - simplify common patterns):
+   - `device_create_shader_module_wgsl` - handles chained WGSL struct
+   - `device_create_command_encoder_simple` - label-only convenience
+   - `command_encoder_begin_compute_pass_simple` - label-only convenience
+   - `command_encoder_finish_simple` - label-only convenience
+   - `queue_submit_single` - single command buffer convenience
+   - `compute_pass_encoder_set_bind_group_simple` - no dynamic offsets
+   - `device_poll` - poll with optional wait
+   - Various `*_simple` render helpers
+
+### Auto-Generated Alternatives
+For convenience helpers, auto-generated struct-based alternatives exist:
+```ocaml
+(* Using convenience helper *)
+let encoder = device_create_command_encoder_simple device "my_encoder"
+
+(* Using auto-generated APIs *)
+let desc = Command_Encoder_Descriptor.command_encoder_descriptor_create () in
+Command_Encoder_Descriptor.command_encoder_descriptor_set_label desc "my_encoder";
+let encoder = device_create_command_encoder device desc in
+Command_Encoder_Descriptor.command_encoder_descriptor_free desc;
+```
+
+### Next Steps
+1. Document which APIs are auto-generated vs helper-based
+2. Consider adding builder pattern in high-level API for ergonomics
+3. Add more examples using struct-based APIs
