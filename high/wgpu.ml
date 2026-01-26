@@ -1383,6 +1383,60 @@ module Device = struct
     ({ Pipeline_layout.handle = result } : Pipeline_layout.t)
   ;;
 
+  let create_query_set t ?(label = "") ~type_ ~count () =
+    let desc_descriptor = Wgpu_low.Query_set_descriptor.query_set_descriptor_create () in
+    Wgpu_low.Query_set_descriptor.query_set_descriptor_set_label desc_descriptor label;
+    Wgpu_low.Query_set_descriptor.query_set_descriptor_set_type
+      desc_descriptor
+      (Query_type.to_int type_);
+    Wgpu_low.Query_set_descriptor.query_set_descriptor_set_count desc_descriptor count;
+    let result = Wgpu_low.device_create_query_set t.handle desc_descriptor in
+    Wgpu_low.Query_set_descriptor.query_set_descriptor_free desc_descriptor;
+    ({ Query_set.handle = result } : Query_set.t)
+  ;;
+
+  let create_render_bundle_encoder
+    t
+    ?(label = "")
+    ?(color_formats = [])
+    ~depth_stencil_format
+    ~sample_count
+    ~depth_read_only
+    ~stencil_read_only
+    ()
+    =
+    let desc_descriptor =
+      Wgpu_low.Render_bundle_encoder_descriptor.render_bundle_encoder_descriptor_create ()
+    in
+    Wgpu_low.Render_bundle_encoder_descriptor.render_bundle_encoder_descriptor_set_label
+      desc_descriptor
+      label;
+    Wgpu_low.Render_bundle_encoder_descriptor
+    .render_bundle_encoder_descriptor_set_color_formats
+      desc_descriptor
+      (Array.of_list (List.map Texture_format.to_int color_formats));
+    Wgpu_low.Render_bundle_encoder_descriptor
+    .render_bundle_encoder_descriptor_set_depth_stencil_format
+      desc_descriptor
+      (Texture_format.to_int depth_stencil_format);
+    Wgpu_low.Render_bundle_encoder_descriptor
+    .render_bundle_encoder_descriptor_set_sample_count
+      desc_descriptor
+      sample_count;
+    Wgpu_low.Render_bundle_encoder_descriptor
+    .render_bundle_encoder_descriptor_set_depth_read_only
+      desc_descriptor
+      depth_read_only;
+    Wgpu_low.Render_bundle_encoder_descriptor
+    .render_bundle_encoder_descriptor_set_stencil_read_only
+      desc_descriptor
+      stencil_read_only;
+    let result = Wgpu_low.device_create_render_bundle_encoder t.handle desc_descriptor in
+    Wgpu_low.Render_bundle_encoder_descriptor.render_bundle_encoder_descriptor_free
+      desc_descriptor;
+    ({ Render_bundle_encoder.handle = result } : Render_bundle_encoder.t)
+  ;;
+
   let get_limits t =
     let output = Wgpu_low.Limits.limits_create () in
     let _status = Wgpu_low.device_get_limits t.handle output in

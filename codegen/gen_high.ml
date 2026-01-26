@@ -48,8 +48,6 @@ let manual_implementations =
     ; "device", "create_compute_pipeline" (* uses descriptor struct *)
     ; "device", "create_render_pipeline" (* uses descriptor struct *)
     ; "device", "create_bind_group_layout_for_storage_buffer" (* convenience helper *)
-    ; "device", "create_query_set" (* uses descriptor struct *)
-    ; "device", "create_render_bundle_encoder" (* uses descriptor struct *)
     ; "device", "pop_error_scope" (* async callback *)
     ; "device", "get_queue" (* hand-written for cleaner return type *)
     ; "device", "get_lost_future" (* returns Future struct *)

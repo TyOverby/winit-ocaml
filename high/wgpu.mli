@@ -1481,6 +1481,25 @@ module Device : sig
     -> unit
     -> Pipeline_layout.t
 
+  val create_query_set
+    :  t
+    -> ?label:string
+    -> type_:Query_type.t
+    -> count:int
+    -> unit
+    -> Query_set.t
+
+  val create_render_bundle_encoder
+    :  t
+    -> ?label:string
+    -> ?color_formats:Texture_format.t list
+    -> depth_stencil_format:Texture_format.t
+    -> sample_count:int
+    -> depth_read_only:bool
+    -> stencil_read_only:bool
+    -> unit
+    -> Render_bundle_encoder.t
+
   val get_limits : t -> limits
 
   (** Poll the device for completed work *)
