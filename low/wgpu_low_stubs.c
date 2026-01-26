@@ -8798,48 +8798,6 @@ CAMLprim value caml_wgpu_device_create_shader_module_wgsl(value device_val, valu
   CAMLreturn(caml_copy_nativeint((intnat)module));
 }
 
-/* Create command encoder with optional label */
-CAMLprim value caml_wgpu_device_create_command_encoder_simple(value device_val, value label_val) {
-  CAMLparam2(device_val, label_val);
-  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
-  const char* label = String_val(label_val);
-
-  WGPUCommandEncoderDescriptor desc = {
-    .label = { .data = label, .length = caml_string_length(label_val) },
-  };
-
-  WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, &desc);
-  CAMLreturn(caml_copy_nativeint((intnat)encoder));
-}
-
-/* Begin compute pass with optional label */
-CAMLprim value caml_wgpu_command_encoder_begin_compute_pass_simple(value encoder_val, value label_val) {
-  CAMLparam2(encoder_val, label_val);
-  WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
-  const char* label = String_val(label_val);
-
-  WGPUComputePassDescriptor desc = {
-    .label = { .data = label, .length = caml_string_length(label_val) },
-  };
-
-  WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, &desc);
-  CAMLreturn(caml_copy_nativeint((intnat)pass));
-}
-
-/* Finish command encoder with optional label */
-CAMLprim value caml_wgpu_command_encoder_finish_simple(value encoder_val, value label_val) {
-  CAMLparam2(encoder_val, label_val);
-  WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
-  const char* label = String_val(label_val);
-
-  WGPUCommandBufferDescriptor desc = {
-    .label = { .data = label, .length = caml_string_length(label_val) },
-  };
-
-  WGPUCommandBuffer buffer = wgpuCommandEncoderFinish(encoder, &desc);
-  CAMLreturn(caml_copy_nativeint((intnat)buffer));
-}
-
 /* Submit single command buffer */
 CAMLprim value caml_wgpu_queue_submit_single(value queue_val, value command_buffer_val) {
   CAMLparam2(queue_val, command_buffer_val);
@@ -8847,17 +8805,6 @@ CAMLprim value caml_wgpu_queue_submit_single(value queue_val, value command_buff
   WGPUCommandBuffer command_buffer = (WGPUCommandBuffer)Nativeint_val(command_buffer_val);
 
   wgpuQueueSubmit(queue, 1, &command_buffer);
-  CAMLreturn(Val_unit);
-}
-
-/* Set bind group on compute pass (no dynamic offsets) */
-CAMLprim value caml_wgpu_compute_pass_encoder_set_bind_group_simple(value pass_val, value index_val, value group_val) {
-  CAMLparam3(pass_val, index_val, group_val);
-  WGPUComputePassEncoder pass = (WGPUComputePassEncoder)Nativeint_val(pass_val);
-  uint32_t index = Int_val(index_val);
-  WGPUBindGroup group = (WGPUBindGroup)Nativeint_val(group_val);
-
-  wgpuComputePassEncoderSetBindGroup(pass, index, group, 0, NULL);
   CAMLreturn(Val_unit);
 }
 
@@ -9027,30 +8974,6 @@ CAMLprim value caml_wgpu_device_create_pipeline_layout_single(value device_val, 
 
   WGPUPipelineLayout pipeline_layout = wgpuDeviceCreatePipelineLayout(device, &desc);
   CAMLreturn(caml_copy_nativeint((intnat)pipeline_layout));
-}
-
-/* Create compute pipeline from shader module */
-CAMLprim value caml_wgpu_device_create_compute_pipeline_simple(value device_val, value label_val, value layout_val, value shader_val, value entry_point_val) {
-  CAMLparam5(device_val, label_val, layout_val, shader_val, entry_point_val);
-  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
-  const char* label = String_val(label_val);
-  WGPUPipelineLayout layout = (WGPUPipelineLayout)Nativeint_val(layout_val);
-  WGPUShaderModule shader = (WGPUShaderModule)Nativeint_val(shader_val);
-  const char* entry_point = String_val(entry_point_val);
-
-  WGPUComputePipelineDescriptor desc = {
-    .label = { .data = label, .length = caml_string_length(label_val) },
-    .layout = layout,
-    .compute = {
-      .module = shader,
-      .entryPoint = { .data = entry_point, .length = caml_string_length(entry_point_val) },
-      .constantCount = 0,
-      .constants = NULL,
-    },
-  };
-
-  WGPUComputePipeline pipeline = wgpuDeviceCreateComputePipeline(device, &desc);
-  CAMLreturn(caml_copy_nativeint((intnat)pipeline));
 }
 
 /* Create a 2D texture with given dimensions, format, and usage */

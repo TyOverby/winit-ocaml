@@ -1378,7 +1378,10 @@ module Device = struct
     ({ Shader_module.handle = shader } : Shader_module.t)
 
   let create_command_encoder t ?(label = "") () =
-    let encoder = Wgpu_low.device_create_command_encoder_simple t.handle label in
+    let desc = Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_create () in
+    Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_set_label desc label;
+    let encoder = Wgpu_low.device_create_command_encoder t.handle desc in
+    Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_free desc;
     ({ Command_encoder.handle = encoder } : Command_encoder.t)
 
   let create_texture t ?(label = "") ~size ~format ~usage ?(dimension = Texture_dimension.N2d)
@@ -1432,8 +1435,17 @@ module Device = struct
     ({ Sampler.handle = sampler } : Sampler.t)
 
   let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
-    let pipeline = Wgpu_low.device_create_compute_pipeline_simple t.handle
-      label layout.Pipeline_layout.handle module_.Shader_module.handle entry_point in
+    let stage_desc = Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_create () in
+    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_module stage_desc module_.Shader_module.handle;
+    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_entry_point stage_desc entry_point;
+    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_constants stage_desc [||];
+    let desc = Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_create () in
+    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_label desc label;
+    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_layout desc layout.Pipeline_layout.handle;
+    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_compute desc stage_desc;
+    let pipeline = Wgpu_low.device_create_compute_pipeline t.handle desc in
+    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_free stage_desc;
+    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_free desc;
     ({ Compute_pipeline.handle = pipeline } : Compute_pipeline.t)
 
   let create_render_pipeline t ?(label = "") ~shader_module ~vertex_entry_point
@@ -1516,7 +1528,10 @@ end
 (* Convenience functions for methods that take complex descriptors *)
 
 let begin_compute_pass (encoder : Command_encoder.t) ?(label = "") () =
-  let pass = Wgpu_low.command_encoder_begin_compute_pass_simple encoder.handle label in
+  let desc = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
+  Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc label;
+  let pass = Wgpu_low.command_encoder_begin_compute_pass encoder.handle desc in
+  Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_free desc;
   ({ Compute_pass_encoder.handle = pass } : Compute_pass_encoder.t)
 
 let begin_render_pass (encoder : Command_encoder.t) ?(label = "") ~color_view
@@ -1530,14 +1545,13 @@ let begin_render_pass (encoder : Command_encoder.t) ?(label = "") ~color_view
   ({ Render_pass_encoder.handle = pass } : Render_pass_encoder.t)
 
 let finish (encoder : Command_encoder.t) ?(label = "") () =
-  let cmd_buffer = Wgpu_low.command_encoder_finish_simple encoder.handle label in
-  ({ Command_buffer.handle = cmd_buffer } : Command_buffer.t)
+  Command_encoder.finish encoder ~label ()
 
 let set_bind_group (pass : Compute_pass_encoder.t) ~index ~bind_group =
-  Wgpu_low.compute_pass_encoder_set_bind_group_simple pass.handle index bind_group.Bind_group.handle
+  Compute_pass_encoder.set_bind_group pass ~group_index:index ~group:bind_group ~dynamic_offsets:[]
 
 let set_bind_group_render (pass : Render_pass_encoder.t) ~index ~bind_group =
-  Wgpu_low.render_pass_encoder_set_bind_group pass.handle index bind_group.Bind_group.handle [||]
+  Render_pass_encoder.set_bind_group pass ~group_index:index ~group:bind_group ~dynamic_offsets:[]
 
 let copy_texture_to_buffer (encoder : Command_encoder.t) ~texture ~buffer ~size ~bytes_per_row () =
   let (width, height) = size in

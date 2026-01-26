@@ -7825,36 +7825,11 @@ external device_create_shader_module_wgsl
   -> shader_module
   = "caml_wgpu_device_create_shader_module_wgsl"
 
-external device_create_command_encoder_simple
-  :  device
-  -> string
-  -> command_encoder
-  = "caml_wgpu_device_create_command_encoder_simple"
-
-external command_encoder_begin_compute_pass_simple
-  :  command_encoder
-  -> string
-  -> compute_pass_encoder
-  = "caml_wgpu_command_encoder_begin_compute_pass_simple"
-
-external command_encoder_finish_simple
-  :  command_encoder
-  -> string
-  -> command_buffer
-  = "caml_wgpu_command_encoder_finish_simple"
-
 external queue_submit_single
   :  queue
   -> command_buffer
   -> unit
   = "caml_wgpu_queue_submit_single"
-
-external compute_pass_encoder_set_bind_group_simple
-  :  compute_pass_encoder
-  -> int
-  -> bind_group
-  -> unit
-  = "caml_wgpu_compute_pass_encoder_set_bind_group_simple"
 
 external device_poll : device -> bool -> unit = "caml_wgpu_device_poll"
 
@@ -7914,15 +7889,6 @@ external device_create_pipeline_layout_single
   -> bind_group_layout
   -> pipeline_layout
   = "caml_wgpu_device_create_pipeline_layout_single"
-
-external device_create_compute_pipeline_simple
-  :  device
-  -> string
-  -> pipeline_layout
-  -> shader_module
-  -> string
-  -> compute_pipeline
-  = "caml_wgpu_device_create_compute_pipeline_simple"
 
 external device_create_texture_2d
   :  device
