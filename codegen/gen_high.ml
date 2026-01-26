@@ -568,6 +568,13 @@ let map_buffer (buffer : Buffer.t) ~mode ~offset ~size =
 
 let get_mapped_range (buffer : Buffer.t) ~offset ~size =
   Wgpu_low.buffer_get_mapped_range_bigarray buffer.handle offset size
+
+let get_const_mapped_range (buffer : Buffer.t) ~offset ~size =
+  Wgpu_low.buffer_get_const_mapped_range_bigarray buffer.handle offset size
+
+let create_texture_view (texture : Texture.t) ?(label = "") () =
+  let view = Wgpu_low.texture_create_view_simple texture.handle label in
+  ({ Texture_View.handle = view } : Texture_View.t)
 |}
   in
   String.concat [ header; enums; bitflags; objects; adapter_module; instance_module ]
@@ -710,6 +717,13 @@ val map_buffer : Buffer.t -> mode:Map_Mode.t list -> offset:int64 -> size:int64 
 (** Get mapped buffer data as a bigarray *)
 val get_mapped_range : Buffer.t -> offset:int64 -> size:int64 ->
   (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+
+(** Get const mapped buffer data as a bigarray (for read-only access) *)
+val get_const_mapped_range : Buffer.t -> offset:int64 -> size:int64 ->
+  (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+
+(** Create a texture view from a texture *)
+val create_texture_view : Texture.t -> ?label:string -> unit -> Texture_View.t
 |}
   in
   String.concat [ header; enums; bitflags; objects; adapter_module; instance_module ]

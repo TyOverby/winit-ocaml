@@ -457,3 +457,10 @@ let map_buffer (buffer : Buffer.t) ~mode ~offset ~size =
 
 let get_mapped_range (buffer : Buffer.t) ~offset ~size =
   Wgpu_low.buffer_get_mapped_range_bigarray buffer.handle offset size
+
+let get_const_mapped_range (buffer : Buffer.t) ~offset ~size =
+  Wgpu_low.buffer_get_const_mapped_range_bigarray buffer.handle offset size
+
+let create_texture_view (texture : Texture.t) ?(label = "") () =
+  let view = Wgpu_low.texture_create_view_simple texture.handle label in
+  ({ Texture_View.handle = view } : Texture_View.t)
