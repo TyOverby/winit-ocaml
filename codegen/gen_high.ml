@@ -55,16 +55,12 @@ let manual_implementations =
       (* async callback *)
       (* Command encoder methods - keep only complex ones *)
     ; "command_encoder", "begin_compute_pass" (* uses descriptor struct with arrays *)
-    ; "command_encoder", "begin_render_pass" (* uses descriptor struct with arrays *)
-    ; "command_encoder", "copy_buffer_to_texture" (* uses structs *)
-    ; "command_encoder", "copy_texture_to_buffer" (* uses structs *)
-    ; "command_encoder", "copy_texture_to_texture"
-      (* uses structs *)
+    ; "command_encoder", "begin_render_pass"
+      (* uses descriptor struct with arrays *)
       (* Render pass encoder methods - keep only complex ones *)
     ; "render_pass_encoder", "set_vertex_buffer" (* manual for better API *)
-    ; "render_pass_encoder", "set_index_buffer" (* manual for better API *)
-    ; "render_pass_encoder", "set_blend_constant"
-      (* uses struct *)
+    ; "render_pass_encoder", "set_index_buffer"
+      (* manual for better API *)
       (* Render bundle encoder methods - keep only complex ones *)
     ; "render_bundle_encoder", "set_vertex_buffer" (* manual *)
     ; "render_bundle_encoder", "set_index_buffer"
@@ -197,7 +193,7 @@ let escape_keyword (name : string) : string =
 (** Check if a method uses callbacks (async) *)
 let method_is_async (method_ : Ir.method_) : bool = Option.is_some method_.callback
 
-(** Check if a type is simple (primitive, enum, bitflag, or object) *)
+(** Check if a type is simple (primitive, enum, bitflag, or object) - no nested structs *)
 let rec is_simple_member_type (type_ref : Ir.type_ref) : bool =
   match type_ref with
   | Primitive _ -> true
@@ -211,9 +207,36 @@ let rec is_simple_member_type (type_ref : Ir.type_ref) : bool =
   | Pointer _ -> false
 ;;
 
-(** Check if a struct has only simple members (no nested structs or arrays) and is an
-    input struct *)
-let is_simple_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
+(** Check if a type is simple, allowing nested structs that are themselves simple. Uses
+    visited set to prevent infinite recursion. *)
+let rec is_simple_member_type_with_nested
+  (structs : Ir.struct_ list)
+  (visited : Set.M(String).t)
+  (type_ref : Ir.type_ref)
+  : bool
+  =
+  match type_ref with
+  | Primitive _ -> true
+  | Enum _ -> true
+  | Bitflag _ -> true
+  | Object _ -> true
+  | Optional inner -> is_simple_member_type_with_nested structs visited inner
+  | Struct name ->
+    (* Check if the nested struct is simple (and not already being visited) *)
+    if Set.mem visited name
+    then false (* Circular reference *)
+    else is_simple_struct_aux structs (Set.add visited name) name
+  | Callback _ -> false
+  | Array { elem; _ } -> is_simple_member_type_with_nested structs visited elem
+  | Pointer _ -> false
+
+(** Auxiliary function to check if a struct is simple, with visited tracking *)
+and is_simple_struct_aux
+  (structs : Ir.struct_ list)
+  (visited : Set.M(String).t)
+  (struct_name : string)
+  : bool
+  =
   match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
   | None -> false
   | Some struct_ ->
@@ -224,7 +247,42 @@ let is_simple_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
       | Base_out | Base_in_out -> false
     in
     is_input_struct
-    && List.for_all struct_.members ~f:(fun member -> is_simple_member_type member.type_)
+    && List.for_all struct_.members ~f:(fun member ->
+      is_simple_member_type_with_nested structs visited member.type_)
+;;
+
+(** Check if a struct has only simple members (allowing nested simple structs) and is an
+    input struct *)
+let is_simple_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
+  is_simple_struct_aux structs (Set.empty (module String)) struct_name
+;;
+
+(** Check if a member type contains a nested struct *)
+let member_is_nested_struct (type_ref : Ir.type_ref) : string option =
+  match type_ref with
+  | Struct name -> Some name
+  | _ -> None
+;;
+
+(** Collect all nested struct members from a struct, recursively. Returns a list of (path,
+    struct_def) pairs where path is the variable name path. *)
+let rec collect_nested_structs
+  (structs : Ir.struct_ list)
+  (prefix : string)
+  (struct_ : Ir.struct_)
+  : (string * Ir.struct_) list
+  =
+  List.concat_map struct_.members ~f:(fun member ->
+    match member_is_nested_struct member.type_ with
+    | Some nested_name ->
+      (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
+       | None -> []
+       | Some nested_struct ->
+         let nested_var = prefix ^ "_" ^ member.name ^ "_nested" in
+         (* Add this nested struct and any nested structs within it *)
+         (nested_var, nested_struct)
+         :: collect_nested_structs structs nested_var nested_struct)
+    | None -> [])
 ;;
 
 (** Check if an argument type is "simple" (can be easily converted) *)
@@ -505,8 +563,124 @@ let default_value_for_type (type_ref : Ir.type_ref) : string =
   | _ -> {|""|}
 ;;
 
+(** Recursively collect all parameters from a struct, including nested structs. Returns
+    (param_name, member, is_optional, nested_var_name option) list. nested_var_name is
+    Some if this parameter belongs to a nested struct. *)
+let rec collect_struct_params
+  (structs : Ir.struct_ list)
+  (prefix : string)
+  (struct_ : Ir.struct_)
+  (nested_var : string option)
+  : (string * Ir.struct_member * bool * string option) list
+  =
+  List.concat_map struct_.members ~f:(fun member ->
+    match member_is_nested_struct member.type_ with
+    | Some nested_name ->
+      (* This member is a nested struct - collect its parameters *)
+      (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
+       | None -> []
+       | Some nested_struct ->
+         let nested_prefix = prefix ^ member.name ^ "_" in
+         let nested_var_name = prefix ^ member.name ^ "_nested" in
+         collect_struct_params structs nested_prefix nested_struct (Some nested_var_name))
+    | None ->
+      (* Regular member - create parameter *)
+      let param_name = escape_keyword (prefix ^ member.name) in
+      let is_optional =
+        member.optional
+        ||
+        match member.type_ with
+        | Primitive String_with_default_empty -> true
+        | Optional _ -> true
+        | Array _ -> true
+        | _ -> false
+      in
+      [ param_name, member, is_optional, nested_var ])
+;;
+
+(** Generate code to create a struct and all its nested structs. Returns list of
+    (var_name, struct_) pairs for all created structs (including nested). *)
+let rec generate_struct_creates
+  (structs : Ir.struct_ list)
+  (prefix : string)
+  (struct_ : Ir.struct_)
+  (var_name : string)
+  : (string * Ir.struct_) list * string list
+  =
+  let struct_module = ocaml_module_name struct_.name in
+  let create_line =
+    sprintf "let %s = Wgpu_low.%s.%s_create () in" var_name struct_module struct_.name
+  in
+  (* Collect nested struct creates *)
+  let nested_results =
+    List.filter_map struct_.members ~f:(fun member ->
+      match member_is_nested_struct member.type_ with
+      | Some nested_name ->
+        (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
+         | None -> None
+         | Some nested_struct ->
+           let nested_var = prefix ^ member.name ^ "_nested" in
+           let nested_prefix = prefix ^ member.name ^ "_" in
+           Some (generate_struct_creates structs nested_prefix nested_struct nested_var))
+      | None -> None)
+  in
+  let nested_vars, nested_creates =
+    List.fold nested_results ~init:([], []) ~f:(fun (vars, creates) (v, c) ->
+      vars @ v, creates @ c)
+  in
+  (var_name, struct_) :: nested_vars, nested_creates @ [ create_line ]
+;;
+
+(** Generate code to set fields on a struct, including assigning nested structs. prefix is
+    the parameter prefix for this struct. *)
+let rec generate_struct_sets
+  (structs : Ir.struct_ list)
+  (prefix : string)
+  (struct_ : Ir.struct_)
+  (var_name : string)
+  : string list
+  =
+  let struct_module = ocaml_module_name struct_.name in
+  List.concat_map struct_.members ~f:(fun member ->
+    match member_is_nested_struct member.type_ with
+    | Some nested_name ->
+      (* First, recursively set fields on the nested struct *)
+      (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
+       | None -> []
+       | Some nested_struct ->
+         let nested_var = prefix ^ member.name ^ "_nested" in
+         let nested_prefix = prefix ^ member.name ^ "_" in
+         let nested_sets =
+           generate_struct_sets structs nested_prefix nested_struct nested_var
+         in
+         (* Then, set the nested struct on the parent *)
+         let set_nested =
+           sprintf
+             "Wgpu_low.%s.%s_set_%s %s %s;"
+             struct_module
+             struct_.name
+             member.name
+             var_name
+             nested_var
+         in
+         nested_sets @ [ set_nested ])
+    | None ->
+      (* Regular member - set the value *)
+      let param_name = escape_keyword (prefix ^ member.name) in
+      let converted = member_to_low_level param_name member.type_ in
+      [ sprintf
+          "Wgpu_low.%s.%s_set_%s %s %s;"
+          struct_module
+          struct_.name
+          member.name
+          var_name
+          converted
+      ])
+;;
+
 (** Generate ML implementation for a method with one or more struct arguments *)
 let gen_ml_method_with_structs
+  (structs : Ir.struct_ list)
   (obj : Ir.object_)
   (method_ : Ir.method_)
   (struct_args : (Ir.arg * Ir.struct_) list)
@@ -521,29 +695,18 @@ let gen_ml_method_with_structs
       | Struct _ -> false
       | _ -> true)
   in
-  (* Build parameter list from all struct members + other args *)
+  (* Build parameter list from all struct members + other args (including nested) *)
   let struct_params =
     List.concat_map struct_args ~f:(fun (arg, struct_) ->
-      List.map struct_.members ~f:(fun member ->
-        let prefix = if use_prefix then arg.name ^ "_" else "" in
-        let param_name = escape_keyword (prefix ^ member.name) in
-        let is_optional =
-          member.optional
-          ||
-          match member.type_ with
-          | Primitive String_with_default_empty -> true
-          | Optional _ -> true
-          | Array _ -> true (* Arrays default to empty *)
-          | _ -> false
-        in
-        param_name, member, is_optional, arg, struct_))
+      let base_prefix = if use_prefix then arg.name ^ "_" else "" in
+      collect_struct_params structs base_prefix struct_ None)
   in
   let other_params =
     List.map other_args ~f:(fun arg -> escape_keyword arg.name, arg, arg.optional)
   in
   (* Build function signature *)
   let param_strs =
-    List.filter_map struct_params ~f:(fun (name, member, is_opt, _, _) ->
+    List.filter_map struct_params ~f:(fun (name, member, is_opt, _) ->
       if is_opt
       then Some (sprintf "?(%s = %s)" name (default_value_for_type member.type_))
       else Some (sprintf "~%s" name))
@@ -551,33 +714,23 @@ let gen_ml_method_with_structs
       if is_opt then Some (sprintf "?%s" name) else Some (sprintf "~%s" name))
   in
   let param_list = "t " ^ String.concat ~sep:" " param_strs ^ " ()" in
-  (* Generate struct creation for each struct *)
-  let create_structs =
-    List.map struct_args ~f:(fun (arg, struct_) ->
-      let struct_module = ocaml_module_name struct_.name in
+  (* Generate struct creation for each struct arg (including nested structs) *)
+  let all_struct_vars, create_structs_lists =
+    List.fold struct_args ~init:([], []) ~f:(fun (vars, creates) (arg, struct_) ->
+      let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       let desc_var = "desc_" ^ arg.name in
-      sprintf
-        "let %s = Wgpu_low.%s.%s_create () in"
-        desc_var
-        struct_module
-        (String.lowercase struct_.name))
+      let new_vars, new_creates =
+        generate_struct_creates structs base_prefix struct_ desc_var
+      in
+      vars @ new_vars, creates @ new_creates)
   in
-  (* Generate field setting for each struct *)
+  let create_structs = create_structs_lists in
+  (* Generate field setting for each struct (including nested structs) *)
   let set_fields =
     List.concat_map struct_args ~f:(fun (arg, struct_) ->
-      let struct_module = ocaml_module_name struct_.name in
+      let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       let desc_var = "desc_" ^ arg.name in
-      List.map struct_.members ~f:(fun member ->
-        let prefix = if use_prefix then arg.name ^ "_" else "" in
-        let param_name = escape_keyword (prefix ^ member.name) in
-        let converted = member_to_low_level param_name member.type_ in
-        sprintf
-          "Wgpu_low.%s.%s_set_%s %s %s;"
-          struct_module
-          (String.lowercase struct_.name)
-          member.name
-          desc_var
-          converted))
+      generate_struct_sets structs base_prefix struct_ desc_var)
   in
   (* Build the call args, mapping each struct arg to its desc variable *)
   let struct_arg_names =
@@ -596,16 +749,11 @@ let gen_ml_method_with_structs
       method_.name
       (String.concat ~sep:" " call_args)
   in
-  (* Generate struct freeing *)
+  (* Generate struct freeing (reverse order: parent structs first, then nested) *)
   let free_structs =
-    List.map struct_args ~f:(fun (arg, struct_) ->
+    List.map (List.rev all_struct_vars) ~f:(fun (var_name, struct_) ->
       let struct_module = ocaml_module_name struct_.name in
-      let desc_var = "desc_" ^ arg.name in
-      sprintf
-        "Wgpu_low.%s.%s_free %s;"
-        struct_module
-        (String.lowercase struct_.name)
-        desc_var)
+      sprintf "Wgpu_low.%s.%s_free %s;" struct_module struct_.name var_name)
   in
   (* Generate result handling *)
   let result_and_free =
@@ -656,11 +804,7 @@ let gen_ml_method_with_output_struct
   in
   (* Create the output struct *)
   let create_struct =
-    sprintf
-      "let %s = Wgpu_low.%s.%s_create () in"
-      struct_var
-      struct_module
-      (String.lowercase struct_.name)
+    sprintf "let %s = Wgpu_low.%s.%s_create () in" struct_var struct_module struct_.name
   in
   (* Build call args *)
   let call_args =
@@ -685,11 +829,7 @@ let gen_ml_method_with_output_struct
       else (
         let field_name = escape_keyword member.name in
         let getter_name =
-          sprintf
-            "Wgpu_low.%s.%s_get_%s"
-            struct_module
-            (String.lowercase struct_.name)
-            member.name
+          sprintf "Wgpu_low.%s.%s_get_%s" struct_module struct_.name member.name
         in
         let value_expr =
           match member.type_ with
@@ -718,11 +858,7 @@ let gen_ml_method_with_output_struct
   in
   (* Free the struct *)
   let free_struct =
-    sprintf
-      "Wgpu_low.%s.%s_free %s;"
-      struct_module
-      (String.lowercase struct_.name)
-      struct_var
+    sprintf "Wgpu_low.%s.%s_free %s;" struct_module struct_.name struct_var
   in
   (* Return result *)
   let return_result = "result" in
@@ -754,7 +890,7 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
       (match struct_args with
        | _ :: _ ->
          (* One or more simple struct args *)
-         Some (gen_ml_method_with_structs obj method_ struct_args)
+         Some (gen_ml_method_with_structs structs obj method_ struct_args)
        | [] ->
          (* Original simple method generation - no struct args *)
          let method_name = escape_keyword method_.name in
@@ -824,6 +960,7 @@ let gen_output_struct_record_type (struct_ : Ir.struct_) : string =
 
 (** Generate MLI signature for a method with one or more struct arguments *)
 let gen_mli_method_with_structs
+  (structs : Ir.struct_ list)
   (_obj : Ir.object_)
   (method_ : Ir.method_)
   (struct_args : (Ir.arg * Ir.struct_) list)
@@ -838,22 +975,13 @@ let gen_mli_method_with_structs
       | Struct _ -> false
       | _ -> true)
   in
-  (* Build parameter types from all struct members + other args *)
+  (* Build parameter types from all struct members + other args (including nested) *)
   let struct_param_types =
     List.concat_map struct_args ~f:(fun (arg, struct_) ->
-      List.map struct_.members ~f:(fun member ->
-        let prefix = if use_prefix then arg.name ^ "_" else "" in
-        let param_name = escape_keyword (prefix ^ member.name) in
+      let base_prefix = if use_prefix then arg.name ^ "_" else "" in
+      let params = collect_struct_params structs base_prefix struct_ None in
+      List.map params ~f:(fun (param_name, member, is_optional, _) ->
         let type_str = high_level_member_type member in
-        let is_optional =
-          member.optional
-          ||
-          match member.type_ with
-          | Primitive String_with_default_empty -> true
-          | Optional _ -> true
-          | Array _ -> true (* Arrays default to empty *)
-          | _ -> false
-        in
         if is_optional
         then sprintf "?%s:%s" param_name type_str
         else sprintf "%s:%s" param_name type_str))
@@ -932,7 +1060,7 @@ let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.
       (match struct_args with
        | _ :: _ ->
          (* One or more simple struct args *)
-         Some (gen_mli_method_with_structs obj method_ struct_args)
+         Some (gen_mli_method_with_structs structs obj method_ struct_args)
        | [] ->
          (* Original simple method generation - no struct args *)
          let method_name = escape_keyword method_.name in

@@ -292,6 +292,233 @@ module Command_encoder = struct
       size
   ;;
 
+  let copy_buffer_to_texture
+    t
+    ~source_layout_offset
+    ~source_layout_bytes_per_row
+    ~source_layout_rows_per_image
+    ~source_buffer
+    ~destination_texture
+    ~destination_mip_level
+    ~destination_origin_x
+    ~destination_origin_y
+    ~destination_origin_z
+    ~destination_aspect
+    ~copy_size_width
+    ~copy_size_height
+    ~copy_size_depth_or_array_layers
+    ()
+    =
+    let source_layout_nested =
+      Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_create ()
+    in
+    let desc_source = Wgpu_low.Texel_copy_buffer_info.texel_copy_buffer_info_create () in
+    let destination_origin_nested = Wgpu_low.Origin_3d.origin_3D_create () in
+    let desc_destination =
+      Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_create ()
+    in
+    let desc_copy_size = Wgpu_low.Extent_3d.extent_3D_create () in
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_set_offset
+      source_layout_nested
+      source_layout_offset;
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_set_bytes_per_row
+      source_layout_nested
+      source_layout_bytes_per_row;
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_set_rows_per_image
+      source_layout_nested
+      source_layout_rows_per_image;
+    Wgpu_low.Texel_copy_buffer_info.texel_copy_buffer_info_set_layout
+      desc_source
+      source_layout_nested;
+    Wgpu_low.Texel_copy_buffer_info.texel_copy_buffer_info_set_buffer
+      desc_source
+      source_buffer.Buffer.handle;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_texture
+      desc_destination
+      destination_texture.Texture.handle;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_mip_level
+      desc_destination
+      destination_mip_level;
+    Wgpu_low.Origin_3d.origin_3D_set_x destination_origin_nested destination_origin_x;
+    Wgpu_low.Origin_3d.origin_3D_set_y destination_origin_nested destination_origin_y;
+    Wgpu_low.Origin_3d.origin_3D_set_z destination_origin_nested destination_origin_z;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_origin
+      desc_destination
+      destination_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_aspect
+      desc_destination
+      (Texture_aspect.to_int destination_aspect);
+    Wgpu_low.Extent_3d.extent_3D_set_width desc_copy_size copy_size_width;
+    Wgpu_low.Extent_3d.extent_3D_set_height desc_copy_size copy_size_height;
+    Wgpu_low.Extent_3d.extent_3D_set_depth_or_array_layers
+      desc_copy_size
+      copy_size_depth_or_array_layers;
+    Wgpu_low.command_encoder_copy_buffer_to_texture
+      t.handle
+      desc_source
+      desc_destination
+      desc_copy_size;
+    Wgpu_low.Extent_3d.extent_3D_free desc_copy_size;
+    Wgpu_low.Origin_3d.origin_3D_free destination_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_free desc_destination;
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_free source_layout_nested;
+    Wgpu_low.Texel_copy_buffer_info.texel_copy_buffer_info_free desc_source;
+    ()
+  ;;
+
+  let copy_texture_to_buffer
+    t
+    ~source_texture
+    ~source_mip_level
+    ~source_origin_x
+    ~source_origin_y
+    ~source_origin_z
+    ~source_aspect
+    ~destination_layout_offset
+    ~destination_layout_bytes_per_row
+    ~destination_layout_rows_per_image
+    ~destination_buffer
+    ~copy_size_width
+    ~copy_size_height
+    ~copy_size_depth_or_array_layers
+    ()
+    =
+    let source_origin_nested = Wgpu_low.Origin_3d.origin_3D_create () in
+    let desc_source =
+      Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_create ()
+    in
+    let destination_layout_nested =
+      Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_create ()
+    in
+    let desc_destination =
+      Wgpu_low.Texel_copy_buffer_info.texel_copy_buffer_info_create ()
+    in
+    let desc_copy_size = Wgpu_low.Extent_3d.extent_3D_create () in
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_texture
+      desc_source
+      source_texture.Texture.handle;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_mip_level
+      desc_source
+      source_mip_level;
+    Wgpu_low.Origin_3d.origin_3D_set_x source_origin_nested source_origin_x;
+    Wgpu_low.Origin_3d.origin_3D_set_y source_origin_nested source_origin_y;
+    Wgpu_low.Origin_3d.origin_3D_set_z source_origin_nested source_origin_z;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_origin
+      desc_source
+      source_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_aspect
+      desc_source
+      (Texture_aspect.to_int source_aspect);
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_set_offset
+      destination_layout_nested
+      destination_layout_offset;
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_set_bytes_per_row
+      destination_layout_nested
+      destination_layout_bytes_per_row;
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_set_rows_per_image
+      destination_layout_nested
+      destination_layout_rows_per_image;
+    Wgpu_low.Texel_copy_buffer_info.texel_copy_buffer_info_set_layout
+      desc_destination
+      destination_layout_nested;
+    Wgpu_low.Texel_copy_buffer_info.texel_copy_buffer_info_set_buffer
+      desc_destination
+      destination_buffer.Buffer.handle;
+    Wgpu_low.Extent_3d.extent_3D_set_width desc_copy_size copy_size_width;
+    Wgpu_low.Extent_3d.extent_3D_set_height desc_copy_size copy_size_height;
+    Wgpu_low.Extent_3d.extent_3D_set_depth_or_array_layers
+      desc_copy_size
+      copy_size_depth_or_array_layers;
+    Wgpu_low.command_encoder_copy_texture_to_buffer
+      t.handle
+      desc_source
+      desc_destination
+      desc_copy_size;
+    Wgpu_low.Extent_3d.extent_3D_free desc_copy_size;
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_free
+      destination_layout_nested;
+    Wgpu_low.Texel_copy_buffer_info.texel_copy_buffer_info_free desc_destination;
+    Wgpu_low.Origin_3d.origin_3D_free source_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_free desc_source;
+    ()
+  ;;
+
+  let copy_texture_to_texture
+    t
+    ~source_texture
+    ~source_mip_level
+    ~source_origin_x
+    ~source_origin_y
+    ~source_origin_z
+    ~source_aspect
+    ~destination_texture
+    ~destination_mip_level
+    ~destination_origin_x
+    ~destination_origin_y
+    ~destination_origin_z
+    ~destination_aspect
+    ~copy_size_width
+    ~copy_size_height
+    ~copy_size_depth_or_array_layers
+    ()
+    =
+    let source_origin_nested = Wgpu_low.Origin_3d.origin_3D_create () in
+    let desc_source =
+      Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_create ()
+    in
+    let destination_origin_nested = Wgpu_low.Origin_3d.origin_3D_create () in
+    let desc_destination =
+      Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_create ()
+    in
+    let desc_copy_size = Wgpu_low.Extent_3d.extent_3D_create () in
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_texture
+      desc_source
+      source_texture.Texture.handle;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_mip_level
+      desc_source
+      source_mip_level;
+    Wgpu_low.Origin_3d.origin_3D_set_x source_origin_nested source_origin_x;
+    Wgpu_low.Origin_3d.origin_3D_set_y source_origin_nested source_origin_y;
+    Wgpu_low.Origin_3d.origin_3D_set_z source_origin_nested source_origin_z;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_origin
+      desc_source
+      source_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_aspect
+      desc_source
+      (Texture_aspect.to_int source_aspect);
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_texture
+      desc_destination
+      destination_texture.Texture.handle;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_mip_level
+      desc_destination
+      destination_mip_level;
+    Wgpu_low.Origin_3d.origin_3D_set_x destination_origin_nested destination_origin_x;
+    Wgpu_low.Origin_3d.origin_3D_set_y destination_origin_nested destination_origin_y;
+    Wgpu_low.Origin_3d.origin_3D_set_z destination_origin_nested destination_origin_z;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_origin
+      desc_destination
+      destination_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_aspect
+      desc_destination
+      (Texture_aspect.to_int destination_aspect);
+    Wgpu_low.Extent_3d.extent_3D_set_width desc_copy_size copy_size_width;
+    Wgpu_low.Extent_3d.extent_3D_set_height desc_copy_size copy_size_height;
+    Wgpu_low.Extent_3d.extent_3D_set_depth_or_array_layers
+      desc_copy_size
+      copy_size_depth_or_array_layers;
+    Wgpu_low.command_encoder_copy_texture_to_texture
+      t.handle
+      desc_source
+      desc_destination
+      desc_copy_size;
+    Wgpu_low.Extent_3d.extent_3D_free desc_copy_size;
+    Wgpu_low.Origin_3d.origin_3D_free destination_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_free desc_destination;
+    Wgpu_low.Origin_3d.origin_3D_free source_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_free desc_source;
+    ()
+  ;;
+
   let clear_buffer t ~buffer ~offset ~size =
     Wgpu_low.command_encoder_clear_buffer t.handle buffer.Buffer.handle offset size
   ;;
@@ -536,6 +763,17 @@ module Render_pass_encoder = struct
 
   let set_stencil_reference t ~reference =
     Wgpu_low.render_pass_encoder_set_stencil_reference t.handle reference
+  ;;
+
+  let set_blend_constant t ~r ~g ~b ~a () =
+    let desc_color = Wgpu_low.Color.color_create () in
+    Wgpu_low.Color.color_set_r desc_color r;
+    Wgpu_low.Color.color_set_g desc_color g;
+    Wgpu_low.Color.color_set_b desc_color b;
+    Wgpu_low.Color.color_set_a desc_color a;
+    Wgpu_low.render_pass_encoder_set_blend_constant t.handle desc_color;
+    Wgpu_low.Color.color_free desc_color;
+    ()
   ;;
 
   let set_viewport t ~x ~y ~width ~height ~min_depth ~max_depth =

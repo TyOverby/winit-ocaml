@@ -966,6 +966,62 @@ module Command_encoder : sig
     -> size:int64
     -> unit
 
+  val copy_buffer_to_texture
+    :  t
+    -> source_layout_offset:int64
+    -> source_layout_bytes_per_row:int
+    -> source_layout_rows_per_image:int
+    -> source_buffer:Buffer.t
+    -> destination_texture:Texture.t
+    -> destination_mip_level:int
+    -> destination_origin_x:int
+    -> destination_origin_y:int
+    -> destination_origin_z:int
+    -> destination_aspect:Texture_aspect.t
+    -> copy_size_width:int
+    -> copy_size_height:int
+    -> copy_size_depth_or_array_layers:int
+    -> unit
+    -> unit
+
+  val copy_texture_to_buffer
+    :  t
+    -> source_texture:Texture.t
+    -> source_mip_level:int
+    -> source_origin_x:int
+    -> source_origin_y:int
+    -> source_origin_z:int
+    -> source_aspect:Texture_aspect.t
+    -> destination_layout_offset:int64
+    -> destination_layout_bytes_per_row:int
+    -> destination_layout_rows_per_image:int
+    -> destination_buffer:Buffer.t
+    -> copy_size_width:int
+    -> copy_size_height:int
+    -> copy_size_depth_or_array_layers:int
+    -> unit
+    -> unit
+
+  val copy_texture_to_texture
+    :  t
+    -> source_texture:Texture.t
+    -> source_mip_level:int
+    -> source_origin_x:int
+    -> source_origin_y:int
+    -> source_origin_z:int
+    -> source_aspect:Texture_aspect.t
+    -> destination_texture:Texture.t
+    -> destination_mip_level:int
+    -> destination_origin_x:int
+    -> destination_origin_y:int
+    -> destination_origin_z:int
+    -> destination_aspect:Texture_aspect.t
+    -> copy_size_width:int
+    -> copy_size_height:int
+    -> copy_size_depth_or_array_layers:int
+    -> unit
+    -> unit
+
   val clear_buffer : t -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
   val insert_debug_marker : t -> marker_label:string -> unit
   val pop_debug_group : t -> unit
@@ -1105,6 +1161,7 @@ module Render_pass_encoder : sig
   val pop_debug_group : t -> unit
   val push_debug_group : t -> group_label:string -> unit
   val set_stencil_reference : t -> reference:int -> unit
+  val set_blend_constant : t -> r:float -> g:float -> b:float -> a:float -> unit -> unit
 
   val set_viewport
     :  t

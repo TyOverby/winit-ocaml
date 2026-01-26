@@ -759,22 +759,69 @@ Methods now auto-generated from struct descriptors:
 - Output struct record types placed inside object modules to avoid forward references
 - Object field values from output structs properly converted (Enum.of_int, Object wrapping)
 
-### Attempted but Blocked
-- **Nested struct support**: Structs containing nested struct members (e.g., `texel_copy_texture_info` with `origin_3D`)
-  - Started implementation with recursive helpers
-  - Blocked by variable naming conflicts (reserved word 'struct')
-  - Requires more careful implementation to handle proper naming and struct ordering
-
 ### Current Coverage
 - **Auto-generated methods**: Majority of simple methods
 - **Manual implementations remain for**:
   - Async/callback methods (request_adapter, map_async, etc.)
-  - Methods with nested struct arguments (copy_texture_to_buffer, etc.)
   - Chained struct patterns (shader module creation with WGSL chain)
   - "Special" objects (Instance, Adapter, Device, Queue) - hand-written for cleaner API
 
 ### Next Steps
-1. Implement proper nested struct support (with careful variable naming)
-2. Add vertex buffer support for custom geometry
-3. Add texture sampling support
-4. Document the complete high-level API
+1. Add vertex buffer support for custom geometry
+2. Add texture sampling support
+3. Document the complete high-level API
+
+---
+
+## 2026-01-26: Nested Struct Support Complete
+
+### Accomplished
+- **Nested struct support**: Structs containing nested struct members now fully auto-generate
+  - Added `is_simple_member_type_with_nested` with circular reference detection
+  - Added `is_simple_struct_aux` for recursive struct checking
+  - Added `member_is_nested_struct` to detect struct-typed members
+  - Added `collect_nested_structs` to recursively collect nested struct info
+  - Added `collect_struct_params` to flatten nested struct parameters
+  - Added `generate_struct_creates` to create all structs (nested first)
+  - Added `generate_struct_sets` to set fields including nested struct assignments
+  - Updated `gen_ml_method_with_structs` and `gen_mli_method_with_structs` to use new helpers
+  - Fixed struct name handling (use original name, not lowercased)
+
+### Methods Removed from manual_implementations
+- `command_encoder.copy_buffer_to_texture` - uses nested structs
+- `command_encoder.copy_texture_to_buffer` - uses nested structs
+- `command_encoder.copy_texture_to_texture` - uses nested structs
+- `render_pass_encoder.set_blend_constant` - uses simple struct (Color)
+
+### Example Generated Code
+The `copy_texture_to_buffer` method now auto-generates with flattened parameters:
+```ocaml
+let copy_texture_to_buffer t
+    ~source_texture ~source_mip_level
+    ~source_origin_x ~source_origin_y ~source_origin_z
+    ~source_aspect
+    ~destination_layout_offset ~destination_layout_bytes_per_row
+    ~destination_layout_rows_per_image ~destination_buffer
+    ~copy_size_width ~copy_size_height ~copy_size_depth_or_array_layers
+    () =
+  let source_origin_nested = Wgpu_low.Origin_3d.origin_3D_create () in
+  let desc_source = Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_create () in
+  let destination_layout_nested = Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_create () in
+  let desc_destination = Wgpu_low.Texel_copy_buffer_info.texel_copy_buffer_info_create () in
+  let desc_copy_size = Wgpu_low.Extent_3d.extent_3D_create () in
+  (* ... set all fields including nested struct assignments ... *)
+  Wgpu_low.command_encoder_copy_texture_to_buffer t.handle desc_source desc_destination desc_copy_size;
+  (* ... free all structs in reverse order ... *)
+```
+
+### Technical Details
+- Nested structs are created before parent structs
+- Fields are set recursively: nested struct fields first, then nested struct assigned to parent
+- Structs are freed in reverse order (parent first, then nested)
+- Parameter names are prefixed: `source_origin_x` for `origin.x` in `source` argument
+- Multiple levels of nesting are supported (recursive implementation)
+
+### Next Steps
+1. Add vertex buffer support for custom geometry
+2. Add texture sampling support
+3. Document the complete high-level API
