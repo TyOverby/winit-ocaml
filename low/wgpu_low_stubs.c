@@ -8702,10 +8702,19 @@ static void handle_request_adapter_sync(WGPURequestAdapterStatus status,
   *(WGPUAdapter *)userdata1 = adapter;
 }
 
-CAMLprim value caml_wgpu_instance_request_adapter_sync(value instance_val) {
-  CAMLparam1(instance_val);
+CAMLprim value caml_wgpu_instance_request_adapter_sync(value instance_val,
+    value power_preference_val, value backend_type_val) {
+  CAMLparam3(instance_val, power_preference_val, backend_type_val);
   WGPUInstance instance = (WGPUInstance)Nativeint_val(instance_val);
+  WGPUPowerPreference power_preference = Int_val(power_preference_val);
+  WGPUBackendType backend_type = Int_val(backend_type_val);
   WGPUAdapter adapter = NULL;
+
+  WGPURequestAdapterOptions options = {
+    .powerPreference = power_preference,
+    .backendType = backend_type,
+    .forceFallbackAdapter = false,
+  };
 
   WGPURequestAdapterCallbackInfo callback_info = {
     .callback = handle_request_adapter_sync,
@@ -8713,7 +8722,7 @@ CAMLprim value caml_wgpu_instance_request_adapter_sync(value instance_val) {
     .userdata2 = NULL,
   };
 
-  wgpuInstanceRequestAdapter(instance, NULL, callback_info);
+  wgpuInstanceRequestAdapter(instance, &options, callback_info);
 
   CAMLreturn(caml_copy_nativeint((intnat)adapter));
 }
@@ -9076,36 +9085,56 @@ CAMLprim value caml_wgpu_device_create_texture_2d_bytecode(value *argv, int argn
   return caml_wgpu_device_create_texture_2d(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
 }
 
-/* Create texture view with default settings */
-CAMLprim value caml_wgpu_texture_create_view_simple(value texture_val, value label_val) {
-  CAMLparam2(texture_val, label_val);
+/* Create texture view with configurable settings */
+CAMLprim value caml_wgpu_texture_create_view_configurable(value texture_val, value label_val,
+    value format_val, value dimension_val, value aspect_val,
+    value base_mip_level_val, value mip_level_count_val,
+    value base_array_layer_val, value array_layer_count_val) {
+  CAMLparam5(texture_val, label_val, format_val, dimension_val, aspect_val);
+  CAMLxparam4(base_mip_level_val, mip_level_count_val, base_array_layer_val, array_layer_count_val);
   WGPUTexture texture = (WGPUTexture)Nativeint_val(texture_val);
   const char* label = String_val(label_val);
+  WGPUTextureFormat format = Int_val(format_val);
+  WGPUTextureViewDimension dimension = Int_val(dimension_val);
+  WGPUTextureAspect aspect = Int_val(aspect_val);
+  uint32_t base_mip_level = Int_val(base_mip_level_val);
+  uint32_t mip_level_count = Int_val(mip_level_count_val);
+  uint32_t base_array_layer = Int_val(base_array_layer_val);
+  uint32_t array_layer_count = Int_val(array_layer_count_val);
 
   WGPUTextureViewDescriptor desc = {
     .label = { .data = label, .length = caml_string_length(label_val) },
-    .format = WGPUTextureFormat_Undefined, /* Use texture's format */
-    .dimension = WGPUTextureViewDimension_Undefined, /* Use texture's dimension */
-    .baseMipLevel = 0,
-    .mipLevelCount = WGPU_MIP_LEVEL_COUNT_UNDEFINED, /* Use all mip levels */
-    .baseArrayLayer = 0,
-    .arrayLayerCount = WGPU_ARRAY_LAYER_COUNT_UNDEFINED, /* Use all array layers */
-    .aspect = WGPUTextureAspect_All,
+    .format = format,
+    .dimension = dimension,
+    .baseMipLevel = base_mip_level,
+    .mipLevelCount = mip_level_count,
+    .baseArrayLayer = base_array_layer,
+    .arrayLayerCount = array_layer_count,
+    .aspect = aspect,
   };
 
   WGPUTextureView view = wgpuTextureCreateView(texture, &desc);
   CAMLreturn(caml_copy_nativeint((intnat)view));
 }
 
-/* Begin a render pass with a single color attachment (clear to given color) */
-CAMLprim value caml_wgpu_command_encoder_begin_render_pass_simple(
+CAMLprim value caml_wgpu_texture_create_view_configurable_bytecode(value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_texture_create_view_configurable(
+    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8]);
+}
+
+/* Begin a render pass with a single color attachment with configurable load/store ops */
+CAMLprim value caml_wgpu_command_encoder_begin_render_pass_configurable(
     value encoder_val, value label_val, value view_val,
+    value load_op_val, value store_op_val,
     value r_val, value g_val, value b_val, value a_val) {
-  CAMLparam5(encoder_val, label_val, view_val, r_val, g_val);
-  CAMLxparam2(b_val, a_val);
+  CAMLparam5(encoder_val, label_val, view_val, load_op_val, store_op_val);
+  CAMLxparam4(r_val, g_val, b_val, a_val);
   WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
   const char* label = String_val(label_val);
   WGPUTextureView view = (WGPUTextureView)Nativeint_val(view_val);
+  WGPULoadOp load_op = Int_val(load_op_val);
+  WGPUStoreOp store_op = Int_val(store_op_val);
   double r = Double_val(r_val);
   double g = Double_val(g_val);
   double b = Double_val(b_val);
@@ -9115,8 +9144,8 @@ CAMLprim value caml_wgpu_command_encoder_begin_render_pass_simple(
     .view = view,
     .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED, /* Required for non-3D textures */
     .resolveTarget = NULL,
-    .loadOp = WGPULoadOp_Clear,
-    .storeOp = WGPUStoreOp_Store,
+    .loadOp = load_op,
+    .storeOp = store_op,
     .clearValue = { .r = r, .g = g, .b = b, .a = a },
   };
 
@@ -9133,10 +9162,10 @@ CAMLprim value caml_wgpu_command_encoder_begin_render_pass_simple(
   CAMLreturn(caml_copy_nativeint((intnat)pass));
 }
 
-CAMLprim value caml_wgpu_command_encoder_begin_render_pass_simple_bytecode(value *argv, int argn) {
+CAMLprim value caml_wgpu_command_encoder_begin_render_pass_configurable_bytecode(value *argv, int argn) {
   (void)argn;
-  return caml_wgpu_command_encoder_begin_render_pass_simple(
-    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]);
+  return caml_wgpu_command_encoder_begin_render_pass_configurable(
+    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8]);
 }
 
 /* Copy texture to buffer (simplified - full texture from origin 0,0) */
@@ -9180,18 +9209,37 @@ CAMLprim value caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode(
     argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
 }
 
-/* Create a simple render pipeline (no vertex buffers, uses vertex_index in shader) */
-CAMLprim value caml_wgpu_device_create_render_pipeline_simple(
+/* Create a render pipeline with full configuration */
+CAMLprim value caml_wgpu_device_create_render_pipeline_full(
     value device_val, value label_val, value shader_val,
-    value vs_entry_val, value fs_entry_val, value format_val) {
+    value vs_entry_val, value fs_entry_val, value format_val,
+    value topology_val, value front_face_val, value cull_mode_val,
+    value blend_enabled_val,
+    value color_src_factor_val, value color_dst_factor_val, value color_operation_val,
+    value alpha_src_factor_val, value alpha_dst_factor_val, value alpha_operation_val,
+    value write_mask_val) {
   CAMLparam5(device_val, label_val, shader_val, vs_entry_val, fs_entry_val);
-  CAMLxparam1(format_val);
+  CAMLxparam5(format_val, topology_val, front_face_val, cull_mode_val, blend_enabled_val);
+  CAMLxparam4(color_src_factor_val, color_dst_factor_val, color_operation_val, alpha_src_factor_val);
+  CAMLxparam3(alpha_dst_factor_val, alpha_operation_val, write_mask_val);
+
   WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
   const char* label = String_val(label_val);
   WGPUShaderModule shader = (WGPUShaderModule)Nativeint_val(shader_val);
   const char* vs_entry = String_val(vs_entry_val);
   const char* fs_entry = String_val(fs_entry_val);
   WGPUTextureFormat format = Int_val(format_val);
+  WGPUPrimitiveTopology topology = Int_val(topology_val);
+  WGPUFrontFace front_face = Int_val(front_face_val);
+  WGPUCullMode cull_mode = Int_val(cull_mode_val);
+  bool blend_enabled = Bool_val(blend_enabled_val);
+  WGPUBlendFactor color_src_factor = Int_val(color_src_factor_val);
+  WGPUBlendFactor color_dst_factor = Int_val(color_dst_factor_val);
+  WGPUBlendOperation color_operation = Int_val(color_operation_val);
+  WGPUBlendFactor alpha_src_factor = Int_val(alpha_src_factor_val);
+  WGPUBlendFactor alpha_dst_factor = Int_val(alpha_dst_factor_val);
+  WGPUBlendOperation alpha_operation = Int_val(alpha_operation_val);
+  WGPUColorWriteMask write_mask = Int_val(write_mask_val);
 
   /* Create an empty pipeline layout (no bind groups) */
   WGPUPipelineLayoutDescriptor layout_desc = {
@@ -9201,11 +9249,25 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_simple(
   };
   WGPUPipelineLayout layout = wgpuDeviceCreatePipelineLayout(device, &layout_desc);
 
+  /* Blend state (only used if blend_enabled) */
+  WGPUBlendState blend_state = {
+    .color = {
+      .srcFactor = color_src_factor,
+      .dstFactor = color_dst_factor,
+      .operation = color_operation,
+    },
+    .alpha = {
+      .srcFactor = alpha_src_factor,
+      .dstFactor = alpha_dst_factor,
+      .operation = alpha_operation,
+    },
+  };
+
   /* Color target state */
   WGPUColorTargetState color_target = {
     .format = format,
-    .blend = NULL,
-    .writeMask = WGPUColorWriteMask_All,
+    .blend = blend_enabled ? &blend_state : NULL,
+    .writeMask = write_mask,
   };
 
   /* Fragment state */
@@ -9231,10 +9293,10 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_simple(
       .buffers = NULL,
     },
     .primitive = {
-      .topology = WGPUPrimitiveTopology_TriangleList,
+      .topology = topology,
       .stripIndexFormat = WGPUIndexFormat_Undefined,
-      .frontFace = WGPUFrontFace_CCW,
-      .cullMode = WGPUCullMode_None,
+      .frontFace = front_face,
+      .cullMode = cull_mode,
     },
     .depthStencil = NULL,
     .multisample = {
@@ -9253,9 +9315,10 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_simple(
   CAMLreturn(caml_copy_nativeint((intnat)pipeline));
 }
 
-CAMLprim value caml_wgpu_device_create_render_pipeline_simple_bytecode(value *argv, int argn) {
+CAMLprim value caml_wgpu_device_create_render_pipeline_full_bytecode(value *argv, int argn) {
   (void)argn;
-  return caml_wgpu_device_create_render_pipeline_simple(
-    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+  return caml_wgpu_device_create_render_pipeline_full(
+    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8],
+    argv[9], argv[10], argv[11], argv[12], argv[13], argv[14], argv[15], argv[16]);
 }
 

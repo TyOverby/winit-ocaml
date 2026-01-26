@@ -47,7 +47,9 @@
  (action
   (with-stdout-to
    wgpu_low.ml
-   (run ../codegen/gen_bindings.exe Low Ml)))
+   (pipe-stdout
+    (run ../codegen/gen_bindings.exe Low Ml)
+    (run ocamlformat --impl -))))
  (mode promote)
  (target wgpu_low.ml))
 
@@ -55,6 +57,8 @@
  (action
   (with-stdout-to
    wgpu_low.mli
-   (run ../codegen/gen_bindings.exe Low Mli)))
+   (pipe-stdout
+    (run ../codegen/gen_bindings.exe Low Mli)
+    (run ocamlformat --intf -))))
  (mode promote)
  (target wgpu_low.mli))

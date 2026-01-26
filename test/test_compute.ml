@@ -34,15 +34,15 @@ let test_instance_and_adapter () =
   let instance = Wgpu.Instance.create () in
   print_endline "Instance created!";
   print_endline "Requesting adapter...";
-  let adapter = Wgpu.Instance.request_adapter instance in
+  let adapter = Wgpu.Instance.request_adapter instance () in
   print_endline "Adapter obtained!";
   let info = Wgpu.Adapter.get_info adapter in
   printf "  Vendor: %s\n" info.vendor;
   printf "  Architecture: %s\n" info.architecture;
   printf "  Device: %s\n" info.device;
   printf "  Description: %s\n" info.description;
-  printf "  Backend type: %d\n" info.backend_type;
-  printf "  Adapter type: %d\n" info.adapter_type;
+  printf "  Backend type: %d\n" (Wgpu.Backend_type.to_int info.backend_type);
+  printf "  Adapter type: %d\n" (Wgpu.Adapter_type.to_int info.adapter_type);
   Wgpu.Adapter.release adapter;
   print_endline "Adapter released.";
   Wgpu.Instance.release instance;
@@ -53,7 +53,7 @@ let test_buffer_creation () =
   print_endline "\n=== Testing Buffer Creation ===";
   (* Create instance, adapter, device using high-level API *)
   let instance = Wgpu.Instance.create () in
-  let adapter = Wgpu.Instance.request_adapter instance in
+  let adapter = Wgpu.Instance.request_adapter instance () in
   let device = Wgpu.Adapter.request_device adapter in
   print_endline "Device obtained.";
   (* Create buffer using high-level API *)
@@ -88,7 +88,7 @@ let test_compute_shader () =
   print_endline "\n=== Testing Compute Shader (Full Pipeline) ===";
   (* Create instance, adapter, device using high-level API *)
   let instance = Wgpu.Instance.create () in
-  let adapter = Wgpu.Instance.request_adapter instance in
+  let adapter = Wgpu.Instance.request_adapter instance () in
   let device = Wgpu.Adapter.request_device adapter in
   let queue = Wgpu.Device.get_queue device in
   print_endline "Device and queue obtained.";
@@ -272,7 +272,7 @@ let test_render_clear () =
   print_endline "\n=== Testing Render Pass (Clear to Color) ===";
   (* Create instance, adapter, device using high-level API *)
   let instance = Wgpu.Instance.create () in
-  let adapter = Wgpu.Instance.request_adapter instance in
+  let adapter = Wgpu.Instance.request_adapter instance () in
   let device = Wgpu.Adapter.request_device adapter in
   let queue = Wgpu.Device.get_queue device in
   print_endline "Device and queue obtained.";
@@ -405,7 +405,7 @@ let test_render_triangle () =
   print_endline "\n=== Testing Render Pipeline (Triangle) ===";
   (* Create instance, adapter, device using high-level API *)
   let instance = Wgpu.Instance.create () in
-  let adapter = Wgpu.Instance.request_adapter instance in
+  let adapter = Wgpu.Instance.request_adapter instance () in
   let device = Wgpu.Adapter.request_device adapter in
   let queue = Wgpu.Device.get_queue device in
   print_endline "Device and queue obtained.";

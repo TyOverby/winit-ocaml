@@ -715,3 +715,66 @@ Methods now auto-generated from struct descriptors:
 2. Add texture sampling support
 3. Document the complete high-level API
 4. Consider expanding struct handling to more complex cases (nested structs)
+
+---
+
+## 2026-01-26: Advanced Method Auto-Generation
+
+### Accomplished
+- **Array argument support**: Methods with array parameters now auto-generate with list types
+  - Updated `is_simple_arg_type` to handle arrays of simple types
+  - Updated `high_level_arg_type` to return `elem_type list` for arrays
+  - Updated `arg_to_low_level` to convert lists to arrays (Objects, Primitives, Enums)
+  - Removed `set_bind_group`, `execute_bundles` from manual_implementations
+
+- **Output struct support**: Methods with mutable pointer to output struct now auto-generate
+  - Added `is_simple_output_struct` to detect output structs (`Base_out`, `Base_in_out`)
+  - Added `method_has_output_struct_arg` to find output struct arguments
+  - Added `gen_ml_method_with_output_struct` and MLI variant
+  - Record types generated inside object modules (avoids circular dependencies)
+  - `Surface.get_current_texture` now auto-generates with `surface_texture` record type
+
+- **Array members in structs**: Structs with array members of simple types now work
+  - Extended `is_simple_member_type` to allow arrays of simple types
+  - Updated `member_to_low_level` to handle array conversion
+  - Updated `high_level_member_type` for array member types
+  - Arrays default to empty list
+
+- **Multiple struct arguments**: Methods with multiple struct args now work
+  - Replaced `method_has_simple_struct_arg` with `get_simple_struct_args` (returns list)
+  - Added `method_has_simple_struct_args` for validation
+  - Replaced `gen_ml_method_with_struct` with `gen_ml_method_with_structs`
+  - Parameters prefixed with arg name when multiple structs (e.g., `source_texture`, `destination_buffer`)
+
+### Methods Removed from manual_implementations
+- `compute_pass_encoder.set_bind_group` - now auto-generates with array
+- `render_pass_encoder.set_bind_group` - now auto-generates with array
+- `render_pass_encoder.execute_bundles` - now auto-generates with array
+- `render_bundle_encoder.set_bind_group` - now auto-generates with array
+- `adapter.get_limits` - now auto-generates with output struct
+- `device.get_limits` - now auto-generates with output struct
+
+### Technical Details
+- Fixed object ordering: Surface after Texture (surface_texture references Texture.t)
+- Output struct record types placed inside object modules to avoid forward references
+- Object field values from output structs properly converted (Enum.of_int, Object wrapping)
+
+### Attempted but Blocked
+- **Nested struct support**: Structs containing nested struct members (e.g., `texel_copy_texture_info` with `origin_3D`)
+  - Started implementation with recursive helpers
+  - Blocked by variable naming conflicts (reserved word 'struct')
+  - Requires more careful implementation to handle proper naming and struct ordering
+
+### Current Coverage
+- **Auto-generated methods**: Majority of simple methods
+- **Manual implementations remain for**:
+  - Async/callback methods (request_adapter, map_async, etc.)
+  - Methods with nested struct arguments (copy_texture_to_buffer, etc.)
+  - Chained struct patterns (shader module creation with WGSL chain)
+  - "Special" objects (Instance, Adapter, Device, Queue) - hand-written for cleaner API
+
+### Next Steps
+1. Implement proper nested struct support (with careful variable naming)
+2. Add vertex buffer support for custom geometry
+3. Add texture sampling support
+4. Document the complete high-level API
