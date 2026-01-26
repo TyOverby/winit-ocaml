@@ -410,6 +410,7 @@ module Queue = struct
   type t = { handle : Wgpu_low.queue }
 
   let release t = Wgpu_low.queue_release t.handle
+  let set_label t ~label = Wgpu_low.queue_set_label t.handle label
 end
 
 module Device = struct
@@ -417,6 +418,10 @@ module Device = struct
 
   let release t = Wgpu_low.device_release t.handle
   let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
+  let destroy t = Wgpu_low.device_destroy t.handle
+  let has_feature t ~feature = Wgpu_low.device_has_feature t.handle (Feature_Name.to_int feature)
+  let push_error_scope t ~filter = Wgpu_low.device_push_error_scope t.handle (Error_Filter.to_int filter)
+  let set_label t ~label = Wgpu_low.device_set_label t.handle label
 end
 
 module Adapter = struct
@@ -427,6 +432,7 @@ module Adapter = struct
   let request_device t =
     let device = Wgpu_low.adapter_request_device_sync t.handle in
     { Device.handle = device }
+  let has_feature t ~feature = Wgpu_low.adapter_has_feature t.handle (Feature_Name.to_int feature)
 end
 |}
   in
@@ -478,6 +484,7 @@ module Queue : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Device : sig
@@ -485,6 +492,10 @@ module Device : sig
 
   val release : t -> unit
   val get_queue : t -> Queue.t
+  val destroy : t -> unit
+  val has_feature : t -> feature:Feature_Name.t -> bool
+  val push_error_scope : t -> filter:Error_Filter.t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Adapter : sig
@@ -493,6 +504,7 @@ module Adapter : sig
   val get_info : t -> Adapter_info.t
   val release : t -> unit
   val request_device : t -> Device.t
+  val has_feature : t -> feature:Feature_Name.t -> bool
 end
 |}
   in

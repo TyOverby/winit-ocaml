@@ -958,6 +958,7 @@ module Queue : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Device : sig
@@ -965,6 +966,10 @@ module Device : sig
 
   val release : t -> unit
   val get_queue : t -> Queue.t
+  val destroy : t -> unit
+  val has_feature : t -> feature:Feature_Name.t -> bool
+  val push_error_scope : t -> filter:Error_Filter.t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Adapter : sig
@@ -973,6 +978,7 @@ module Adapter : sig
   val get_info : t -> Adapter_info.t
   val release : t -> unit
   val request_device : t -> Device.t
+  val has_feature : t -> feature:Feature_Name.t -> bool
 end
 module Instance : sig
   type t
