@@ -1986,3 +1986,6 @@ val command_encoder_begin_render_pass_simple :
 
 val command_encoder_copy_texture_to_buffer_simple :
   command_encoder -> texture -> buffer -> int -> int -> int -> unit
+
+val device_create_render_pipeline_simple :
+  device -> string -> shader_module -> string -> string -> int -> render_pipeline

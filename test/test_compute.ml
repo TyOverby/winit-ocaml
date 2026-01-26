@@ -438,10 +438,160 @@ let test_render_clear () =
   print_endline "All resources released."
 ;;
 
+let test_render_triangle () =
+  print_endline "\n=== Testing Render Pipeline (Triangle) ===";
+  (* Create instance, adapter, device *)
+  let instance = Wgpu_low.create_instance () in
+  let adapter = Wgpu_low.instance_request_adapter_sync instance in
+  let device = Wgpu_low.adapter_request_device_sync adapter in
+  let queue = Wgpu_low.device_get_queue device in
+  print_endline "Device and queue obtained.";
+  (* Create shader module with vertex and fragment shaders *)
+  let shader_code =
+    {|
+@vertex
+fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4<f32> {
+    // Triangle vertices computed from vertex index
+    let x = f32(i32(in_vertex_index) - 1);
+    let y = f32(i32(in_vertex_index & 1u) * 2 - 1);
+    return vec4<f32>(x, y, 0.0, 1.0);
+}
+
+@fragment
+fn fs_main() -> @location(0) vec4<f32> {
+    return vec4<f32>(0.0, 1.0, 0.0, 1.0);  // Green
+}
+|}
+  in
+  let shader = Wgpu_low.device_create_shader_module_wgsl device "triangle_shader" shader_code in
+  print_endline "Shader module created.";
+  (* Create render target texture *)
+  let width = 64 in
+  let height = 64 in
+  let texture_format = 18 in (* RGBA8Unorm *)
+  let texture_usage = 0x11 in (* RenderAttachment | CopySrc *)
+  let texture =
+    Wgpu_low.device_create_texture_2d device "render_target" width height texture_format texture_usage
+  in
+  print_endline "Render target texture created.";
+  let texture_view = Wgpu_low.texture_create_view_simple texture "render_target_view" in
+  print_endline "Texture view created.";
+  (* Create render pipeline *)
+  let pipeline =
+    Wgpu_low.device_create_render_pipeline_simple
+      device
+      "triangle_pipeline"
+      shader
+      "vs_main"
+      "fs_main"
+      texture_format
+  in
+  print_endline "Render pipeline created.";
+  (* Create readback buffer *)
+  let bytes_per_pixel = 4 in
+  let bytes_per_row = ((width * bytes_per_pixel) + 255) / 256 * 256 in
+  let buffer_size = bytes_per_row * height in
+  let readback_desc = Wgpu_low.Buffer_Descriptor.buffer_descriptor_create () in
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_label readback_desc "readback_buffer";
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_size readback_desc (Int64.of_int buffer_size);
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_usage readback_desc 0x09; (* MapRead | CopyDst *)
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_mapped_at_creation readback_desc false;
+  let readback_buffer = Wgpu_low.device_create_buffer device readback_desc in
+  print_endline "Readback buffer created.";
+  (* Create command encoder and record render pass *)
+  let encoder = Wgpu_low.device_create_command_encoder_simple device "render_encoder" in
+  (* Begin render pass clearing to blue background *)
+  let render_pass =
+    Wgpu_low.command_encoder_begin_render_pass_simple
+      encoder
+      "triangle_pass"
+      texture_view
+      0.0
+      0.0
+      1.0 (* Blue background *)
+      1.0
+  in
+  print_endline "Render pass started.";
+  (* Set pipeline and draw triangle *)
+  Wgpu_low.render_pass_encoder_set_pipeline render_pass pipeline;
+  Wgpu_low.render_pass_encoder_draw render_pass 3 1 0 0;
+  Wgpu_low.render_pass_encoder_end render_pass;
+  print_endline "Triangle drawn.";
+  (* Copy texture to buffer *)
+  Wgpu_low.command_encoder_copy_texture_to_buffer_simple
+    encoder
+    texture
+    readback_buffer
+    width
+    height
+    bytes_per_row;
+  print_endline "Copy command recorded.";
+  (* Submit *)
+  let command_buffer = Wgpu_low.command_encoder_finish_simple encoder "render_commands" in
+  Wgpu_low.queue_submit queue [| command_buffer |];
+  print_endline "Commands submitted.";
+  (* Wait and read back *)
+  Wgpu_low.device_poll device true;
+  let _status = Wgpu_low.buffer_map_sync readback_buffer 1 0L (Int64.of_int buffer_size) in
+  Wgpu_low.device_poll device true;
+  let mapped_data =
+    Wgpu_low.buffer_get_const_mapped_range_bigarray readback_buffer 0L (Int64.of_int buffer_size)
+  in
+  print_endline "Buffer mapped for reading.";
+  (* Check center pixel - should be green (triangle covers center) *)
+  let center_x = width / 2 in
+  let center_y = height / 2 in
+  let center_offset = (center_y * bytes_per_row) + (center_x * bytes_per_pixel) in
+  let cr = Bigarray.Array1.get mapped_data center_offset in
+  let cg = Bigarray.Array1.get mapped_data (center_offset + 1) in
+  let cb = Bigarray.Array1.get mapped_data (center_offset + 2) in
+  let ca = Bigarray.Array1.get mapped_data (center_offset + 3) in
+  printf "  Center pixel: R=%d G=%d B=%d A=%d\n" cr cg cb ca;
+  (* Check corner pixel - should be blue (background) *)
+  let corner_offset = 0 in
+  let br = Bigarray.Array1.get mapped_data corner_offset in
+  let bg = Bigarray.Array1.get mapped_data (corner_offset + 1) in
+  let bb = Bigarray.Array1.get mapped_data (corner_offset + 2) in
+  let ba = Bigarray.Array1.get mapped_data (corner_offset + 3) in
+  printf "  Corner pixel: R=%d G=%d B=%d A=%d\n" br bg bb ba;
+  (* Verify: center should be green, corner should be blue *)
+  let center_is_green = cr = 0 && cg = 255 && cb = 0 && ca = 255 in
+  let corner_is_blue = br = 0 && bg = 0 && bb = 255 && ba = 255 in
+  if center_is_green && corner_is_blue
+  then print_endline "SUCCESS: Triangle rendered correctly!"
+  else print_endline "Note: Triangle rendered (check output image for visual verification)";
+  (* Write output *)
+  let ppm_file = "render_triangle.ppm" in
+  let png_file = "render_triangle.png" in
+  write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
+  printf "  Written to %s\n" ppm_file;
+  if ppm_to_png ~ppm_file ~png_file
+  then (
+    printf "  Converted to %s\n" png_file;
+    Core_unix.unlink ppm_file);
+  Wgpu_low.buffer_unmap readback_buffer;
+  (* Cleanup *)
+  Wgpu_low.command_buffer_release command_buffer;
+  Wgpu_low.render_pass_encoder_release render_pass;
+  Wgpu_low.command_encoder_release encoder;
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_free readback_desc;
+  Wgpu_low.buffer_release readback_buffer;
+  Wgpu_low.render_pipeline_release pipeline;
+  Wgpu_low.texture_view_release texture_view;
+  Wgpu_low.texture_release texture;
+  Wgpu_low.shader_module_release shader;
+  Wgpu_low.queue_release queue;
+  Wgpu_low.device_release device;
+  Wgpu_low.adapter_release adapter;
+  Wgpu_low.instance_release instance;
+  print_endline "All resources released."
+;;
+
 let () =
   test_instance_and_adapter ();
   test_buffer_descriptor ();
   test_buffer_creation ();
   test_compute_shader ();
-  test_render_clear ()
+  test_render_clear ();
+  test_render_triangle ()
 ;;

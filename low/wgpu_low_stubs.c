@@ -9062,3 +9062,82 @@ CAMLprim value caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode(
     argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
 }
 
+/* Create a simple render pipeline (no vertex buffers, uses vertex_index in shader) */
+CAMLprim value caml_wgpu_device_create_render_pipeline_simple(
+    value device_val, value label_val, value shader_val,
+    value vs_entry_val, value fs_entry_val, value format_val) {
+  CAMLparam5(device_val, label_val, shader_val, vs_entry_val, fs_entry_val);
+  CAMLxparam1(format_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char* label = String_val(label_val);
+  WGPUShaderModule shader = (WGPUShaderModule)Nativeint_val(shader_val);
+  const char* vs_entry = String_val(vs_entry_val);
+  const char* fs_entry = String_val(fs_entry_val);
+  WGPUTextureFormat format = Int_val(format_val);
+
+  /* Create an empty pipeline layout (no bind groups) */
+  WGPUPipelineLayoutDescriptor layout_desc = {
+    .label = { .data = "empty_layout", .length = 12 },
+    .bindGroupLayoutCount = 0,
+    .bindGroupLayouts = NULL,
+  };
+  WGPUPipelineLayout layout = wgpuDeviceCreatePipelineLayout(device, &layout_desc);
+
+  /* Color target state */
+  WGPUColorTargetState color_target = {
+    .format = format,
+    .blend = NULL,
+    .writeMask = WGPUColorWriteMask_All,
+  };
+
+  /* Fragment state */
+  WGPUFragmentState fragment = {
+    .module = shader,
+    .entryPoint = { .data = fs_entry, .length = strlen(fs_entry) },
+    .constantCount = 0,
+    .constants = NULL,
+    .targetCount = 1,
+    .targets = &color_target,
+  };
+
+  /* Render pipeline descriptor */
+  WGPURenderPipelineDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+    .layout = layout,
+    .vertex = {
+      .module = shader,
+      .entryPoint = { .data = vs_entry, .length = strlen(vs_entry) },
+      .constantCount = 0,
+      .constants = NULL,
+      .bufferCount = 0,
+      .buffers = NULL,
+    },
+    .primitive = {
+      .topology = WGPUPrimitiveTopology_TriangleList,
+      .stripIndexFormat = WGPUIndexFormat_Undefined,
+      .frontFace = WGPUFrontFace_CCW,
+      .cullMode = WGPUCullMode_None,
+    },
+    .depthStencil = NULL,
+    .multisample = {
+      .count = 1,
+      .mask = 0xFFFFFFFF,
+      .alphaToCoverageEnabled = false,
+    },
+    .fragment = &fragment,
+  };
+
+  WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(device, &desc);
+
+  /* Release the pipeline layout (pipeline holds a reference) */
+  wgpuPipelineLayoutRelease(layout);
+
+  CAMLreturn(caml_copy_nativeint((intnat)pipeline));
+}
+
+CAMLprim value caml_wgpu_device_create_render_pipeline_simple_bytecode(value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_device_create_render_pipeline_simple(
+    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+}
+

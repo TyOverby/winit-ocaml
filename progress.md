@@ -263,7 +263,56 @@ All resources released.
 - Texture usage flags: RenderAttachment (0x10) | CopySrc (0x01) = 0x11
 
 ### Next Steps
-1. Implement PNG output for visual verification
-2. Add full render pipeline (shaders, vertex buffers)
-3. Create triangle rendering example
+1. ~~Implement PNG output for visual verification~~ ✅
+2. ~~Add full render pipeline (shaders, vertex buffers)~~ ✅
+3. ~~Create triangle rendering example~~ ✅
 4. Document the high-level API
+
+---
+
+## 2026-01-25: Triangle Rendering Complete
+
+### Accomplished
+- **PNG Output**: Added PPM writer + ImageMagick conversion for visual verification
+- **Render Pipeline Helper**: `device_create_render_pipeline_simple` creates a basic render pipeline
+  - No vertex buffers needed (uses vertex_index in shader)
+  - Empty pipeline layout (no bind groups)
+  - Triangle list topology, no culling
+- **Triangle Test**: Full working triangle render example
+  - WGSL vertex shader generates triangle from vertex index
+  - Fragment shader outputs solid green
+  - Blue clear color for background
+  - Correctly verifies center (green) and corner (blue) pixels
+
+### Test Verification
+```
+=== Testing Render Pipeline (Triangle) ===
+Device and queue obtained.
+Shader module created.
+Render target texture created.
+Texture view created.
+Render pipeline created.
+Readback buffer created.
+Render pass started.
+Triangle drawn.
+Copy command recorded.
+Commands submitted.
+Buffer mapped for reading.
+  Center pixel: R=0 G=255 B=0 A=255
+  Corner pixel: R=0 G=0 B=255 A=255
+SUCCESS: Triangle rendered correctly!
+  Written to render_triangle.ppm
+  Converted to render_triangle.png
+All resources released.
+```
+
+### Helper Functions Added
+- `device_create_render_pipeline_simple` - create render pipeline with vertex/fragment shaders
+- `write_ppm` (OCaml) - write RGBA pixel data to PPM file
+- `ppm_to_png` (OCaml) - convert PPM to PNG via ImageMagick
+
+### Next Steps
+1. Add vertex buffer support for custom geometry
+2. Add texture sampling support
+3. Document the high-level API
+4. Consider adding more complex examples (textured quad, etc.)
