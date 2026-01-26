@@ -757,90 +757,89 @@ module Bind_Group : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Bind_Group_Layout : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Buffer : sig
   type t
 
   val release : t -> unit
+  val get_mapped_range : t -> offset:int64 -> size:int64 -> nativeint
+  val get_const_mapped_range : t -> offset:int64 -> size:int64 -> nativeint
+  val set_label : t -> label:string -> unit
+  val get_usage : t -> int
+  val get_size : t -> int64
+  val get_map_state : t -> int
+  val unmap : t -> unit
+  val destroy : t -> unit
 end
 
 module Command_Buffer : sig
   type t
 
   val release : t -> unit
-end
-
-module Command_Encoder : sig
-  type t
-
-  val release : t -> unit
-end
-
-module Compute_Pass_Encoder : sig
-  type t
-
-  val release : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Compute_Pipeline : sig
   type t
 
   val release : t -> unit
+  val get_bind_group_layout : t -> group_index:int -> Bind_Group_Layout.t
+  val set_label : t -> label:string -> unit
 end
 
 module Pipeline_Layout : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Query_Set : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
+  val get_type : t -> int
+  val get_count : t -> int
+  val destroy : t -> unit
 end
 
 module Render_Bundle : sig
   type t
 
   val release : t -> unit
-end
-
-module Render_Bundle_Encoder : sig
-  type t
-
-  val release : t -> unit
-end
-
-module Render_Pass_Encoder : sig
-  type t
-
-  val release : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Render_Pipeline : sig
   type t
 
   val release : t -> unit
+  val get_bind_group_layout : t -> group_index:int -> Bind_Group_Layout.t
+  val set_label : t -> label:string -> unit
 end
 
 module Sampler : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Shader_Module : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Surface : sig
@@ -849,18 +848,100 @@ module Surface : sig
   type t
 
   val release : t -> unit
+  val present : t -> int
+  val unconfigure : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Texture : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
+  val get_width : t -> int
+  val get_height : t -> int
+  val get_depth_or_array_layers : t -> int
+  val get_mip_level_count : t -> int
+  val get_sample_count : t -> int
+  val get_dimension : t -> int
+  val get_format : t -> int
+  val get_usage : t -> int
+  val destroy : t -> unit
 end
 
 module Texture_View : sig
   type t
 
   val release : t -> unit
+  val set_label : t -> label:string -> unit
+end
+
+module Command_Encoder : sig
+  type t
+
+  val release : t -> unit
+  val copy_buffer_to_buffer : t -> source:Buffer.t -> source_offset:int64 -> destination:Buffer.t -> destination_offset:int64 -> size:int64 -> unit
+  val clear_buffer : t -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
+  val insert_debug_marker : t -> marker_label:string -> unit
+  val pop_debug_group : t -> unit
+  val push_debug_group : t -> group_label:string -> unit
+  val resolve_query_set : t -> query_set:Query_Set.t -> first_query:int -> query_count:int -> destination:Buffer.t -> destination_offset:int64 -> unit
+  val write_timestamp : t -> query_set:Query_Set.t -> query_index:int -> unit
+  val set_label : t -> label:string -> unit
+end
+
+module Compute_Pass_Encoder : sig
+  type t
+
+  val release : t -> unit
+  val insert_debug_marker : t -> marker_label:string -> unit
+  val pop_debug_group : t -> unit
+  val push_debug_group : t -> group_label:string -> unit
+  val set_pipeline : t -> pipeline:Compute_Pipeline.t -> unit
+  val dispatch_workgroups : t -> workgroupCountX:int -> workgroupCountY:int -> workgroupCountZ:int -> unit
+  val dispatch_workgroups_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
+  val end_ : t -> unit
+  val set_label : t -> label:string -> unit
+end
+
+module Render_Bundle_Encoder : sig
+  type t
+
+  val release : t -> unit
+  val set_pipeline : t -> pipeline:Render_Pipeline.t -> unit
+  val draw : t -> vertex_count:int -> instance_count:int -> first_vertex:int -> first_instance:int -> unit
+  val draw_indexed : t -> index_count:int -> instance_count:int -> first_index:int -> base_vertex:int -> first_instance:int -> unit
+  val draw_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
+  val draw_indexed_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
+  val insert_debug_marker : t -> marker_label:string -> unit
+  val pop_debug_group : t -> unit
+  val push_debug_group : t -> group_label:string -> unit
+  val set_vertex_buffer : t -> slot:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
+  val set_index_buffer : t -> buffer:Buffer.t -> format:Index_Format.t -> offset:int64 -> size:int64 -> unit
+  val set_label : t -> label:string -> unit
+end
+
+module Render_Pass_Encoder : sig
+  type t
+
+  val release : t -> unit
+  val set_pipeline : t -> pipeline:Render_Pipeline.t -> unit
+  val draw : t -> vertex_count:int -> instance_count:int -> first_vertex:int -> first_instance:int -> unit
+  val draw_indexed : t -> index_count:int -> instance_count:int -> first_index:int -> base_vertex:int -> first_instance:int -> unit
+  val draw_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
+  val draw_indexed_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
+  val insert_debug_marker : t -> marker_label:string -> unit
+  val pop_debug_group : t -> unit
+  val push_debug_group : t -> group_label:string -> unit
+  val set_stencil_reference : t -> reference:int -> unit
+  val set_viewport : t -> x:float -> y:float -> width:float -> height:float -> min_depth:float -> max_depth:float -> unit
+  val set_scissor_rect : t -> x:int -> y:int -> width:int -> height:int -> unit
+  val set_vertex_buffer : t -> slot:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
+  val set_index_buffer : t -> buffer:Buffer.t -> format:Index_Format.t -> offset:int64 -> size:int64 -> unit
+  val begin_occlusion_query : t -> query_index:int -> unit
+  val end_occlusion_query : t -> unit
+  val end_ : t -> unit
+  val set_label : t -> label:string -> unit
 end
 module Adapter_info : sig
   type t =
