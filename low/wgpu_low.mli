@@ -744,93 +744,1177 @@ module Texture_Usage : sig
   val to_int : t -> int
   val list_to_int : t list -> int
 end
+module Adapter_Info : sig
+  type t = nativeint
+  val adapter_info_create : unit -> t
+  val adapter_info_free : t -> unit
+  val adapter_info_set_vendor : t -> string -> unit
+  val adapter_info_set_architecture : t -> string -> unit
+  val adapter_info_set_device : t -> string -> unit
+  val adapter_info_set_description : t -> string -> unit
+  val adapter_info_set_backend_type : t -> int -> unit
+  val adapter_info_set_adapter_type : t -> int -> unit
+  val adapter_info_set_vendor_ID : t -> int -> unit
+  val adapter_info_set_device_ID : t -> int -> unit
+  val adapter_info_get_vendor : t -> string
+  val adapter_info_get_architecture : t -> string
+  val adapter_info_get_device : t -> string
+  val adapter_info_get_description : t -> string
+  val adapter_info_get_backend_type : t -> int
+  val adapter_info_get_adapter_type : t -> int
+  val adapter_info_get_vendor_ID : t -> int
+  val adapter_info_get_device_ID : t -> int
+end
+
+module Bind_Group_Descriptor : sig
+  type t = nativeint
+  val bind_group_descriptor_create : unit -> t
+  val bind_group_descriptor_free : t -> unit
+  val bind_group_descriptor_set_label : t -> string -> unit
+  val bind_group_descriptor_set_layout : t -> nativeint -> unit
+  val bind_group_descriptor_set_entries : t -> nativeint -> unit
+  val bind_group_descriptor_get_label : t -> string
+  val bind_group_descriptor_get_layout : t -> nativeint
+  val bind_group_descriptor_get_entries : t -> nativeint
+end
+
+module Bind_Group_Entry : sig
+  type t = nativeint
+  val bind_group_entry_create : unit -> t
+  val bind_group_entry_free : t -> unit
+  val bind_group_entry_set_binding : t -> int -> unit
+  val bind_group_entry_set_buffer : t -> nativeint -> unit
+  val bind_group_entry_set_offset : t -> int64 -> unit
+  val bind_group_entry_set_size : t -> int64 -> unit
+  val bind_group_entry_set_sampler : t -> nativeint -> unit
+  val bind_group_entry_set_texture_view : t -> nativeint -> unit
+  val bind_group_entry_get_binding : t -> int
+  val bind_group_entry_get_buffer : t -> nativeint
+  val bind_group_entry_get_offset : t -> int64
+  val bind_group_entry_get_size : t -> int64
+  val bind_group_entry_get_sampler : t -> nativeint
+  val bind_group_entry_get_texture_view : t -> nativeint
+end
+
+module Bind_Group_Layout_Descriptor : sig
+  type t = nativeint
+  val bind_group_layout_descriptor_create : unit -> t
+  val bind_group_layout_descriptor_free : t -> unit
+  val bind_group_layout_descriptor_set_label : t -> string -> unit
+  val bind_group_layout_descriptor_set_entries : t -> nativeint -> unit
+  val bind_group_layout_descriptor_get_label : t -> string
+  val bind_group_layout_descriptor_get_entries : t -> nativeint
+end
+
+module Bind_Group_Layout_Entry : sig
+  type t = nativeint
+  val bind_group_layout_entry_create : unit -> t
+  val bind_group_layout_entry_free : t -> unit
+  val bind_group_layout_entry_set_binding : t -> int -> unit
+  val bind_group_layout_entry_set_visibility : t -> int -> unit
+  val bind_group_layout_entry_set_buffer : t -> nativeint -> unit
+  val bind_group_layout_entry_set_sampler : t -> nativeint -> unit
+  val bind_group_layout_entry_set_texture : t -> nativeint -> unit
+  val bind_group_layout_entry_set_storage_texture : t -> nativeint -> unit
+  val bind_group_layout_entry_get_binding : t -> int
+  val bind_group_layout_entry_get_visibility : t -> int
+  val bind_group_layout_entry_get_buffer : t -> nativeint
+  val bind_group_layout_entry_get_sampler : t -> nativeint
+  val bind_group_layout_entry_get_texture : t -> nativeint
+  val bind_group_layout_entry_get_storage_texture : t -> nativeint
+end
+
+module Blend_Component : sig
+  type t = nativeint
+  val blend_component_create : unit -> t
+  val blend_component_free : t -> unit
+  val blend_component_set_operation : t -> int -> unit
+  val blend_component_set_src_factor : t -> int -> unit
+  val blend_component_set_dst_factor : t -> int -> unit
+  val blend_component_get_operation : t -> int
+  val blend_component_get_src_factor : t -> int
+  val blend_component_get_dst_factor : t -> int
+end
+
+module Blend_State : sig
+  type t = nativeint
+  val blend_state_create : unit -> t
+  val blend_state_free : t -> unit
+  val blend_state_set_color : t -> nativeint -> unit
+  val blend_state_set_alpha : t -> nativeint -> unit
+  val blend_state_get_color : t -> nativeint
+  val blend_state_get_alpha : t -> nativeint
+end
+
+module Buffer_Binding_Layout : sig
+  type t = nativeint
+  val buffer_binding_layout_create : unit -> t
+  val buffer_binding_layout_free : t -> unit
+  val buffer_binding_layout_set_type : t -> int -> unit
+  val buffer_binding_layout_set_has_dynamic_offset : t -> bool -> unit
+  val buffer_binding_layout_set_min_binding_size : t -> int64 -> unit
+  val buffer_binding_layout_get_type : t -> int
+  val buffer_binding_layout_get_has_dynamic_offset : t -> bool
+  val buffer_binding_layout_get_min_binding_size : t -> int64
+end
+
+module Buffer_Descriptor : sig
+  type t = nativeint
+  val buffer_descriptor_create : unit -> t
+  val buffer_descriptor_free : t -> unit
+  val buffer_descriptor_set_label : t -> string -> unit
+  val buffer_descriptor_set_usage : t -> int -> unit
+  val buffer_descriptor_set_size : t -> int64 -> unit
+  val buffer_descriptor_set_mapped_at_creation : t -> bool -> unit
+  val buffer_descriptor_get_label : t -> string
+  val buffer_descriptor_get_usage : t -> int
+  val buffer_descriptor_get_size : t -> int64
+  val buffer_descriptor_get_mapped_at_creation : t -> bool
+end
+
+module Color : sig
+  type t = nativeint
+  val color_create : unit -> t
+  val color_free : t -> unit
+  val color_set_r : t -> float -> unit
+  val color_set_g : t -> float -> unit
+  val color_set_b : t -> float -> unit
+  val color_set_a : t -> float -> unit
+  val color_get_r : t -> float
+  val color_get_g : t -> float
+  val color_get_b : t -> float
+  val color_get_a : t -> float
+end
+
+module Color_Target_State : sig
+  type t = nativeint
+  val color_target_state_create : unit -> t
+  val color_target_state_free : t -> unit
+  val color_target_state_set_format : t -> int -> unit
+  val color_target_state_set_blend : t -> nativeint -> unit
+  val color_target_state_set_write_mask : t -> int -> unit
+  val color_target_state_get_format : t -> int
+  val color_target_state_get_blend : t -> nativeint
+  val color_target_state_get_write_mask : t -> int
+end
+
+module Command_Buffer_Descriptor : sig
+  type t = nativeint
+  val command_buffer_descriptor_create : unit -> t
+  val command_buffer_descriptor_free : t -> unit
+  val command_buffer_descriptor_set_label : t -> string -> unit
+  val command_buffer_descriptor_get_label : t -> string
+end
+
+module Command_Encoder_Descriptor : sig
+  type t = nativeint
+  val command_encoder_descriptor_create : unit -> t
+  val command_encoder_descriptor_free : t -> unit
+  val command_encoder_descriptor_set_label : t -> string -> unit
+  val command_encoder_descriptor_get_label : t -> string
+end
+
+module Compilation_Info : sig
+  type t = nativeint
+  val compilation_info_create : unit -> t
+  val compilation_info_free : t -> unit
+  val compilation_info_set_messages : t -> nativeint -> unit
+  val compilation_info_get_messages : t -> nativeint
+end
+
+module Compilation_Message : sig
+  type t = nativeint
+  val compilation_message_create : unit -> t
+  val compilation_message_free : t -> unit
+  val compilation_message_set_message : t -> string -> unit
+  val compilation_message_set_type : t -> int -> unit
+  val compilation_message_set_line_num : t -> int64 -> unit
+  val compilation_message_set_line_pos : t -> int64 -> unit
+  val compilation_message_set_offset : t -> int64 -> unit
+  val compilation_message_set_length : t -> int64 -> unit
+  val compilation_message_get_message : t -> string
+  val compilation_message_get_type : t -> int
+  val compilation_message_get_line_num : t -> int64
+  val compilation_message_get_line_pos : t -> int64
+  val compilation_message_get_offset : t -> int64
+  val compilation_message_get_length : t -> int64
+end
+
+module Compute_Pass_Descriptor : sig
+  type t = nativeint
+  val compute_pass_descriptor_create : unit -> t
+  val compute_pass_descriptor_free : t -> unit
+  val compute_pass_descriptor_set_label : t -> string -> unit
+  val compute_pass_descriptor_set_timestamp_writes : t -> nativeint -> unit
+  val compute_pass_descriptor_get_label : t -> string
+  val compute_pass_descriptor_get_timestamp_writes : t -> nativeint
+end
+
+module Compute_Pass_Timestamp_Writes : sig
+  type t = nativeint
+  val compute_pass_timestamp_writes_create : unit -> t
+  val compute_pass_timestamp_writes_free : t -> unit
+  val compute_pass_timestamp_writes_set_query_set : t -> nativeint -> unit
+  val compute_pass_timestamp_writes_set_beginning_of_pass_write_index : t -> int -> unit
+  val compute_pass_timestamp_writes_set_end_of_pass_write_index : t -> int -> unit
+  val compute_pass_timestamp_writes_get_query_set : t -> nativeint
+  val compute_pass_timestamp_writes_get_beginning_of_pass_write_index : t -> int
+  val compute_pass_timestamp_writes_get_end_of_pass_write_index : t -> int
+end
+
+module Compute_Pipeline_Descriptor : sig
+  type t = nativeint
+  val compute_pipeline_descriptor_create : unit -> t
+  val compute_pipeline_descriptor_free : t -> unit
+  val compute_pipeline_descriptor_set_label : t -> string -> unit
+  val compute_pipeline_descriptor_set_layout : t -> nativeint -> unit
+  val compute_pipeline_descriptor_set_compute : t -> nativeint -> unit
+  val compute_pipeline_descriptor_get_label : t -> string
+  val compute_pipeline_descriptor_get_layout : t -> nativeint
+  val compute_pipeline_descriptor_get_compute : t -> nativeint
+end
+
+module Constant_Entry : sig
+  type t = nativeint
+  val constant_entry_create : unit -> t
+  val constant_entry_free : t -> unit
+  val constant_entry_set_key : t -> string -> unit
+  val constant_entry_set_value : t -> float -> unit
+  val constant_entry_get_key : t -> string
+  val constant_entry_get_value : t -> float
+end
+
+module Depth_Stencil_State : sig
+  type t = nativeint
+  val depth_stencil_state_create : unit -> t
+  val depth_stencil_state_free : t -> unit
+  val depth_stencil_state_set_format : t -> int -> unit
+  val depth_stencil_state_set_depth_write_enabled : t -> int -> unit
+  val depth_stencil_state_set_depth_compare : t -> int -> unit
+  val depth_stencil_state_set_stencil_front : t -> nativeint -> unit
+  val depth_stencil_state_set_stencil_back : t -> nativeint -> unit
+  val depth_stencil_state_set_stencil_read_mask : t -> int -> unit
+  val depth_stencil_state_set_stencil_write_mask : t -> int -> unit
+  val depth_stencil_state_set_depth_bias : t -> int -> unit
+  val depth_stencil_state_set_depth_bias_slope_scale : t -> float -> unit
+  val depth_stencil_state_set_depth_bias_clamp : t -> float -> unit
+  val depth_stencil_state_get_format : t -> int
+  val depth_stencil_state_get_depth_write_enabled : t -> int
+  val depth_stencil_state_get_depth_compare : t -> int
+  val depth_stencil_state_get_stencil_front : t -> nativeint
+  val depth_stencil_state_get_stencil_back : t -> nativeint
+  val depth_stencil_state_get_stencil_read_mask : t -> int
+  val depth_stencil_state_get_stencil_write_mask : t -> int
+  val depth_stencil_state_get_depth_bias : t -> int
+  val depth_stencil_state_get_depth_bias_slope_scale : t -> float
+  val depth_stencil_state_get_depth_bias_clamp : t -> float
+end
+
+module Device_Descriptor : sig
+  type t = nativeint
+  val device_descriptor_create : unit -> t
+  val device_descriptor_free : t -> unit
+  val device_descriptor_set_label : t -> string -> unit
+  val device_descriptor_set_required_features : t -> nativeint -> unit
+  val device_descriptor_set_required_limits : t -> nativeint -> unit
+  val device_descriptor_set_default_queue : t -> nativeint -> unit
+  val device_descriptor_set_device_lost_callback_info : t -> nativeint -> unit
+  val device_descriptor_set_uncaptured_error_callback_info : t -> nativeint -> unit
+  val device_descriptor_get_label : t -> string
+  val device_descriptor_get_required_features : t -> nativeint
+  val device_descriptor_get_required_limits : t -> nativeint
+  val device_descriptor_get_default_queue : t -> nativeint
+  val device_descriptor_get_device_lost_callback_info : t -> nativeint
+  val device_descriptor_get_uncaptured_error_callback_info : t -> nativeint
+end
+
+module Extent_3D : sig
+  type t = nativeint
+  val extent_3D_create : unit -> t
+  val extent_3D_free : t -> unit
+  val extent_3D_set_width : t -> int -> unit
+  val extent_3D_set_height : t -> int -> unit
+  val extent_3D_set_depth_or_array_layers : t -> int -> unit
+  val extent_3D_get_width : t -> int
+  val extent_3D_get_height : t -> int
+  val extent_3D_get_depth_or_array_layers : t -> int
+end
+
+module Fragment_State : sig
+  type t = nativeint
+  val fragment_state_create : unit -> t
+  val fragment_state_free : t -> unit
+  val fragment_state_set_module : t -> nativeint -> unit
+  val fragment_state_set_entry_point : t -> string -> unit
+  val fragment_state_set_constants : t -> nativeint -> unit
+  val fragment_state_set_targets : t -> nativeint -> unit
+  val fragment_state_get_module : t -> nativeint
+  val fragment_state_get_entry_point : t -> string
+  val fragment_state_get_constants : t -> nativeint
+  val fragment_state_get_targets : t -> nativeint
+end
+
+module Future : sig
+  type t = nativeint
+  val future_create : unit -> t
+  val future_free : t -> unit
+  val future_set_id : t -> int64 -> unit
+  val future_get_id : t -> int64
+end
+
+module Future_Wait_Info : sig
+  type t = nativeint
+  val future_wait_info_create : unit -> t
+  val future_wait_info_free : t -> unit
+  val future_wait_info_set_future : t -> nativeint -> unit
+  val future_wait_info_set_completed : t -> bool -> unit
+  val future_wait_info_get_future : t -> nativeint
+  val future_wait_info_get_completed : t -> bool
+end
+
+module Instance_Capabilities : sig
+  type t = nativeint
+  val instance_capabilities_create : unit -> t
+  val instance_capabilities_free : t -> unit
+  val instance_capabilities_set_timed_wait_any_enable : t -> bool -> unit
+  val instance_capabilities_set_timed_wait_any_max_count : t -> int64 -> unit
+  val instance_capabilities_get_timed_wait_any_enable : t -> bool
+  val instance_capabilities_get_timed_wait_any_max_count : t -> int64
+end
+
+module Instance_Descriptor : sig
+  type t = nativeint
+  val instance_descriptor_create : unit -> t
+  val instance_descriptor_free : t -> unit
+  val instance_descriptor_set_features : t -> nativeint -> unit
+  val instance_descriptor_get_features : t -> nativeint
+end
+
+module Limits : sig
+  type t = nativeint
+  val limits_create : unit -> t
+  val limits_free : t -> unit
+  val limits_set_max_texture_dimension_1D : t -> int -> unit
+  val limits_set_max_texture_dimension_2D : t -> int -> unit
+  val limits_set_max_texture_dimension_3D : t -> int -> unit
+  val limits_set_max_texture_array_layers : t -> int -> unit
+  val limits_set_max_bind_groups : t -> int -> unit
+  val limits_set_max_bind_groups_plus_vertex_buffers : t -> int -> unit
+  val limits_set_max_bindings_per_bind_group : t -> int -> unit
+  val limits_set_max_dynamic_uniform_buffers_per_pipeline_layout : t -> int -> unit
+  val limits_set_max_dynamic_storage_buffers_per_pipeline_layout : t -> int -> unit
+  val limits_set_max_sampled_textures_per_shader_stage : t -> int -> unit
+  val limits_set_max_samplers_per_shader_stage : t -> int -> unit
+  val limits_set_max_storage_buffers_per_shader_stage : t -> int -> unit
+  val limits_set_max_storage_textures_per_shader_stage : t -> int -> unit
+  val limits_set_max_uniform_buffers_per_shader_stage : t -> int -> unit
+  val limits_set_max_uniform_buffer_binding_size : t -> int64 -> unit
+  val limits_set_max_storage_buffer_binding_size : t -> int64 -> unit
+  val limits_set_min_uniform_buffer_offset_alignment : t -> int -> unit
+  val limits_set_min_storage_buffer_offset_alignment : t -> int -> unit
+  val limits_set_max_vertex_buffers : t -> int -> unit
+  val limits_set_max_buffer_size : t -> int64 -> unit
+  val limits_set_max_vertex_attributes : t -> int -> unit
+  val limits_set_max_vertex_buffer_array_stride : t -> int -> unit
+  val limits_set_max_inter_stage_shader_variables : t -> int -> unit
+  val limits_set_max_color_attachments : t -> int -> unit
+  val limits_set_max_color_attachment_bytes_per_sample : t -> int -> unit
+  val limits_set_max_compute_workgroup_storage_size : t -> int -> unit
+  val limits_set_max_compute_invocations_per_workgroup : t -> int -> unit
+  val limits_set_max_compute_workgroup_size_x : t -> int -> unit
+  val limits_set_max_compute_workgroup_size_y : t -> int -> unit
+  val limits_set_max_compute_workgroup_size_z : t -> int -> unit
+  val limits_set_max_compute_workgroups_per_dimension : t -> int -> unit
+  val limits_get_max_texture_dimension_1D : t -> int
+  val limits_get_max_texture_dimension_2D : t -> int
+  val limits_get_max_texture_dimension_3D : t -> int
+  val limits_get_max_texture_array_layers : t -> int
+  val limits_get_max_bind_groups : t -> int
+  val limits_get_max_bind_groups_plus_vertex_buffers : t -> int
+  val limits_get_max_bindings_per_bind_group : t -> int
+  val limits_get_max_dynamic_uniform_buffers_per_pipeline_layout : t -> int
+  val limits_get_max_dynamic_storage_buffers_per_pipeline_layout : t -> int
+  val limits_get_max_sampled_textures_per_shader_stage : t -> int
+  val limits_get_max_samplers_per_shader_stage : t -> int
+  val limits_get_max_storage_buffers_per_shader_stage : t -> int
+  val limits_get_max_storage_textures_per_shader_stage : t -> int
+  val limits_get_max_uniform_buffers_per_shader_stage : t -> int
+  val limits_get_max_uniform_buffer_binding_size : t -> int64
+  val limits_get_max_storage_buffer_binding_size : t -> int64
+  val limits_get_min_uniform_buffer_offset_alignment : t -> int
+  val limits_get_min_storage_buffer_offset_alignment : t -> int
+  val limits_get_max_vertex_buffers : t -> int
+  val limits_get_max_buffer_size : t -> int64
+  val limits_get_max_vertex_attributes : t -> int
+  val limits_get_max_vertex_buffer_array_stride : t -> int
+  val limits_get_max_inter_stage_shader_variables : t -> int
+  val limits_get_max_color_attachments : t -> int
+  val limits_get_max_color_attachment_bytes_per_sample : t -> int
+  val limits_get_max_compute_workgroup_storage_size : t -> int
+  val limits_get_max_compute_invocations_per_workgroup : t -> int
+  val limits_get_max_compute_workgroup_size_x : t -> int
+  val limits_get_max_compute_workgroup_size_y : t -> int
+  val limits_get_max_compute_workgroup_size_z : t -> int
+  val limits_get_max_compute_workgroups_per_dimension : t -> int
+end
+
+module Multisample_State : sig
+  type t = nativeint
+  val multisample_state_create : unit -> t
+  val multisample_state_free : t -> unit
+  val multisample_state_set_count : t -> int -> unit
+  val multisample_state_set_mask : t -> int -> unit
+  val multisample_state_set_alpha_to_coverage_enabled : t -> bool -> unit
+  val multisample_state_get_count : t -> int
+  val multisample_state_get_mask : t -> int
+  val multisample_state_get_alpha_to_coverage_enabled : t -> bool
+end
+
+module Origin_3D : sig
+  type t = nativeint
+  val origin_3D_create : unit -> t
+  val origin_3D_free : t -> unit
+  val origin_3D_set_x : t -> int -> unit
+  val origin_3D_set_y : t -> int -> unit
+  val origin_3D_set_z : t -> int -> unit
+  val origin_3D_get_x : t -> int
+  val origin_3D_get_y : t -> int
+  val origin_3D_get_z : t -> int
+end
+
+module Pipeline_Layout_Descriptor : sig
+  type t = nativeint
+  val pipeline_layout_descriptor_create : unit -> t
+  val pipeline_layout_descriptor_free : t -> unit
+  val pipeline_layout_descriptor_set_label : t -> string -> unit
+  val pipeline_layout_descriptor_set_bind_group_layouts : t -> nativeint -> unit
+  val pipeline_layout_descriptor_get_label : t -> string
+  val pipeline_layout_descriptor_get_bind_group_layouts : t -> nativeint
+end
+
+module Primitive_State : sig
+  type t = nativeint
+  val primitive_state_create : unit -> t
+  val primitive_state_free : t -> unit
+  val primitive_state_set_topology : t -> int -> unit
+  val primitive_state_set_strip_index_format : t -> int -> unit
+  val primitive_state_set_front_face : t -> int -> unit
+  val primitive_state_set_cull_mode : t -> int -> unit
+  val primitive_state_set_unclipped_depth : t -> bool -> unit
+  val primitive_state_get_topology : t -> int
+  val primitive_state_get_strip_index_format : t -> int
+  val primitive_state_get_front_face : t -> int
+  val primitive_state_get_cull_mode : t -> int
+  val primitive_state_get_unclipped_depth : t -> bool
+end
+
+module Programmable_Stage_Descriptor : sig
+  type t = nativeint
+  val programmable_stage_descriptor_create : unit -> t
+  val programmable_stage_descriptor_free : t -> unit
+  val programmable_stage_descriptor_set_module : t -> nativeint -> unit
+  val programmable_stage_descriptor_set_entry_point : t -> string -> unit
+  val programmable_stage_descriptor_set_constants : t -> nativeint -> unit
+  val programmable_stage_descriptor_get_module : t -> nativeint
+  val programmable_stage_descriptor_get_entry_point : t -> string
+  val programmable_stage_descriptor_get_constants : t -> nativeint
+end
+
+module Query_Set_Descriptor : sig
+  type t = nativeint
+  val query_set_descriptor_create : unit -> t
+  val query_set_descriptor_free : t -> unit
+  val query_set_descriptor_set_label : t -> string -> unit
+  val query_set_descriptor_set_type : t -> int -> unit
+  val query_set_descriptor_set_count : t -> int -> unit
+  val query_set_descriptor_get_label : t -> string
+  val query_set_descriptor_get_type : t -> int
+  val query_set_descriptor_get_count : t -> int
+end
+
+module Queue_Descriptor : sig
+  type t = nativeint
+  val queue_descriptor_create : unit -> t
+  val queue_descriptor_free : t -> unit
+  val queue_descriptor_set_label : t -> string -> unit
+  val queue_descriptor_get_label : t -> string
+end
+
+module Render_Bundle_Descriptor : sig
+  type t = nativeint
+  val render_bundle_descriptor_create : unit -> t
+  val render_bundle_descriptor_free : t -> unit
+  val render_bundle_descriptor_set_label : t -> string -> unit
+  val render_bundle_descriptor_get_label : t -> string
+end
+
+module Render_Bundle_Encoder_Descriptor : sig
+  type t = nativeint
+  val render_bundle_encoder_descriptor_create : unit -> t
+  val render_bundle_encoder_descriptor_free : t -> unit
+  val render_bundle_encoder_descriptor_set_label : t -> string -> unit
+  val render_bundle_encoder_descriptor_set_color_formats : t -> nativeint -> unit
+  val render_bundle_encoder_descriptor_set_depth_stencil_format : t -> int -> unit
+  val render_bundle_encoder_descriptor_set_sample_count : t -> int -> unit
+  val render_bundle_encoder_descriptor_set_depth_read_only : t -> bool -> unit
+  val render_bundle_encoder_descriptor_set_stencil_read_only : t -> bool -> unit
+  val render_bundle_encoder_descriptor_get_label : t -> string
+  val render_bundle_encoder_descriptor_get_color_formats : t -> nativeint
+  val render_bundle_encoder_descriptor_get_depth_stencil_format : t -> int
+  val render_bundle_encoder_descriptor_get_sample_count : t -> int
+  val render_bundle_encoder_descriptor_get_depth_read_only : t -> bool
+  val render_bundle_encoder_descriptor_get_stencil_read_only : t -> bool
+end
+
+module Render_Pass_Color_Attachment : sig
+  type t = nativeint
+  val render_pass_color_attachment_create : unit -> t
+  val render_pass_color_attachment_free : t -> unit
+  val render_pass_color_attachment_set_view : t -> nativeint -> unit
+  val render_pass_color_attachment_set_depth_slice : t -> int -> unit
+  val render_pass_color_attachment_set_resolve_target : t -> nativeint -> unit
+  val render_pass_color_attachment_set_load_op : t -> int -> unit
+  val render_pass_color_attachment_set_store_op : t -> int -> unit
+  val render_pass_color_attachment_set_clear_value : t -> nativeint -> unit
+  val render_pass_color_attachment_get_view : t -> nativeint
+  val render_pass_color_attachment_get_depth_slice : t -> int
+  val render_pass_color_attachment_get_resolve_target : t -> nativeint
+  val render_pass_color_attachment_get_load_op : t -> int
+  val render_pass_color_attachment_get_store_op : t -> int
+  val render_pass_color_attachment_get_clear_value : t -> nativeint
+end
+
+module Render_Pass_Depth_Stencil_Attachment : sig
+  type t = nativeint
+  val render_pass_depth_stencil_attachment_create : unit -> t
+  val render_pass_depth_stencil_attachment_free : t -> unit
+  val render_pass_depth_stencil_attachment_set_view : t -> nativeint -> unit
+  val render_pass_depth_stencil_attachment_set_depth_load_op : t -> int -> unit
+  val render_pass_depth_stencil_attachment_set_depth_store_op : t -> int -> unit
+  val render_pass_depth_stencil_attachment_set_depth_clear_value : t -> float -> unit
+  val render_pass_depth_stencil_attachment_set_depth_read_only : t -> bool -> unit
+  val render_pass_depth_stencil_attachment_set_stencil_load_op : t -> int -> unit
+  val render_pass_depth_stencil_attachment_set_stencil_store_op : t -> int -> unit
+  val render_pass_depth_stencil_attachment_set_stencil_clear_value : t -> int -> unit
+  val render_pass_depth_stencil_attachment_set_stencil_read_only : t -> bool -> unit
+  val render_pass_depth_stencil_attachment_get_view : t -> nativeint
+  val render_pass_depth_stencil_attachment_get_depth_load_op : t -> int
+  val render_pass_depth_stencil_attachment_get_depth_store_op : t -> int
+  val render_pass_depth_stencil_attachment_get_depth_clear_value : t -> float
+  val render_pass_depth_stencil_attachment_get_depth_read_only : t -> bool
+  val render_pass_depth_stencil_attachment_get_stencil_load_op : t -> int
+  val render_pass_depth_stencil_attachment_get_stencil_store_op : t -> int
+  val render_pass_depth_stencil_attachment_get_stencil_clear_value : t -> int
+  val render_pass_depth_stencil_attachment_get_stencil_read_only : t -> bool
+end
+
+module Render_Pass_Descriptor : sig
+  type t = nativeint
+  val render_pass_descriptor_create : unit -> t
+  val render_pass_descriptor_free : t -> unit
+  val render_pass_descriptor_set_label : t -> string -> unit
+  val render_pass_descriptor_set_color_attachments : t -> nativeint -> unit
+  val render_pass_descriptor_set_depth_stencil_attachment : t -> nativeint -> unit
+  val render_pass_descriptor_set_occlusion_query_set : t -> nativeint -> unit
+  val render_pass_descriptor_set_timestamp_writes : t -> nativeint -> unit
+  val render_pass_descriptor_get_label : t -> string
+  val render_pass_descriptor_get_color_attachments : t -> nativeint
+  val render_pass_descriptor_get_depth_stencil_attachment : t -> nativeint
+  val render_pass_descriptor_get_occlusion_query_set : t -> nativeint
+  val render_pass_descriptor_get_timestamp_writes : t -> nativeint
+end
+
+module Render_Pass_Max_Draw_Count : sig
+  type t = nativeint
+  val render_pass_max_draw_count_create : unit -> t
+  val render_pass_max_draw_count_free : t -> unit
+  val render_pass_max_draw_count_set_max_draw_count : t -> int64 -> unit
+  val render_pass_max_draw_count_get_max_draw_count : t -> int64
+end
+
+module Render_Pass_Timestamp_Writes : sig
+  type t = nativeint
+  val render_pass_timestamp_writes_create : unit -> t
+  val render_pass_timestamp_writes_free : t -> unit
+  val render_pass_timestamp_writes_set_query_set : t -> nativeint -> unit
+  val render_pass_timestamp_writes_set_beginning_of_pass_write_index : t -> int -> unit
+  val render_pass_timestamp_writes_set_end_of_pass_write_index : t -> int -> unit
+  val render_pass_timestamp_writes_get_query_set : t -> nativeint
+  val render_pass_timestamp_writes_get_beginning_of_pass_write_index : t -> int
+  val render_pass_timestamp_writes_get_end_of_pass_write_index : t -> int
+end
+
+module Render_Pipeline_Descriptor : sig
+  type t = nativeint
+  val render_pipeline_descriptor_create : unit -> t
+  val render_pipeline_descriptor_free : t -> unit
+  val render_pipeline_descriptor_set_label : t -> string -> unit
+  val render_pipeline_descriptor_set_layout : t -> nativeint -> unit
+  val render_pipeline_descriptor_set_vertex : t -> nativeint -> unit
+  val render_pipeline_descriptor_set_primitive : t -> nativeint -> unit
+  val render_pipeline_descriptor_set_depth_stencil : t -> nativeint -> unit
+  val render_pipeline_descriptor_set_multisample : t -> nativeint -> unit
+  val render_pipeline_descriptor_set_fragment : t -> nativeint -> unit
+  val render_pipeline_descriptor_get_label : t -> string
+  val render_pipeline_descriptor_get_layout : t -> nativeint
+  val render_pipeline_descriptor_get_vertex : t -> nativeint
+  val render_pipeline_descriptor_get_primitive : t -> nativeint
+  val render_pipeline_descriptor_get_depth_stencil : t -> nativeint
+  val render_pipeline_descriptor_get_multisample : t -> nativeint
+  val render_pipeline_descriptor_get_fragment : t -> nativeint
+end
+
+module Request_Adapter_Options : sig
+  type t = nativeint
+  val request_adapter_options_create : unit -> t
+  val request_adapter_options_free : t -> unit
+  val request_adapter_options_set_feature_level : t -> int -> unit
+  val request_adapter_options_set_power_preference : t -> int -> unit
+  val request_adapter_options_set_force_fallback_adapter : t -> bool -> unit
+  val request_adapter_options_set_backend_type : t -> int -> unit
+  val request_adapter_options_set_compatible_surface : t -> nativeint -> unit
+  val request_adapter_options_get_feature_level : t -> int
+  val request_adapter_options_get_power_preference : t -> int
+  val request_adapter_options_get_force_fallback_adapter : t -> bool
+  val request_adapter_options_get_backend_type : t -> int
+  val request_adapter_options_get_compatible_surface : t -> nativeint
+end
+
+module Sampler_Binding_Layout : sig
+  type t = nativeint
+  val sampler_binding_layout_create : unit -> t
+  val sampler_binding_layout_free : t -> unit
+  val sampler_binding_layout_set_type : t -> int -> unit
+  val sampler_binding_layout_get_type : t -> int
+end
+
+module Sampler_Descriptor : sig
+  type t = nativeint
+  val sampler_descriptor_create : unit -> t
+  val sampler_descriptor_free : t -> unit
+  val sampler_descriptor_set_label : t -> string -> unit
+  val sampler_descriptor_set_address_mode_u : t -> int -> unit
+  val sampler_descriptor_set_address_mode_v : t -> int -> unit
+  val sampler_descriptor_set_address_mode_w : t -> int -> unit
+  val sampler_descriptor_set_mag_filter : t -> int -> unit
+  val sampler_descriptor_set_min_filter : t -> int -> unit
+  val sampler_descriptor_set_mipmap_filter : t -> int -> unit
+  val sampler_descriptor_set_lod_min_clamp : t -> float -> unit
+  val sampler_descriptor_set_lod_max_clamp : t -> float -> unit
+  val sampler_descriptor_set_compare : t -> int -> unit
+  val sampler_descriptor_set_max_anisotropy : t -> int -> unit
+  val sampler_descriptor_get_label : t -> string
+  val sampler_descriptor_get_address_mode_u : t -> int
+  val sampler_descriptor_get_address_mode_v : t -> int
+  val sampler_descriptor_get_address_mode_w : t -> int
+  val sampler_descriptor_get_mag_filter : t -> int
+  val sampler_descriptor_get_min_filter : t -> int
+  val sampler_descriptor_get_mipmap_filter : t -> int
+  val sampler_descriptor_get_lod_min_clamp : t -> float
+  val sampler_descriptor_get_lod_max_clamp : t -> float
+  val sampler_descriptor_get_compare : t -> int
+  val sampler_descriptor_get_max_anisotropy : t -> int
+end
+
+module Shader_Module_Descriptor : sig
+  type t = nativeint
+  val shader_module_descriptor_create : unit -> t
+  val shader_module_descriptor_free : t -> unit
+  val shader_module_descriptor_set_label : t -> string -> unit
+  val shader_module_descriptor_get_label : t -> string
+end
+
+module Shader_Source_SPIRV : sig
+  type t = nativeint
+  val shader_source_SPIRV_create : unit -> t
+  val shader_source_SPIRV_free : t -> unit
+  val shader_source_SPIRV_set_code_size : t -> int -> unit
+  val shader_source_SPIRV_set_code : t -> nativeint -> unit
+  val shader_source_SPIRV_get_code_size : t -> int
+  val shader_source_SPIRV_get_code : t -> nativeint
+end
+
+module Shader_Source_WGSL : sig
+  type t = nativeint
+  val shader_source_WGSL_create : unit -> t
+  val shader_source_WGSL_free : t -> unit
+  val shader_source_WGSL_set_code : t -> string -> unit
+  val shader_source_WGSL_get_code : t -> string
+end
+
+module Stencil_Face_State : sig
+  type t = nativeint
+  val stencil_face_state_create : unit -> t
+  val stencil_face_state_free : t -> unit
+  val stencil_face_state_set_compare : t -> int -> unit
+  val stencil_face_state_set_fail_op : t -> int -> unit
+  val stencil_face_state_set_depth_fail_op : t -> int -> unit
+  val stencil_face_state_set_pass_op : t -> int -> unit
+  val stencil_face_state_get_compare : t -> int
+  val stencil_face_state_get_fail_op : t -> int
+  val stencil_face_state_get_depth_fail_op : t -> int
+  val stencil_face_state_get_pass_op : t -> int
+end
+
+module Storage_Texture_Binding_Layout : sig
+  type t = nativeint
+  val storage_texture_binding_layout_create : unit -> t
+  val storage_texture_binding_layout_free : t -> unit
+  val storage_texture_binding_layout_set_access : t -> int -> unit
+  val storage_texture_binding_layout_set_format : t -> int -> unit
+  val storage_texture_binding_layout_set_view_dimension : t -> int -> unit
+  val storage_texture_binding_layout_get_access : t -> int
+  val storage_texture_binding_layout_get_format : t -> int
+  val storage_texture_binding_layout_get_view_dimension : t -> int
+end
+
+module Supported_Features : sig
+  type t = nativeint
+  val supported_features_create : unit -> t
+  val supported_features_free : t -> unit
+  val supported_features_set_features : t -> nativeint -> unit
+  val supported_features_get_features : t -> nativeint
+end
+
+module Supported_WGSL_Language_Features : sig
+  type t = nativeint
+  val supported_WGSL_language_features_create : unit -> t
+  val supported_WGSL_language_features_free : t -> unit
+  val supported_WGSL_language_features_set_features : t -> nativeint -> unit
+  val supported_WGSL_language_features_get_features : t -> nativeint
+end
+
+module Surface_Capabilities : sig
+  type t = nativeint
+  val surface_capabilities_create : unit -> t
+  val surface_capabilities_free : t -> unit
+  val surface_capabilities_set_usages : t -> int -> unit
+  val surface_capabilities_set_formats : t -> nativeint -> unit
+  val surface_capabilities_set_present_modes : t -> nativeint -> unit
+  val surface_capabilities_set_alpha_modes : t -> nativeint -> unit
+  val surface_capabilities_get_usages : t -> int
+  val surface_capabilities_get_formats : t -> nativeint
+  val surface_capabilities_get_present_modes : t -> nativeint
+  val surface_capabilities_get_alpha_modes : t -> nativeint
+end
+
+module Surface_Configuration : sig
+  type t = nativeint
+  val surface_configuration_create : unit -> t
+  val surface_configuration_free : t -> unit
+  val surface_configuration_set_device : t -> nativeint -> unit
+  val surface_configuration_set_format : t -> int -> unit
+  val surface_configuration_set_usage : t -> int -> unit
+  val surface_configuration_set_width : t -> int -> unit
+  val surface_configuration_set_height : t -> int -> unit
+  val surface_configuration_set_view_formats : t -> nativeint -> unit
+  val surface_configuration_set_alpha_mode : t -> int -> unit
+  val surface_configuration_set_present_mode : t -> int -> unit
+  val surface_configuration_get_device : t -> nativeint
+  val surface_configuration_get_format : t -> int
+  val surface_configuration_get_usage : t -> int
+  val surface_configuration_get_width : t -> int
+  val surface_configuration_get_height : t -> int
+  val surface_configuration_get_view_formats : t -> nativeint
+  val surface_configuration_get_alpha_mode : t -> int
+  val surface_configuration_get_present_mode : t -> int
+end
+
+module Surface_Descriptor : sig
+  type t = nativeint
+  val surface_descriptor_create : unit -> t
+  val surface_descriptor_free : t -> unit
+  val surface_descriptor_set_label : t -> string -> unit
+  val surface_descriptor_get_label : t -> string
+end
+
+module Surface_Source_Android_Native_Window : sig
+  type t = nativeint
+  val surface_source_android_native_window_create : unit -> t
+  val surface_source_android_native_window_free : t -> unit
+  val surface_source_android_native_window_set_window : t -> nativeint -> unit
+  val surface_source_android_native_window_get_window : t -> nativeint
+end
+
+module Surface_Source_Metal_Layer : sig
+  type t = nativeint
+  val surface_source_metal_layer_create : unit -> t
+  val surface_source_metal_layer_free : t -> unit
+  val surface_source_metal_layer_set_layer : t -> nativeint -> unit
+  val surface_source_metal_layer_get_layer : t -> nativeint
+end
+
+module Surface_Source_Wayland_Surface : sig
+  type t = nativeint
+  val surface_source_wayland_surface_create : unit -> t
+  val surface_source_wayland_surface_free : t -> unit
+  val surface_source_wayland_surface_set_display : t -> nativeint -> unit
+  val surface_source_wayland_surface_set_surface : t -> nativeint -> unit
+  val surface_source_wayland_surface_get_display : t -> nativeint
+  val surface_source_wayland_surface_get_surface : t -> nativeint
+end
+
+module Surface_Source_Windows_HWND : sig
+  type t = nativeint
+  val surface_source_windows_HWND_create : unit -> t
+  val surface_source_windows_HWND_free : t -> unit
+  val surface_source_windows_HWND_set_hinstance : t -> nativeint -> unit
+  val surface_source_windows_HWND_set_hwnd : t -> nativeint -> unit
+  val surface_source_windows_HWND_get_hinstance : t -> nativeint
+  val surface_source_windows_HWND_get_hwnd : t -> nativeint
+end
+
+module Surface_Source_XCB_Window : sig
+  type t = nativeint
+  val surface_source_XCB_window_create : unit -> t
+  val surface_source_XCB_window_free : t -> unit
+  val surface_source_XCB_window_set_connection : t -> nativeint -> unit
+  val surface_source_XCB_window_set_window : t -> int -> unit
+  val surface_source_XCB_window_get_connection : t -> nativeint
+  val surface_source_XCB_window_get_window : t -> int
+end
+
+module Surface_Source_Xlib_Window : sig
+  type t = nativeint
+  val surface_source_xlib_window_create : unit -> t
+  val surface_source_xlib_window_free : t -> unit
+  val surface_source_xlib_window_set_display : t -> nativeint -> unit
+  val surface_source_xlib_window_set_window : t -> int64 -> unit
+  val surface_source_xlib_window_get_display : t -> nativeint
+  val surface_source_xlib_window_get_window : t -> int64
+end
+
+module Surface_Texture : sig
+  type t = nativeint
+  val surface_texture_create : unit -> t
+  val surface_texture_free : t -> unit
+  val surface_texture_set_texture : t -> nativeint -> unit
+  val surface_texture_set_status : t -> int -> unit
+  val surface_texture_get_texture : t -> nativeint
+  val surface_texture_get_status : t -> int
+end
+
+module Texel_Copy_Buffer_Info : sig
+  type t = nativeint
+  val texel_copy_buffer_info_create : unit -> t
+  val texel_copy_buffer_info_free : t -> unit
+  val texel_copy_buffer_info_set_layout : t -> nativeint -> unit
+  val texel_copy_buffer_info_set_buffer : t -> nativeint -> unit
+  val texel_copy_buffer_info_get_layout : t -> nativeint
+  val texel_copy_buffer_info_get_buffer : t -> nativeint
+end
+
+module Texel_Copy_Buffer_Layout : sig
+  type t = nativeint
+  val texel_copy_buffer_layout_create : unit -> t
+  val texel_copy_buffer_layout_free : t -> unit
+  val texel_copy_buffer_layout_set_offset : t -> int64 -> unit
+  val texel_copy_buffer_layout_set_bytes_per_row : t -> int -> unit
+  val texel_copy_buffer_layout_set_rows_per_image : t -> int -> unit
+  val texel_copy_buffer_layout_get_offset : t -> int64
+  val texel_copy_buffer_layout_get_bytes_per_row : t -> int
+  val texel_copy_buffer_layout_get_rows_per_image : t -> int
+end
+
+module Texel_Copy_Texture_Info : sig
+  type t = nativeint
+  val texel_copy_texture_info_create : unit -> t
+  val texel_copy_texture_info_free : t -> unit
+  val texel_copy_texture_info_set_texture : t -> nativeint -> unit
+  val texel_copy_texture_info_set_mip_level : t -> int -> unit
+  val texel_copy_texture_info_set_origin : t -> nativeint -> unit
+  val texel_copy_texture_info_set_aspect : t -> int -> unit
+  val texel_copy_texture_info_get_texture : t -> nativeint
+  val texel_copy_texture_info_get_mip_level : t -> int
+  val texel_copy_texture_info_get_origin : t -> nativeint
+  val texel_copy_texture_info_get_aspect : t -> int
+end
+
+module Texture_Binding_Layout : sig
+  type t = nativeint
+  val texture_binding_layout_create : unit -> t
+  val texture_binding_layout_free : t -> unit
+  val texture_binding_layout_set_sample_type : t -> int -> unit
+  val texture_binding_layout_set_view_dimension : t -> int -> unit
+  val texture_binding_layout_set_multisampled : t -> bool -> unit
+  val texture_binding_layout_get_sample_type : t -> int
+  val texture_binding_layout_get_view_dimension : t -> int
+  val texture_binding_layout_get_multisampled : t -> bool
+end
+
+module Texture_Descriptor : sig
+  type t = nativeint
+  val texture_descriptor_create : unit -> t
+  val texture_descriptor_free : t -> unit
+  val texture_descriptor_set_label : t -> string -> unit
+  val texture_descriptor_set_usage : t -> int -> unit
+  val texture_descriptor_set_dimension : t -> int -> unit
+  val texture_descriptor_set_size : t -> nativeint -> unit
+  val texture_descriptor_set_format : t -> int -> unit
+  val texture_descriptor_set_mip_level_count : t -> int -> unit
+  val texture_descriptor_set_sample_count : t -> int -> unit
+  val texture_descriptor_set_view_formats : t -> nativeint -> unit
+  val texture_descriptor_get_label : t -> string
+  val texture_descriptor_get_usage : t -> int
+  val texture_descriptor_get_dimension : t -> int
+  val texture_descriptor_get_size : t -> nativeint
+  val texture_descriptor_get_format : t -> int
+  val texture_descriptor_get_mip_level_count : t -> int
+  val texture_descriptor_get_sample_count : t -> int
+  val texture_descriptor_get_view_formats : t -> nativeint
+end
+
+module Texture_View_Descriptor : sig
+  type t = nativeint
+  val texture_view_descriptor_create : unit -> t
+  val texture_view_descriptor_free : t -> unit
+  val texture_view_descriptor_set_label : t -> string -> unit
+  val texture_view_descriptor_set_format : t -> int -> unit
+  val texture_view_descriptor_set_dimension : t -> int -> unit
+  val texture_view_descriptor_set_base_mip_level : t -> int -> unit
+  val texture_view_descriptor_set_mip_level_count : t -> int -> unit
+  val texture_view_descriptor_set_base_array_layer : t -> int -> unit
+  val texture_view_descriptor_set_array_layer_count : t -> int -> unit
+  val texture_view_descriptor_set_aspect : t -> int -> unit
+  val texture_view_descriptor_set_usage : t -> int -> unit
+  val texture_view_descriptor_get_label : t -> string
+  val texture_view_descriptor_get_format : t -> int
+  val texture_view_descriptor_get_dimension : t -> int
+  val texture_view_descriptor_get_base_mip_level : t -> int
+  val texture_view_descriptor_get_mip_level_count : t -> int
+  val texture_view_descriptor_get_base_array_layer : t -> int
+  val texture_view_descriptor_get_array_layer_count : t -> int
+  val texture_view_descriptor_get_aspect : t -> int
+  val texture_view_descriptor_get_usage : t -> int
+end
+
+module Vertex_Attribute : sig
+  type t = nativeint
+  val vertex_attribute_create : unit -> t
+  val vertex_attribute_free : t -> unit
+  val vertex_attribute_set_format : t -> int -> unit
+  val vertex_attribute_set_offset : t -> int64 -> unit
+  val vertex_attribute_set_shader_location : t -> int -> unit
+  val vertex_attribute_get_format : t -> int
+  val vertex_attribute_get_offset : t -> int64
+  val vertex_attribute_get_shader_location : t -> int
+end
+
+module Vertex_Buffer_Layout : sig
+  type t = nativeint
+  val vertex_buffer_layout_create : unit -> t
+  val vertex_buffer_layout_free : t -> unit
+  val vertex_buffer_layout_set_step_mode : t -> int -> unit
+  val vertex_buffer_layout_set_array_stride : t -> int64 -> unit
+  val vertex_buffer_layout_set_attributes : t -> nativeint -> unit
+  val vertex_buffer_layout_get_step_mode : t -> int
+  val vertex_buffer_layout_get_array_stride : t -> int64
+  val vertex_buffer_layout_get_attributes : t -> nativeint
+end
+
+module Vertex_State : sig
+  type t = nativeint
+  val vertex_state_create : unit -> t
+  val vertex_state_free : t -> unit
+  val vertex_state_set_module : t -> nativeint -> unit
+  val vertex_state_set_entry_point : t -> string -> unit
+  val vertex_state_set_constants : t -> nativeint -> unit
+  val vertex_state_set_buffers : t -> nativeint -> unit
+  val vertex_state_get_module : t -> nativeint
+  val vertex_state_get_entry_point : t -> string
+  val vertex_state_get_constants : t -> nativeint
+  val vertex_state_get_buffers : t -> nativeint
+end
 type adapter = nativeint
-
-val adapter_release : adapter -> unit
-
 type bind_group = nativeint
-
-val bind_group_release : bind_group -> unit
-
 type bind_group_layout = nativeint
-
-val bind_group_layout_release : bind_group_layout -> unit
-
 type buffer = nativeint
-
-val buffer_release : buffer -> unit
-
 type command_buffer = nativeint
-
-val command_buffer_release : command_buffer -> unit
-
 type command_encoder = nativeint
-
-val command_encoder_release : command_encoder -> unit
-
 type compute_pass_encoder = nativeint
-
-val compute_pass_encoder_release : compute_pass_encoder -> unit
-
 type compute_pipeline = nativeint
-
-val compute_pipeline_release : compute_pipeline -> unit
-
 type device = nativeint
-
-val device_release : device -> unit
-
 type instance = nativeint
-
-val instance_release : instance -> unit
-
 type pipeline_layout = nativeint
-
-val pipeline_layout_release : pipeline_layout -> unit
-
 type query_set = nativeint
-
-val query_set_release : query_set -> unit
-
 type queue = nativeint
-
-val queue_release : queue -> unit
-
 type render_bundle = nativeint
-
-val render_bundle_release : render_bundle -> unit
-
 type render_bundle_encoder = nativeint
-
-val render_bundle_encoder_release : render_bundle_encoder -> unit
-
 type render_pass_encoder = nativeint
-
-val render_pass_encoder_release : render_pass_encoder -> unit
-
 type render_pipeline = nativeint
-
-val render_pipeline_release : render_pipeline -> unit
-
 type sampler = nativeint
-
-val sampler_release : sampler -> unit
-
 type shader_module = nativeint
-
-val shader_module_release : shader_module -> unit
-
-type surface = nativeint (** An object used to continuously present image data to the user, see @ref Surfaces for more details. *)
-
-val surface_release : surface -> unit
-
+type surface = nativeint
 type texture = nativeint
-
-val texture_release : texture -> unit
-
 type texture_view = nativeint
 
+val adapter_release : adapter -> unit
+val adapter_get_limits : adapter -> nativeint -> int
+val adapter_has_feature : adapter -> int -> bool
+val adapter_get_features : adapter -> nativeint -> unit
+
+val bind_group_release : bind_group -> unit
+val bind_group_set_label : bind_group -> string -> unit
+
+val bind_group_layout_release : bind_group_layout -> unit
+val bind_group_layout_set_label : bind_group_layout -> string -> unit
+
+val buffer_release : buffer -> unit
+val buffer_get_mapped_range : buffer -> int64 -> int64 -> nativeint
+val buffer_get_const_mapped_range : buffer -> int64 -> int64 -> nativeint
+val buffer_set_label : buffer -> string -> unit
+val buffer_get_usage : buffer -> int
+val buffer_get_size : buffer -> int64
+val buffer_get_map_state : buffer -> int
+val buffer_unmap : buffer -> unit
+val buffer_destroy : buffer -> unit
+
+val command_buffer_release : command_buffer -> unit
+val command_buffer_set_label : command_buffer -> string -> unit
+
+val command_encoder_release : command_encoder -> unit
+val command_encoder_finish : command_encoder -> nativeint -> command_buffer
+val command_encoder_begin_compute_pass : command_encoder -> nativeint -> compute_pass_encoder
+val command_encoder_begin_render_pass : command_encoder -> nativeint -> render_pass_encoder
+val command_encoder_copy_buffer_to_buffer : command_encoder -> buffer -> int64 -> buffer -> int64 -> int64 -> unit
+val command_encoder_copy_buffer_to_texture : command_encoder -> nativeint -> nativeint -> nativeint -> unit
+val command_encoder_copy_texture_to_buffer : command_encoder -> nativeint -> nativeint -> nativeint -> unit
+val command_encoder_copy_texture_to_texture : command_encoder -> nativeint -> nativeint -> nativeint -> unit
+val command_encoder_clear_buffer : command_encoder -> buffer -> int64 -> int64 -> unit
+val command_encoder_insert_debug_marker : command_encoder -> string -> unit
+val command_encoder_pop_debug_group : command_encoder -> unit
+val command_encoder_push_debug_group : command_encoder -> string -> unit
+val command_encoder_resolve_query_set : command_encoder -> query_set -> int -> int -> buffer -> int64 -> unit
+val command_encoder_write_timestamp : command_encoder -> query_set -> int -> unit
+val command_encoder_set_label : command_encoder -> string -> unit
+
+val compute_pass_encoder_release : compute_pass_encoder -> unit
+val compute_pass_encoder_insert_debug_marker : compute_pass_encoder -> string -> unit
+val compute_pass_encoder_pop_debug_group : compute_pass_encoder -> unit
+val compute_pass_encoder_push_debug_group : compute_pass_encoder -> string -> unit
+val compute_pass_encoder_set_pipeline : compute_pass_encoder -> compute_pipeline -> unit
+val compute_pass_encoder_dispatch_workgroups : compute_pass_encoder -> int -> int -> int -> unit
+val compute_pass_encoder_dispatch_workgroups_indirect : compute_pass_encoder -> buffer -> int64 -> unit
+val compute_pass_encoder_end : compute_pass_encoder -> unit
+val compute_pass_encoder_set_label : compute_pass_encoder -> string -> unit
+
+val compute_pipeline_release : compute_pipeline -> unit
+val compute_pipeline_get_bind_group_layout : compute_pipeline -> int -> bind_group_layout
+val compute_pipeline_set_label : compute_pipeline -> string -> unit
+
+val device_release : device -> unit
+val device_create_bind_group : device -> nativeint -> bind_group
+val device_create_bind_group_layout : device -> nativeint -> bind_group_layout
+val device_create_buffer : device -> nativeint -> buffer
+val device_create_command_encoder : device -> nativeint -> command_encoder
+val device_create_compute_pipeline : device -> nativeint -> compute_pipeline
+val device_create_pipeline_layout : device -> nativeint -> pipeline_layout
+val device_create_query_set : device -> nativeint -> query_set
+val device_create_render_bundle_encoder : device -> nativeint -> render_bundle_encoder
+val device_create_render_pipeline : device -> nativeint -> render_pipeline
+val device_create_sampler : device -> nativeint -> sampler
+val device_create_shader_module : device -> nativeint -> shader_module
+val device_create_texture : device -> nativeint -> texture
+val device_destroy : device -> unit
+val device_get_lost_future : device -> nativeint
+val device_get_limits : device -> nativeint -> int
+val device_has_feature : device -> int -> bool
+val device_get_features : device -> nativeint -> unit
+val device_get_adapter_info : device -> nativeint
+val device_push_error_scope : device -> int -> unit
+val device_set_label : device -> string -> unit
+
+val instance_release : instance -> unit
+val instance_create_surface : instance -> nativeint -> surface
+val instance_get_WGSL_language_features : instance -> nativeint -> int
+val instance_has_WGSL_language_feature : instance -> int -> bool
+val instance_process_events : instance -> unit
+val instance_wait_any : instance -> int64 -> nativeint -> int64 -> int
+
+val pipeline_layout_release : pipeline_layout -> unit
+val pipeline_layout_set_label : pipeline_layout -> string -> unit
+
+val query_set_release : query_set -> unit
+val query_set_set_label : query_set -> string -> unit
+val query_set_get_type : query_set -> int
+val query_set_get_count : query_set -> int
+val query_set_destroy : query_set -> unit
+
+val queue_release : queue -> unit
+val queue_write_buffer : queue -> buffer -> int64 -> nativeint -> int64 -> unit
+val queue_write_texture : queue -> nativeint -> nativeint -> int64 -> nativeint -> nativeint -> unit
+val queue_set_label : queue -> string -> unit
+
+val render_bundle_release : render_bundle -> unit
+val render_bundle_set_label : render_bundle -> string -> unit
+
+val render_bundle_encoder_release : render_bundle_encoder -> unit
+val render_bundle_encoder_set_pipeline : render_bundle_encoder -> render_pipeline -> unit
+val render_bundle_encoder_draw : render_bundle_encoder -> int -> int -> int -> int -> unit
+val render_bundle_encoder_draw_indexed : render_bundle_encoder -> int -> int -> int -> int -> int -> unit
+val render_bundle_encoder_draw_indirect : render_bundle_encoder -> buffer -> int64 -> unit
+val render_bundle_encoder_draw_indexed_indirect : render_bundle_encoder -> buffer -> int64 -> unit
+val render_bundle_encoder_insert_debug_marker : render_bundle_encoder -> string -> unit
+val render_bundle_encoder_pop_debug_group : render_bundle_encoder -> unit
+val render_bundle_encoder_push_debug_group : render_bundle_encoder -> string -> unit
+val render_bundle_encoder_set_vertex_buffer : render_bundle_encoder -> int -> buffer -> int64 -> int64 -> unit
+val render_bundle_encoder_set_index_buffer : render_bundle_encoder -> buffer -> int -> int64 -> int64 -> unit
+val render_bundle_encoder_finish : render_bundle_encoder -> nativeint -> render_bundle
+val render_bundle_encoder_set_label : render_bundle_encoder -> string -> unit
+
+val render_pass_encoder_release : render_pass_encoder -> unit
+val render_pass_encoder_set_pipeline : render_pass_encoder -> render_pipeline -> unit
+val render_pass_encoder_draw : render_pass_encoder -> int -> int -> int -> int -> unit
+val render_pass_encoder_draw_indexed : render_pass_encoder -> int -> int -> int -> int -> int -> unit
+val render_pass_encoder_draw_indirect : render_pass_encoder -> buffer -> int64 -> unit
+val render_pass_encoder_draw_indexed_indirect : render_pass_encoder -> buffer -> int64 -> unit
+val render_pass_encoder_insert_debug_marker : render_pass_encoder -> string -> unit
+val render_pass_encoder_pop_debug_group : render_pass_encoder -> unit
+val render_pass_encoder_push_debug_group : render_pass_encoder -> string -> unit
+val render_pass_encoder_set_stencil_reference : render_pass_encoder -> int -> unit
+val render_pass_encoder_set_blend_constant : render_pass_encoder -> nativeint -> unit
+val render_pass_encoder_set_viewport : render_pass_encoder -> float -> float -> float -> float -> float -> float -> unit
+val render_pass_encoder_set_scissor_rect : render_pass_encoder -> int -> int -> int -> int -> unit
+val render_pass_encoder_set_vertex_buffer : render_pass_encoder -> int -> buffer -> int64 -> int64 -> unit
+val render_pass_encoder_set_index_buffer : render_pass_encoder -> buffer -> int -> int64 -> int64 -> unit
+val render_pass_encoder_begin_occlusion_query : render_pass_encoder -> int -> unit
+val render_pass_encoder_end_occlusion_query : render_pass_encoder -> unit
+val render_pass_encoder_end : render_pass_encoder -> unit
+val render_pass_encoder_set_label : render_pass_encoder -> string -> unit
+
+val render_pipeline_release : render_pipeline -> unit
+val render_pipeline_get_bind_group_layout : render_pipeline -> int -> bind_group_layout
+val render_pipeline_set_label : render_pipeline -> string -> unit
+
+val sampler_release : sampler -> unit
+val sampler_set_label : sampler -> string -> unit
+
+val shader_module_release : shader_module -> unit
+val shader_module_set_label : shader_module -> string -> unit
+
+val surface_release : surface -> unit
+val surface_configure : surface -> nativeint -> unit
+val surface_get_capabilities : surface -> adapter -> nativeint -> int
+val surface_get_current_texture : surface -> nativeint -> unit
+val surface_present : surface -> int
+val surface_unconfigure : surface -> unit
+val surface_set_label : surface -> string -> unit
+
+val texture_release : texture -> unit
+val texture_create_view : texture -> nativeint -> texture_view
+val texture_set_label : texture -> string -> unit
+val texture_get_width : texture -> int
+val texture_get_height : texture -> int
+val texture_get_depth_or_array_layers : texture -> int
+val texture_get_mip_level_count : texture -> int
+val texture_get_sample_count : texture -> int
+val texture_get_dimension : texture -> int
+val texture_get_format : texture -> int
+val texture_get_usage : texture -> int
+val texture_destroy : texture -> unit
+
 val texture_view_release : texture_view -> unit
+val texture_view_set_label : texture_view -> string -> unit
 val create_instance : unit -> instance
 
 val instance_request_adapter_sync : instance -> adapter

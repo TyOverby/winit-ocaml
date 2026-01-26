@@ -89,3 +89,63 @@ Adapter obtained!
 1. Add buffer creation and data transfer
 2. Implement compute shader execution
 3. Create headless render-to-texture example
+
+---
+
+## 2026-01-25: Struct and Method Generation Complete
+
+### Accomplished
+- **Phase A (Struct Generation)**: Complete
+  - Generate C stubs for struct allocation/deallocation
+  - Generate setters and getters for all struct fields
+  - Handle primitive types, enums, bitflags, objects, and pointers
+  - Fixed YAML parsing issue where `y` and `n` were being parsed as booleans
+
+- **Phase B (Object Method Generation)**: Complete
+  - Generate C stubs for object methods
+  - Generate OCaml external declarations
+  - Handle various argument types (primitives, enums, structs, objects)
+  - Handle return types (void, primitives, objects)
+  - Skip async methods (with callbacks) for now
+  - Skip methods with array arguments (need special handling)
+  - Fixed type ordering issues in generated ML/MLI
+
+- **Phase C (Buffer Operations)**: Partial
+  - Successfully creating buffers via `device.createBuffer()`
+  - Buffer size and usage can be queried
+
+### Generated Code Statistics
+- **Struct modules**: 82 types with create/free/getters/setters
+- **Object methods**: ~200 sync methods generated
+- **Total generated lines**: ~15,000+
+
+### Test Verification
+```
+=== Testing Buffer Descriptor ===
+Buffer descriptor created.
+Buffer descriptor fields set.
+  Label: test_buffer
+  Size: 1024
+  Usage: 0x0041
+  Mapped at creation: false
+All assertions passed!
+
+=== Testing Buffer Creation ===
+Device obtained.
+Buffer created!
+  Buffer size: 256
+  Buffer usage: 0x008c
+Buffer properties verified!
+```
+
+### Edge Cases Handled
+- YAML boolean aliases (`y` -> `true`, `n` -> `false`) mapped back to single letters
+- Type ordering in generated ML/MLI (all types declared before methods)
+- Duplicate function definitions (manual vs generated)
+- C keyword conflicts avoided
+
+### Next Steps
+1. Implement array argument handling for methods like `queue.submit()`
+2. Add shader module creation
+3. Create compute pipeline
+4. Execute compute shader and verify results

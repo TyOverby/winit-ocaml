@@ -49,6 +49,36 @@ let normalize_enum_entry_name (name : string) : string =
   if String.length s > 0 && Char.is_digit (String.get s 0) then "N" ^ s else s
 ;;
 
+(** Helper to indent lines *)
+let indent_lines s =
+  String.split_lines s |> List.map ~f:(fun line -> "  " ^ line) |> String.concat ~sep:"\n"
+;;
+
+(** Map IR type to C type string *)
+let rec c_type_of_type_ref (type_ref : Ir.type_ref) : string =
+  match type_ref with
+  | Primitive Bool -> "bool"
+  | Primitive Uint32 -> "uint32_t"
+  | Primitive Uint64 -> "uint64_t"
+  | Primitive Int32 -> "int32_t"
+  | Primitive Int64 -> "int64_t"
+  | Primitive Float32 -> "float"
+  | Primitive Float64 -> "double"
+  | Primitive Usize -> "size_t"
+  | Primitive String -> "WGPUStringView"
+  | Primitive Out_string -> "WGPUStringView"
+  | Primitive String_with_default_empty -> "WGPUStringView"
+  | Primitive C_void -> "void*"
+  | Enum name -> c_type_name name
+  | Bitflag name -> c_type_name name
+  | Struct name -> c_type_name name
+  | Object name -> c_type_name name
+  | Callback name -> c_type_name name
+  | Array { elem; _ } -> c_type_of_type_ref elem ^ "*"
+  | Optional inner -> c_type_of_type_ref inner
+  | Pointer { inner; _ } -> c_type_of_type_ref inner ^ "*"
+;;
+
 (** Generate C code for enum constants *)
 let gen_c_enum_constants (enum : Ir.enum) : string =
   let c_name = c_type_name enum.name in
@@ -198,6 +228,484 @@ let gen_mli_bitflag (bitflag : Ir.bitflag) : string =
     variants
 ;;
 
+(** Generate C struct allocation/deallocation functions *)
+let gen_c_struct_create_free (struct_ : Ir.struct_) : string =
+  let c_name = c_type_name struct_.name in
+  sprintf
+    {|/* Struct: %s */
+CAMLprim value caml_wgpu_%s_create(value unit) {
+  CAMLparam1(unit);
+  %s *s = (%s*)malloc(sizeof(%s));
+  memset(s, 0, sizeof(%s));
+  CAMLreturn(caml_copy_nativeint((intnat)s));
+}
+
+CAMLprim value caml_wgpu_%s_free(value handle) {
+  CAMLparam1(handle);
+  %s *s = (%s*)Nativeint_val(handle);
+  if (s != NULL) {
+    free(s);
+  }
+  CAMLreturn(Val_unit);
+}
+|}
+    c_name
+    (String.lowercase struct_.name)
+    c_name
+    c_name
+    c_name
+    c_name
+    (String.lowercase struct_.name)
+    c_name
+    c_name
+;;
+
+(** Generate C setter for a struct member *)
+let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : string =
+  let c_struct = c_type_name struct_.name in
+  let c_field = to_camel_case member.name in
+  let func_name =
+    sprintf
+      "caml_wgpu_%s_set_%s"
+      (String.lowercase struct_.name)
+      (String.lowercase member.name)
+  in
+  let body =
+    match member.type_ with
+    | Primitive Bool -> sprintf "  s->%s = Bool_val(val);" c_field
+    | Primitive Uint32 -> sprintf "  s->%s = (uint32_t)Int_val(val);" c_field
+    | Primitive Uint64 -> sprintf "  s->%s = (uint64_t)Int64_val(val);" c_field
+    | Primitive Int32 -> sprintf "  s->%s = (int32_t)Int_val(val);" c_field
+    | Primitive Int64 -> sprintf "  s->%s = (int64_t)Int64_val(val);" c_field
+    | Primitive Float32 -> sprintf "  s->%s = (float)Double_val(val);" c_field
+    | Primitive Float64 -> sprintf "  s->%s = Double_val(val);" c_field
+    | Primitive Usize -> sprintf "  s->%s = (size_t)Int64_val(val);" c_field
+    | Primitive (String | Out_string | String_with_default_empty) ->
+      sprintf
+        "  const char *str = String_val(val);\n\
+        \  s->%s.data = str;\n\
+        \  s->%s.length = strlen(str);"
+        c_field
+        c_field
+    | Primitive C_void -> sprintf "  s->%s = (void*)Nativeint_val(val);" c_field
+    | Enum _ -> sprintf "  s->%s = Int_val(val);" c_field
+    | Bitflag _ -> sprintf "  s->%s = Int_val(val);" c_field
+    | Struct _ ->
+      sprintf
+        "  s->%s = *(%s*)Nativeint_val(val);"
+        c_field
+        (c_type_of_type_ref member.type_)
+    | Object _ ->
+      sprintf
+        "  s->%s = (%s)Nativeint_val(val);"
+        c_field
+        (c_type_of_type_ref member.type_)
+    | Callback _ -> sprintf "  (void)s; /* TODO: callback field %s */" c_field
+    | Array _ -> sprintf "  (void)s; /* TODO: array field %s */" c_field
+    | Optional inner ->
+      (match inner with
+       | Object _ ->
+         sprintf "  s->%s = (%s)Nativeint_val(val);" c_field (c_type_of_type_ref inner)
+       | _ -> sprintf "  (void)s; /* TODO: optional field %s */" c_field)
+    | Pointer { inner; _ } ->
+      (match inner with
+       | Struct name ->
+         sprintf "  s->%s = (%s*)Nativeint_val(val);" c_field (c_type_name name)
+       | _ -> sprintf "  (void)s; /* TODO: pointer field %s */" c_field)
+  in
+  sprintf
+    {|CAMLprim value %s(value handle, value val) {
+  CAMLparam2(handle, val);
+  %s *s = (%s*)Nativeint_val(handle);
+%s
+  CAMLreturn(Val_unit);
+}
+|}
+    func_name
+    c_struct
+    c_struct
+    body
+;;
+
+(** Generate C getter for a struct member *)
+let gen_c_struct_getter (struct_ : Ir.struct_) (member : Ir.struct_member) : string =
+  let c_struct = c_type_name struct_.name in
+  let c_field = to_camel_case member.name in
+  let func_name =
+    sprintf
+      "caml_wgpu_%s_get_%s"
+      (String.lowercase struct_.name)
+      (String.lowercase member.name)
+  in
+  let body =
+    match member.type_ with
+    | Primitive Bool -> sprintf "  CAMLreturn(Val_bool(s->%s));" c_field
+    | Primitive Uint32 -> sprintf "  CAMLreturn(Val_int(s->%s));" c_field
+    | Primitive Uint64 -> sprintf "  CAMLreturn(caml_copy_int64(s->%s));" c_field
+    | Primitive Int32 -> sprintf "  CAMLreturn(Val_int(s->%s));" c_field
+    | Primitive Int64 -> sprintf "  CAMLreturn(caml_copy_int64(s->%s));" c_field
+    | Primitive Float32 ->
+      sprintf "  CAMLreturn(caml_copy_double((double)s->%s));" c_field
+    | Primitive Float64 -> sprintf "  CAMLreturn(caml_copy_double(s->%s));" c_field
+    | Primitive Usize -> sprintf "  CAMLreturn(caml_copy_int64((int64_t)s->%s));" c_field
+    | Primitive (String | Out_string | String_with_default_empty) ->
+      sprintf
+        "  if (s->%s.data != NULL) {\n\
+        \    CAMLreturn(caml_copy_string(s->%s.data));\n\
+        \  } else {\n\
+        \    CAMLreturn(caml_copy_string(\"\"));\n\
+        \  }"
+        c_field
+        c_field
+    | Primitive C_void ->
+      sprintf "  CAMLreturn(caml_copy_nativeint((intnat)s->%s));" c_field
+    | Enum _ -> sprintf "  CAMLreturn(Val_int(s->%s));" c_field
+    | Bitflag _ -> sprintf "  CAMLreturn(Val_int(s->%s));" c_field
+    | Object _ -> sprintf "  CAMLreturn(caml_copy_nativeint((intnat)s->%s));" c_field
+    | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
+      sprintf "  (void)s; /* TODO: getter for %s */\n  CAMLreturn(Val_unit);" c_field
+  in
+  sprintf
+    {|CAMLprim value %s(value handle) {
+  CAMLparam1(handle);
+  %s *s = (%s*)Nativeint_val(handle);
+%s
+}
+|}
+    func_name
+    c_struct
+    c_struct
+    body
+;;
+
+(** Generate all C code for a struct *)
+let gen_c_struct_stubs (struct_ : Ir.struct_) : string =
+  let create_free = gen_c_struct_create_free struct_ in
+  let setters =
+    List.map struct_.members ~f:(gen_c_struct_setter struct_) |> String.concat ~sep:"\n"
+  in
+  let getters =
+    List.map struct_.members ~f:(gen_c_struct_getter struct_) |> String.concat ~sep:"\n"
+  in
+  String.concat ~sep:"\n" [ create_free; setters; getters ]
+;;
+
+(** Generate OCaml external for struct operations *)
+let gen_ml_struct (struct_ : Ir.struct_) : string =
+  let type_name = struct_.name in
+  let module_name = ocaml_module_name struct_.name in
+  (* External declarations *)
+  let create_ext =
+    sprintf
+      "external %s_create : unit -> nativeint = \"caml_wgpu_%s_create\""
+      type_name
+      (String.lowercase struct_.name)
+  in
+  let free_ext =
+    sprintf
+      "external %s_free : nativeint -> unit = \"caml_wgpu_%s_free\""
+      type_name
+      (String.lowercase struct_.name)
+  in
+  let setter_exts =
+    List.map struct_.members ~f:(fun member ->
+      let ml_type =
+        match member.type_ with
+        | Primitive Bool -> "bool"
+        | Primitive (Uint32 | Int32) -> "int"
+        | Primitive (Uint64 | Int64 | Usize) -> "int64"
+        | Primitive (Float32 | Float64) -> "float"
+        | Primitive (String | Out_string | String_with_default_empty) -> "string"
+        | Primitive C_void -> "nativeint"
+        | Enum _ | Bitflag _ -> "int"
+        | Object _ | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
+          "nativeint"
+      in
+      sprintf
+        "external %s_set_%s : nativeint -> %s -> unit = \"caml_wgpu_%s_set_%s\""
+        type_name
+        member.name
+        ml_type
+        (String.lowercase struct_.name)
+        (String.lowercase member.name))
+    |> String.concat ~sep:"\n"
+  in
+  let getter_exts =
+    List.map struct_.members ~f:(fun member ->
+      let ml_type =
+        match member.type_ with
+        | Primitive Bool -> "bool"
+        | Primitive (Uint32 | Int32) -> "int"
+        | Primitive (Uint64 | Int64 | Usize) -> "int64"
+        | Primitive (Float32 | Float64) -> "float"
+        | Primitive (String | Out_string | String_with_default_empty) -> "string"
+        | Primitive C_void -> "nativeint"
+        | Enum _ | Bitflag _ -> "int"
+        | Object _ | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
+          "nativeint"
+      in
+      sprintf
+        "external %s_get_%s : nativeint -> %s = \"caml_wgpu_%s_get_%s\""
+        type_name
+        member.name
+        ml_type
+        (String.lowercase struct_.name)
+        (String.lowercase member.name))
+    |> String.concat ~sep:"\n"
+  in
+  sprintf
+    "module %s = struct\n  type t = nativeint\n\n  %s\n\n  %s\n\n%s\n\n%s\nend\n"
+    module_name
+    create_ext
+    free_ext
+    (indent_lines setter_exts)
+    (indent_lines getter_exts)
+;;
+
+(** Generate MLI for struct *)
+let gen_mli_struct (struct_ : Ir.struct_) : string =
+  let module_name = ocaml_module_name struct_.name in
+  let type_name = struct_.name in
+  (* Signature for setters *)
+  let setter_sigs =
+    List.map struct_.members ~f:(fun member ->
+      let ml_type =
+        match member.type_ with
+        | Primitive Bool -> "bool"
+        | Primitive (Uint32 | Int32) -> "int"
+        | Primitive (Uint64 | Int64 | Usize) -> "int64"
+        | Primitive (Float32 | Float64) -> "float"
+        | Primitive (String | Out_string | String_with_default_empty) -> "string"
+        | Primitive C_void -> "nativeint"
+        | Enum _ | Bitflag _ -> "int"
+        | Object _ | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
+          "nativeint"
+      in
+      sprintf "  val %s_set_%s : t -> %s -> unit" type_name member.name ml_type)
+    |> String.concat ~sep:"\n"
+  in
+  let getter_sigs =
+    List.map struct_.members ~f:(fun member ->
+      let ml_type =
+        match member.type_ with
+        | Primitive Bool -> "bool"
+        | Primitive (Uint32 | Int32) -> "int"
+        | Primitive (Uint64 | Int64 | Usize) -> "int64"
+        | Primitive (Float32 | Float64) -> "float"
+        | Primitive (String | Out_string | String_with_default_empty) -> "string"
+        | Primitive C_void -> "nativeint"
+        | Enum _ | Bitflag _ -> "int"
+        | Object _ | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
+          "nativeint"
+      in
+      sprintf "  val %s_get_%s : t -> %s" type_name member.name ml_type)
+    |> String.concat ~sep:"\n"
+  in
+  sprintf
+    "module %s : sig\n\
+    \  type t = nativeint\n\
+    \  val %s_create : unit -> t\n\
+    \  val %s_free : t -> unit\n\
+     %s\n\
+     %s\n\
+     end\n"
+    module_name
+    type_name
+    type_name
+    setter_sigs
+    getter_sigs
+;;
+
+(** Check if a method uses callbacks (async) *)
+let method_is_async (method_ : Ir.method_) : bool = Option.is_some method_.callback
+
+(** Check if a method uses arrays in args (need special handling) *)
+let method_has_array_args (method_ : Ir.method_) : bool =
+  List.exists method_.args ~f:(fun arg ->
+    match arg.type_ with
+    | Array _ -> true
+    | _ -> false)
+;;
+
+(** Check if method is manually implemented in sync helpers *)
+let method_is_manual (obj_name : string) (method_name : string) : bool =
+  match obj_name, method_name with
+  | "adapter", "get_info" -> true
+  | "device", "get_queue" -> true
+  | _ -> false
+;;
+
+(** Generate C stub for a single method *)
+let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
+  (* Skip async methods, array args, and manually implemented methods *)
+  if method_is_async method_
+  then sprintf "/* TODO: async method %s.%s */\n" obj.name method_.name
+  else if method_has_array_args method_
+  then sprintf "/* TODO: array args %s.%s */\n" obj.name method_.name
+  else if method_is_manual obj.name method_.name
+  then sprintf "/* Manually implemented: %s.%s */\n" obj.name method_.name
+  else (
+    let c_func = c_method_name obj.name method_.name in
+    let caml_func =
+      sprintf
+        "caml_wgpu_%s_%s"
+        (String.lowercase obj.name)
+        (String.lowercase method_.name)
+    in
+    let obj_c_type = c_type_name obj.name in
+    (* Build parameter list for CAMLparam *)
+    let all_params = "self" :: List.map method_.args ~f:(fun arg -> arg.name) in
+    let num_params = List.length all_params in
+    let caml_param =
+      if num_params <= 5
+      then sprintf "CAMLparam%d(%s)" num_params (String.concat ~sep:", " all_params)
+      else (
+        (* Need multiple CAMLparam calls *)
+        let first5 = List.take all_params 5 in
+        let rest = List.drop all_params 5 in
+        sprintf
+          "CAMLparam5(%s);\n  CAMLxparam%d(%s)"
+          (String.concat ~sep:", " first5)
+          (List.length rest)
+          (String.concat ~sep:", " rest))
+    in
+    (* Build value parameter declarations *)
+    let value_params =
+      "value self" :: List.map method_.args ~f:(fun arg -> sprintf "value %s" arg.name)
+    in
+    (* Build argument conversion *)
+    let arg_conversions =
+      List.map method_.args ~f:(fun arg ->
+        let c_type = c_type_of_type_ref arg.type_ in
+        match arg.type_ with
+        | Primitive Bool -> sprintf "  bool c_%s = Bool_val(%s);" arg.name arg.name
+        | Primitive Uint32 -> sprintf "  uint32_t c_%s = Int_val(%s);" arg.name arg.name
+        | Primitive Uint64 -> sprintf "  uint64_t c_%s = Int64_val(%s);" arg.name arg.name
+        | Primitive Int32 -> sprintf "  int32_t c_%s = Int_val(%s);" arg.name arg.name
+        | Primitive Int64 -> sprintf "  int64_t c_%s = Int64_val(%s);" arg.name arg.name
+        | Primitive Float32 -> sprintf "  float c_%s = Double_val(%s);" arg.name arg.name
+        | Primitive Float64 -> sprintf "  double c_%s = Double_val(%s);" arg.name arg.name
+        | Primitive Usize -> sprintf "  size_t c_%s = Int64_val(%s);" arg.name arg.name
+        | Primitive (String | Out_string | String_with_default_empty) ->
+          sprintf
+            "  WGPUStringView c_%s = { .data = String_val(%s), .length = \
+             caml_string_length(%s) };"
+            arg.name
+            arg.name
+            arg.name
+        | Primitive C_void ->
+          sprintf "  void* c_%s = (void*)Nativeint_val(%s);" arg.name arg.name
+        | Enum _ | Bitflag _ ->
+          sprintf "  %s c_%s = Int_val(%s);" c_type arg.name arg.name
+        | Object _ ->
+          sprintf "  %s c_%s = (%s)Nativeint_val(%s);" c_type arg.name c_type arg.name
+        | Struct _ ->
+          (* For struct pointers, we pass the nativeint as a pointer *)
+          sprintf "  %s* c_%s = (%s*)Nativeint_val(%s);" c_type arg.name c_type arg.name
+        | Pointer { inner = Struct _; _ } ->
+          sprintf "  %s c_%s = (%s)Nativeint_val(%s);" c_type arg.name c_type arg.name
+        | _ -> sprintf "  /* TODO: convert %s */" arg.name)
+      |> String.concat ~sep:"\n"
+    in
+    (* Build C function call arguments *)
+    let c_args =
+      "c_self"
+      :: List.map method_.args ~f:(fun arg ->
+        (* Struct and Pointer types are already pointers from the conversion *)
+        sprintf "c_%s" arg.name)
+    in
+    let c_call_args = String.concat ~sep:", " c_args in
+    (* Build return handling *)
+    let return_code =
+      match method_.returns with
+      | None ->
+        sprintf
+          "  %s(c_self%s);\n  CAMLreturn(Val_unit);"
+          c_func
+          (if List.is_empty method_.args
+           then ""
+           else
+             ", "
+             ^ String.concat ~sep:", " (List.map method_.args ~f:(fun a -> "c_" ^ a.name)))
+      | Some ret ->
+        let ret_c_type = c_type_of_type_ref ret.type_ in
+        (match ret.type_ with
+         | Primitive Bool ->
+           sprintf
+             "  bool result = %s(%s);\n  CAMLreturn(Val_bool(result));"
+             c_func
+             c_call_args
+         | Primitive (Uint32 | Int32) ->
+           sprintf
+             "  %s result = %s(%s);\n  CAMLreturn(Val_int(result));"
+             ret_c_type
+             c_func
+             c_call_args
+         | Primitive (Uint64 | Int64 | Usize) ->
+           sprintf
+             "  %s result = %s(%s);\n  CAMLreturn(caml_copy_int64(result));"
+             ret_c_type
+             c_func
+             c_call_args
+         | Primitive (Float32 | Float64) ->
+           sprintf
+             "  %s result = %s(%s);\n  CAMLreturn(caml_copy_double(result));"
+             ret_c_type
+             c_func
+             c_call_args
+         | Object _ ->
+           sprintf
+             "  %s result = %s(%s);\n  CAMLreturn(caml_copy_nativeint((intnat)result));"
+             ret_c_type
+             c_func
+             c_call_args
+         | Enum _ | Bitflag _ ->
+           sprintf
+             "  %s result = %s(%s);\n  CAMLreturn(Val_int(result));"
+             ret_c_type
+             c_func
+             c_call_args
+         | _ ->
+           sprintf
+             "  /* TODO: return type */\n  %s(%s);\n  CAMLreturn(Val_unit);"
+             c_func
+             c_call_args)
+    in
+    (* Handle bytecode calling convention for many args *)
+    let bytecode_decl =
+      if num_params > 5
+      then
+        sprintf
+          "\n\
+           CAMLprim value %s_bytecode(value *argv, int argn) {\n\
+          \  (void)argn;\n\
+          \  return %s(%s);\n\
+           }"
+          caml_func
+          caml_func
+          (String.concat
+             ~sep:", "
+             (List.mapi all_params ~f:(fun i _ -> sprintf "argv[%d]" i)))
+      else ""
+    in
+    sprintf
+      {|CAMLprim value %s(%s) {
+  %s;
+  %s c_self = (%s)Nativeint_val(self);
+%s
+%s
+}%s
+|}
+      caml_func
+      (String.concat ~sep:", " value_params)
+      caml_param
+      obj_c_type
+      obj_c_type
+      arg_conversions
+      return_code
+      bytecode_decl)
+;;
+
 (** Generate C code for object handle types *)
 let gen_c_object_stubs (obj : Ir.object_) : string =
   let c_type = c_type_name obj.name in
@@ -217,33 +725,137 @@ let gen_c_object_stubs (obj : Ir.object_) : string =
       c_type
       (c_function_name obj.name)
   in
-  sprintf "/* Object: %s */\n%s\n" c_type release
+  (* Generate method stubs *)
+  let methods =
+    List.map obj.methods ~f:(gen_c_method_stub obj) |> String.concat ~sep:"\n"
+  in
+  sprintf "/* Object: %s */\n%s\n\n%s" c_type release methods
+;;
+
+(** Get OCaml type string for a type_ref *)
+let rec ml_type_of_type_ref (type_ref : Ir.type_ref) : string =
+  match type_ref with
+  | Primitive Bool -> "bool"
+  | Primitive (Uint32 | Int32) -> "int"
+  | Primitive (Uint64 | Int64 | Usize) -> "int64"
+  | Primitive (Float32 | Float64) -> "float"
+  | Primitive (String | Out_string | String_with_default_empty) -> "string"
+  | Primitive C_void -> "nativeint"
+  | Enum _ | Bitflag _ -> "int"
+  | Object name -> name
+  | Struct _ -> "nativeint"
+  | Callback _ -> "nativeint"
+  | Array _ -> "nativeint"
+  | Optional inner -> ml_type_of_type_ref inner
+  | Pointer _ -> "nativeint"
+;;
+
+(** Generate OCaml external declaration for a method *)
+let gen_ml_method (obj : Ir.object_) (method_ : Ir.method_) : string =
+  if method_is_async method_
+  then sprintf "(* TODO: async method %s_%s *)" obj.name method_.name
+  else if method_has_array_args method_
+  then sprintf "(* TODO: array args %s_%s *)" obj.name method_.name
+  else if method_is_manual obj.name method_.name
+  then "" (* Already defined manually *)
+  else (
+    let func_name = sprintf "%s_%s" obj.name method_.name in
+    let caml_func =
+      sprintf
+        "caml_wgpu_%s_%s"
+        (String.lowercase obj.name)
+        (String.lowercase method_.name)
+    in
+    let arg_types =
+      obj.name :: List.map method_.args ~f:(fun arg -> ml_type_of_type_ref arg.type_)
+    in
+    let ret_type =
+      match method_.returns with
+      | None -> "unit"
+      | Some ret -> ml_type_of_type_ref ret.type_
+    in
+    let num_args = List.length arg_types in
+    let type_sig = String.concat ~sep:" -> " arg_types ^ " -> " ^ ret_type in
+    if num_args > 5
+    then
+      sprintf
+        "external %s : %s = \"%s_bytecode\" \"%s\""
+        func_name
+        type_sig
+        caml_func
+        caml_func
+    else sprintf "external %s : %s = \"%s\"" func_name type_sig caml_func)
+;;
+
+(** Generate OCaml type declaration for an object *)
+let gen_ml_object_type (obj : Ir.object_) : string =
+  sprintf "type %s = nativeint\n" obj.name
+;;
+
+(** Generate OCaml method declarations for an object *)
+let gen_ml_object_methods (obj : Ir.object_) : string =
+  let release =
+    sprintf
+      "external %s_release : %s -> unit = \"caml_wgpu_%s_release\"\n"
+      obj.name
+      obj.name
+      (String.lowercase obj.name)
+  in
+  let methods =
+    List.filter_map obj.methods ~f:(fun m ->
+      let s = gen_ml_method obj m in
+      if String.is_empty s then None else Some s)
+    |> String.concat ~sep:"\n"
+  in
+  release ^ methods
 ;;
 
 (** Generate OCaml code for an object type *)
 let gen_ml_object (obj : Ir.object_) : string =
-  sprintf
-    "type %s = nativeint\n\nexternal %s_release : %s -> unit = \"caml_wgpu_%s_release\"\n"
-    obj.name
-    obj.name
-    obj.name
-    (String.lowercase obj.name)
+  gen_ml_object_type obj ^ "\n" ^ gen_ml_object_methods obj ^ "\n"
 ;;
 
-(** Generate MLI for an object type *)
-let gen_mli_object (obj : Ir.object_) : string =
-  let doc = String.strip obj.doc in
-  let doc_comment =
-    if String.is_empty doc || String.equal doc "TODO"
-    then ""
-    else sprintf " (** %s *)" doc
+(** Generate MLI declaration for a method *)
+let gen_mli_method (obj : Ir.object_) (method_ : Ir.method_) : string =
+  if method_is_async method_
+     || method_has_array_args method_
+     || method_is_manual obj.name method_.name
+  then ""
+  else (
+    let func_name = sprintf "%s_%s" obj.name method_.name in
+    let arg_types =
+      obj.name :: List.map method_.args ~f:(fun arg -> ml_type_of_type_ref arg.type_)
+    in
+    let ret_type =
+      match method_.returns with
+      | None -> "unit"
+      | Some ret -> ml_type_of_type_ref ret.type_
+    in
+    let type_sig = String.concat ~sep:" -> " arg_types ^ " -> " ^ ret_type in
+    sprintf "val %s : %s" func_name type_sig)
+;;
+
+(** Generate MLI type declaration only for an object *)
+let gen_mli_object_type (obj : Ir.object_) : string =
+  sprintf "type %s = nativeint\n" obj.name
+;;
+
+(** Generate MLI method declarations for an object *)
+let gen_mli_object_methods (obj : Ir.object_) : string =
+  let release = sprintf "val %s_release : %s -> unit\n" obj.name obj.name in
+  let methods =
+    List.filter_map obj.methods ~f:(fun m ->
+      let s = gen_mli_method obj m in
+      if String.is_empty s then None else Some s)
+    |> String.concat ~sep:"\n"
   in
-  sprintf
-    "type %s = nativeint%s\n\nval %s_release : %s -> unit\n"
-    obj.name
-    doc_comment
-    obj.name
-    obj.name
+  if String.is_empty methods then release else release ^ methods ^ "\n"
+;;
+
+(** Generate MLI for an object type - deprecated, use gen_mli_object_type +
+    gen_mli_object_methods *)
+let gen_mli_object (obj : Ir.object_) : string =
+  gen_mli_object_type obj ^ "\n" ^ gen_mli_object_methods obj
 ;;
 
 (** Generate C stubs for standalone functions *)
@@ -362,6 +974,8 @@ let gen_c_stubs (api : Ir.api) : string =
 #include <caml/alloc.h>
 #include <caml/custom.h>
 #include <caml/fail.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "webgpu.h"
 #include "wgpu.h"
@@ -374,6 +988,9 @@ let gen_c_stubs (api : Ir.api) : string =
   let bitflag_stubs =
     List.map api.bitflags ~f:gen_c_bitflag_constants |> String.concat ~sep:"\n"
   in
+  let struct_stubs =
+    List.map api.structs ~f:gen_c_struct_stubs |> String.concat ~sep:"\n"
+  in
   let object_stubs =
     List.map api.objects ~f:gen_c_object_stubs |> String.concat ~sep:"\n"
   in
@@ -381,7 +998,15 @@ let gen_c_stubs (api : Ir.api) : string =
     List.map api.functions ~f:gen_c_function_stubs |> String.concat ~sep:"\n"
   in
   let sync_helpers = gen_c_sync_helpers () in
-  String.concat [ header; enum_stubs; bitflag_stubs; object_stubs; function_stubs; sync_helpers ]
+  String.concat
+    [ header
+    ; enum_stubs
+    ; bitflag_stubs
+    ; struct_stubs
+    ; object_stubs
+    ; function_stubs
+    ; sync_helpers
+    ]
 ;;
 
 (** Generate all OCaml bindings *)
@@ -389,7 +1014,14 @@ let gen_ml (api : Ir.api) : string =
   let header = "(* Generated by gen_bindings - low-level OCaml bindings *)\n\n" in
   let enums = List.map api.enums ~f:gen_ml_enum |> String.concat ~sep:"\n" in
   let bitflags = List.map api.bitflags ~f:gen_ml_bitflag |> String.concat ~sep:"\n" in
-  let objects = List.map api.objects ~f:gen_ml_object |> String.concat ~sep:"\n" in
+  let structs = List.map api.structs ~f:gen_ml_struct |> String.concat ~sep:"\n" in
+  (* Generate all object types first, then all methods to handle forward references *)
+  let object_types =
+    List.map api.objects ~f:gen_ml_object_type |> String.concat ~sep:""
+  in
+  let object_methods =
+    List.map api.objects ~f:gen_ml_object_methods |> String.concat ~sep:"\n"
+  in
   let functions =
     {|external create_instance : unit -> instance = "caml_wgpu_create_instance"
 
@@ -421,7 +1053,8 @@ let adapter_get_info adapter =
   { vendor; architecture; device; description; backend_type; adapter_type }
 |}
   in
-  String.concat [ header; enums; bitflags; objects; functions ]
+  String.concat
+    [ header; enums; bitflags; structs; object_types; "\n"; object_methods; functions ]
 ;;
 
 (** Generate all OCaml interface *)
@@ -429,7 +1062,14 @@ let gen_mli (api : Ir.api) : string =
   let header = "(* Generated by gen_bindings - low-level OCaml interface *)\n\n" in
   let enums = List.map api.enums ~f:gen_mli_enum |> String.concat ~sep:"\n" in
   let bitflags = List.map api.bitflags ~f:gen_mli_bitflag |> String.concat ~sep:"\n" in
-  let objects = List.map api.objects ~f:gen_mli_object |> String.concat ~sep:"\n" in
+  let structs = List.map api.structs ~f:gen_mli_struct |> String.concat ~sep:"\n" in
+  (* Generate all object types first, then all methods to handle forward references *)
+  let object_types =
+    List.map api.objects ~f:gen_mli_object_type |> String.concat ~sep:""
+  in
+  let object_methods =
+    List.map api.objects ~f:gen_mli_object_methods |> String.concat ~sep:"\n"
+  in
   let functions =
     {|val create_instance : unit -> instance
 
@@ -451,5 +1091,6 @@ type adapter_info =
 val adapter_get_info : adapter -> adapter_info
 |}
   in
-  String.concat [ header; enums; bitflags; objects; functions ]
+  String.concat
+    [ header; enums; bitflags; structs; object_types; "\n"; object_methods; functions ]
 ;;
