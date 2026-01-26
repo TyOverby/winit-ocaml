@@ -250,8 +250,8 @@ and is_simple_struct_aux
     (* Only input structs can be auto-generated - not output structs *)
     let is_input_struct =
       match struct_.type_ with
-      | Base_in | Standalone -> true
-      | Base_out | Base_in_out -> false
+      | Base_in | Standalone | Extension_in _ -> true
+      | Base_out | Base_in_out | Extension_out _ -> false
     in
     is_input_struct
     && List.for_all struct_.members ~f:(fun member ->
@@ -368,8 +368,8 @@ let is_simple_output_struct (structs : Ir.struct_ list) (struct_name : string) :
     (* Output structs must be base_out or base_in_out *)
     let is_output_struct =
       match struct_.type_ with
-      | Base_out | Base_in_out -> true
-      | Base_in | Standalone -> false
+      | Base_out | Base_in_out | Extension_out _ -> true
+      | Base_in | Standalone | Extension_in _ -> false
     in
     is_output_struct
     && List.for_all struct_.members ~f:(fun member -> is_simple_member_type member.type_)
@@ -1841,7 +1841,20 @@ module Device = struct
   let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
 
   let create_shader_module t ?(label = "") ~wgsl () =
-    let shader = Wgpu_low.device_create_shader_module_wgsl t.handle label wgsl in
+    (* Create the WGSL source extension struct *)
+    let wgsl_source = Wgpu_low.Shader_source_wgsl.shader_source_WGSL_create () in
+    Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_code wgsl_source wgsl;
+    Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_chain_stype wgsl_source (S_type.to_int S_type.Shader_source_wgsl);
+    (* Create the shader module descriptor and chain the extension *)
+    let desc = Wgpu_low.Shader_module_descriptor.shader_module_descriptor_create () in
+    Wgpu_low.Shader_module_descriptor.shader_module_descriptor_set_label desc label;
+    let chained = Wgpu_low.Shader_source_wgsl.shader_source_WGSL_as_chained wgsl_source in
+    Wgpu_low.Shader_module_descriptor.shader_module_descriptor_set_next_in_chain desc chained;
+    (* Create the shader module *)
+    let shader = Wgpu_low.device_create_shader_module t.handle desc in
+    (* Free the descriptor structs *)
+    Wgpu_low.Shader_module_descriptor.shader_module_descriptor_free desc;
+    Wgpu_low.Shader_source_wgsl.shader_source_WGSL_free wgsl_source;
     ({ Shader_module.handle = shader } : Shader_module.t)
 
   let create_texture t ?(label = "") ~size ~format ~usage ?(dimension = Texture_dimension.N2d)

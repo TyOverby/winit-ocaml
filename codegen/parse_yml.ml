@@ -158,14 +158,31 @@ let parse_struct_member (yaml : Yaml.value) : Ir.struct_member =
   }
 ;;
 
+(** Get the list of struct names this extension struct extends *)
+let get_extends_list (yaml : Yaml.value) : string list =
+  match get_list_exn yaml "extends" with
+  | [] -> []
+  | extends_list ->
+    List.filter_map extends_list ~f:(function
+      | `String s -> Some s
+      | _ -> None)
+;;
+
 let parse_struct_type (yaml : Yaml.value) : Ir.struct_type =
   match get_string_opt yaml "type" with
   | Some "base_in" -> Base_in
   | Some "base_out" -> Base_out
   | Some "base_in_out" | Some "base_in_or_out" -> Base_in_out
-  | Some "extension_in" -> Base_in (* Extension structs are also input *)
-  | Some "extension_out" -> Base_out
-  | Some "extension_in_out" -> Base_in_out
+  | Some "extension_in" ->
+    let extends = get_extends_list yaml in
+    Extension_in { extends }
+  | Some "extension_out" ->
+    let extends = get_extends_list yaml in
+    Extension_out { extends }
+  | Some "extension_in_out" ->
+    (* Treat extension_in_out as Extension_in for now *)
+    let extends = get_extends_list yaml in
+    Extension_in { extends }
   | Some "standalone" | None -> Standalone
   | Some s ->
     eprintf "Warning: unknown struct type '%s', treating as standalone\n" s;

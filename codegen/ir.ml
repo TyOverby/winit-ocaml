@@ -83,6 +83,8 @@ type struct_type =
   | Base_out (** Output struct with nextInChain *)
   | Base_in_out (** Both input and output *)
   | Standalone (** No nextInChain *)
+  | Extension_in of { extends : string list } (** Extension struct for input *)
+  | Extension_out of { extends : string list } (** Extension struct for output *)
 [@@deriving sexp_of]
 
 (** A struct definition *)

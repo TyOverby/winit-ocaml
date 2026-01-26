@@ -2,7 +2,11 @@
 
 ## Goal
 
-Support the webgpu "chained struct" pattern where base structs can be extended with additional functionality via a linked list of extension structs.
+Support the webgpu "chained struct" pattern where base structs can be extended
+with additional functionality via a linked list of extension structs.
+
+IMPORTANT: This task is not complete until the hardcoded code in the generator 
+that was waiting for chained struct support is removed.
 
 ## Background
 
@@ -219,14 +223,6 @@ Current extension structs that need support:
 2. Replace hardcoded `device_create_shader_module_wgsl` with auto-generated version
 3. Verify existing shader tests still pass
 4. Add tests for other extension structs as they're implemented
-
-## Complexity Estimate
-
-This is a medium-to-high complexity task:
-- IR changes: straightforward
-- C stub generation: moderate (need to handle chain header specially)
-- High-level API design: needs careful thought about ergonomics
-- Main challenge: deciding on the right abstraction level
 
 ## Open Questions
 

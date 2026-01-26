@@ -2264,6 +2264,14 @@ CAMLprim value caml_wgpu_adapter_info_get_device_id(value handle) {
   CAMLreturn(Val_int(s->deviceID));
 }
 
+/* nextInChain setter for WGPUAdapterInfo */
+CAMLprim value caml_wgpu_adapter_info_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUAdapterInfo *s = (WGPUAdapterInfo*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStructOut *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUBindGroupDescriptor */
 CAMLprim value caml_wgpu_bind_group_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -2330,6 +2338,14 @@ CAMLprim value caml_wgpu_bind_group_descriptor_get_entries(value handle) {
   CAMLparam1(handle);
   WGPUBindGroupDescriptor *s = (WGPUBindGroupDescriptor*)Nativeint_val(handle);
   (void)s; /* TODO: getter for entries */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPUBindGroupDescriptor */
+CAMLprim value caml_wgpu_bind_group_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUBindGroupDescriptor *s = (WGPUBindGroupDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 
@@ -2428,6 +2444,14 @@ CAMLprim value caml_wgpu_bind_group_entry_get_texture_view(value handle) {
   CAMLreturn(caml_copy_nativeint((intnat)s->textureView));
 }
 
+/* nextInChain setter for WGPUBindGroupEntry */
+CAMLprim value caml_wgpu_bind_group_entry_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUBindGroupEntry *s = (WGPUBindGroupEntry*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUBindGroupLayoutDescriptor */
 CAMLprim value caml_wgpu_bind_group_layout_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -2481,6 +2505,14 @@ CAMLprim value caml_wgpu_bind_group_layout_descriptor_get_entries(value handle) 
   CAMLparam1(handle);
   WGPUBindGroupLayoutDescriptor *s = (WGPUBindGroupLayoutDescriptor*)Nativeint_val(handle);
   (void)s; /* TODO: getter for entries */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPUBindGroupLayoutDescriptor */
+CAMLprim value caml_wgpu_bind_group_layout_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUBindGroupLayoutDescriptor *s = (WGPUBindGroupLayoutDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 
@@ -2583,6 +2615,14 @@ CAMLprim value caml_wgpu_bind_group_layout_entry_get_storage_texture(value handl
   CAMLreturn(Val_unit);
 }
 
+/* nextInChain setter for WGPUBindGroupLayoutEntry */
+CAMLprim value caml_wgpu_bind_group_layout_entry_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUBindGroupLayoutEntry *s = (WGPUBindGroupLayoutEntry*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUBlendComponent */
 CAMLprim value caml_wgpu_blend_component_create(value unit) {
   CAMLparam1(unit);
@@ -2639,6 +2679,7 @@ CAMLprim value caml_wgpu_blend_component_get_dst_factor(value handle) {
   CAMLreturn(Val_int(s->dstFactor));
 }
 
+
 /* Struct: WGPUBlendState */
 CAMLprim value caml_wgpu_blend_state_create(value unit) {
   CAMLparam1(unit);
@@ -2683,6 +2724,7 @@ CAMLprim value caml_wgpu_blend_state_get_alpha(value handle) {
   (void)s; /* TODO: getter for alpha */
   CAMLreturn(Val_unit);
 }
+
 
 /* Struct: WGPUBufferBindingLayout */
 CAMLprim value caml_wgpu_buffer_binding_layout_create(value unit) {
@@ -2738,6 +2780,14 @@ CAMLprim value caml_wgpu_buffer_binding_layout_get_min_binding_size(value handle
   CAMLparam1(handle);
   WGPUBufferBindingLayout *s = (WGPUBufferBindingLayout*)Nativeint_val(handle);
   CAMLreturn(caml_copy_int64(s->minBindingSize));
+}
+
+/* nextInChain setter for WGPUBufferBindingLayout */
+CAMLprim value caml_wgpu_buffer_binding_layout_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUBufferBindingLayout *s = (WGPUBufferBindingLayout*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
 }
 
 /* Struct: WGPUBufferDescriptor */
@@ -2815,6 +2865,14 @@ CAMLprim value caml_wgpu_buffer_descriptor_get_mapped_at_creation(value handle) 
   CAMLreturn(Val_bool(s->mappedAtCreation));
 }
 
+/* nextInChain setter for WGPUBufferDescriptor */
+CAMLprim value caml_wgpu_buffer_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUBufferDescriptor *s = (WGPUBufferDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUColor */
 CAMLprim value caml_wgpu_color_create(value unit) {
   CAMLparam1(unit);
@@ -2884,6 +2942,7 @@ CAMLprim value caml_wgpu_color_get_a(value handle) {
   CAMLreturn(caml_copy_double(s->a));
 }
 
+
 /* Struct: WGPUColorTargetState */
 CAMLprim value caml_wgpu_color_target_state_create(value unit) {
   CAMLparam1(unit);
@@ -2941,6 +3000,14 @@ CAMLprim value caml_wgpu_color_target_state_get_write_mask(value handle) {
   CAMLreturn(Val_int(s->writeMask));
 }
 
+/* nextInChain setter for WGPUColorTargetState */
+CAMLprim value caml_wgpu_color_target_state_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUColorTargetState *s = (WGPUColorTargetState*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUCommandBufferDescriptor */
 CAMLprim value caml_wgpu_command_buffer_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -2975,6 +3042,14 @@ CAMLprim value caml_wgpu_command_buffer_descriptor_get_label(value handle) {
   } else {
     CAMLreturn(caml_copy_string(""));
   }
+}
+
+/* nextInChain setter for WGPUCommandBufferDescriptor */
+CAMLprim value caml_wgpu_command_buffer_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUCommandBufferDescriptor *s = (WGPUCommandBufferDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
 }
 
 /* Struct: WGPUCommandEncoderDescriptor */
@@ -3013,6 +3088,14 @@ CAMLprim value caml_wgpu_command_encoder_descriptor_get_label(value handle) {
   }
 }
 
+/* nextInChain setter for WGPUCommandEncoderDescriptor */
+CAMLprim value caml_wgpu_command_encoder_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUCommandEncoderDescriptor *s = (WGPUCommandEncoderDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUCompilationInfo */
 CAMLprim value caml_wgpu_compilation_info_create(value unit) {
   CAMLparam1(unit);
@@ -3047,6 +3130,14 @@ CAMLprim value caml_wgpu_compilation_info_get_messages(value handle) {
   CAMLparam1(handle);
   WGPUCompilationInfo *s = (WGPUCompilationInfo*)Nativeint_val(handle);
   (void)s; /* TODO: getter for messages */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPUCompilationInfo */
+CAMLprim value caml_wgpu_compilation_info_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUCompilationInfo *s = (WGPUCompilationInfo*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 
@@ -3151,6 +3242,14 @@ CAMLprim value caml_wgpu_compilation_message_get_length(value handle) {
   CAMLreturn(caml_copy_int64(s->length));
 }
 
+/* nextInChain setter for WGPUCompilationMessage */
+CAMLprim value caml_wgpu_compilation_message_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUCompilationMessage *s = (WGPUCompilationMessage*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUComputePassDescriptor */
 CAMLprim value caml_wgpu_compute_pass_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -3198,6 +3297,14 @@ CAMLprim value caml_wgpu_compute_pass_descriptor_get_timestamp_writes(value hand
   CAMLparam1(handle);
   WGPUComputePassDescriptor *s = (WGPUComputePassDescriptor*)Nativeint_val(handle);
   (void)s; /* TODO: getter for timestampWrites */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPUComputePassDescriptor */
+CAMLprim value caml_wgpu_compute_pass_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUComputePassDescriptor *s = (WGPUComputePassDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 
@@ -3256,6 +3363,7 @@ CAMLprim value caml_wgpu_compute_pass_timestamp_writes_get_end_of_pass_write_ind
   WGPUComputePassTimestampWrites *s = (WGPUComputePassTimestampWrites*)Nativeint_val(handle);
   CAMLreturn(Val_int(s->endOfPassWriteIndex));
 }
+
 
 /* Struct: WGPUComputePipelineDescriptor */
 CAMLprim value caml_wgpu_compute_pipeline_descriptor_create(value unit) {
@@ -3320,6 +3428,14 @@ CAMLprim value caml_wgpu_compute_pipeline_descriptor_get_compute(value handle) {
   CAMLreturn(Val_unit);
 }
 
+/* nextInChain setter for WGPUComputePipelineDescriptor */
+CAMLprim value caml_wgpu_compute_pipeline_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUComputePipelineDescriptor *s = (WGPUComputePipelineDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUConstantEntry */
 CAMLprim value caml_wgpu_constant_entry_create(value unit) {
   CAMLparam1(unit);
@@ -3367,6 +3483,14 @@ CAMLprim value caml_wgpu_constant_entry_get_value(value handle) {
   CAMLparam1(handle);
   WGPUConstantEntry *s = (WGPUConstantEntry*)Nativeint_val(handle);
   CAMLreturn(caml_copy_double(s->value));
+}
+
+/* nextInChain setter for WGPUConstantEntry */
+CAMLprim value caml_wgpu_constant_entry_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUConstantEntry *s = (WGPUConstantEntry*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
 }
 
 /* Struct: WGPUDepthStencilState */
@@ -3518,6 +3642,14 @@ CAMLprim value caml_wgpu_depth_stencil_state_get_depth_bias_clamp(value handle) 
   CAMLreturn(caml_copy_double((double)s->depthBiasClamp));
 }
 
+/* nextInChain setter for WGPUDepthStencilState */
+CAMLprim value caml_wgpu_depth_stencil_state_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUDepthStencilState *s = (WGPUDepthStencilState*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUDeviceDescriptor */
 CAMLprim value caml_wgpu_device_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -3630,6 +3762,14 @@ CAMLprim value caml_wgpu_device_descriptor_get_uncaptured_error_callback_info(va
   CAMLreturn(Val_unit);
 }
 
+/* nextInChain setter for WGPUDeviceDescriptor */
+CAMLprim value caml_wgpu_device_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUDeviceDescriptor *s = (WGPUDeviceDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUExtent3D */
 CAMLprim value caml_wgpu_extent_3d_create(value unit) {
   CAMLparam1(unit);
@@ -3685,6 +3825,7 @@ CAMLprim value caml_wgpu_extent_3d_get_depth_or_array_layers(value handle) {
   WGPUExtent3D *s = (WGPUExtent3D*)Nativeint_val(handle);
   CAMLreturn(Val_int(s->depthOrArrayLayers));
 }
+
 
 /* Struct: WGPUFragmentState */
 CAMLprim value caml_wgpu_fragment_state_create(value unit) {
@@ -3775,6 +3916,14 @@ CAMLprim value caml_wgpu_fragment_state_get_targets(value handle) {
   CAMLreturn(Val_unit);
 }
 
+/* nextInChain setter for WGPUFragmentState */
+CAMLprim value caml_wgpu_fragment_state_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUFragmentState *s = (WGPUFragmentState*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUFuture */
 CAMLprim value caml_wgpu_future_create(value unit) {
   CAMLparam1(unit);
@@ -3804,6 +3953,7 @@ CAMLprim value caml_wgpu_future_get_id(value handle) {
   WGPUFuture *s = (WGPUFuture*)Nativeint_val(handle);
   CAMLreturn(caml_copy_int64(s->id));
 }
+
 
 /* Struct: WGPUFutureWaitInfo */
 CAMLprim value caml_wgpu_future_wait_info_create(value unit) {
@@ -3849,6 +3999,7 @@ CAMLprim value caml_wgpu_future_wait_info_get_completed(value handle) {
   CAMLreturn(Val_bool(s->completed));
 }
 
+
 /* Struct: WGPUInstanceCapabilities */
 CAMLprim value caml_wgpu_instance_capabilities_create(value unit) {
   CAMLparam1(unit);
@@ -3892,6 +4043,14 @@ CAMLprim value caml_wgpu_instance_capabilities_get_timed_wait_any_max_count(valu
   CAMLreturn(caml_copy_int64((int64_t)s->timedWaitAnyMaxCount));
 }
 
+/* nextInChain setter for WGPUInstanceCapabilities */
+CAMLprim value caml_wgpu_instance_capabilities_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUInstanceCapabilities *s = (WGPUInstanceCapabilities*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStructOut *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUInstanceDescriptor */
 CAMLprim value caml_wgpu_instance_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -3920,6 +4079,14 @@ CAMLprim value caml_wgpu_instance_descriptor_get_features(value handle) {
   CAMLparam1(handle);
   WGPUInstanceDescriptor *s = (WGPUInstanceDescriptor*)Nativeint_val(handle);
   (void)s; /* TODO: getter for features */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPUInstanceDescriptor */
+CAMLprim value caml_wgpu_instance_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUInstanceDescriptor *s = (WGPUInstanceDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 
@@ -4343,6 +4510,14 @@ CAMLprim value caml_wgpu_limits_get_max_compute_workgroups_per_dimension(value h
   CAMLreturn(Val_int(s->maxComputeWorkgroupsPerDimension));
 }
 
+/* nextInChain setter for WGPULimits */
+CAMLprim value caml_wgpu_limits_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPULimits *s = (WGPULimits*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStructOut *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUMultisampleState */
 CAMLprim value caml_wgpu_multisample_state_create(value unit) {
   CAMLparam1(unit);
@@ -4397,6 +4572,14 @@ CAMLprim value caml_wgpu_multisample_state_get_alpha_to_coverage_enabled(value h
   CAMLparam1(handle);
   WGPUMultisampleState *s = (WGPUMultisampleState*)Nativeint_val(handle);
   CAMLreturn(Val_bool(s->alphaToCoverageEnabled));
+}
+
+/* nextInChain setter for WGPUMultisampleState */
+CAMLprim value caml_wgpu_multisample_state_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUMultisampleState *s = (WGPUMultisampleState*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
 }
 
 /* Struct: WGPUOrigin3D */
@@ -4455,6 +4638,7 @@ CAMLprim value caml_wgpu_origin_3d_get_z(value handle) {
   CAMLreturn(Val_int(s->z));
 }
 
+
 /* Struct: WGPUPipelineLayoutDescriptor */
 CAMLprim value caml_wgpu_pipeline_layout_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -4508,6 +4692,14 @@ CAMLprim value caml_wgpu_pipeline_layout_descriptor_get_bind_group_layouts(value
   CAMLparam1(handle);
   WGPUPipelineLayoutDescriptor *s = (WGPUPipelineLayoutDescriptor*)Nativeint_val(handle);
   (void)s; /* TODO: getter for bindGroupLayouts */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPUPipelineLayoutDescriptor */
+CAMLprim value caml_wgpu_pipeline_layout_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUPipelineLayoutDescriptor *s = (WGPUPipelineLayoutDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 
@@ -4593,6 +4785,14 @@ CAMLprim value caml_wgpu_primitive_state_get_unclipped_depth(value handle) {
   CAMLreturn(Val_bool(s->unclippedDepth));
 }
 
+/* nextInChain setter for WGPUPrimitiveState */
+CAMLprim value caml_wgpu_primitive_state_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUPrimitiveState *s = (WGPUPrimitiveState*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUProgrammableStageDescriptor */
 CAMLprim value caml_wgpu_programmable_stage_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -4662,6 +4862,14 @@ CAMLprim value caml_wgpu_programmable_stage_descriptor_get_constants(value handl
   CAMLreturn(Val_unit);
 }
 
+/* nextInChain setter for WGPUProgrammableStageDescriptor */
+CAMLprim value caml_wgpu_programmable_stage_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUProgrammableStageDescriptor *s = (WGPUProgrammableStageDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUQuerySetDescriptor */
 CAMLprim value caml_wgpu_query_set_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -4724,6 +4932,14 @@ CAMLprim value caml_wgpu_query_set_descriptor_get_count(value handle) {
   CAMLreturn(Val_int(s->count));
 }
 
+/* nextInChain setter for WGPUQuerySetDescriptor */
+CAMLprim value caml_wgpu_query_set_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUQuerySetDescriptor *s = (WGPUQuerySetDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUQueueDescriptor */
 CAMLprim value caml_wgpu_queue_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -4760,6 +4976,14 @@ CAMLprim value caml_wgpu_queue_descriptor_get_label(value handle) {
   }
 }
 
+/* nextInChain setter for WGPUQueueDescriptor */
+CAMLprim value caml_wgpu_queue_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUQueueDescriptor *s = (WGPUQueueDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPURenderBundleDescriptor */
 CAMLprim value caml_wgpu_render_bundle_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -4794,6 +5018,14 @@ CAMLprim value caml_wgpu_render_bundle_descriptor_get_label(value handle) {
   } else {
     CAMLreturn(caml_copy_string(""));
   }
+}
+
+/* nextInChain setter for WGPURenderBundleDescriptor */
+CAMLprim value caml_wgpu_render_bundle_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPURenderBundleDescriptor *s = (WGPURenderBundleDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
 }
 
 /* Struct: WGPURenderBundleEncoderDescriptor */
@@ -4904,6 +5136,14 @@ CAMLprim value caml_wgpu_render_bundle_encoder_descriptor_get_stencil_read_only(
   CAMLreturn(Val_bool(s->stencilReadOnly));
 }
 
+/* nextInChain setter for WGPURenderBundleEncoderDescriptor */
+CAMLprim value caml_wgpu_render_bundle_encoder_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPURenderBundleEncoderDescriptor *s = (WGPURenderBundleEncoderDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPURenderPassColorAttachment */
 CAMLprim value caml_wgpu_render_pass_color_attachment_create(value unit) {
   CAMLparam1(unit);
@@ -4997,6 +5237,14 @@ CAMLprim value caml_wgpu_render_pass_color_attachment_get_clear_value(value hand
   CAMLparam1(handle);
   WGPURenderPassColorAttachment *s = (WGPURenderPassColorAttachment*)Nativeint_val(handle);
   (void)s; /* TODO: getter for clearValue */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPURenderPassColorAttachment */
+CAMLprim value caml_wgpu_render_pass_color_attachment_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPURenderPassColorAttachment *s = (WGPURenderPassColorAttachment*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 
@@ -5134,6 +5382,7 @@ CAMLprim value caml_wgpu_render_pass_depth_stencil_attachment_get_stencil_read_o
   CAMLreturn(Val_bool(s->stencilReadOnly));
 }
 
+
 /* Struct: WGPURenderPassDescriptor */
 CAMLprim value caml_wgpu_render_pass_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -5231,6 +5480,14 @@ CAMLprim value caml_wgpu_render_pass_descriptor_get_timestamp_writes(value handl
   CAMLreturn(Val_unit);
 }
 
+/* nextInChain setter for WGPURenderPassDescriptor */
+CAMLprim value caml_wgpu_render_pass_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPURenderPassDescriptor *s = (WGPURenderPassDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPURenderPassMaxDrawCount */
 CAMLprim value caml_wgpu_render_pass_max_draw_count_create(value unit) {
   CAMLparam1(unit);
@@ -5259,6 +5516,20 @@ CAMLprim value caml_wgpu_render_pass_max_draw_count_get_max_draw_count(value han
   CAMLparam1(handle);
   WGPURenderPassMaxDrawCount *s = (WGPURenderPassMaxDrawCount*)Nativeint_val(handle);
   CAMLreturn(caml_copy_int64(s->maxDrawCount));
+}
+
+/* Extension chain functions for WGPURenderPassMaxDrawCount */
+CAMLprim value caml_wgpu_render_pass_max_draw_count_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  WGPURenderPassMaxDrawCount *s = (WGPURenderPassMaxDrawCount*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_render_pass_max_draw_count_as_chained(value handle) {
+  CAMLparam1(handle);
+  WGPURenderPassMaxDrawCount *s = (WGPURenderPassMaxDrawCount*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
 }
 
 /* Struct: WGPURenderPassTimestampWrites */
@@ -5316,6 +5587,7 @@ CAMLprim value caml_wgpu_render_pass_timestamp_writes_get_end_of_pass_write_inde
   WGPURenderPassTimestampWrites *s = (WGPURenderPassTimestampWrites*)Nativeint_val(handle);
   CAMLreturn(Val_int(s->endOfPassWriteIndex));
 }
+
 
 /* Struct: WGPURenderPipelineDescriptor */
 CAMLprim value caml_wgpu_render_pipeline_descriptor_create(value unit) {
@@ -5436,6 +5708,14 @@ CAMLprim value caml_wgpu_render_pipeline_descriptor_get_fragment(value handle) {
   CAMLreturn(Val_unit);
 }
 
+/* nextInChain setter for WGPURenderPipelineDescriptor */
+CAMLprim value caml_wgpu_render_pipeline_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPURenderPipelineDescriptor *s = (WGPURenderPipelineDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPURequestAdapterOptions */
 CAMLprim value caml_wgpu_request_adapter_options_create(value unit) {
   CAMLparam1(unit);
@@ -5518,6 +5798,14 @@ CAMLprim value caml_wgpu_request_adapter_options_get_compatible_surface(value ha
   CAMLreturn(caml_copy_nativeint((intnat)s->compatibleSurface));
 }
 
+/* nextInChain setter for WGPURequestAdapterOptions */
+CAMLprim value caml_wgpu_request_adapter_options_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPURequestAdapterOptions *s = (WGPURequestAdapterOptions*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUSamplerBindingLayout */
 CAMLprim value caml_wgpu_sampler_binding_layout_create(value unit) {
   CAMLparam1(unit);
@@ -5546,6 +5834,14 @@ CAMLprim value caml_wgpu_sampler_binding_layout_get_type(value handle) {
   CAMLparam1(handle);
   WGPUSamplerBindingLayout *s = (WGPUSamplerBindingLayout*)Nativeint_val(handle);
   CAMLreturn(Val_int(s->type));
+}
+
+/* nextInChain setter for WGPUSamplerBindingLayout */
+CAMLprim value caml_wgpu_sampler_binding_layout_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUSamplerBindingLayout *s = (WGPUSamplerBindingLayout*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
 }
 
 /* Struct: WGPUSamplerDescriptor */
@@ -5714,6 +6010,14 @@ CAMLprim value caml_wgpu_sampler_descriptor_get_max_anisotropy(value handle) {
   CAMLreturn(Val_int(s->maxAnisotropy));
 }
 
+/* nextInChain setter for WGPUSamplerDescriptor */
+CAMLprim value caml_wgpu_sampler_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUSamplerDescriptor *s = (WGPUSamplerDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUShaderModuleDescriptor */
 CAMLprim value caml_wgpu_shader_module_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -5748,6 +6052,14 @@ CAMLprim value caml_wgpu_shader_module_descriptor_get_label(value handle) {
   } else {
     CAMLreturn(caml_copy_string(""));
   }
+}
+
+/* nextInChain setter for WGPUShaderModuleDescriptor */
+CAMLprim value caml_wgpu_shader_module_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUShaderModuleDescriptor *s = (WGPUShaderModuleDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
 }
 
 /* Struct: WGPUShaderSourceSPIRV */
@@ -5794,6 +6106,20 @@ CAMLprim value caml_wgpu_shader_source_spirv_get_code(value handle) {
   CAMLreturn(Val_unit);
 }
 
+/* Extension chain functions for WGPUShaderSourceSPIRV */
+CAMLprim value caml_wgpu_shader_source_spirv_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  WGPUShaderSourceSPIRV *s = (WGPUShaderSourceSPIRV*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_shader_source_spirv_as_chained(value handle) {
+  CAMLparam1(handle);
+  WGPUShaderSourceSPIRV *s = (WGPUShaderSourceSPIRV*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
+}
+
 /* Struct: WGPUShaderSourceWGSL */
 CAMLprim value caml_wgpu_shader_source_wgsl_create(value unit) {
   CAMLparam1(unit);
@@ -5828,6 +6154,20 @@ CAMLprim value caml_wgpu_shader_source_wgsl_get_code(value handle) {
   } else {
     CAMLreturn(caml_copy_string(""));
   }
+}
+
+/* Extension chain functions for WGPUShaderSourceWGSL */
+CAMLprim value caml_wgpu_shader_source_wgsl_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  WGPUShaderSourceWGSL *s = (WGPUShaderSourceWGSL*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_shader_source_wgsl_as_chained(value handle) {
+  CAMLparam1(handle);
+  WGPUShaderSourceWGSL *s = (WGPUShaderSourceWGSL*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
 }
 
 /* Struct: WGPUStencilFaceState */
@@ -5899,6 +6239,7 @@ CAMLprim value caml_wgpu_stencil_face_state_get_pass_op(value handle) {
   CAMLreturn(Val_int(s->passOp));
 }
 
+
 /* Struct: WGPUStorageTextureBindingLayout */
 CAMLprim value caml_wgpu_storage_texture_binding_layout_create(value unit) {
   CAMLparam1(unit);
@@ -5955,6 +6296,14 @@ CAMLprim value caml_wgpu_storage_texture_binding_layout_get_view_dimension(value
   CAMLreturn(Val_int(s->viewDimension));
 }
 
+/* nextInChain setter for WGPUStorageTextureBindingLayout */
+CAMLprim value caml_wgpu_storage_texture_binding_layout_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUStorageTextureBindingLayout *s = (WGPUStorageTextureBindingLayout*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUSupportedFeatures */
 CAMLprim value caml_wgpu_supported_features_create(value unit) {
   CAMLparam1(unit);
@@ -5992,6 +6341,7 @@ CAMLprim value caml_wgpu_supported_features_get_features(value handle) {
   CAMLreturn(Val_unit);
 }
 
+
 /* Struct: WGPUSupportedWGSLLanguageFeatures */
 CAMLprim value caml_wgpu_supported_wgsl_language_features_create(value unit) {
   CAMLparam1(unit);
@@ -6028,6 +6378,7 @@ CAMLprim value caml_wgpu_supported_wgsl_language_features_get_features(value han
   (void)s; /* TODO: getter for features */
   CAMLreturn(Val_unit);
 }
+
 
 /* Struct: WGPUSurfaceCapabilities */
 CAMLprim value caml_wgpu_surface_capabilities_create(value unit) {
@@ -6116,6 +6467,14 @@ CAMLprim value caml_wgpu_surface_capabilities_get_alpha_modes(value handle) {
   CAMLparam1(handle);
   WGPUSurfaceCapabilities *s = (WGPUSurfaceCapabilities*)Nativeint_val(handle);
   (void)s; /* TODO: getter for alphaModes */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPUSurfaceCapabilities */
+CAMLprim value caml_wgpu_surface_capabilities_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUSurfaceCapabilities *s = (WGPUSurfaceCapabilities*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStructOut *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 
@@ -6247,6 +6606,14 @@ CAMLprim value caml_wgpu_surface_configuration_get_present_mode(value handle) {
   CAMLreturn(Val_int(s->presentMode));
 }
 
+/* nextInChain setter for WGPUSurfaceConfiguration */
+CAMLprim value caml_wgpu_surface_configuration_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUSurfaceConfiguration *s = (WGPUSurfaceConfiguration*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUSurfaceDescriptor */
 CAMLprim value caml_wgpu_surface_descriptor_create(value unit) {
   CAMLparam1(unit);
@@ -6283,6 +6650,14 @@ CAMLprim value caml_wgpu_surface_descriptor_get_label(value handle) {
   }
 }
 
+/* nextInChain setter for WGPUSurfaceDescriptor */
+CAMLprim value caml_wgpu_surface_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUSurfaceDescriptor *s = (WGPUSurfaceDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUSurfaceSourceAndroidNativeWindow */
 CAMLprim value caml_wgpu_surface_source_android_native_window_create(value unit) {
   CAMLparam1(unit);
@@ -6314,6 +6689,20 @@ CAMLprim value caml_wgpu_surface_source_android_native_window_get_window(value h
   CAMLreturn(Val_unit);
 }
 
+/* Extension chain functions for WGPUSurfaceSourceAndroidNativeWindow */
+CAMLprim value caml_wgpu_surface_source_android_native_window_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  WGPUSurfaceSourceAndroidNativeWindow *s = (WGPUSurfaceSourceAndroidNativeWindow*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_surface_source_android_native_window_as_chained(value handle) {
+  CAMLparam1(handle);
+  WGPUSurfaceSourceAndroidNativeWindow *s = (WGPUSurfaceSourceAndroidNativeWindow*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
+}
+
 /* Struct: WGPUSurfaceSourceMetalLayer */
 CAMLprim value caml_wgpu_surface_source_metal_layer_create(value unit) {
   CAMLparam1(unit);
@@ -6343,6 +6732,20 @@ CAMLprim value caml_wgpu_surface_source_metal_layer_get_layer(value handle) {
   WGPUSurfaceSourceMetalLayer *s = (WGPUSurfaceSourceMetalLayer*)Nativeint_val(handle);
   (void)s; /* TODO: getter for layer */
   CAMLreturn(Val_unit);
+}
+
+/* Extension chain functions for WGPUSurfaceSourceMetalLayer */
+CAMLprim value caml_wgpu_surface_source_metal_layer_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  WGPUSurfaceSourceMetalLayer *s = (WGPUSurfaceSourceMetalLayer*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_surface_source_metal_layer_as_chained(value handle) {
+  CAMLparam1(handle);
+  WGPUSurfaceSourceMetalLayer *s = (WGPUSurfaceSourceMetalLayer*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
 }
 
 /* Struct: WGPUSurfaceSourceWaylandSurface */
@@ -6390,6 +6793,20 @@ CAMLprim value caml_wgpu_surface_source_wayland_surface_get_surface(value handle
   CAMLreturn(Val_unit);
 }
 
+/* Extension chain functions for WGPUSurfaceSourceWaylandSurface */
+CAMLprim value caml_wgpu_surface_source_wayland_surface_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  WGPUSurfaceSourceWaylandSurface *s = (WGPUSurfaceSourceWaylandSurface*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_surface_source_wayland_surface_as_chained(value handle) {
+  CAMLparam1(handle);
+  WGPUSurfaceSourceWaylandSurface *s = (WGPUSurfaceSourceWaylandSurface*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
+}
+
 /* Struct: WGPUSurfaceSourceWindowsHWND */
 CAMLprim value caml_wgpu_surface_source_windows_hwnd_create(value unit) {
   CAMLparam1(unit);
@@ -6433,6 +6850,20 @@ CAMLprim value caml_wgpu_surface_source_windows_hwnd_get_hwnd(value handle) {
   WGPUSurfaceSourceWindowsHWND *s = (WGPUSurfaceSourceWindowsHWND*)Nativeint_val(handle);
   (void)s; /* TODO: getter for hwnd */
   CAMLreturn(Val_unit);
+}
+
+/* Extension chain functions for WGPUSurfaceSourceWindowsHWND */
+CAMLprim value caml_wgpu_surface_source_windows_hwnd_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  WGPUSurfaceSourceWindowsHWND *s = (WGPUSurfaceSourceWindowsHWND*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_surface_source_windows_hwnd_as_chained(value handle) {
+  CAMLparam1(handle);
+  WGPUSurfaceSourceWindowsHWND *s = (WGPUSurfaceSourceWindowsHWND*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
 }
 
 /* Struct: WGPUSurfaceSourceXCBWindow */
@@ -6479,6 +6910,20 @@ CAMLprim value caml_wgpu_surface_source_xcb_window_get_window(value handle) {
   CAMLreturn(Val_int(s->window));
 }
 
+/* Extension chain functions for WGPUSurfaceSourceXCBWindow */
+CAMLprim value caml_wgpu_surface_source_xcb_window_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  WGPUSurfaceSourceXCBWindow *s = (WGPUSurfaceSourceXCBWindow*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_surface_source_xcb_window_as_chained(value handle) {
+  CAMLparam1(handle);
+  WGPUSurfaceSourceXCBWindow *s = (WGPUSurfaceSourceXCBWindow*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
+}
+
 /* Struct: WGPUSurfaceSourceXlibWindow */
 CAMLprim value caml_wgpu_surface_source_xlib_window_create(value unit) {
   CAMLparam1(unit);
@@ -6521,6 +6966,20 @@ CAMLprim value caml_wgpu_surface_source_xlib_window_get_window(value handle) {
   CAMLparam1(handle);
   WGPUSurfaceSourceXlibWindow *s = (WGPUSurfaceSourceXlibWindow*)Nativeint_val(handle);
   CAMLreturn(caml_copy_int64(s->window));
+}
+
+/* Extension chain functions for WGPUSurfaceSourceXlibWindow */
+CAMLprim value caml_wgpu_surface_source_xlib_window_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  WGPUSurfaceSourceXlibWindow *s = (WGPUSurfaceSourceXlibWindow*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_surface_source_xlib_window_as_chained(value handle) {
+  CAMLparam1(handle);
+  WGPUSurfaceSourceXlibWindow *s = (WGPUSurfaceSourceXlibWindow*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
 }
 
 /* Struct: WGPUSurfaceTexture */
@@ -6566,6 +7025,14 @@ CAMLprim value caml_wgpu_surface_texture_get_status(value handle) {
   CAMLreturn(Val_int(s->status));
 }
 
+/* nextInChain setter for WGPUSurfaceTexture */
+CAMLprim value caml_wgpu_surface_texture_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUSurfaceTexture *s = (WGPUSurfaceTexture*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStructOut *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUTexelCopyBufferInfo */
 CAMLprim value caml_wgpu_texel_copy_buffer_info_create(value unit) {
   CAMLparam1(unit);
@@ -6609,6 +7076,7 @@ CAMLprim value caml_wgpu_texel_copy_buffer_info_get_buffer(value handle) {
   WGPUTexelCopyBufferInfo *s = (WGPUTexelCopyBufferInfo*)Nativeint_val(handle);
   CAMLreturn(caml_copy_nativeint((intnat)s->buffer));
 }
+
 
 /* Struct: WGPUTexelCopyBufferLayout */
 CAMLprim value caml_wgpu_texel_copy_buffer_layout_create(value unit) {
@@ -6665,6 +7133,7 @@ CAMLprim value caml_wgpu_texel_copy_buffer_layout_get_rows_per_image(value handl
   WGPUTexelCopyBufferLayout *s = (WGPUTexelCopyBufferLayout*)Nativeint_val(handle);
   CAMLreturn(Val_int(s->rowsPerImage));
 }
+
 
 /* Struct: WGPUTexelCopyTextureInfo */
 CAMLprim value caml_wgpu_texel_copy_texture_info_create(value unit) {
@@ -6736,6 +7205,7 @@ CAMLprim value caml_wgpu_texel_copy_texture_info_get_aspect(value handle) {
   CAMLreturn(Val_int(s->aspect));
 }
 
+
 /* Struct: WGPUTextureBindingLayout */
 CAMLprim value caml_wgpu_texture_binding_layout_create(value unit) {
   CAMLparam1(unit);
@@ -6790,6 +7260,14 @@ CAMLprim value caml_wgpu_texture_binding_layout_get_multisampled(value handle) {
   CAMLparam1(handle);
   WGPUTextureBindingLayout *s = (WGPUTextureBindingLayout*)Nativeint_val(handle);
   CAMLreturn(Val_bool(s->multisampled));
+}
+
+/* nextInChain setter for WGPUTextureBindingLayout */
+CAMLprim value caml_wgpu_texture_binding_layout_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUTextureBindingLayout *s = (WGPUTextureBindingLayout*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
 }
 
 /* Struct: WGPUTextureDescriptor */
@@ -6924,6 +7402,14 @@ CAMLprim value caml_wgpu_texture_descriptor_get_view_formats(value handle) {
   CAMLparam1(handle);
   WGPUTextureDescriptor *s = (WGPUTextureDescriptor*)Nativeint_val(handle);
   (void)s; /* TODO: getter for viewFormats */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPUTextureDescriptor */
+CAMLprim value caml_wgpu_texture_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUTextureDescriptor *s = (WGPUTextureDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 
@@ -7067,6 +7553,14 @@ CAMLprim value caml_wgpu_texture_view_descriptor_get_usage(value handle) {
   CAMLreturn(Val_int(s->usage));
 }
 
+/* nextInChain setter for WGPUTextureViewDescriptor */
+CAMLprim value caml_wgpu_texture_view_descriptor_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUTextureViewDescriptor *s = (WGPUTextureViewDescriptor*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+
 /* Struct: WGPUVertexAttribute */
 CAMLprim value caml_wgpu_vertex_attribute_create(value unit) {
   CAMLparam1(unit);
@@ -7122,6 +7616,7 @@ CAMLprim value caml_wgpu_vertex_attribute_get_shader_location(value handle) {
   WGPUVertexAttribute *s = (WGPUVertexAttribute*)Nativeint_val(handle);
   CAMLreturn(Val_int(s->shaderLocation));
 }
+
 
 /* Struct: WGPUVertexBufferLayout */
 CAMLprim value caml_wgpu_vertex_buffer_layout_create(value unit) {
@@ -7185,6 +7680,7 @@ CAMLprim value caml_wgpu_vertex_buffer_layout_get_attributes(value handle) {
   (void)s; /* TODO: getter for attributes */
   CAMLreturn(Val_unit);
 }
+
 
 /* Struct: WGPUVertexState */
 CAMLprim value caml_wgpu_vertex_state_create(value unit) {
@@ -7272,6 +7768,14 @@ CAMLprim value caml_wgpu_vertex_state_get_buffers(value handle) {
   CAMLparam1(handle);
   WGPUVertexState *s = (WGPUVertexState*)Nativeint_val(handle);
   (void)s; /* TODO: getter for buffers */
+  CAMLreturn(Val_unit);
+}
+
+/* nextInChain setter for WGPUVertexState */
+CAMLprim value caml_wgpu_vertex_state_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  WGPUVertexState *s = (WGPUVertexState*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 /* Object: WGPUAdapter */
@@ -8777,26 +9281,6 @@ CAMLprim value caml_wgpu_adapter_get_info(value adapter_val) {
   CAMLreturn(result);
 }
 
-/* Create shader module from WGSL source */
-CAMLprim value caml_wgpu_device_create_shader_module_wgsl(value device_val, value label_val, value code_val) {
-  CAMLparam3(device_val, label_val, code_val);
-  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
-  const char* label = String_val(label_val);
-  const char* code = String_val(code_val);
-
-  WGPUShaderSourceWGSL wgsl_desc = {
-    .chain = { .sType = WGPUSType_ShaderSourceWGSL },
-    .code = { .data = code, .length = caml_string_length(code_val) },
-  };
-
-  WGPUShaderModuleDescriptor desc = {
-    .nextInChain = (WGPUChainedStruct*)&wgsl_desc,
-    .label = { .data = label, .length = caml_string_length(label_val) },
-  };
-
-  WGPUShaderModule module = wgpuDeviceCreateShaderModule(device, &desc);
-  CAMLreturn(caml_copy_nativeint((intnat)module));
-}
 
 /* Submit single command buffer */
 CAMLprim value caml_wgpu_queue_submit_single(value queue_val, value command_buffer_val) {

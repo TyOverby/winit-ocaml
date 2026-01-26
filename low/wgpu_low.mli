@@ -817,6 +817,7 @@ module Adapter_info : sig
   val adapter_info_get_adapter_type : t -> int
   val adapter_info_get_vendor_ID : t -> int
   val adapter_info_get_device_ID : t -> int
+  val adapter_info_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Bind_group_descriptor : sig
@@ -830,6 +831,7 @@ module Bind_group_descriptor : sig
   val bind_group_descriptor_get_label : t -> string
   val bind_group_descriptor_get_layout : t -> nativeint
   val bind_group_descriptor_get_entries : t -> nativeint
+  val bind_group_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Bind_group_entry : sig
@@ -849,6 +851,7 @@ module Bind_group_entry : sig
   val bind_group_entry_get_size : t -> int64
   val bind_group_entry_get_sampler : t -> nativeint
   val bind_group_entry_get_texture_view : t -> nativeint
+  val bind_group_entry_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Bind_group_layout_descriptor : sig
@@ -860,6 +863,7 @@ module Bind_group_layout_descriptor : sig
   val bind_group_layout_descriptor_set_entries : t -> nativeint array -> unit
   val bind_group_layout_descriptor_get_label : t -> string
   val bind_group_layout_descriptor_get_entries : t -> nativeint
+  val bind_group_layout_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Bind_group_layout_entry : sig
@@ -879,6 +883,7 @@ module Bind_group_layout_entry : sig
   val bind_group_layout_entry_get_sampler : t -> nativeint
   val bind_group_layout_entry_get_texture : t -> nativeint
   val bind_group_layout_entry_get_storage_texture : t -> nativeint
+  val bind_group_layout_entry_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Blend_component : sig
@@ -916,6 +921,7 @@ module Buffer_binding_layout : sig
   val buffer_binding_layout_get_type : t -> int
   val buffer_binding_layout_get_has_dynamic_offset : t -> bool
   val buffer_binding_layout_get_min_binding_size : t -> int64
+  val buffer_binding_layout_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Buffer_descriptor : sig
@@ -931,6 +937,7 @@ module Buffer_descriptor : sig
   val buffer_descriptor_get_usage : t -> int
   val buffer_descriptor_get_size : t -> int64
   val buffer_descriptor_get_mapped_at_creation : t -> bool
+  val buffer_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Color : sig
@@ -959,6 +966,7 @@ module Color_target_state : sig
   val color_target_state_get_format : t -> int
   val color_target_state_get_blend : t -> nativeint
   val color_target_state_get_write_mask : t -> int
+  val color_target_state_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Command_buffer_descriptor : sig
@@ -968,6 +976,7 @@ module Command_buffer_descriptor : sig
   val command_buffer_descriptor_free : t -> unit
   val command_buffer_descriptor_set_label : t -> string -> unit
   val command_buffer_descriptor_get_label : t -> string
+  val command_buffer_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Command_encoder_descriptor : sig
@@ -977,6 +986,7 @@ module Command_encoder_descriptor : sig
   val command_encoder_descriptor_free : t -> unit
   val command_encoder_descriptor_set_label : t -> string -> unit
   val command_encoder_descriptor_get_label : t -> string
+  val command_encoder_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Compilation_info : sig
@@ -986,6 +996,7 @@ module Compilation_info : sig
   val compilation_info_free : t -> unit
   val compilation_info_set_messages : t -> nativeint array -> unit
   val compilation_info_get_messages : t -> nativeint
+  val compilation_info_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Compilation_message : sig
@@ -1005,6 +1016,7 @@ module Compilation_message : sig
   val compilation_message_get_line_pos : t -> int64
   val compilation_message_get_offset : t -> int64
   val compilation_message_get_length : t -> int64
+  val compilation_message_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Compute_pass_descriptor : sig
@@ -1016,6 +1028,7 @@ module Compute_pass_descriptor : sig
   val compute_pass_descriptor_set_timestamp_writes : t -> nativeint -> unit
   val compute_pass_descriptor_get_label : t -> string
   val compute_pass_descriptor_get_timestamp_writes : t -> nativeint
+  val compute_pass_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Compute_pass_timestamp_writes : sig
@@ -1042,6 +1055,7 @@ module Compute_pipeline_descriptor : sig
   val compute_pipeline_descriptor_get_label : t -> string
   val compute_pipeline_descriptor_get_layout : t -> nativeint
   val compute_pipeline_descriptor_get_compute : t -> nativeint
+  val compute_pipeline_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Constant_entry : sig
@@ -1053,6 +1067,7 @@ module Constant_entry : sig
   val constant_entry_set_value : t -> float -> unit
   val constant_entry_get_key : t -> string
   val constant_entry_get_value : t -> float
+  val constant_entry_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Depth_stencil_state : sig
@@ -1080,6 +1095,7 @@ module Depth_stencil_state : sig
   val depth_stencil_state_get_depth_bias : t -> int
   val depth_stencil_state_get_depth_bias_slope_scale : t -> float
   val depth_stencil_state_get_depth_bias_clamp : t -> float
+  val depth_stencil_state_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Device_descriptor : sig
@@ -1099,6 +1115,7 @@ module Device_descriptor : sig
   val device_descriptor_get_default_queue : t -> nativeint
   val device_descriptor_get_device_lost_callback_info : t -> nativeint
   val device_descriptor_get_uncaptured_error_callback_info : t -> nativeint
+  val device_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Extent_3d : sig
@@ -1127,6 +1144,7 @@ module Fragment_state : sig
   val fragment_state_get_entry_point : t -> string
   val fragment_state_get_constants : t -> nativeint
   val fragment_state_get_targets : t -> nativeint
+  val fragment_state_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Future : sig
@@ -1158,6 +1176,7 @@ module Instance_capabilities : sig
   val instance_capabilities_set_timed_wait_any_max_count : t -> int64 -> unit
   val instance_capabilities_get_timed_wait_any_enable : t -> bool
   val instance_capabilities_get_timed_wait_any_max_count : t -> int64
+  val instance_capabilities_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Instance_descriptor : sig
@@ -1167,6 +1186,7 @@ module Instance_descriptor : sig
   val instance_descriptor_free : t -> unit
   val instance_descriptor_set_features : t -> nativeint -> unit
   val instance_descriptor_get_features : t -> nativeint
+  val instance_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Limits : sig
@@ -1236,6 +1256,7 @@ module Limits : sig
   val limits_get_max_compute_workgroup_size_y : t -> int
   val limits_get_max_compute_workgroup_size_z : t -> int
   val limits_get_max_compute_workgroups_per_dimension : t -> int
+  val limits_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Multisample_state : sig
@@ -1249,6 +1270,7 @@ module Multisample_state : sig
   val multisample_state_get_count : t -> int
   val multisample_state_get_mask : t -> int
   val multisample_state_get_alpha_to_coverage_enabled : t -> bool
+  val multisample_state_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Origin_3d : sig
@@ -1273,6 +1295,7 @@ module Pipeline_layout_descriptor : sig
   val pipeline_layout_descriptor_set_bind_group_layouts : t -> nativeint array -> unit
   val pipeline_layout_descriptor_get_label : t -> string
   val pipeline_layout_descriptor_get_bind_group_layouts : t -> nativeint
+  val pipeline_layout_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Primitive_state : sig
@@ -1290,6 +1313,7 @@ module Primitive_state : sig
   val primitive_state_get_front_face : t -> int
   val primitive_state_get_cull_mode : t -> int
   val primitive_state_get_unclipped_depth : t -> bool
+  val primitive_state_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Programmable_stage_descriptor : sig
@@ -1303,6 +1327,7 @@ module Programmable_stage_descriptor : sig
   val programmable_stage_descriptor_get_module : t -> nativeint
   val programmable_stage_descriptor_get_entry_point : t -> string
   val programmable_stage_descriptor_get_constants : t -> nativeint
+  val programmable_stage_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Query_set_descriptor : sig
@@ -1316,6 +1341,7 @@ module Query_set_descriptor : sig
   val query_set_descriptor_get_label : t -> string
   val query_set_descriptor_get_type : t -> int
   val query_set_descriptor_get_count : t -> int
+  val query_set_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Queue_descriptor : sig
@@ -1325,6 +1351,7 @@ module Queue_descriptor : sig
   val queue_descriptor_free : t -> unit
   val queue_descriptor_set_label : t -> string -> unit
   val queue_descriptor_get_label : t -> string
+  val queue_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Render_bundle_descriptor : sig
@@ -1334,6 +1361,7 @@ module Render_bundle_descriptor : sig
   val render_bundle_descriptor_free : t -> unit
   val render_bundle_descriptor_set_label : t -> string -> unit
   val render_bundle_descriptor_get_label : t -> string
+  val render_bundle_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Render_bundle_encoder_descriptor : sig
@@ -1353,6 +1381,7 @@ module Render_bundle_encoder_descriptor : sig
   val render_bundle_encoder_descriptor_get_sample_count : t -> int
   val render_bundle_encoder_descriptor_get_depth_read_only : t -> bool
   val render_bundle_encoder_descriptor_get_stencil_read_only : t -> bool
+  val render_bundle_encoder_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Render_pass_color_attachment : sig
@@ -1372,6 +1401,7 @@ module Render_pass_color_attachment : sig
   val render_pass_color_attachment_get_load_op : t -> int
   val render_pass_color_attachment_get_store_op : t -> int
   val render_pass_color_attachment_get_clear_value : t -> nativeint
+  val render_pass_color_attachment_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Render_pass_depth_stencil_attachment : sig
@@ -1414,6 +1444,7 @@ module Render_pass_descriptor : sig
   val render_pass_descriptor_get_depth_stencil_attachment : t -> nativeint
   val render_pass_descriptor_get_occlusion_query_set : t -> nativeint
   val render_pass_descriptor_get_timestamp_writes : t -> nativeint
+  val render_pass_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Render_pass_max_draw_count : sig
@@ -1423,6 +1454,8 @@ module Render_pass_max_draw_count : sig
   val render_pass_max_draw_count_free : t -> unit
   val render_pass_max_draw_count_set_max_draw_count : t -> int64 -> unit
   val render_pass_max_draw_count_get_max_draw_count : t -> int64
+  val render_pass_max_draw_count_set_chain_stype : t -> int -> unit
+  val render_pass_max_draw_count_as_chained : t -> nativeint
 end
 
 module Render_pass_timestamp_writes : sig
@@ -1457,6 +1490,7 @@ module Render_pipeline_descriptor : sig
   val render_pipeline_descriptor_get_depth_stencil : t -> nativeint
   val render_pipeline_descriptor_get_multisample : t -> nativeint
   val render_pipeline_descriptor_get_fragment : t -> nativeint
+  val render_pipeline_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Request_adapter_options : sig
@@ -1474,6 +1508,7 @@ module Request_adapter_options : sig
   val request_adapter_options_get_force_fallback_adapter : t -> bool
   val request_adapter_options_get_backend_type : t -> int
   val request_adapter_options_get_compatible_surface : t -> nativeint
+  val request_adapter_options_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Sampler_binding_layout : sig
@@ -1483,6 +1518,7 @@ module Sampler_binding_layout : sig
   val sampler_binding_layout_free : t -> unit
   val sampler_binding_layout_set_type : t -> int -> unit
   val sampler_binding_layout_get_type : t -> int
+  val sampler_binding_layout_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Sampler_descriptor : sig
@@ -1512,6 +1548,7 @@ module Sampler_descriptor : sig
   val sampler_descriptor_get_lod_max_clamp : t -> float
   val sampler_descriptor_get_compare : t -> int
   val sampler_descriptor_get_max_anisotropy : t -> int
+  val sampler_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Shader_module_descriptor : sig
@@ -1521,6 +1558,7 @@ module Shader_module_descriptor : sig
   val shader_module_descriptor_free : t -> unit
   val shader_module_descriptor_set_label : t -> string -> unit
   val shader_module_descriptor_get_label : t -> string
+  val shader_module_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Shader_source_spirv : sig
@@ -1532,6 +1570,8 @@ module Shader_source_spirv : sig
   val shader_source_SPIRV_set_code : t -> nativeint -> unit
   val shader_source_SPIRV_get_code_size : t -> int
   val shader_source_SPIRV_get_code : t -> nativeint
+  val shader_source_SPIRV_set_chain_stype : t -> int -> unit
+  val shader_source_SPIRV_as_chained : t -> nativeint
 end
 
 module Shader_source_wgsl : sig
@@ -1541,6 +1581,8 @@ module Shader_source_wgsl : sig
   val shader_source_WGSL_free : t -> unit
   val shader_source_WGSL_set_code : t -> string -> unit
   val shader_source_WGSL_get_code : t -> string
+  val shader_source_WGSL_set_chain_stype : t -> int -> unit
+  val shader_source_WGSL_as_chained : t -> nativeint
 end
 
 module Stencil_face_state : sig
@@ -1569,6 +1611,7 @@ module Storage_texture_binding_layout : sig
   val storage_texture_binding_layout_get_access : t -> int
   val storage_texture_binding_layout_get_format : t -> int
   val storage_texture_binding_layout_get_view_dimension : t -> int
+  val storage_texture_binding_layout_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Supported_features : sig
@@ -1602,6 +1645,7 @@ module Surface_capabilities : sig
   val surface_capabilities_get_formats : t -> nativeint
   val surface_capabilities_get_present_modes : t -> nativeint
   val surface_capabilities_get_alpha_modes : t -> nativeint
+  val surface_capabilities_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Surface_configuration : sig
@@ -1625,6 +1669,7 @@ module Surface_configuration : sig
   val surface_configuration_get_view_formats : t -> nativeint
   val surface_configuration_get_alpha_mode : t -> int
   val surface_configuration_get_present_mode : t -> int
+  val surface_configuration_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Surface_descriptor : sig
@@ -1634,6 +1679,7 @@ module Surface_descriptor : sig
   val surface_descriptor_free : t -> unit
   val surface_descriptor_set_label : t -> string -> unit
   val surface_descriptor_get_label : t -> string
+  val surface_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Surface_source_android_native_window : sig
@@ -1643,6 +1689,8 @@ module Surface_source_android_native_window : sig
   val surface_source_android_native_window_free : t -> unit
   val surface_source_android_native_window_set_window : t -> nativeint -> unit
   val surface_source_android_native_window_get_window : t -> nativeint
+  val surface_source_android_native_window_set_chain_stype : t -> int -> unit
+  val surface_source_android_native_window_as_chained : t -> nativeint
 end
 
 module Surface_source_metal_layer : sig
@@ -1652,6 +1700,8 @@ module Surface_source_metal_layer : sig
   val surface_source_metal_layer_free : t -> unit
   val surface_source_metal_layer_set_layer : t -> nativeint -> unit
   val surface_source_metal_layer_get_layer : t -> nativeint
+  val surface_source_metal_layer_set_chain_stype : t -> int -> unit
+  val surface_source_metal_layer_as_chained : t -> nativeint
 end
 
 module Surface_source_wayland_surface : sig
@@ -1663,6 +1713,8 @@ module Surface_source_wayland_surface : sig
   val surface_source_wayland_surface_set_surface : t -> nativeint -> unit
   val surface_source_wayland_surface_get_display : t -> nativeint
   val surface_source_wayland_surface_get_surface : t -> nativeint
+  val surface_source_wayland_surface_set_chain_stype : t -> int -> unit
+  val surface_source_wayland_surface_as_chained : t -> nativeint
 end
 
 module Surface_source_windows_hwnd : sig
@@ -1674,6 +1726,8 @@ module Surface_source_windows_hwnd : sig
   val surface_source_windows_HWND_set_hwnd : t -> nativeint -> unit
   val surface_source_windows_HWND_get_hinstance : t -> nativeint
   val surface_source_windows_HWND_get_hwnd : t -> nativeint
+  val surface_source_windows_HWND_set_chain_stype : t -> int -> unit
+  val surface_source_windows_HWND_as_chained : t -> nativeint
 end
 
 module Surface_source_xcb_window : sig
@@ -1685,6 +1739,8 @@ module Surface_source_xcb_window : sig
   val surface_source_XCB_window_set_window : t -> int -> unit
   val surface_source_XCB_window_get_connection : t -> nativeint
   val surface_source_XCB_window_get_window : t -> int
+  val surface_source_XCB_window_set_chain_stype : t -> int -> unit
+  val surface_source_XCB_window_as_chained : t -> nativeint
 end
 
 module Surface_source_xlib_window : sig
@@ -1696,6 +1752,8 @@ module Surface_source_xlib_window : sig
   val surface_source_xlib_window_set_window : t -> int64 -> unit
   val surface_source_xlib_window_get_display : t -> nativeint
   val surface_source_xlib_window_get_window : t -> int64
+  val surface_source_xlib_window_set_chain_stype : t -> int -> unit
+  val surface_source_xlib_window_as_chained : t -> nativeint
 end
 
 module Surface_texture : sig
@@ -1707,6 +1765,7 @@ module Surface_texture : sig
   val surface_texture_set_status : t -> int -> unit
   val surface_texture_get_texture : t -> nativeint
   val surface_texture_get_status : t -> int
+  val surface_texture_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Texel_copy_buffer_info : sig
@@ -1759,6 +1818,7 @@ module Texture_binding_layout : sig
   val texture_binding_layout_get_sample_type : t -> int
   val texture_binding_layout_get_view_dimension : t -> int
   val texture_binding_layout_get_multisampled : t -> bool
+  val texture_binding_layout_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Texture_descriptor : sig
@@ -1782,6 +1842,7 @@ module Texture_descriptor : sig
   val texture_descriptor_get_mip_level_count : t -> int
   val texture_descriptor_get_sample_count : t -> int
   val texture_descriptor_get_view_formats : t -> nativeint
+  val texture_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Texture_view_descriptor : sig
@@ -1807,6 +1868,7 @@ module Texture_view_descriptor : sig
   val texture_view_descriptor_get_array_layer_count : t -> int
   val texture_view_descriptor_get_aspect : t -> int
   val texture_view_descriptor_get_usage : t -> int
+  val texture_view_descriptor_set_next_in_chain : t -> nativeint -> unit
 end
 
 module Vertex_attribute : sig
@@ -1848,6 +1910,7 @@ module Vertex_state : sig
   val vertex_state_get_entry_point : t -> string
   val vertex_state_get_constants : t -> nativeint
   val vertex_state_get_buffers : t -> nativeint
+  val vertex_state_set_next_in_chain : t -> nativeint -> unit
 end
 
 type adapter = nativeint
@@ -2204,7 +2267,6 @@ type adapter_info =
   }
 
 val adapter_get_info : adapter -> adapter_info
-val device_create_shader_module_wgsl : device -> string -> string -> shader_module
 val queue_submit_single : queue -> command_buffer -> unit
 val device_poll : device -> bool -> unit
 val buffer_map_sync : buffer -> int -> int64 -> int64 -> int

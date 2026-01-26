@@ -62,6 +62,8 @@ https://github.com/pygfx/wgpu-py/tree/main; feel free to take inspiration from
 them, but always strive to build the best thing for OCaml; don't limit yourself
 to what others have done!
 
+`dune build` will re-generate all of the generated code.
+
 `dune exec test/test_compute.exe` to run tests.
 
 Run `dune fmt > /dev/null || true` regularly, and run `dune build @check` before commiting, ensuring no warnings are present.

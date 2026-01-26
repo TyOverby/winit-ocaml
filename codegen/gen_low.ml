@@ -494,6 +494,71 @@ let gen_c_struct_getter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
     body
 ;;
 
+(** Generate C code for extension struct chain header functions *)
+let gen_c_extension_chain_stubs (struct_ : Ir.struct_) : string =
+  match struct_.type_ with
+  | Ir.Extension_in _ | Ir.Extension_out _ ->
+    let c_name = c_type_name struct_.name in
+    let lower_name = String.lowercase struct_.name in
+    sprintf
+      {|/* Extension chain functions for %s */
+CAMLprim value caml_wgpu_%s_set_chain_stype(value handle, value stype) {
+  CAMLparam2(handle, stype);
+  %s *s = (%s*)Nativeint_val(handle);
+  s->chain.sType = Int_val(stype);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_%s_as_chained(value handle) {
+  CAMLparam1(handle);
+  %s *s = (%s*)Nativeint_val(handle);
+  CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
+}
+|}
+      c_name
+      lower_name
+      c_name
+      c_name
+      lower_name
+      c_name
+      c_name
+  | Ir.Base_in ->
+    (* Base input structs use WGPUChainedStruct *)
+    let c_name = c_type_name struct_.name in
+    let lower_name = String.lowercase struct_.name in
+    sprintf
+      {|/* nextInChain setter for %s */
+CAMLprim value caml_wgpu_%s_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  %s *s = (%s*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+|}
+      c_name
+      lower_name
+      c_name
+      c_name
+  | Ir.Base_out | Ir.Base_in_out ->
+    (* Base output structs use WGPUChainedStructOut *)
+    let c_name = c_type_name struct_.name in
+    let lower_name = String.lowercase struct_.name in
+    sprintf
+      {|/* nextInChain setter for %s */
+CAMLprim value caml_wgpu_%s_set_next_in_chain(value handle, value chain) {
+  CAMLparam2(handle, chain);
+  %s *s = (%s*)Nativeint_val(handle);
+  s->nextInChain = (WGPUChainedStructOut *)Nativeint_val(chain);
+  CAMLreturn(Val_unit);
+}
+|}
+      c_name
+      lower_name
+      c_name
+      c_name
+  | Ir.Standalone -> ""
+;;
+
 (** Generate all C code for a struct *)
 let gen_c_struct_stubs (struct_ : Ir.struct_) : string =
   let create_free = gen_c_struct_create_free struct_ in
@@ -503,7 +568,8 @@ let gen_c_struct_stubs (struct_ : Ir.struct_) : string =
   let getters =
     List.map struct_.members ~f:(gen_c_struct_getter struct_) |> String.concat ~sep:"\n"
   in
-  String.concat ~sep:"\n" [ create_free; setters; getters ]
+  let chain_stubs = gen_c_extension_chain_stubs struct_ in
+  String.concat ~sep:"\n" [ create_free; setters; getters; chain_stubs ]
 ;;
 
 (** Generate OCaml external for struct operations *)
@@ -578,13 +644,38 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
         (String.lowercase member.name))
     |> String.concat ~sep:"\n"
   in
+  (* Extension chain functions for extension structs, or nextInChain setter for base structs *)
+  let chain_exts =
+    match struct_.type_ with
+    | Ir.Extension_in _ | Ir.Extension_out _ ->
+      let lower_name = String.lowercase struct_.name in
+      sprintf
+        "\n\n\
+        \  external %s_set_chain_stype : nativeint -> int -> unit = \
+         \"caml_wgpu_%s_set_chain_stype\"\n\n\
+        \  external %s_as_chained : nativeint -> nativeint = \"caml_wgpu_%s_as_chained\""
+        type_name
+        lower_name
+        type_name
+        lower_name
+    | Ir.Base_in | Ir.Base_out | Ir.Base_in_out ->
+      let lower_name = String.lowercase struct_.name in
+      sprintf
+        "\n\n\
+        \  external %s_set_next_in_chain : nativeint -> nativeint -> unit = \
+         \"caml_wgpu_%s_set_next_in_chain\""
+        type_name
+        lower_name
+    | Ir.Standalone -> ""
+  in
   sprintf
-    "module %s = struct\n  type t = nativeint\n\n  %s\n\n  %s\n\n%s\n\n%s\nend\n"
+    "module %s = struct\n  type t = nativeint\n\n  %s\n\n  %s\n\n%s\n\n%s%s\nend\n"
     module_name
     create_ext
     free_ext
     (indent_lines setter_exts)
     (indent_lines getter_exts)
+    chain_exts
 ;;
 
 (** Generate MLI for struct *)
@@ -635,19 +726,34 @@ let gen_mli_struct (struct_ : Ir.struct_) : string =
       sprintf "  val %s_get_%s : t -> %s" type_name member.name ml_type)
     |> String.concat ~sep:"\n"
   in
+  (* Extension chain function signatures, or nextInChain setter for base structs *)
+  let chain_sigs =
+    match struct_.type_ with
+    | Ir.Extension_in _ | Ir.Extension_out _ ->
+      sprintf
+        "\n\
+        \  val %s_set_chain_stype : t -> int -> unit\n\
+        \  val %s_as_chained : t -> nativeint"
+        type_name
+        type_name
+    | Ir.Base_in | Ir.Base_out | Ir.Base_in_out ->
+      sprintf "\n  val %s_set_next_in_chain : t -> nativeint -> unit" type_name
+    | Ir.Standalone -> ""
+  in
   sprintf
     "module %s : sig\n\
     \  type t = nativeint\n\
     \  val %s_create : unit -> t\n\
     \  val %s_free : t -> unit\n\
      %s\n\
-     %s\n\
+     %s%s\n\
      end\n"
     module_name
     type_name
     type_name
     setter_sigs
     getter_sigs
+    chain_sigs
 ;;
 
 (** Check if a method uses callbacks (async) *)
@@ -1175,26 +1281,6 @@ CAMLprim value caml_wgpu_adapter_get_info(value adapter_val) {
   CAMLreturn(result);
 }
 
-/* Create shader module from WGSL source */
-CAMLprim value caml_wgpu_device_create_shader_module_wgsl(value device_val, value label_val, value code_val) {
-  CAMLparam3(device_val, label_val, code_val);
-  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
-  const char* label = String_val(label_val);
-  const char* code = String_val(code_val);
-
-  WGPUShaderSourceWGSL wgsl_desc = {
-    .chain = { .sType = WGPUSType_ShaderSourceWGSL },
-    .code = { .data = code, .length = caml_string_length(code_val) },
-  };
-
-  WGPUShaderModuleDescriptor desc = {
-    .nextInChain = (WGPUChainedStruct*)&wgsl_desc,
-    .label = { .data = label, .length = caml_string_length(label_val) },
-  };
-
-  WGPUShaderModule module = wgpuDeviceCreateShaderModule(device, &desc);
-  CAMLreturn(caml_copy_nativeint((intnat)module));
-}
 
 /* Submit single command buffer */
 CAMLprim value caml_wgpu_queue_submit_single(value queue_val, value command_buffer_val) {
@@ -1674,9 +1760,6 @@ let adapter_get_info adapter =
   in
   { vendor; architecture; device; description; backend_type; adapter_type }
 
-external device_create_shader_module_wgsl : device -> string -> string -> shader_module
-  = "caml_wgpu_device_create_shader_module_wgsl"
-
 external queue_submit_single : queue -> command_buffer -> unit
   = "caml_wgpu_queue_submit_single"
 
@@ -1758,8 +1841,6 @@ type adapter_info =
   }
 
 val adapter_get_info : adapter -> adapter_info
-
-val device_create_shader_module_wgsl : device -> string -> string -> shader_module
 
 val queue_submit_single : queue -> command_buffer -> unit
 

@@ -963,7 +963,24 @@ module Device = struct
   let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
 
   let create_shader_module t ?(label = "") ~wgsl () =
-    let shader = Wgpu_low.device_create_shader_module_wgsl t.handle label wgsl in
+    (* Create the WGSL source extension struct *)
+    let wgsl_source = Wgpu_low.Shader_source_wgsl.shader_source_WGSL_create () in
+    Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_code wgsl_source wgsl;
+    Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_chain_stype
+      wgsl_source
+      (S_type.to_int S_type.Shader_source_wgsl);
+    (* Create the shader module descriptor and chain the extension *)
+    let desc = Wgpu_low.Shader_module_descriptor.shader_module_descriptor_create () in
+    Wgpu_low.Shader_module_descriptor.shader_module_descriptor_set_label desc label;
+    let chained = Wgpu_low.Shader_source_wgsl.shader_source_WGSL_as_chained wgsl_source in
+    Wgpu_low.Shader_module_descriptor.shader_module_descriptor_set_next_in_chain
+      desc
+      chained;
+    (* Create the shader module *)
+    let shader = Wgpu_low.device_create_shader_module t.handle desc in
+    (* Free the descriptor structs *)
+    Wgpu_low.Shader_module_descriptor.shader_module_descriptor_free desc;
+    Wgpu_low.Shader_source_wgsl.shader_source_WGSL_free wgsl_source;
     ({ Shader_module.handle = shader } : Shader_module.t)
   ;;
 

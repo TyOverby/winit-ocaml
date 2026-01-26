@@ -3245,6 +3245,12 @@ module Adapter_info = struct
     :  nativeint
     -> int
     = "caml_wgpu_adapter_info_get_device_id"
+
+  external adapter_info_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_adapter_info_set_next_in_chain"
 end
 
 module Bind_group_descriptor = struct
@@ -3292,6 +3298,12 @@ module Bind_group_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_bind_group_descriptor_get_entries"
+
+  external bind_group_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_descriptor_set_next_in_chain"
 end
 
 module Bind_group_entry = struct
@@ -3369,6 +3381,12 @@ module Bind_group_entry = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_bind_group_entry_get_texture_view"
+
+  external bind_group_entry_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_entry_set_next_in_chain"
 end
 
 module Bind_group_layout_descriptor = struct
@@ -3405,6 +3423,12 @@ module Bind_group_layout_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_bind_group_layout_descriptor_get_entries"
+
+  external bind_group_layout_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_layout_descriptor_set_next_in_chain"
 end
 
 module Bind_group_layout_entry = struct
@@ -3485,6 +3509,12 @@ module Bind_group_layout_entry = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_bind_group_layout_entry_get_storage_texture"
+
+  external bind_group_layout_entry_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_bind_group_layout_entry_set_next_in_chain"
 end
 
 module Blend_component = struct
@@ -3601,6 +3631,12 @@ module Buffer_binding_layout = struct
     :  nativeint
     -> int64
     = "caml_wgpu_buffer_binding_layout_get_min_binding_size"
+
+  external buffer_binding_layout_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_buffer_binding_layout_set_next_in_chain"
 end
 
 module Buffer_descriptor = struct
@@ -3656,6 +3692,12 @@ module Buffer_descriptor = struct
     :  nativeint
     -> bool
     = "caml_wgpu_buffer_descriptor_get_mapped_at_creation"
+
+  external buffer_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_buffer_descriptor_set_next_in_chain"
 end
 
 module Color = struct
@@ -3718,6 +3760,12 @@ module Color_target_state = struct
     :  nativeint
     -> int
     = "caml_wgpu_color_target_state_get_write_mask"
+
+  external color_target_state_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_color_target_state_set_next_in_chain"
 end
 
 module Command_buffer_descriptor = struct
@@ -3743,6 +3791,12 @@ module Command_buffer_descriptor = struct
     :  nativeint
     -> string
     = "caml_wgpu_command_buffer_descriptor_get_label"
+
+  external command_buffer_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_command_buffer_descriptor_set_next_in_chain"
 end
 
 module Command_encoder_descriptor = struct
@@ -3768,6 +3822,12 @@ module Command_encoder_descriptor = struct
     :  nativeint
     -> string
     = "caml_wgpu_command_encoder_descriptor_get_label"
+
+  external command_encoder_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_command_encoder_descriptor_set_next_in_chain"
 end
 
 module Compilation_info = struct
@@ -3790,6 +3850,12 @@ module Compilation_info = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_compilation_info_get_messages"
+
+  external compilation_info_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_compilation_info_set_next_in_chain"
 end
 
 module Compilation_message = struct
@@ -3870,6 +3936,12 @@ module Compilation_message = struct
     :  nativeint
     -> int64
     = "caml_wgpu_compilation_message_get_length"
+
+  external compilation_message_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_compilation_message_set_next_in_chain"
 end
 
 module Compute_pass_descriptor = struct
@@ -3906,6 +3978,12 @@ module Compute_pass_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_compute_pass_descriptor_get_timestamp_writes"
+
+  external compute_pass_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_compute_pass_descriptor_set_next_in_chain"
 end
 
 module Compute_pass_timestamp_writes = struct
@@ -4000,6 +4078,12 @@ module Compute_pipeline_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_compute_pipeline_descriptor_get_compute"
+
+  external compute_pipeline_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_compute_pipeline_descriptor_set_next_in_chain"
 end
 
 module Constant_entry = struct
@@ -4029,6 +4113,12 @@ module Constant_entry = struct
     :  nativeint
     -> float
     = "caml_wgpu_constant_entry_get_value"
+
+  external constant_entry_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_constant_entry_set_next_in_chain"
 end
 
 module Depth_stencil_state = struct
@@ -4153,6 +4243,12 @@ module Depth_stencil_state = struct
     :  nativeint
     -> float
     = "caml_wgpu_depth_stencil_state_get_depth_bias_clamp"
+
+  external depth_stencil_state_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_depth_stencil_state_set_next_in_chain"
 end
 
 module Device_descriptor = struct
@@ -4230,6 +4326,12 @@ module Device_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_device_descriptor_get_uncaptured_error_callback_info"
+
+  external device_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_device_descriptor_set_next_in_chain"
 end
 
 module Extent_3d = struct
@@ -4314,6 +4416,12 @@ module Fragment_state = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_fragment_state_get_targets"
+
+  external fragment_state_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_fragment_state_set_next_in_chain"
 end
 
 module Future = struct
@@ -4392,6 +4500,12 @@ module Instance_capabilities = struct
     :  nativeint
     -> int64
     = "caml_wgpu_instance_capabilities_get_timed_wait_any_max_count"
+
+  external instance_capabilities_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_instance_capabilities_set_next_in_chain"
 end
 
 module Instance_descriptor = struct
@@ -4417,6 +4531,12 @@ module Instance_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_instance_descriptor_get_features"
+
+  external instance_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_instance_descriptor_set_next_in_chain"
 end
 
 module Limits = struct
@@ -4765,6 +4885,12 @@ module Limits = struct
     :  nativeint
     -> int
     = "caml_wgpu_limits_get_max_compute_workgroups_per_dimension"
+
+  external limits_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_limits_set_next_in_chain"
 end
 
 module Multisample_state = struct
@@ -4809,6 +4935,12 @@ module Multisample_state = struct
     :  nativeint
     -> bool
     = "caml_wgpu_multisample_state_get_alpha_to_coverage_enabled"
+
+  external multisample_state_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_multisample_state_set_next_in_chain"
 end
 
 module Origin_3d = struct
@@ -4858,6 +4990,12 @@ module Pipeline_layout_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_pipeline_layout_descriptor_get_bind_group_layouts"
+
+  external pipeline_layout_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_pipeline_layout_descriptor_set_next_in_chain"
 end
 
 module Primitive_state = struct
@@ -4920,6 +5058,12 @@ module Primitive_state = struct
     :  nativeint
     -> bool
     = "caml_wgpu_primitive_state_get_unclipped_depth"
+
+  external primitive_state_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_primitive_state_set_next_in_chain"
 end
 
 module Programmable_stage_descriptor = struct
@@ -4967,6 +5111,12 @@ module Programmable_stage_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_programmable_stage_descriptor_get_constants"
+
+  external programmable_stage_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_programmable_stage_descriptor_set_next_in_chain"
 end
 
 module Query_set_descriptor = struct
@@ -5014,6 +5164,12 @@ module Query_set_descriptor = struct
     :  nativeint
     -> int
     = "caml_wgpu_query_set_descriptor_get_count"
+
+  external query_set_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_query_set_descriptor_set_next_in_chain"
 end
 
 module Queue_descriptor = struct
@@ -5036,6 +5192,12 @@ module Queue_descriptor = struct
     :  nativeint
     -> string
     = "caml_wgpu_queue_descriptor_get_label"
+
+  external queue_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_queue_descriptor_set_next_in_chain"
 end
 
 module Render_bundle_descriptor = struct
@@ -5061,6 +5223,12 @@ module Render_bundle_descriptor = struct
     :  nativeint
     -> string
     = "caml_wgpu_render_bundle_descriptor_get_label"
+
+  external render_bundle_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_bundle_descriptor_set_next_in_chain"
 end
 
 module Render_bundle_encoder_descriptor = struct
@@ -5141,6 +5309,12 @@ module Render_bundle_encoder_descriptor = struct
     :  nativeint
     -> bool
     = "caml_wgpu_render_bundle_encoder_descriptor_get_stencil_read_only"
+
+  external render_bundle_encoder_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_bundle_encoder_descriptor_set_next_in_chain"
 end
 
 module Render_pass_color_attachment = struct
@@ -5221,6 +5395,12 @@ module Render_pass_color_attachment = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_render_pass_color_attachment_get_clear_value"
+
+  external render_pass_color_attachment_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_color_attachment_set_next_in_chain"
 end
 
 module Render_pass_depth_stencil_attachment = struct
@@ -5403,6 +5583,12 @@ module Render_pass_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_render_pass_descriptor_get_timestamp_writes"
+
+  external render_pass_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pass_descriptor_set_next_in_chain"
 end
 
 module Render_pass_max_draw_count = struct
@@ -5428,6 +5614,17 @@ module Render_pass_max_draw_count = struct
     :  nativeint
     -> int64
     = "caml_wgpu_render_pass_max_draw_count_get_max_draw_count"
+
+  external render_pass_max_draw_count_set_chain_stype
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_render_pass_max_draw_count_set_chain_stype"
+
+  external render_pass_max_draw_count_as_chained
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_render_pass_max_draw_count_as_chained"
 end
 
 module Render_pass_timestamp_writes = struct
@@ -5566,6 +5763,12 @@ module Render_pipeline_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_render_pipeline_descriptor_get_fragment"
+
+  external render_pipeline_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_render_pipeline_descriptor_set_next_in_chain"
 end
 
 module Request_adapter_options = struct
@@ -5635,6 +5838,12 @@ module Request_adapter_options = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_request_adapter_options_get_compatible_surface"
+
+  external request_adapter_options_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_request_adapter_options_set_next_in_chain"
 end
 
 module Sampler_binding_layout = struct
@@ -5660,6 +5869,12 @@ module Sampler_binding_layout = struct
     :  nativeint
     -> int
     = "caml_wgpu_sampler_binding_layout_get_type"
+
+  external sampler_binding_layout_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_sampler_binding_layout_set_next_in_chain"
 end
 
 module Sampler_descriptor = struct
@@ -5795,6 +6010,12 @@ module Sampler_descriptor = struct
     :  nativeint
     -> int
     = "caml_wgpu_sampler_descriptor_get_max_anisotropy"
+
+  external sampler_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_sampler_descriptor_set_next_in_chain"
 end
 
 module Shader_module_descriptor = struct
@@ -5820,6 +6041,12 @@ module Shader_module_descriptor = struct
     :  nativeint
     -> string
     = "caml_wgpu_shader_module_descriptor_get_label"
+
+  external shader_module_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_shader_module_descriptor_set_next_in_chain"
 end
 
 module Shader_source_spirv = struct
@@ -5856,6 +6083,17 @@ module Shader_source_spirv = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_shader_source_spirv_get_code"
+
+  external shader_source_SPIRV_set_chain_stype
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_shader_source_spirv_set_chain_stype"
+
+  external shader_source_SPIRV_as_chained
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_shader_source_spirv_as_chained"
 end
 
 module Shader_source_wgsl = struct
@@ -5881,6 +6119,17 @@ module Shader_source_wgsl = struct
     :  nativeint
     -> string
     = "caml_wgpu_shader_source_wgsl_get_code"
+
+  external shader_source_WGSL_set_chain_stype
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_shader_source_wgsl_set_chain_stype"
+
+  external shader_source_WGSL_as_chained
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_shader_source_wgsl_as_chained"
 end
 
 module Stencil_face_state = struct
@@ -5986,6 +6235,12 @@ module Storage_texture_binding_layout = struct
     :  nativeint
     -> int
     = "caml_wgpu_storage_texture_binding_layout_get_view_dimension"
+
+  external storage_texture_binding_layout_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_storage_texture_binding_layout_set_next_in_chain"
 end
 
 module Supported_features = struct
@@ -6094,6 +6349,12 @@ module Surface_capabilities = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_surface_capabilities_get_alpha_modes"
+
+  external surface_capabilities_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_capabilities_set_next_in_chain"
 end
 
 module Surface_configuration = struct
@@ -6196,6 +6457,12 @@ module Surface_configuration = struct
     :  nativeint
     -> int
     = "caml_wgpu_surface_configuration_get_present_mode"
+
+  external surface_configuration_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_configuration_set_next_in_chain"
 end
 
 module Surface_descriptor = struct
@@ -6221,6 +6488,12 @@ module Surface_descriptor = struct
     :  nativeint
     -> string
     = "caml_wgpu_surface_descriptor_get_label"
+
+  external surface_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_descriptor_set_next_in_chain"
 end
 
 module Surface_source_android_native_window = struct
@@ -6246,6 +6519,17 @@ module Surface_source_android_native_window = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_surface_source_android_native_window_get_window"
+
+  external surface_source_android_native_window_set_chain_stype
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_source_android_native_window_set_chain_stype"
+
+  external surface_source_android_native_window_as_chained
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_android_native_window_as_chained"
 end
 
 module Surface_source_metal_layer = struct
@@ -6271,6 +6555,17 @@ module Surface_source_metal_layer = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_surface_source_metal_layer_get_layer"
+
+  external surface_source_metal_layer_set_chain_stype
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_source_metal_layer_set_chain_stype"
+
+  external surface_source_metal_layer_as_chained
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_metal_layer_as_chained"
 end
 
 module Surface_source_wayland_surface = struct
@@ -6307,6 +6602,17 @@ module Surface_source_wayland_surface = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_surface_source_wayland_surface_get_surface"
+
+  external surface_source_wayland_surface_set_chain_stype
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_source_wayland_surface_set_chain_stype"
+
+  external surface_source_wayland_surface_as_chained
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_wayland_surface_as_chained"
 end
 
 module Surface_source_windows_hwnd = struct
@@ -6343,6 +6649,17 @@ module Surface_source_windows_hwnd = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_surface_source_windows_hwnd_get_hwnd"
+
+  external surface_source_windows_HWND_set_chain_stype
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_source_windows_hwnd_set_chain_stype"
+
+  external surface_source_windows_HWND_as_chained
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_windows_hwnd_as_chained"
 end
 
 module Surface_source_xcb_window = struct
@@ -6379,6 +6696,17 @@ module Surface_source_xcb_window = struct
     :  nativeint
     -> int
     = "caml_wgpu_surface_source_xcb_window_get_window"
+
+  external surface_source_XCB_window_set_chain_stype
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_source_xcb_window_set_chain_stype"
+
+  external surface_source_XCB_window_as_chained
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_xcb_window_as_chained"
 end
 
 module Surface_source_xlib_window = struct
@@ -6415,6 +6743,17 @@ module Surface_source_xlib_window = struct
     :  nativeint
     -> int64
     = "caml_wgpu_surface_source_xlib_window_get_window"
+
+  external surface_source_xlib_window_set_chain_stype
+    :  nativeint
+    -> int
+    -> unit
+    = "caml_wgpu_surface_source_xlib_window_set_chain_stype"
+
+  external surface_source_xlib_window_as_chained
+    :  nativeint
+    -> nativeint
+    = "caml_wgpu_surface_source_xlib_window_as_chained"
 end
 
 module Surface_texture = struct
@@ -6444,6 +6783,12 @@ module Surface_texture = struct
     :  nativeint
     -> int
     = "caml_wgpu_surface_texture_get_status"
+
+  external surface_texture_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_surface_texture_set_next_in_chain"
 end
 
 module Texel_copy_buffer_info = struct
@@ -6632,6 +6977,12 @@ module Texture_binding_layout = struct
     :  nativeint
     -> bool
     = "caml_wgpu_texture_binding_layout_get_multisampled"
+
+  external texture_binding_layout_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_texture_binding_layout_set_next_in_chain"
 end
 
 module Texture_descriptor = struct
@@ -6734,6 +7085,12 @@ module Texture_descriptor = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_texture_descriptor_get_view_formats"
+
+  external texture_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_texture_descriptor_set_next_in_chain"
 end
 
 module Texture_view_descriptor = struct
@@ -6847,6 +7204,12 @@ module Texture_view_descriptor = struct
     :  nativeint
     -> int
     = "caml_wgpu_texture_view_descriptor_get_usage"
+
+  external texture_view_descriptor_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_texture_view_descriptor_set_next_in_chain"
 end
 
 module Vertex_attribute = struct
@@ -6989,6 +7352,12 @@ module Vertex_state = struct
     :  nativeint
     -> nativeint
     = "caml_wgpu_vertex_state_get_buffers"
+
+  external vertex_state_set_next_in_chain
+    :  nativeint
+    -> nativeint
+    -> unit
+    = "caml_wgpu_vertex_state_set_next_in_chain"
 end
 
 type adapter = nativeint
@@ -7817,13 +8186,6 @@ let adapter_get_info adapter =
   in
   { vendor; architecture; device; description; backend_type; adapter_type }
 ;;
-
-external device_create_shader_module_wgsl
-  :  device
-  -> string
-  -> string
-  -> shader_module
-  = "caml_wgpu_device_create_shader_module_wgsl"
 
 external queue_submit_single
   :  queue

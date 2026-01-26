@@ -1,5 +1,39 @@
 # wgpu-native-ocaml Progress
 
+## 2026-01-26: Chained Struct Support Complete
+
+### Accomplished
+- Added chained struct support for WebGPU's extension pattern
+- Extended IR with `Extension_in` and `Extension_out` variants that track what structs they extend
+- Updated YAML parser to extract the `extends` field for extension structs
+- Generated chain header functions for extension structs:
+  - `set_chain_stype` - sets the sType in the chain header
+  - `as_chained` - returns a pointer suitable for nextInChain
+- Generated `set_next_in_chain` setter for base structs (Base_in, Base_out, Base_in_out)
+- Removed the hardcoded `device_create_shader_module_wgsl` helper
+- Updated high-level `Device.create_shader_module` to use auto-generated chain support
+
+### Extension Structs Now Supported
+All extension structs in webgpu.yml now have proper chain support:
+- `Shader_source_spirv` (extends `shader_module_descriptor`)
+- `Shader_source_wgsl` (extends `shader_module_descriptor`)
+- `Render_pass_max_draw_count` (extends `render_pass_descriptor`)
+- `Surface_source_*` variants for platform-specific windowing
+
+### Files Changed
+- `codegen/ir.ml` - Added Extension_in/Extension_out variants to struct_type
+- `codegen/parse_yml.ml` - Parse `extends` field from YAML
+- `codegen/gen_low.ml` - Generate chain header stubs for extensions, nextInChain setters for base structs
+- `codegen/gen_high.ml` - Updated create_shader_module to use generated chain support
+
+### Test Verification
+All existing tests pass with the new auto-generated chain support:
+- Compute shader test (uses create_shader_module with WGSL)
+- Render clear test (uses create_shader_module)
+- Triangle render test (uses create_shader_module)
+
+---
+
 ## 2026-01-25: Rust/Cargo Integration Complete
 
 ### Accomplished
