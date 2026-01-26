@@ -119,23 +119,27 @@ let gen_ml (api : Ir.api) : string =
     }
 end
 
-module Adapter = struct
-  type t = { handle : Wgpu_low.adapter }
+module Queue = struct
+  type t = { handle : Wgpu_low.queue }
 
-  let get_info t = Wgpu_low.adapter_get_info t.handle
-  let release t = Wgpu_low.adapter_release t.handle
+  let release t = Wgpu_low.queue_release t.handle
 end
 
 module Device = struct
   type t = { handle : Wgpu_low.device }
 
   let release t = Wgpu_low.device_release t.handle
+  let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
 end
 
-module Queue = struct
-  type t = { handle : Wgpu_low.queue }
+module Adapter = struct
+  type t = { handle : Wgpu_low.adapter }
 
-  let release t = Wgpu_low.queue_release t.handle
+  let get_info t = Wgpu_low.adapter_get_info t.handle
+  let release t = Wgpu_low.adapter_release t.handle
+  let request_device t =
+    let device = Wgpu_low.adapter_request_device_sync t.handle in
+    { Device.handle = device }
 end
 |}
   in
@@ -182,10 +186,9 @@ let gen_mli (api : Ir.api) : string =
     }
 end
 
-module Adapter : sig
+module Queue : sig
   type t
 
-  val get_info : t -> Adapter_info.t
   val release : t -> unit
 end
 
@@ -193,12 +196,15 @@ module Device : sig
   type t
 
   val release : t -> unit
+  val get_queue : t -> Queue.t
 end
 
-module Queue : sig
+module Adapter : sig
   type t
 
+  val get_info : t -> Adapter_info.t
   val release : t -> unit
+  val request_device : t -> Device.t
 end
 |}
   in
