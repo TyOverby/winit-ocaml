@@ -32,12 +32,10 @@ let c_method_name (obj_name : string) (method_name : string) : string =
 (** Get the C function name for a standalone function *)
 let c_function_name (name : string) : string = "wgpu" ^ to_pascal_case name
 
-(** Get the OCaml module name for a type *)
+(** Get the OCaml module name for a type. Lowercases everything then capitalizes only the
+    first letter. e.g., "texture_format" -> "Texture_format", "extent_3D" -> "Extent_3d" *)
 let ocaml_module_name (name : string) : string =
-  String.capitalize name
-  |> String.substr_replace_all ~pattern:"_" ~with_:" "
-  |> fun s ->
-  String.split s ~on:' ' |> List.map ~f:String.capitalize |> String.concat ~sep:"_"
+  String.lowercase name |> String.capitalize
 ;;
 
 (** Convert C name conventions (e.g., discrete_GPU -> Discrete_gpu) *)

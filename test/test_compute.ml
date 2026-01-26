@@ -62,9 +62,9 @@ let test_buffer_creation () =
       device
       ~size:256L
       ~usage:
-        [ Wgpu.Buffer_Usage.Storage
-        ; Wgpu.Buffer_Usage.Copy_dst
-        ; Wgpu.Buffer_Usage.Copy_src
+        [ Wgpu.Buffer_usage.Storage
+        ; Wgpu.Buffer_usage.Copy_dst
+        ; Wgpu.Buffer_usage.Copy_src
         ]
       ()
   in
@@ -117,9 +117,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       device
       ~size:(Int64.of_int data_size)
       ~usage:
-        [ Wgpu.Buffer_Usage.Storage
-        ; Wgpu.Buffer_Usage.Copy_dst
-        ; Wgpu.Buffer_Usage.Copy_src
+        [ Wgpu.Buffer_usage.Storage
+        ; Wgpu.Buffer_usage.Copy_dst
+        ; Wgpu.Buffer_usage.Copy_src
         ]
       ()
   in
@@ -129,7 +129,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     Wgpu.Device.create_buffer
       device
       ~size:(Int64.of_int data_size)
-      ~usage:[ Wgpu.Buffer_Usage.Map_read; Wgpu.Buffer_Usage.Copy_dst ]
+      ~usage:[ Wgpu.Buffer_usage.Map_read; Wgpu.Buffer_usage.Copy_dst ]
       ()
   in
   print_endline "Readback buffer created.";
@@ -194,18 +194,18 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
   let encoder = Wgpu.Device.create_command_encoder device ~label:"compute_encoder" () in
   let compute_pass = Wgpu.begin_compute_pass encoder ~label:"compute_pass" () in
   (* Set pipeline and bind group, then dispatch *)
-  Wgpu.Compute_Pass_Encoder.set_pipeline compute_pass ~pipeline:compute_pipeline;
+  Wgpu.Compute_pass_encoder.set_pipeline compute_pass ~pipeline:compute_pipeline;
   Wgpu.set_bind_group compute_pass ~index:0 ~bind_group;
   (* Dispatch 1 workgroup of 64 threads *)
-  Wgpu.Compute_Pass_Encoder.dispatch_workgroups
+  Wgpu.Compute_pass_encoder.dispatch_workgroups
     compute_pass
     ~workgroupCountX:1
     ~workgroupCountY:1
     ~workgroupCountZ:1;
-  Wgpu.Compute_Pass_Encoder.end_ compute_pass;
+  Wgpu.Compute_pass_encoder.end_ compute_pass;
   print_endline "Compute pass recorded.";
   (* Copy storage buffer to readback buffer *)
-  Wgpu.Command_Encoder.copy_buffer_to_buffer
+  Wgpu.Command_encoder.copy_buffer_to_buffer
     encoder
     ~source:storage_buffer
     ~source_offset:0L
@@ -223,7 +223,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
   (* Map readback buffer and verify results *)
   Wgpu.map_buffer
     readback_buffer
-    ~mode:[ Wgpu.Map_Mode.Read ]
+    ~mode:[ Wgpu.Map_mode.Read ]
     ~offset:0L
     ~size:(Int64.of_int data_size);
   Wgpu.Device.poll device ~wait:true ();
@@ -251,16 +251,16 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
   else print_endline "FAILURE: Some values incorrect.";
   Wgpu.Buffer.unmap readback_buffer;
   (* Cleanup *)
-  Wgpu.Command_Buffer.release command_buffer;
-  Wgpu.Compute_Pass_Encoder.release compute_pass;
-  Wgpu.Command_Encoder.release encoder;
-  Wgpu.Compute_Pipeline.release compute_pipeline;
-  Wgpu.Pipeline_Layout.release pipeline_layout;
-  Wgpu.Bind_Group.release bind_group;
-  Wgpu.Bind_Group_Layout.release bind_group_layout;
+  Wgpu.Command_buffer.release command_buffer;
+  Wgpu.Compute_pass_encoder.release compute_pass;
+  Wgpu.Command_encoder.release encoder;
+  Wgpu.Compute_pipeline.release compute_pipeline;
+  Wgpu.Pipeline_layout.release pipeline_layout;
+  Wgpu.Bind_group.release bind_group;
+  Wgpu.Bind_group_layout.release bind_group_layout;
   Wgpu.Buffer.release readback_buffer;
   Wgpu.Buffer.release storage_buffer;
-  Wgpu.Shader_Module.release shader;
+  Wgpu.Shader_module.release shader;
   Wgpu.Queue.release queue;
   Wgpu.Device.release device;
   Wgpu.Adapter.release adapter;
@@ -284,8 +284,8 @@ let test_render_clear () =
       device
       ~label:"render_target"
       ~size:(width, height, 1)
-      ~format:Wgpu.Texture_Format.Rgba8_unorm
-      ~usage:[ Wgpu.Texture_Usage.Render_attachment; Wgpu.Texture_Usage.Copy_src ]
+      ~format:Wgpu.Texture_format.Rgba8_unorm
+      ~usage:[ Wgpu.Texture_usage.Render_attachment; Wgpu.Texture_usage.Copy_src ]
       ()
   in
   print_endline "Render target texture created.";
@@ -302,7 +302,7 @@ let test_render_clear () =
       device
       ~label:"readback_buffer"
       ~size:(Int64.of_int buffer_size)
-      ~usage:[ Wgpu.Buffer_Usage.Map_read; Wgpu.Buffer_Usage.Copy_dst ]
+      ~usage:[ Wgpu.Buffer_usage.Map_read; Wgpu.Buffer_usage.Copy_dst ]
       ()
   in
   print_endline "Readback buffer created.";
@@ -319,7 +319,7 @@ let test_render_clear () =
   in
   print_endline "Render pass started (clearing to red).";
   (* End render pass immediately (just the clear) *)
-  Wgpu.Render_Pass_Encoder.end_ render_pass;
+  Wgpu.Render_pass_encoder.end_ render_pass;
   print_endline "Render pass ended.";
   (* Copy texture to buffer *)
   Wgpu.copy_texture_to_buffer
@@ -340,7 +340,7 @@ let test_render_clear () =
   (* Map readback buffer and verify *)
   Wgpu.map_buffer
     readback_buffer
-    ~mode:[ Wgpu.Map_Mode.Read ]
+    ~mode:[ Wgpu.Map_mode.Read ]
     ~offset:0L
     ~size:(Int64.of_int buffer_size);
   Wgpu.Device.poll device ~wait:true ();
@@ -388,11 +388,11 @@ let test_render_clear () =
     Core_unix.unlink ppm_file);
   Wgpu.Buffer.unmap readback_buffer;
   (* Cleanup *)
-  Wgpu.Command_Buffer.release command_buffer;
-  Wgpu.Render_Pass_Encoder.release render_pass;
-  Wgpu.Command_Encoder.release encoder;
+  Wgpu.Command_buffer.release command_buffer;
+  Wgpu.Render_pass_encoder.release render_pass;
+  Wgpu.Command_encoder.release encoder;
   Wgpu.Buffer.release readback_buffer;
-  Wgpu.Texture_View.release texture_view;
+  Wgpu.Texture_view.release texture_view;
   Wgpu.Texture.release texture;
   Wgpu.Queue.release queue;
   Wgpu.Device.release device;
@@ -438,8 +438,8 @@ fn fs_main() -> @location(0) vec4<f32> {
       device
       ~label:"render_target"
       ~size:(width, height, 1)
-      ~format:Wgpu.Texture_Format.Rgba8_unorm
-      ~usage:[ Wgpu.Texture_Usage.Render_attachment; Wgpu.Texture_Usage.Copy_src ]
+      ~format:Wgpu.Texture_format.Rgba8_unorm
+      ~usage:[ Wgpu.Texture_usage.Render_attachment; Wgpu.Texture_usage.Copy_src ]
       ()
   in
   print_endline "Render target texture created.";
@@ -453,7 +453,7 @@ fn fs_main() -> @location(0) vec4<f32> {
       ~shader_module:shader
       ~vertex_entry_point:"vs_main"
       ~fragment_entry_point:"fs_main"
-      ~color_format:Wgpu.Texture_Format.Rgba8_unorm
+      ~color_format:Wgpu.Texture_format.Rgba8_unorm
       ()
   in
   print_endline "Render pipeline created.";
@@ -466,7 +466,7 @@ fn fs_main() -> @location(0) vec4<f32> {
       device
       ~label:"readback_buffer"
       ~size:(Int64.of_int buffer_size)
-      ~usage:[ Wgpu.Buffer_Usage.Map_read; Wgpu.Buffer_Usage.Copy_dst ]
+      ~usage:[ Wgpu.Buffer_usage.Map_read; Wgpu.Buffer_usage.Copy_dst ]
       ()
   in
   print_endline "Readback buffer created.";
@@ -483,14 +483,14 @@ fn fs_main() -> @location(0) vec4<f32> {
   in
   print_endline "Render pass started.";
   (* Set pipeline and draw triangle *)
-  Wgpu.Render_Pass_Encoder.set_pipeline render_pass ~pipeline;
-  Wgpu.Render_Pass_Encoder.draw
+  Wgpu.Render_pass_encoder.set_pipeline render_pass ~pipeline;
+  Wgpu.Render_pass_encoder.draw
     render_pass
     ~vertex_count:3
     ~instance_count:1
     ~first_vertex:0
     ~first_instance:0;
-  Wgpu.Render_Pass_Encoder.end_ render_pass;
+  Wgpu.Render_pass_encoder.end_ render_pass;
   print_endline "Triangle drawn.";
   (* Copy texture to buffer *)
   Wgpu.copy_texture_to_buffer
@@ -509,7 +509,7 @@ fn fs_main() -> @location(0) vec4<f32> {
   Wgpu.Device.poll device ~wait:true ();
   Wgpu.map_buffer
     readback_buffer
-    ~mode:[ Wgpu.Map_Mode.Read ]
+    ~mode:[ Wgpu.Map_mode.Read ]
     ~offset:0L
     ~size:(Int64.of_int buffer_size);
   Wgpu.Device.poll device ~wait:true ();
@@ -554,14 +554,14 @@ fn fs_main() -> @location(0) vec4<f32> {
     Core_unix.unlink ppm_file);
   Wgpu.Buffer.unmap readback_buffer;
   (* Cleanup *)
-  Wgpu.Command_Buffer.release command_buffer;
-  Wgpu.Render_Pass_Encoder.release render_pass;
-  Wgpu.Command_Encoder.release encoder;
+  Wgpu.Command_buffer.release command_buffer;
+  Wgpu.Render_pass_encoder.release render_pass;
+  Wgpu.Command_encoder.release encoder;
   Wgpu.Buffer.release readback_buffer;
-  Wgpu.Render_Pipeline.release pipeline;
-  Wgpu.Texture_View.release texture_view;
+  Wgpu.Render_pipeline.release pipeline;
+  Wgpu.Texture_view.release texture_view;
   Wgpu.Texture.release texture;
-  Wgpu.Shader_Module.release shader;
+  Wgpu.Shader_module.release shader;
   Wgpu.Queue.release queue;
   Wgpu.Device.release device;
   Wgpu.Adapter.release adapter;
