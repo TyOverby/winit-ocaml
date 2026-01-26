@@ -663,7 +663,55 @@ Please add these methods to either:
   - Pointer return types (e.g., `get_mapped_range`)
 
 ### Next Steps
+1. ~~Extend generator to auto-generate struct-based methods~~ ✅
+2. Add vertex buffer support for custom geometry
+3. Add texture sampling support
+4. Document the complete high-level API
+
+---
+
+## 2026-01-25: Struct-Based Method Auto-Generation
+
+### Accomplished
+- **Auto-generate methods with simple struct arguments**: The generator now automatically creates methods that take struct descriptors, expanding parameters from the struct's fields
+
+- **Key additions to gen_high.ml**:
+  - `is_simple_struct`: Detects input structs with only primitive/enum/object members
+  - `method_has_simple_struct_arg`: Identifies methods with one simple struct arg
+  - `gen_ml_method_with_struct`: Generates method implementation from struct fields
+  - `gen_mli_method_with_struct`: Generates method signature from struct fields
+  - Added check for `manual_implementations` to prevent duplicate generation
+  - Cleaned up `manual_implementations` list, removing simple methods
+
+- **Fixed module ordering**: `Texture_view` now defined before `Texture` since `Texture.create_view` returns `Texture_view.t`
+
+### Auto-Generated Methods
+Methods now auto-generated from struct descriptors:
+- `Texture.create_view` - uses `texture_view_descriptor` with all fields as params
+- `Command_encoder.finish` - uses `command_buffer_descriptor`
+- `Render_bundle_encoder.finish` - uses `render_bundle_descriptor`
+- Many simple methods removed from `manual_implementations`
+
+### Enum Usage
+**17 enum/bitflag types** now used in function signatures:
+- `Texture_format` (5 uses)
+- `Address_mode` (3 uses)
+- `Filter_mode`, `Texture_dimension`, `Texture_aspect`, `Texture_view_dimension`, `Blend_factor`, `Backend_type` (2 uses each)
+- `Load_op`, `Store_op`, `Compare_function`, `Query_type`, `Power_preference`, `Buffer_map_state`, `Texture_usage`, `Buffer_usage`, `Map_mode` (1 use each)
+
+### Technical Details
+- Only input structs (`Base_in`, `Standalone`) are auto-generated, not output structs
+- Pointer must be immutable (input arg) for struct to be processed
+- All struct fields become labeled parameters in the generated method
+- Generated code creates descriptor, sets fields, calls low-level function, frees descriptor
+
+### Code Statistics
+- Total methods in high-level API: **241**
+- Total enum/bitflag modules: **55**
+- Enums used in API signatures: **17**
+
+### Next Steps
 1. Add vertex buffer support for custom geometry
 2. Add texture sampling support
 3. Document the complete high-level API
-4. Consider adding more complex examples (textured quad, etc.)
+4. Consider expanding struct handling to more complex cases (nested structs)
