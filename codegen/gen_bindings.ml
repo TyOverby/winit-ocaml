@@ -57,8 +57,12 @@ let command =
        | Ml, Low -> print_string (Gen_low.gen_ml api)
        | Mli, Low -> print_string (Gen_low.gen_mli api)
        | C, Low -> print_string (Gen_low.gen_c_stubs api)
-       | Ml, High -> print_string (Gen_high.gen_ml api)
-       | Mli, High -> print_string (Gen_high.gen_mli api)
+       | Ml, High ->
+         Gen_high.check_method_coverage api;
+         print_string (Gen_high.gen_ml api)
+       | Mli, High ->
+         Gen_high.check_method_coverage api;
+         print_string (Gen_high.gen_mli api)
        | C, High -> failwith "no c bindings in high level module")
 ;;
 

@@ -2,6 +2,144 @@ open! Core
 
 (** Generate high-level idiomatic OCaml bindings *)
 
+module Method_key = struct
+  module T = struct
+    type t = string * string [@@deriving sexp, compare]
+  end
+
+  include T
+  include Comparator.Make (T)
+end
+
+(** Methods that are manually implemented in the hand-written sections. These are
+    (object_name, method_name) pairs. *)
+let manual_implementations =
+  Set.of_list
+    (module Method_key)
+    [ (* Instance methods *)
+      "instance", "create_surface"
+    ; "instance", "process_events"
+    ; "instance", "request_adapter" (* async, we have sync wrapper *)
+    ; "instance", "get_WGSL_language_features" (* uses struct output parameter *)
+    ; "instance", "wait_any"
+      (* uses struct input parameter *)
+      (* Adapter methods *)
+    ; "adapter", "get_info" (* uses special struct return *)
+    ; "adapter", "request_device" (* async, we have sync wrapper *)
+    ; "adapter", "get_limits" (* uses struct output parameter *)
+    ; "adapter", "get_features"
+      (* uses struct output parameter *)
+      (* Device methods *)
+    ; "device", "create_buffer" (* uses descriptor struct *)
+    ; "device", "create_shader_module" (* uses descriptor struct *)
+    ; "device", "create_command_encoder" (* uses descriptor struct *)
+    ; "device", "create_texture" (* uses descriptor struct *)
+    ; "device", "create_sampler" (* uses descriptor struct *)
+    ; "device", "create_compute_pipeline" (* uses descriptor struct *)
+    ; "device", "create_render_pipeline" (* uses descriptor struct *)
+    ; "device", "create_bind_group_layout" (* uses descriptor with arrays *)
+    ; "device", "create_bind_group" (* uses descriptor with arrays *)
+    ; "device", "create_pipeline_layout" (* uses descriptor with arrays *)
+    ; "device", "create_query_set" (* uses descriptor struct *)
+    ; "device", "create_render_bundle_encoder" (* uses descriptor struct *)
+    ; "device", "pop_error_scope" (* async callback *)
+    ; "device", "get_queue" (* hand-written for cleaner return type *)
+    ; "device", "get_limits" (* uses struct output parameter *)
+    ; "device", "get_features" (* uses struct output parameter *)
+    ; "device", "get_lost_future" (* returns Future struct *)
+    ; "device", "get_adapter_info"
+      (* returns struct *)
+      (* Queue methods *)
+    ; "queue", "submit" (* uses array argument *)
+    ; "queue", "write_buffer" (* uses pointer + size *)
+    ; "queue", "write_texture" (* uses structs and pointer *)
+    ; "queue", "on_submitted_work_done"
+      (* async callback *)
+      (* Command encoder methods *)
+    ; "command_encoder", "begin_compute_pass" (* uses descriptor struct *)
+    ; "command_encoder", "begin_render_pass" (* uses descriptor struct *)
+    ; "command_encoder", "finish" (* uses descriptor struct *)
+    ; "command_encoder", "copy_buffer_to_buffer" (* implemented separately *)
+    ; "command_encoder", "copy_buffer_to_texture" (* uses structs *)
+    ; "command_encoder", "copy_texture_to_buffer" (* uses structs *)
+    ; "command_encoder", "copy_texture_to_texture" (* uses structs *)
+    ; "command_encoder", "clear_buffer" (* simple, could auto-gen but may want manual *)
+    ; "command_encoder", "resolve_query_set" (* manual for clarity *)
+    ; "command_encoder", "write_timestamp"
+      (* manual for clarity *)
+      (* Compute pass encoder methods *)
+    ; "compute_pass_encoder", "set_bind_group" (* uses array for dynamic offsets *)
+    ; "compute_pass_encoder", "push_debug_group" (* simple but keeping manual *)
+    ; "compute_pass_encoder", "pop_debug_group" (* simple but keeping manual *)
+    ; "compute_pass_encoder", "insert_debug_marker"
+      (* simple but keeping manual *)
+      (* Render pass encoder methods *)
+    ; "render_pass_encoder", "set_bind_group" (* uses array for dynamic offsets *)
+    ; "render_pass_encoder", "set_vertex_buffer" (* manual for better API *)
+    ; "render_pass_encoder", "set_index_buffer" (* manual for better API *)
+    ; "render_pass_encoder", "set_scissor_rect" (* simple, could auto-gen *)
+    ; "render_pass_encoder", "set_viewport" (* simple, could auto-gen *)
+    ; "render_pass_encoder", "set_blend_constant" (* uses struct *)
+    ; "render_pass_encoder", "set_stencil_reference" (* simple *)
+    ; "render_pass_encoder", "execute_bundles" (* uses array *)
+    ; "render_pass_encoder", "begin_occlusion_query" (* simple *)
+    ; "render_pass_encoder", "end_occlusion_query" (* simple *)
+    ; "render_pass_encoder", "push_debug_group" (* simple *)
+    ; "render_pass_encoder", "pop_debug_group" (* simple *)
+    ; "render_pass_encoder", "insert_debug_marker" (* simple *)
+    ; "render_pass_encoder", "write_timestamp"
+      (* simple *)
+      (* Render bundle encoder methods *)
+    ; "render_bundle_encoder", "set_bind_group" (* uses array *)
+    ; "render_bundle_encoder", "set_vertex_buffer" (* manual *)
+    ; "render_bundle_encoder", "set_index_buffer" (* manual *)
+    ; "render_bundle_encoder", "finish" (* uses descriptor *)
+    ; "render_bundle_encoder", "push_debug_group" (* simple *)
+    ; "render_bundle_encoder", "pop_debug_group" (* simple *)
+    ; "render_bundle_encoder", "insert_debug_marker"
+      (* simple *)
+      (* Buffer methods *)
+    ; "buffer", "map_async" (* async, we have sync wrapper *)
+    ; "buffer", "get_mapped_range" (* returns pointer, we have bigarray wrapper *)
+    ; "buffer", "get_const_mapped_range"
+      (* returns pointer, we have bigarray wrapper *)
+      (* Texture methods *)
+    ; "texture", "create_view"
+      (* uses descriptor struct *)
+      (* Shader module methods *)
+    ; "shader_module", "get_compilation_info"
+      (* async callback *)
+      (* Surface methods - mostly for windowed rendering *)
+    ; "surface", "configure" (* uses struct *)
+    ; "surface", "get_capabilities" (* uses struct output *)
+    ; "surface", "get_current_texture" (* uses struct output *)
+    ; "surface", "present" (* simple but for windowed *)
+    ; "surface", "unconfigure" (* simple but for windowed *)
+    ; "surface", "set_label" (* simple but for windowed *)
+    ]
+;;
+
+(** Methods that are intentionally not exposed in the high-level API. These are
+    (object_name, method_name) pairs with reasons. *)
+let intentionally_skipped =
+  Set.of_list
+    (module Method_key)
+    [ (* Internal/advanced methods that typical users don't need *)
+      "adapter", "request_adapter_info" (* deprecated, use get_info *)
+    ; "device", "create_error_external_texture" (* internal/testing *)
+    ; "device", "import_external_texture" (* advanced external interop *)
+    ; "device", "create_render_pipeline_async" (* async version, use sync *)
+    ; "device", "create_compute_pipeline_async" (* async version, use sync *)
+    ; "surface", "get_preferred_format" (* deprecated *)
+    ]
+;;
+
+(** Check if a method is accounted for (either manual or intentionally skipped) *)
+let method_is_accounted_for (obj_name : string) (method_name : string) : bool =
+  Set.mem manual_implementations (obj_name, method_name)
+  || Set.mem intentionally_skipped (obj_name, method_name)
+;;
+
 (** Filter out unhelpful doc strings like "TODO" *)
 let useful_doc (doc : string) : string option =
   let doc = String.strip doc in
@@ -727,4 +865,65 @@ val create_texture_view : Texture.t -> ?label:string -> unit -> Texture_View.t
 |}
   in
   String.concat [ header; enums; bitflags; objects; adapter_module; instance_module ]
+;;
+
+(** Validate that all non-auto-generated methods are accounted for. Returns a list of
+    error messages for unaccounted methods. *)
+let validate_method_coverage (api : Ir.api) : string list =
+  let errors = ref [] in
+  List.iter api.objects ~f:(fun obj ->
+    List.iter obj.methods ~f:(fun method_ ->
+      if not (method_is_high_level method_)
+      then
+        if (* This method isn't auto-generated, check if it's accounted for *)
+           not (method_is_accounted_for obj.name method_.name)
+        then (
+          let reason =
+            if method_is_async method_
+            then "async (has callback)"
+            else (
+              let non_simple_args =
+                List.filter method_.args ~f:(fun arg ->
+                  not (is_simple_arg_type arg.type_))
+                |> List.map ~f:(fun arg ->
+                  sprintf
+                    "%s: %s"
+                    arg.name
+                    (match arg.type_ with
+                     | Ir.Struct name -> sprintf "Struct(%s)" name
+                     | Ir.Callback _ -> "Callback"
+                     | Ir.Array _ -> "Array"
+                     | Ir.Pointer _ -> "Pointer"
+                     | _ -> "other"))
+              in
+              let non_simple_return =
+                match method_.returns with
+                | None -> []
+                | Some ret ->
+                  if is_simple_return_type ret.type_
+                  then []
+                  else [ sprintf "returns: non-simple" ]
+              in
+              String.concat ~sep:", " (non_simple_args @ non_simple_return))
+          in
+          errors
+          := sprintf "UNACCOUNTED: %s.%s (%s)" obj.name method_.name reason :: !errors)));
+  List.rev !errors
+;;
+
+(** Check method coverage and fail if there are unaccounted methods *)
+let check_method_coverage (api : Ir.api) : unit =
+  let errors = validate_method_coverage api in
+  if not (List.is_empty errors)
+  then (
+    eprintf "\n=== UNACCOUNTED METHODS ===\n";
+    eprintf "The following methods are not auto-generated and not listed in\n";
+    eprintf "manual_implementations or intentionally_skipped:\n\n";
+    List.iter errors ~f:(fun msg -> eprintf "  %s\n" msg);
+    eprintf
+      "\n\
+       Please add these methods to either:\n\
+      \  - manual_implementations (if you will implement them)\n\
+      \  - intentionally_skipped (if they should not be exposed)\n\n";
+    failwith "Unaccounted methods in high-level API")
 ;;
