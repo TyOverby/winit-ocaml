@@ -418,3 +418,37 @@ Command_Encoder_Descriptor.command_encoder_descriptor_free desc;
 1. Document which APIs are auto-generated vs helper-based
 2. Consider adding builder pattern in high-level API for ergonomics
 3. Add more examples using struct-based APIs
+
+---
+
+## 2026-01-25: High-Level API Improvements
+
+### Accomplished
+- **Added `Adapter.request_device`**: Returns typed `Device.t` instead of nativeint
+- **Added `Device.get_queue`**: Returns typed `Queue.t` instead of nativeint
+- **Fixed module ordering**: Queue -> Device -> Adapter (respects OCaml dependencies)
+
+### High-Level API Flow
+```ocaml
+let instance = Instance.create () in
+let adapter = Instance.request_adapter instance in
+let device = Adapter.request_device adapter in
+let queue = Device.get_queue device in
+(* Now use queue, device for GPU operations *)
+Queue.release queue;
+Device.release device;
+Adapter.release adapter;
+Instance.release instance
+```
+
+### Current High-Level Modules
+- **Instance**: `create`, `release`, `request_adapter`
+- **Adapter**: `release`, `get_info`, `request_device`
+- **Device**: `release`, `get_queue`
+- **Queue**: `release`
+- **All other objects**: `release` only (more methods planned)
+
+### Next Steps
+1. Add more methods to Device module (create_buffer, create_shader_module, etc.)
+2. Add ergonomic descriptor builders
+3. Document the full API
