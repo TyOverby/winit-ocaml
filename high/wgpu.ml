@@ -180,34 +180,38 @@ module Texture = struct
     ~usage
     ()
     =
-    let desc = Wgpu_low.Texture_view_descriptor.texture_view_descriptor_create () in
-    Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_label desc label;
+    let desc_descriptor =
+      Wgpu_low.Texture_view_descriptor.texture_view_descriptor_create ()
+    in
+    Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_label
+      desc_descriptor
+      label;
     Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_format
-      desc
+      desc_descriptor
       (Texture_format.to_int format);
     Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_dimension
-      desc
+      desc_descriptor
       (Texture_view_dimension.to_int dimension);
     Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_base_mip_level
-      desc
+      desc_descriptor
       base_mip_level;
     Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_mip_level_count
-      desc
+      desc_descriptor
       mip_level_count;
     Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_base_array_layer
-      desc
+      desc_descriptor
       base_array_layer;
     Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_array_layer_count
-      desc
+      desc_descriptor
       array_layer_count;
     Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_aspect
-      desc
+      desc_descriptor
       (Texture_aspect.to_int aspect);
     Wgpu_low.Texture_view_descriptor.texture_view_descriptor_set_usage
-      desc
+      desc_descriptor
       (Texture_usage.list_to_int usage);
-    let result = Wgpu_low.texture_create_view t.handle desc in
-    Wgpu_low.Texture_view_descriptor.texture_view_descriptor_free desc;
+    let result = Wgpu_low.texture_create_view t.handle desc_descriptor in
+    Wgpu_low.Texture_view_descriptor.texture_view_descriptor_free desc_descriptor;
     ({ Texture_view.handle = result } : Texture_view.t)
   ;;
 
@@ -260,10 +264,14 @@ module Command_encoder = struct
   let release t = Wgpu_low.command_encoder_release t.handle
 
   let finish t ?(label = "") () =
-    let desc = Wgpu_low.Command_buffer_descriptor.command_buffer_descriptor_create () in
-    Wgpu_low.Command_buffer_descriptor.command_buffer_descriptor_set_label desc label;
-    let result = Wgpu_low.command_encoder_finish t.handle desc in
-    Wgpu_low.Command_buffer_descriptor.command_buffer_descriptor_free desc;
+    let desc_descriptor =
+      Wgpu_low.Command_buffer_descriptor.command_buffer_descriptor_create ()
+    in
+    Wgpu_low.Command_buffer_descriptor.command_buffer_descriptor_set_label
+      desc_descriptor
+      label;
+    let result = Wgpu_low.command_encoder_finish t.handle desc_descriptor in
+    Wgpu_low.Command_buffer_descriptor.command_buffer_descriptor_free desc_descriptor;
     ({ Command_buffer.handle = result } : Command_buffer.t)
   ;;
 
@@ -439,10 +447,14 @@ module Render_bundle_encoder = struct
   ;;
 
   let finish t ?(label = "") () =
-    let desc = Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_create () in
-    Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_set_label desc label;
-    let result = Wgpu_low.render_bundle_encoder_finish t.handle desc in
-    Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_free desc;
+    let desc_descriptor =
+      Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_create ()
+    in
+    Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_set_label
+      desc_descriptor
+      label;
+    let result = Wgpu_low.render_bundle_encoder_finish t.handle desc_descriptor in
+    Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_free desc_descriptor;
     ({ Render_bundle.handle = result } : Render_bundle.t)
   ;;
 

@@ -207,7 +207,7 @@ let rec is_simple_member_type (type_ref : Ir.type_ref) : bool =
   | Optional inner -> is_simple_member_type inner
   | Struct _ -> false
   | Callback _ -> false
-  | Array _ -> false
+  | Array { elem; _ } -> is_simple_member_type elem (* Arrays of simple types are OK *)
   | Pointer _ -> false
 ;;
 
@@ -241,9 +241,25 @@ let rec is_simple_arg_type (type_ref : Ir.type_ref) : bool =
   | Pointer _ -> false
 ;;
 
-(** Check if a method has exactly one struct argument and the struct is simple and it's an
-    input arg *)
-let method_has_simple_struct_arg (structs : Ir.struct_ list) (method_ : Ir.method_) : bool
+(** Get all simple struct arguments from a method (input structs only) *)
+let get_simple_struct_args (structs : Ir.struct_ list) (method_ : Ir.method_)
+  : (Ir.arg * Ir.struct_) list
+  =
+  List.filter_map method_.args ~f:(fun arg ->
+    match arg.type_, arg.pointer with
+    | Struct name, (Some `Immutable | None) ->
+      if is_simple_struct structs name
+      then
+        List.find structs ~f:(fun s -> String.equal s.name name)
+        |> Option.map ~f:(fun s -> arg, s)
+      else None
+    | _ -> None)
+;;
+
+(** Check if a method has at least one struct argument and all structs are simple input
+    structs *)
+let method_has_simple_struct_args (structs : Ir.struct_ list) (method_ : Ir.method_)
+  : bool
   =
   let struct_args =
     List.filter method_.args ~f:(fun arg ->
@@ -251,20 +267,14 @@ let method_has_simple_struct_arg (structs : Ir.struct_ list) (method_ : Ir.metho
       | Struct _ -> true
       | _ -> false)
   in
-  match struct_args with
-  | [ arg ] ->
-    (* Must be immutable pointer (input) not mutable (output) *)
-    let is_input =
-      match arg.pointer with
-      | Some `Immutable | None -> true
-      | Some `Mutable -> false
-    in
-    is_input
-    &&
-      (match arg.type_ with
-      | Struct name -> is_simple_struct structs name
+  if List.is_empty struct_args
+  then false
+  else
+    List.for_all struct_args ~f:(fun arg ->
+      match arg.type_, arg.pointer with
+      | Struct name, (Some `Immutable | None) -> is_simple_struct structs name
+      | Struct _, Some `Mutable -> false (* output struct, handled separately *)
       | _ -> false)
-  | _ -> false
 ;;
 
 (** Check if a struct can be used for output (has only simple readable members) *)
@@ -350,14 +360,14 @@ let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bo
       if all_simple
       then true
       else (
-        (* Check if there's exactly one struct arg and it's simple, with other args simple *)
+        (* Check if all struct args are simple input structs, with other args also simple *)
         let non_struct_args_simple =
           List.for_all method_.args ~f:(fun arg ->
             match arg.type_ with
             | Struct _ -> true (* will check separately *)
             | _ -> is_simple_arg_type arg.type_)
         in
-        if non_struct_args_simple && method_has_simple_struct_arg structs method_
+        if non_struct_args_simple && method_has_simple_struct_args structs method_
         then true
         else (
           (* Check if there's an output struct arg *)
@@ -461,6 +471,24 @@ let member_to_low_level (member_name : string) (type_ref : Ir.type_ref) : string
       member_name
       (ocaml_module_name name)
   | Optional _ -> member_name
+  | Array { elem = Object name; _ } ->
+    (* Convert list of objects to array of handles *)
+    sprintf
+      "(Array.of_list (List.map (fun x -> x.%s.handle) %s))"
+      (ocaml_module_name name)
+      member_name
+  | Array { elem = Primitive _; _ } ->
+    (* Convert list of primitives to array *)
+    sprintf "(Array.of_list %s)" member_name
+  | Array { elem = Enum name; _ } ->
+    (* Convert list of enums to array of ints *)
+    sprintf "(Array.of_list (List.map %s.to_int %s))" (ocaml_module_name name) member_name
+  | Array { elem = Bitflag name; _ } ->
+    (* Convert list of bitflag lists to array of ints *)
+    sprintf
+      "(Array.of_list (List.map %s.list_to_int %s))"
+      (ocaml_module_name name)
+      member_name
   | _ -> member_name
 ;;
 
@@ -473,23 +501,19 @@ let default_value_for_type (type_ref : Ir.type_ref) : string =
   | Primitive (Uint64 | Int64 | Usize) -> "0L"
   | Primitive (Float32 | Float64) -> "0.0"
   | Optional _ -> "None"
+  | Array _ -> "[]"
   | _ -> {|""|}
 ;;
 
-(** Generate ML implementation for a method with struct argument *)
-let gen_ml_method_with_struct
+(** Generate ML implementation for a method with one or more struct arguments *)
+let gen_ml_method_with_structs
   (obj : Ir.object_)
   (method_ : Ir.method_)
-  (struct_ : Ir.struct_)
-  (struct_arg : Ir.arg)
+  (struct_args : (Ir.arg * Ir.struct_) list)
   : string
   =
-  ignore struct_arg;
   let method_name = escape_keyword method_.name in
-  let low_level_func = sprintf "Wgpu_low.%s_%s" obj.name method_.name in
-  ignore low_level_func;
-  let struct_module = ocaml_module_name struct_.name in
-  let desc_var = "desc" in
+  let use_prefix = List.length struct_args > 1 in
   (* Get non-struct args *)
   let other_args =
     List.filter method_.args ~f:(fun arg ->
@@ -497,26 +521,29 @@ let gen_ml_method_with_struct
       | Struct _ -> false
       | _ -> true)
   in
-  (* Build parameter list from struct members + other args *)
+  (* Build parameter list from all struct members + other args *)
   let struct_params =
-    List.map struct_.members ~f:(fun member ->
-      let param_name = escape_keyword member.name in
-      let is_optional =
-        member.optional
-        ||
-        match member.type_ with
-        | Primitive String_with_default_empty -> true
-        | Optional _ -> true
-        | _ -> false
-      in
-      param_name, member, is_optional)
+    List.concat_map struct_args ~f:(fun (arg, struct_) ->
+      List.map struct_.members ~f:(fun member ->
+        let prefix = if use_prefix then arg.name ^ "_" else "" in
+        let param_name = escape_keyword (prefix ^ member.name) in
+        let is_optional =
+          member.optional
+          ||
+          match member.type_ with
+          | Primitive String_with_default_empty -> true
+          | Optional _ -> true
+          | Array _ -> true (* Arrays default to empty *)
+          | _ -> false
+        in
+        param_name, member, is_optional, arg, struct_))
   in
   let other_params =
     List.map other_args ~f:(fun arg -> escape_keyword arg.name, arg, arg.optional)
   in
   (* Build function signature *)
   let param_strs =
-    List.filter_map struct_params ~f:(fun (name, member, is_opt) ->
+    List.filter_map struct_params ~f:(fun (name, member, is_opt, _, _) ->
       if is_opt
       then Some (sprintf "?(%s = %s)" name (default_value_for_type member.type_))
       else Some (sprintf "~%s" name))
@@ -524,31 +551,42 @@ let gen_ml_method_with_struct
       if is_opt then Some (sprintf "?%s" name) else Some (sprintf "~%s" name))
   in
   let param_list = "t " ^ String.concat ~sep:" " param_strs ^ " ()" in
-  (* Generate struct creation and field setting *)
-  let create_struct =
-    sprintf
-      "let %s = Wgpu_low.%s.%s_create () in"
-      desc_var
-      struct_module
-      (String.lowercase struct_.name)
-  in
-  let set_fields =
-    List.map struct_.members ~f:(fun member ->
-      let param_name = escape_keyword member.name in
-      let converted = member_to_low_level param_name member.type_ in
+  (* Generate struct creation for each struct *)
+  let create_structs =
+    List.map struct_args ~f:(fun (arg, struct_) ->
+      let struct_module = ocaml_module_name struct_.name in
+      let desc_var = "desc_" ^ arg.name in
       sprintf
-        "Wgpu_low.%s.%s_set_%s %s %s;"
-        struct_module
-        (String.lowercase struct_.name)
-        member.name
+        "let %s = Wgpu_low.%s.%s_create () in"
         desc_var
-        converted)
+        struct_module
+        (String.lowercase struct_.name))
   in
-  (* Build the call *)
+  (* Generate field setting for each struct *)
+  let set_fields =
+    List.concat_map struct_args ~f:(fun (arg, struct_) ->
+      let struct_module = ocaml_module_name struct_.name in
+      let desc_var = "desc_" ^ arg.name in
+      List.map struct_.members ~f:(fun member ->
+        let prefix = if use_prefix then arg.name ^ "_" else "" in
+        let param_name = escape_keyword (prefix ^ member.name) in
+        let converted = member_to_low_level param_name member.type_ in
+        sprintf
+          "Wgpu_low.%s.%s_set_%s %s %s;"
+          struct_module
+          (String.lowercase struct_.name)
+          member.name
+          desc_var
+          converted))
+  in
+  (* Build the call args, mapping each struct arg to its desc variable *)
+  let struct_arg_names =
+    List.map struct_args ~f:(fun (arg, _) -> arg.name) |> Set.of_list (module String)
+  in
   let call_args =
     List.map method_.args ~f:(fun arg ->
       match arg.type_ with
-      | Struct _ -> desc_var
+      | Struct _ when Set.mem struct_arg_names arg.name -> "desc_" ^ arg.name
       | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
   in
   let call =
@@ -558,27 +596,31 @@ let gen_ml_method_with_struct
       method_.name
       (String.concat ~sep:" " call_args)
   in
-  (* Generate result handling and struct freeing *)
+  (* Generate struct freeing *)
+  let free_structs =
+    List.map struct_args ~f:(fun (arg, struct_) ->
+      let struct_module = ocaml_module_name struct_.name in
+      let desc_var = "desc_" ^ arg.name in
+      sprintf
+        "Wgpu_low.%s.%s_free %s;"
+        struct_module
+        (String.lowercase struct_.name)
+        desc_var)
+  in
+  (* Generate result handling *)
   let result_and_free =
     match method_.returns with
-    | None ->
-      sprintf
-        "%s;\nWgpu_low.%s.%s_free %s"
-        call
-        struct_module
-        (String.lowercase struct_.name)
-        desc_var
+    | None -> String.concat ~sep:"\n    " ([ call ^ ";" ] @ free_structs @ [ "()" ])
     | Some ret ->
+      let free_lines = String.concat ~sep:"\n    " free_structs in
       sprintf
-        "let result = %s in\nWgpu_low.%s.%s_free %s;\n%s"
+        "let result = %s in\n    %s\n    %s"
         call
-        struct_module
-        (String.lowercase struct_.name)
-        desc_var
+        free_lines
         (return_to_high_level "result" ret.type_)
   in
   (* Put it all together *)
-  let body_lines = [ create_struct ] @ set_fields @ [ result_and_free ] in
+  let body_lines = create_structs @ set_fields @ [ result_and_free ] in
   let body = String.concat ~sep:"\n    " body_lines in
   sprintf "  let %s %s =\n    %s\n" method_name param_list body
 ;;
@@ -707,23 +749,14 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
     | Some (arg, struct_) ->
       Some (gen_ml_method_with_output_struct obj method_ struct_ arg)
     | None ->
-      (* Check if this method has an input struct argument *)
-      let struct_arg =
-        List.find method_.args ~f:(fun arg ->
-          match arg.type_ with
-          | Struct _ -> true
-          | _ -> false)
-      in
-      (match struct_arg with
-       | Some arg ->
-         (match arg.type_ with
-          | Struct struct_name ->
-            (match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
-             | Some struct_ -> Some (gen_ml_method_with_struct obj method_ struct_ arg)
-             | None -> None)
-          | _ -> None)
-       | None ->
-         (* Original simple method generation *)
+      (* Check if this method has simple struct arguments *)
+      let struct_args = get_simple_struct_args structs method_ in
+      (match struct_args with
+       | _ :: _ ->
+         (* One or more simple struct args *)
+         Some (gen_ml_method_with_structs obj method_ struct_args)
+       | [] ->
+         (* Original simple method generation - no struct args *)
          let method_name = escape_keyword method_.name in
          let low_level_func = sprintf "Wgpu_low.%s_%s" obj.name method_.name in
          let args =
@@ -762,6 +795,15 @@ let high_level_member_type (member : Ir.struct_member) : string =
   | Optional (Enum name) -> ocaml_module_name name ^ ".t option"
   | Optional (Object name) -> ocaml_module_name name ^ ".t option"
   | Optional inner -> high_level_arg_type inner ^ " option"
+  | Array { elem = Object name; _ } -> ocaml_module_name name ^ ".t list"
+  | Array { elem = Enum name; _ } -> ocaml_module_name name ^ ".t list"
+  | Array { elem = Bitflag name; _ } -> ocaml_module_name name ^ ".t list list"
+  | Array { elem = Primitive Bool; _ } -> "bool list"
+  | Array { elem = Primitive (Uint32 | Int32); _ } -> "int list"
+  | Array { elem = Primitive (Uint64 | Int64 | Usize); _ } -> "int64 list"
+  | Array { elem = Primitive (Float32 | Float64); _ } -> "float list"
+  | Array { elem = Primitive (String | Out_string | String_with_default_empty); _ } ->
+    "string list"
   | _ -> "nativeint"
 ;;
 
@@ -780,14 +822,15 @@ let gen_output_struct_record_type (struct_ : Ir.struct_) : string =
   sprintf "type %s = {\n%s\n}\n" type_name (String.concat ~sep:";\n" fields)
 ;;
 
-(** Generate MLI signature for a method with struct argument *)
-let gen_mli_method_with_struct
+(** Generate MLI signature for a method with one or more struct arguments *)
+let gen_mli_method_with_structs
   (_obj : Ir.object_)
   (method_ : Ir.method_)
-  (struct_ : Ir.struct_)
+  (struct_args : (Ir.arg * Ir.struct_) list)
   : string
   =
   let method_name = escape_keyword method_.name in
+  let use_prefix = List.length struct_args > 1 in
   (* Get non-struct args *)
   let other_args =
     List.filter method_.args ~f:(fun arg ->
@@ -795,22 +838,25 @@ let gen_mli_method_with_struct
       | Struct _ -> false
       | _ -> true)
   in
-  (* Build parameter types from struct members + other args *)
+  (* Build parameter types from all struct members + other args *)
   let struct_param_types =
-    List.map struct_.members ~f:(fun member ->
-      let param_name = escape_keyword member.name in
-      let type_str = high_level_member_type member in
-      let is_optional =
-        member.optional
-        ||
-        match member.type_ with
-        | Primitive String_with_default_empty -> true
-        | Optional _ -> true
-        | _ -> false
-      in
-      if is_optional
-      then sprintf "?%s:%s" param_name type_str
-      else sprintf "%s:%s" param_name type_str)
+    List.concat_map struct_args ~f:(fun (arg, struct_) ->
+      List.map struct_.members ~f:(fun member ->
+        let prefix = if use_prefix then arg.name ^ "_" else "" in
+        let param_name = escape_keyword (prefix ^ member.name) in
+        let type_str = high_level_member_type member in
+        let is_optional =
+          member.optional
+          ||
+          match member.type_ with
+          | Primitive String_with_default_empty -> true
+          | Optional _ -> true
+          | Array _ -> true (* Arrays default to empty *)
+          | _ -> false
+        in
+        if is_optional
+        then sprintf "?%s:%s" param_name type_str
+        else sprintf "%s:%s" param_name type_str))
   in
   let other_param_types =
     List.map other_args ~f:(fun arg ->
@@ -881,23 +927,14 @@ let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.
     match method_has_output_struct_arg structs method_ with
     | Some (_arg, struct_) -> Some (gen_mli_method_with_output_struct obj method_ struct_)
     | None ->
-      (* Check if this method has an input struct argument *)
-      let struct_arg =
-        List.find method_.args ~f:(fun arg ->
-          match arg.type_ with
-          | Struct _ -> true
-          | _ -> false)
-      in
-      (match struct_arg with
-       | Some arg ->
-         (match arg.type_ with
-          | Struct struct_name ->
-            (match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
-             | Some struct_ -> Some (gen_mli_method_with_struct obj method_ struct_)
-             | None -> None)
-          | _ -> None)
-       | None ->
-         (* Original simple method generation *)
+      (* Check if this method has simple struct arguments *)
+      let struct_args = get_simple_struct_args structs method_ in
+      (match struct_args with
+       | _ :: _ ->
+         (* One or more simple struct args *)
+         Some (gen_mli_method_with_structs obj method_ struct_args)
+       | [] ->
+         (* Original simple method generation - no struct args *)
          let method_name = escape_keyword method_.name in
          let arg_types =
            List.map method_.args ~f:(fun arg ->
