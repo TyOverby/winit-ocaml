@@ -452,3 +452,56 @@ Instance.release instance
 1. Add more methods to Device module (create_buffer, create_shader_module, etc.)
 2. Add ergonomic descriptor builders
 3. Document the full API
+
+---
+
+## 2026-01-25: High-Level API Method Generation
+
+### Accomplished
+- **Major expansion of high-level API**: 168 methods now generated across all object modules
+- **Method filtering**: Only generates methods with simple signatures (no callbacks, no struct args)
+- **Keyword escaping**: OCaml reserved words like `end` renamed to `end_`
+- **Dependency ordering**: Objects sorted so dependencies come first (Buffer before Command_Encoder)
+- **Type conversions**:
+  - Objects use qualified field access: `source.Buffer.handle`
+  - Enums converted with `(Enum.to_int arg)`
+  - Bitflags converted with `(Flags.list_to_int arg)`
+  - Return types properly typed: `({ Module.handle = result } : Module.t)`
+
+### Generated Methods (examples)
+```ocaml
+module Buffer : sig
+  val get_size : t -> int64
+  val get_usage : t -> int
+  val get_map_state : t -> int
+  val unmap : t -> unit
+  val destroy : t -> unit
+  ...
+end
+
+module Command_Encoder : sig
+  val copy_buffer_to_buffer : t -> source:Buffer.t -> source_offset:int64 ->
+    destination:Buffer.t -> destination_offset:int64 -> size:int64 -> unit
+  val clear_buffer : t -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
+  ...
+end
+
+module Compute_Pass_Encoder : sig
+  val set_pipeline : t -> pipeline:Compute_Pipeline.t -> unit
+  val dispatch_workgroups : t -> workgroupCountX:int -> workgroupCountY:int ->
+    workgroupCountZ:int -> unit
+  val end_ : t -> unit
+  ...
+end
+```
+
+### Methods Not Yet Generated
+Methods with these signature patterns are currently skipped:
+- Callbacks (async methods like `request_adapter`)
+- Struct arguments (like `create_buffer` which takes `BufferDescriptor`)
+- Array arguments (like `submit` which takes command buffer array)
+
+### Next Steps
+1. Add descriptor builder functions for common create methods
+2. Consider adding `of_int` to enums/bitflags for return type conversion
+3. Add the special-cased Instance/Adapter/Device/Queue methods
