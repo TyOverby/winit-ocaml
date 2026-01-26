@@ -2,706 +2,760 @@
 
 module Adapter_type : sig
   type t =
-  | Discrete_gpu
-  | Integrated_gpu
-  | Cpu
-  | Unknown
+    | Discrete_gpu
+    | Integrated_gpu
+    | Cpu
+    | Unknown
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Address_mode : sig
   type t =
-  | Undefined
-  | Clamp_to_edge
-  | Repeat
-  | Mirror_repeat
+    | Undefined
+    | Clamp_to_edge
+    | Repeat
+    | Mirror_repeat
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Backend_type : sig
   type t =
-  | Undefined
-  | Null
-  | Webgpu
-  | D3d11
-  | D3d12
-  | Metal
-  | Vulkan
-  | Opengl
-  | Opengles
+    | Undefined
+    | Null
+    | Webgpu
+    | D3d11
+    | D3d12
+    | Metal
+    | Vulkan
+    | Opengl
+    | Opengles
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Blend_factor : sig
   type t =
-  | Undefined
-  | Zero
-  | One
-  | Src
-  | One_minus_src
-  | Src_alpha
-  | One_minus_src_alpha
-  | Dst
-  | One_minus_dst
-  | Dst_alpha
-  | One_minus_dst_alpha
-  | Src_alpha_saturated
-  | Constant
-  | One_minus_constant
-  | Src1
-  | One_minus_src1
-  | Src1_alpha
-  | One_minus_src1_alpha
+    | Undefined
+    | Zero
+    | One
+    | Src
+    | One_minus_src
+    | Src_alpha
+    | One_minus_src_alpha
+    | Dst
+    | One_minus_dst
+    | Dst_alpha
+    | One_minus_dst_alpha
+    | Src_alpha_saturated
+    | Constant
+    | One_minus_constant
+    | Src1
+    | One_minus_src1
+    | Src1_alpha
+    | One_minus_src1_alpha
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Blend_operation : sig
   type t =
-  | Undefined
-  | Add
-  | Subtract
-  | Reverse_subtract
-  | Min
-  | Max
+    | Undefined
+    | Add
+    | Subtract
+    | Reverse_subtract
+    | Min
+    | Max
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Buffer_binding_type : sig
   type t =
-  | Binding_not_used
-  | Undefined
-  | Uniform
-  | Storage
-  | Read_only_storage
+    | Binding_not_used
+    | Undefined
+    | Uniform
+    | Storage
+    | Read_only_storage
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Buffer_map_state : sig
   type t =
-  | Unmapped
-  | Pending
-  | Mapped
+    | Unmapped
+    | Pending
+    | Mapped
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Callback_mode : sig
-  (** The callback mode controls how a callback for an asynchronous operation may be fired. See @ref Asynchronous-Operations for how these are used. *)
+  (** The callback mode controls how a callback for an asynchronous operation may be
+      fired. See \@ref Asynchronous-Operations for how these are used. *)
   type t =
-  | Wait_any_only
-  | Allow_process_events
-  | Allow_spontaneous
+    | Wait_any_only
+    | Allow_process_events
+    | Allow_spontaneous
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Compare_function : sig
   type t =
-  | Undefined
-  | Never
-  | Less
-  | Equal
-  | Less_equal
-  | Greater
-  | Not_equal
-  | Greater_equal
-  | Always
+    | Undefined
+    | Never
+    | Less
+    | Equal
+    | Less_equal
+    | Greater
+    | Not_equal
+    | Greater_equal
+    | Always
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Compilation_info_request_status : sig
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Compilation_message_type : sig
   type t =
-  | Error
-  | Warning
-  | Info
+    | Error
+    | Warning
+    | Info
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Composite_alpha_mode : sig
-  (** Describes how frames are composited with other contents on the screen when `::wgpuSurfacePresent` is called. *)
+  (** Describes how frames are composited with other contents on the screen when
+      `::wgpuSurfacePresent` is called. *)
   type t =
-  | Auto
-  | Opaque
-  | Premultiplied
-  | Unpremultiplied
-  | Inherit
+    | Auto
+    | Opaque
+    | Premultiplied
+    | Unpremultiplied
+    | Inherit
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Create_pipeline_async_status : sig
   type t =
-  | Success
-  | Instance_dropped
-  | Validation_error
-  | Internal_error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Validation_error
+    | Internal_error
+    | Unknown
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Cull_mode : sig
   type t =
-  | Undefined
-  | None
-  | Front
-  | Back
+    | Undefined
+    | None
+    | Front
+    | Back
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Device_lost_reason : sig
   type t =
-  | Unknown
-  | Destroyed
-  | Instance_dropped
-  | Failed_creation
+    | Unknown
+    | Destroyed
+    | Instance_dropped
+    | Failed_creation
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Error_filter : sig
   type t =
-  | Validation
-  | Out_of_memory
-  | Internal
+    | Validation
+    | Out_of_memory
+    | Internal
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Error_type : sig
   type t =
-  | No_error
-  | Validation
-  | Out_of_memory
-  | Internal
-  | Unknown
+    | No_error
+    | Validation
+    | Out_of_memory
+    | Internal
+    | Unknown
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Feature_level : sig
-  (** See @ref WGPURequestAdapterOptions::featureLevel. *)
+  (** See \@ref WGPURequestAdapterOptions::featureLevel. *)
   type t =
-  | Compatibility
-  | Core
+    | Compatibility
+    | Core
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Feature_name : sig
   type t =
-  | Undefined
-  | Depth_clip_control
-  | Depth32_float_stencil8
-  | Timestamp_query
-  | Texture_compression_bc
-  | Texture_compression_bc_sliced_3d
-  | Texture_compression_etc2
-  | Texture_compression_astc
-  | Texture_compression_astc_sliced_3d
-  | Indirect_first_instance
-  | Shader_f16
-  | Rg11b10_ufloat_renderable
-  | Bgra8_unorm_storage
-  | Float32_filterable
-  | Float32_blendable
-  | Clip_distances
-  | Dual_source_blending
+    | Undefined
+    | Depth_clip_control
+    | Depth32_float_stencil8
+    | Timestamp_query
+    | Texture_compression_bc
+    | Texture_compression_bc_sliced_3d
+    | Texture_compression_etc2
+    | Texture_compression_astc
+    | Texture_compression_astc_sliced_3d
+    | Indirect_first_instance
+    | Shader_f16
+    | Rg11b10_ufloat_renderable
+    | Bgra8_unorm_storage
+    | Float32_filterable
+    | Float32_blendable
+    | Clip_distances
+    | Dual_source_blending
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Filter_mode : sig
   type t =
-  | Undefined
-  | Nearest
-  | Linear
+    | Undefined
+    | Nearest
+    | Linear
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Front_face : sig
   type t =
-  | Undefined
-  | Ccw
-  | Cw
+    | Undefined
+    | Ccw
+    | Cw
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Index_format : sig
   type t =
-  | Undefined
-  | Uint16
-  | Uint32
+    | Undefined
+    | Uint16
+    | Uint32
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Load_op : sig
   type t =
-  | Undefined
-  | Load
-  | Clear
+    | Undefined
+    | Load
+    | Clear
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Map_async_status : sig
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Aborted
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Aborted
+    | Unknown
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Mipmap_filter_mode : sig
   type t =
-  | Undefined
-  | Nearest
-  | Linear
+    | Undefined
+    | Nearest
+    | Linear
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Optional_bool : sig
   type t =
-  | False
-  | True
-  | Undefined
+    | False
+    | True
+    | Undefined
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Pop_error_scope_status : sig
   type t =
-  | Success
-  | Instance_dropped
-  | Empty_stack
+    | Success
+    | Instance_dropped
+    | Empty_stack
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Power_preference : sig
   type t =
-  | Undefined
-  | Low_power
-  | High_performance
+    | Undefined
+    | Low_power
+    | High_performance
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Present_mode : sig
-  (** Describes when and in which order frames are presented on the screen when `::wgpuSurfacePresent` is called. *)
+  (** Describes when and in which order frames are presented on the screen when
+      `::wgpuSurfacePresent` is called. *)
   type t =
-  | Undefined
-  | Fifo
-  | Fifo_relaxed
-  | Immediate
-  | Mailbox
+    | Undefined
+    | Fifo
+    | Fifo_relaxed
+    | Immediate
+    | Mailbox
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Primitive_topology : sig
   type t =
-  | Undefined
-  | Point_list
-  | Line_list
-  | Line_strip
-  | Triangle_list
-  | Triangle_strip
+    | Undefined
+    | Point_list
+    | Line_list
+    | Line_strip
+    | Triangle_list
+    | Triangle_strip
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Query_type : sig
   type t =
-  | Occlusion
-  | Timestamp
+    | Occlusion
+    | Timestamp
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Queue_work_done_status : sig
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Request_adapter_status : sig
   type t =
-  | Success
-  | Instance_dropped
-  | Unavailable
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Unavailable
+    | Error
+    | Unknown
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Request_device_status : sig
   type t =
-  | Success
-  | Instance_dropped
-  | Error
-  | Unknown
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module S_type : sig
   type t =
-  | Shader_source_spirv
-  | Shader_source_wgsl
-  | Render_pass_max_draw_count
-  | Surface_source_metal_layer
-  | Surface_source_windows_hwnd
-  | Surface_source_xlib_window
-  | Surface_source_wayland_surface
-  | Surface_source_android_native_window
-  | Surface_source_xcb_window
+    | Shader_source_spirv
+    | Shader_source_wgsl
+    | Render_pass_max_draw_count
+    | Surface_source_metal_layer
+    | Surface_source_windows_hwnd
+    | Surface_source_xlib_window
+    | Surface_source_wayland_surface
+    | Surface_source_android_native_window
+    | Surface_source_xcb_window
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Sampler_binding_type : sig
   type t =
-  | Binding_not_used
-  | Undefined
-  | Filtering
-  | Non_filtering
-  | Comparison
+    | Binding_not_used
+    | Undefined
+    | Filtering
+    | Non_filtering
+    | Comparison
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Status : sig
-  (** Status code returned (synchronously) from many operations. Generally
-indicates an invalid input like an unknown enum value or @ref OutStructChainError.
-Read the function's documentation for specific error conditions. *)
+  (** Status code returned (synchronously) from many operations. Generally indicates an
+      invalid input like an unknown enum value or \@ref OutStructChainError. Read the
+      function's documentation for specific error conditions. *)
   type t =
-  | Success
-  | Error
+    | Success
+    | Error
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Stencil_operation : sig
   type t =
-  | Undefined
-  | Keep
-  | Zero
-  | Replace
-  | Invert
-  | Increment_clamp
-  | Decrement_clamp
-  | Increment_wrap
-  | Decrement_wrap
+    | Undefined
+    | Keep
+    | Zero
+    | Replace
+    | Invert
+    | Increment_clamp
+    | Decrement_clamp
+    | Increment_wrap
+    | Decrement_wrap
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Storage_texture_access : sig
   type t =
-  | Binding_not_used
-  | Undefined
-  | Write_only
-  | Read_only
-  | Read_write
+    | Binding_not_used
+    | Undefined
+    | Write_only
+    | Read_only
+    | Read_write
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Store_op : sig
   type t =
-  | Undefined
-  | Store
-  | Discard
+    | Undefined
+    | Store
+    | Discard
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Surface_get_current_texture_status : sig
   (** The status enum for `::wgpuSurfaceGetCurrentTexture`. *)
   type t =
-  | Success_optimal
-  | Success_suboptimal
-  | Timeout
-  | Outdated
-  | Lost
-  | Out_of_memory
-  | Device_lost
-  | Error
+    | Success_optimal
+    | Success_suboptimal
+    | Timeout
+    | Outdated
+    | Lost
+    | Out_of_memory
+    | Device_lost
+    | Error
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Texture_aspect : sig
   type t =
-  | Undefined
-  | All
-  | Stencil_only
-  | Depth_only
+    | Undefined
+    | All
+    | Stencil_only
+    | Depth_only
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Texture_dimension : sig
   type t =
-  | Undefined
-  | N1d
-  | N2d
-  | N3d
+    | Undefined
+    | N1d
+    | N2d
+    | N3d
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Texture_format : sig
   type t =
-  | Undefined
-  | R8_unorm
-  | R8_snorm
-  | R8_uint
-  | R8_sint
-  | R16_uint
-  | R16_sint
-  | R16_float
-  | Rg8_unorm
-  | Rg8_snorm
-  | Rg8_uint
-  | Rg8_sint
-  | R32_float
-  | R32_uint
-  | R32_sint
-  | Rg16_uint
-  | Rg16_sint
-  | Rg16_float
-  | Rgba8_unorm
-  | Rgba8_unorm_srgb
-  | Rgba8_snorm
-  | Rgba8_uint
-  | Rgba8_sint
-  | Bgra8_unorm
-  | Bgra8_unorm_srgb
-  | Rgb10_a2_uint
-  | Rgb10_a2_unorm
-  | Rg11_b10_ufloat
-  | Rgb9_e5_ufloat
-  | Rg32_float
-  | Rg32_uint
-  | Rg32_sint
-  | Rgba16_uint
-  | Rgba16_sint
-  | Rgba16_float
-  | Rgba32_float
-  | Rgba32_uint
-  | Rgba32_sint
-  | Stencil8
-  | Depth16_unorm
-  | Depth24_plus
-  | Depth24_plus_stencil8
-  | Depth32_float
-  | Depth32_float_stencil8
-  | Bc1_rgba_unorm
-  | Bc1_rgba_unorm_srgb
-  | Bc2_rgba_unorm
-  | Bc2_rgba_unorm_srgb
-  | Bc3_rgba_unorm
-  | Bc3_rgba_unorm_srgb
-  | Bc4_r_unorm
-  | Bc4_r_snorm
-  | Bc5_rg_unorm
-  | Bc5_rg_snorm
-  | Bc6h_rgb_ufloat
-  | Bc6h_rgb_float
-  | Bc7_rgba_unorm
-  | Bc7_rgba_unorm_srgb
-  | Etc2_rgb8_unorm
-  | Etc2_rgb8_unorm_srgb
-  | Etc2_rgb8a1_unorm
-  | Etc2_rgb8a1_unorm_srgb
-  | Etc2_rgba8_unorm
-  | Etc2_rgba8_unorm_srgb
-  | Eac_r11_unorm
-  | Eac_r11_snorm
-  | Eac_rg11_unorm
-  | Eac_rg11_snorm
-  | Astc_4x4_unorm
-  | Astc_4x4_unorm_srgb
-  | Astc_5x4_unorm
-  | Astc_5x4_unorm_srgb
-  | Astc_5x5_unorm
-  | Astc_5x5_unorm_srgb
-  | Astc_6x5_unorm
-  | Astc_6x5_unorm_srgb
-  | Astc_6x6_unorm
-  | Astc_6x6_unorm_srgb
-  | Astc_8x5_unorm
-  | Astc_8x5_unorm_srgb
-  | Astc_8x6_unorm
-  | Astc_8x6_unorm_srgb
-  | Astc_8x8_unorm
-  | Astc_8x8_unorm_srgb
-  | Astc_10x5_unorm
-  | Astc_10x5_unorm_srgb
-  | Astc_10x6_unorm
-  | Astc_10x6_unorm_srgb
-  | Astc_10x8_unorm
-  | Astc_10x8_unorm_srgb
-  | Astc_10x10_unorm
-  | Astc_10x10_unorm_srgb
-  | Astc_12x10_unorm
-  | Astc_12x10_unorm_srgb
-  | Astc_12x12_unorm
-  | Astc_12x12_unorm_srgb
+    | Undefined
+    | R8_unorm
+    | R8_snorm
+    | R8_uint
+    | R8_sint
+    | R16_uint
+    | R16_sint
+    | R16_float
+    | Rg8_unorm
+    | Rg8_snorm
+    | Rg8_uint
+    | Rg8_sint
+    | R32_float
+    | R32_uint
+    | R32_sint
+    | Rg16_uint
+    | Rg16_sint
+    | Rg16_float
+    | Rgba8_unorm
+    | Rgba8_unorm_srgb
+    | Rgba8_snorm
+    | Rgba8_uint
+    | Rgba8_sint
+    | Bgra8_unorm
+    | Bgra8_unorm_srgb
+    | Rgb10_a2_uint
+    | Rgb10_a2_unorm
+    | Rg11_b10_ufloat
+    | Rgb9_e5_ufloat
+    | Rg32_float
+    | Rg32_uint
+    | Rg32_sint
+    | Rgba16_uint
+    | Rgba16_sint
+    | Rgba16_float
+    | Rgba32_float
+    | Rgba32_uint
+    | Rgba32_sint
+    | Stencil8
+    | Depth16_unorm
+    | Depth24_plus
+    | Depth24_plus_stencil8
+    | Depth32_float
+    | Depth32_float_stencil8
+    | Bc1_rgba_unorm
+    | Bc1_rgba_unorm_srgb
+    | Bc2_rgba_unorm
+    | Bc2_rgba_unorm_srgb
+    | Bc3_rgba_unorm
+    | Bc3_rgba_unorm_srgb
+    | Bc4_r_unorm
+    | Bc4_r_snorm
+    | Bc5_rg_unorm
+    | Bc5_rg_snorm
+    | Bc6h_rgb_ufloat
+    | Bc6h_rgb_float
+    | Bc7_rgba_unorm
+    | Bc7_rgba_unorm_srgb
+    | Etc2_rgb8_unorm
+    | Etc2_rgb8_unorm_srgb
+    | Etc2_rgb8a1_unorm
+    | Etc2_rgb8a1_unorm_srgb
+    | Etc2_rgba8_unorm
+    | Etc2_rgba8_unorm_srgb
+    | Eac_r11_unorm
+    | Eac_r11_snorm
+    | Eac_rg11_unorm
+    | Eac_rg11_snorm
+    | Astc_4x4_unorm
+    | Astc_4x4_unorm_srgb
+    | Astc_5x4_unorm
+    | Astc_5x4_unorm_srgb
+    | Astc_5x5_unorm
+    | Astc_5x5_unorm_srgb
+    | Astc_6x5_unorm
+    | Astc_6x5_unorm_srgb
+    | Astc_6x6_unorm
+    | Astc_6x6_unorm_srgb
+    | Astc_8x5_unorm
+    | Astc_8x5_unorm_srgb
+    | Astc_8x6_unorm
+    | Astc_8x6_unorm_srgb
+    | Astc_8x8_unorm
+    | Astc_8x8_unorm_srgb
+    | Astc_10x5_unorm
+    | Astc_10x5_unorm_srgb
+    | Astc_10x6_unorm
+    | Astc_10x6_unorm_srgb
+    | Astc_10x8_unorm
+    | Astc_10x8_unorm_srgb
+    | Astc_10x10_unorm
+    | Astc_10x10_unorm_srgb
+    | Astc_12x10_unorm
+    | Astc_12x10_unorm_srgb
+    | Astc_12x12_unorm
+    | Astc_12x12_unorm_srgb
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Texture_sample_type : sig
   type t =
-  | Binding_not_used
-  | Undefined
-  | Float
-  | Unfilterable_float
-  | Depth
-  | Sint
-  | Uint
+    | Binding_not_used
+    | Undefined
+    | Float
+    | Unfilterable_float
+    | Depth
+    | Sint
+    | Uint
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Texture_view_dimension : sig
   type t =
-  | Undefined
-  | N1d
-  | N2d
-  | N2d_array
-  | Cube
-  | Cube_array
-  | N3d
+    | Undefined
+    | N1d
+    | N2d
+    | N2d_array
+    | Cube
+    | Cube_array
+    | N3d
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Vertex_format : sig
   type t =
-  | Uint8
-  | Uint8x2
-  | Uint8x4
-  | Sint8
-  | Sint8x2
-  | Sint8x4
-  | Unorm8
-  | Unorm8x2
-  | Unorm8x4
-  | Snorm8
-  | Snorm8x2
-  | Snorm8x4
-  | Uint16
-  | Uint16x2
-  | Uint16x4
-  | Sint16
-  | Sint16x2
-  | Sint16x4
-  | Unorm16
-  | Unorm16x2
-  | Unorm16x4
-  | Snorm16
-  | Snorm16x2
-  | Snorm16x4
-  | Float16
-  | Float16x2
-  | Float16x4
-  | Float32
-  | Float32x2
-  | Float32x3
-  | Float32x4
-  | Uint32
-  | Uint32x2
-  | Uint32x3
-  | Uint32x4
-  | Sint32
-  | Sint32x2
-  | Sint32x3
-  | Sint32x4
-  | Unorm10__10__10__2
-  | Unorm8x4_b_g_r_a
+    | Uint8
+    | Uint8x2
+    | Uint8x4
+    | Sint8
+    | Sint8x2
+    | Sint8x4
+    | Unorm8
+    | Unorm8x2
+    | Unorm8x4
+    | Snorm8
+    | Snorm8x2
+    | Snorm8x4
+    | Uint16
+    | Uint16x2
+    | Uint16x4
+    | Sint16
+    | Sint16x2
+    | Sint16x4
+    | Unorm16
+    | Unorm16x2
+    | Unorm16x4
+    | Snorm16
+    | Snorm16x2
+    | Snorm16x4
+    | Float16
+    | Float16x2
+    | Float16x4
+    | Float32
+    | Float32x2
+    | Float32x3
+    | Float32x4
+    | Uint32
+    | Uint32x2
+    | Uint32x3
+    | Uint32x4
+    | Sint32
+    | Sint32x2
+    | Sint32x3
+    | Sint32x4
+    | Unorm10__10__10__2
+    | Unorm8x4_b_g_r_a
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Vertex_step_mode : sig
   type t =
-  | Vertex_buffer_not_used
-  | Undefined
-  | Vertex
-  | Instance
+    | Vertex_buffer_not_used
+    | Undefined
+    | Vertex
+    | Instance
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Wait_status : sig
   (** Status returned from a call to ::wgpuInstanceWaitAny. *)
   type t =
-  | Success
-  | Timed_out
-  | Unsupported_timeout
-  | Unsupported_count
-  | Unsupported_mixed_sources
+    | Success
+    | Timed_out
+    | Unsupported_timeout
+    | Unsupported_count
+    | Unsupported_mixed_sources
 
   val to_int : t -> int
+  val of_int : int -> t
 end
 
 module Wgsl_language_feature_name : sig
   type t =
-  | Readonly_and_readwrite_storage_textures
-  | Packed4x8_integer_dot_product
-  | Unrestricted_pointer_parameters
-  | Pointer_composite_access
+    | Readonly_and_readwrite_storage_textures
+    | Packed4x8_integer_dot_product
+    | Unrestricted_pointer_parameters
+    | Pointer_composite_access
 
   val to_int : t -> int
+  val of_int : int -> t
 end
+
 module Buffer_usage : sig
   type t =
-  | None
-  | Map_read
-  | Map_write
-  | Copy_src
-  | Copy_dst
-  | Index
-  | Vertex
-  | Uniform
-  | Storage
-  | Indirect
-  | Query_resolve
+    | None
+    | Map_read
+    | Map_write
+    | Copy_src
+    | Copy_dst
+    | Index
+    | Vertex
+    | Uniform
+    | Storage
+    | Indirect
+    | Query_resolve
 
   val to_int : t -> int
   val list_to_int : t list -> int
@@ -709,12 +763,12 @@ end
 
 module Color_write_mask : sig
   type t =
-  | None
-  | Red
-  | Green
-  | Blue
-  | Alpha
-  | All
+    | None
+    | Red
+    | Green
+    | Blue
+    | Alpha
+    | All
 
   val to_int : t -> int
   val list_to_int : t list -> int
@@ -722,9 +776,9 @@ end
 
 module Map_mode : sig
   type t =
-  | None
-  | Read
-  | Write
+    | None
+    | Read
+    | Write
 
   val to_int : t -> int
   val list_to_int : t list -> int
@@ -732,10 +786,10 @@ end
 
 module Shader_stage : sig
   type t =
-  | None
-  | Vertex
-  | Fragment
-  | Compute
+    | None
+    | Vertex
+    | Fragment
+    | Compute
 
   val to_int : t -> int
   val list_to_int : t list -> int
@@ -743,16 +797,17 @@ end
 
 module Texture_usage : sig
   type t =
-  | None
-  | Copy_src
-  | Copy_dst
-  | Texture_binding
-  | Storage_binding
-  | Render_attachment
+    | None
+    | Copy_src
+    | Copy_dst
+    | Texture_binding
+    | Storage_binding
+    | Render_attachment
 
   val to_int : t -> int
   val list_to_int : t list -> int
 end
+
 module Bind_group : sig
   type t
 
@@ -771,12 +826,10 @@ module Buffer : sig
   type t
 
   val release : t -> unit
-  val get_mapped_range : t -> offset:int64 -> size:int64 -> nativeint
-  val get_const_mapped_range : t -> offset:int64 -> size:int64 -> nativeint
   val set_label : t -> label:string -> unit
   val get_usage : t -> int
   val get_size : t -> int64
-  val get_map_state : t -> int
+  val get_map_state : t -> Buffer_map_state.t
   val unmap : t -> unit
   val destroy : t -> unit
 end
@@ -808,7 +861,7 @@ module Query_set : sig
 
   val release : t -> unit
   val set_label : t -> label:string -> unit
-  val get_type : t -> int
+  val get_type : t -> Query_type.t
   val get_count : t -> int
   val destroy : t -> unit
 end
@@ -842,33 +895,6 @@ module Shader_module : sig
   val set_label : t -> label:string -> unit
 end
 
-module Surface : sig
-  (** An object used to continuously present image data to the user, see @ref Surfaces for more details. *)
-
-  type t
-
-  val release : t -> unit
-  val present : t -> int
-  val unconfigure : t -> unit
-  val set_label : t -> label:string -> unit
-end
-
-module Texture : sig
-  type t
-
-  val release : t -> unit
-  val set_label : t -> label:string -> unit
-  val get_width : t -> int
-  val get_height : t -> int
-  val get_depth_or_array_layers : t -> int
-  val get_mip_level_count : t -> int
-  val get_sample_count : t -> int
-  val get_dimension : t -> int
-  val get_format : t -> int
-  val get_usage : t -> int
-  val destroy : t -> unit
-end
-
 module Texture_view : sig
   type t
 
@@ -876,16 +902,84 @@ module Texture_view : sig
   val set_label : t -> label:string -> unit
 end
 
+module Texture : sig
+  type t
+
+  val release : t -> unit
+
+  val create_view
+    :  t
+    -> ?label:string
+    -> format:Texture_format.t
+    -> dimension:Texture_view_dimension.t
+    -> base_mip_level:int
+    -> mip_level_count:int
+    -> base_array_layer:int
+    -> array_layer_count:int
+    -> aspect:Texture_aspect.t
+    -> usage:Texture_usage.t list
+    -> unit
+    -> Texture_view.t
+
+  val set_label : t -> label:string -> unit
+  val get_width : t -> int
+  val get_height : t -> int
+  val get_depth_or_array_layers : t -> int
+  val get_mip_level_count : t -> int
+  val get_sample_count : t -> int
+  val get_dimension : t -> Texture_dimension.t
+  val get_format : t -> Texture_format.t
+  val get_usage : t -> int
+  val destroy : t -> unit
+end
+
+module Surface : sig
+  (** An object used to continuously present image data to the user, see \@ref Surfaces
+      for more details. *)
+
+  type t
+
+  type surface_texture =
+    { texture : Texture.t
+    ; status : Surface_get_current_texture_status.t
+    }
+
+  val release : t -> unit
+  val get_current_texture : t -> surface_texture
+  val present : t -> Status.t
+  val unconfigure : t -> unit
+  val set_label : t -> label:string -> unit
+end
+
 module Command_encoder : sig
   type t
 
   val release : t -> unit
-  val copy_buffer_to_buffer : t -> source:Buffer.t -> source_offset:int64 -> destination:Buffer.t -> destination_offset:int64 -> size:int64 -> unit
+  val finish : t -> ?label:string -> unit -> Command_buffer.t
+
+  val copy_buffer_to_buffer
+    :  t
+    -> source:Buffer.t
+    -> source_offset:int64
+    -> destination:Buffer.t
+    -> destination_offset:int64
+    -> size:int64
+    -> unit
+
   val clear_buffer : t -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
   val insert_debug_marker : t -> marker_label:string -> unit
   val pop_debug_group : t -> unit
   val push_debug_group : t -> group_label:string -> unit
-  val resolve_query_set : t -> query_set:Query_set.t -> first_query:int -> query_count:int -> destination:Buffer.t -> destination_offset:int64 -> unit
+
+  val resolve_query_set
+    :  t
+    -> query_set:Query_set.t
+    -> first_query:int
+    -> query_count:int
+    -> destination:Buffer.t
+    -> destination_offset:int64
+    -> unit
+
   val write_timestamp : t -> query_set:Query_set.t -> query_index:int -> unit
   val set_label : t -> label:string -> unit
 end
@@ -898,8 +992,27 @@ module Compute_pass_encoder : sig
   val pop_debug_group : t -> unit
   val push_debug_group : t -> group_label:string -> unit
   val set_pipeline : t -> pipeline:Compute_pipeline.t -> unit
-  val dispatch_workgroups : t -> workgroupCountX:int -> workgroupCountY:int -> workgroupCountZ:int -> unit
-  val dispatch_workgroups_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
+
+  val set_bind_group
+    :  t
+    -> group_index:int
+    -> group:Bind_group.t
+    -> dynamic_offsets:int list
+    -> unit
+
+  val dispatch_workgroups
+    :  t
+    -> workgroupCountX:int
+    -> workgroupCountY:int
+    -> workgroupCountZ:int
+    -> unit
+
+  val dispatch_workgroups_indirect
+    :  t
+    -> indirect_buffer:Buffer.t
+    -> indirect_offset:int64
+    -> unit
+
   val end_ : t -> unit
   val set_label : t -> label:string -> unit
 end
@@ -909,15 +1022,43 @@ module Render_bundle_encoder : sig
 
   val release : t -> unit
   val set_pipeline : t -> pipeline:Render_pipeline.t -> unit
-  val draw : t -> vertex_count:int -> instance_count:int -> first_vertex:int -> first_instance:int -> unit
-  val draw_indexed : t -> index_count:int -> instance_count:int -> first_index:int -> base_vertex:int -> first_instance:int -> unit
+
+  val set_bind_group
+    :  t
+    -> group_index:int
+    -> group:Bind_group.t
+    -> dynamic_offsets:int list
+    -> unit
+
+  val draw
+    :  t
+    -> vertex_count:int
+    -> instance_count:int
+    -> first_vertex:int
+    -> first_instance:int
+    -> unit
+
+  val draw_indexed
+    :  t
+    -> index_count:int
+    -> instance_count:int
+    -> first_index:int
+    -> base_vertex:int
+    -> first_instance:int
+    -> unit
+
   val draw_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
-  val draw_indexed_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
+
+  val draw_indexed_indirect
+    :  t
+    -> indirect_buffer:Buffer.t
+    -> indirect_offset:int64
+    -> unit
+
   val insert_debug_marker : t -> marker_label:string -> unit
   val pop_debug_group : t -> unit
   val push_debug_group : t -> group_label:string -> unit
-  val set_vertex_buffer : t -> slot:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
-  val set_index_buffer : t -> buffer:Buffer.t -> format:Index_format.t -> offset:int64 -> size:int64 -> unit
+  val finish : t -> ?label:string -> unit -> Render_bundle.t
   val set_label : t -> label:string -> unit
 end
 
@@ -926,31 +1067,70 @@ module Render_pass_encoder : sig
 
   val release : t -> unit
   val set_pipeline : t -> pipeline:Render_pipeline.t -> unit
-  val draw : t -> vertex_count:int -> instance_count:int -> first_vertex:int -> first_instance:int -> unit
-  val draw_indexed : t -> index_count:int -> instance_count:int -> first_index:int -> base_vertex:int -> first_instance:int -> unit
+
+  val set_bind_group
+    :  t
+    -> group_index:int
+    -> group:Bind_group.t
+    -> dynamic_offsets:int list
+    -> unit
+
+  val draw
+    :  t
+    -> vertex_count:int
+    -> instance_count:int
+    -> first_vertex:int
+    -> first_instance:int
+    -> unit
+
+  val draw_indexed
+    :  t
+    -> index_count:int
+    -> instance_count:int
+    -> first_index:int
+    -> base_vertex:int
+    -> first_instance:int
+    -> unit
+
   val draw_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
-  val draw_indexed_indirect : t -> indirect_buffer:Buffer.t -> indirect_offset:int64 -> unit
+
+  val draw_indexed_indirect
+    :  t
+    -> indirect_buffer:Buffer.t
+    -> indirect_offset:int64
+    -> unit
+
+  val execute_bundles : t -> bundles:Render_bundle.t list -> unit
   val insert_debug_marker : t -> marker_label:string -> unit
   val pop_debug_group : t -> unit
   val push_debug_group : t -> group_label:string -> unit
   val set_stencil_reference : t -> reference:int -> unit
-  val set_viewport : t -> x:float -> y:float -> width:float -> height:float -> min_depth:float -> max_depth:float -> unit
+
+  val set_viewport
+    :  t
+    -> x:float
+    -> y:float
+    -> width:float
+    -> height:float
+    -> min_depth:float
+    -> max_depth:float
+    -> unit
+
   val set_scissor_rect : t -> x:int -> y:int -> width:int -> height:int -> unit
-  val set_vertex_buffer : t -> slot:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
-  val set_index_buffer : t -> buffer:Buffer.t -> format:Index_format.t -> offset:int64 -> size:int64 -> unit
   val begin_occlusion_query : t -> query_index:int -> unit
   val end_occlusion_query : t -> unit
   val end_ : t -> unit
   val set_label : t -> label:string -> unit
 end
+
 module Adapter_info : sig
   type t =
     { vendor : string
     ; architecture : string
     ; device : string
     ; description : string
-    ; backend_type : int
-    ; adapter_type : int
+    ; backend_type : Backend_type.t
+    ; adapter_type : Adapter_type.t
     }
 end
 
@@ -960,8 +1140,13 @@ module Queue : sig
   val release : t -> unit
   val set_label : t -> label:string -> unit
   val submit : t -> command_buffers:Command_buffer.t list -> unit
-  val write_buffer : t -> buffer:Buffer.t -> offset:int64 ->
-    data:(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t -> unit
+
+  val write_buffer
+    :  t
+    -> buffer:Buffer.t
+    -> offset:int64
+    -> data:(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+    -> unit
 end
 
 module Device : sig
@@ -975,8 +1160,14 @@ module Device : sig
   val set_label : t -> label:string -> unit
 
   (** Create a GPU buffer *)
-  val create_buffer : t -> ?label:string -> size:int64 -> usage:Buffer_usage.t list ->
-    ?mapped_at_creation:bool -> unit -> Buffer.t
+  val create_buffer
+    :  t
+    -> ?label:string
+    -> size:int64
+    -> usage:Buffer_usage.t list
+    -> ?mapped_at_creation:bool
+    -> unit
+    -> Buffer.t
 
   (** Create a shader module from WGSL source *)
   val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
@@ -985,34 +1176,97 @@ module Device : sig
   val create_command_encoder : t -> ?label:string -> unit -> Command_encoder.t
 
   (** Create a texture *)
-  val create_texture : t -> ?label:string -> size:(int * int * int) ->
-    format:Texture_format.t -> usage:Texture_usage.t list ->
-    ?dimension:Texture_dimension.t -> ?mip_level_count:int -> ?sample_count:int ->
-    unit -> Texture.t
+  val create_texture
+    :  t
+    -> ?label:string
+    -> size:int * int * int
+    -> format:Texture_format.t
+    -> usage:Texture_usage.t list
+    -> ?dimension:Texture_dimension.t
+    -> ?mip_level_count:int
+    -> ?sample_count:int
+    -> unit
+    -> Texture.t
 
-  (** Create a sampler with default settings *)
-  val create_sampler : t -> ?label:string -> unit -> Sampler.t
+  (** Create a sampler *)
+  val create_sampler
+    :  t
+    -> ?label:string
+    -> ?address_mode_u:Address_mode.t
+    -> ?address_mode_v:Address_mode.t
+    -> ?address_mode_w:Address_mode.t
+    -> ?mag_filter:Filter_mode.t
+    -> ?min_filter:Filter_mode.t
+    -> ?mipmap_filter:Mipmap_filter_mode.t
+    -> ?lod_min_clamp:float
+    -> ?lod_max_clamp:float
+    -> ?compare:Compare_function.t
+    -> ?max_anisotropy:int
+    -> unit
+    -> Sampler.t
 
   (** Create a compute pipeline *)
-  val create_compute_pipeline : t -> ?label:string -> layout:Pipeline_layout.t ->
-    module_:Shader_module.t -> entry_point:string -> unit -> Compute_pipeline.t
+  val create_compute_pipeline
+    :  t
+    -> ?label:string
+    -> layout:Pipeline_layout.t
+    -> module_:Shader_module.t
+    -> entry_point:string
+    -> unit
+    -> Compute_pipeline.t
 
-  (** Create a render pipeline (uses single shader module for vertex and fragment) *)
-  val create_render_pipeline : t -> ?label:string -> shader_module:Shader_module.t ->
-    vertex_entry_point:string -> fragment_entry_point:string ->
-    color_format:Texture_format.t -> unit -> Render_pipeline.t
+  (** Create a render pipeline (uses single shader module for vertex and fragment). The
+      [blend] parameter is a tuple of (color_src, color_dst, color_op, alpha_src,
+      alpha_dst, alpha_op). *)
+  val create_render_pipeline
+    :  t
+    -> ?label:string
+    -> shader_module:Shader_module.t
+    -> vertex_entry_point:string
+    -> fragment_entry_point:string
+    -> color_format:Texture_format.t
+    -> ?topology:Primitive_topology.t
+    -> ?front_face:Front_face.t
+    -> ?cull_mode:Cull_mode.t
+    -> ?blend:
+         Blend_factor.t
+         * Blend_factor.t
+         * Blend_operation.t
+         * Blend_factor.t
+         * Blend_factor.t
+         * Blend_operation.t
+    -> ?write_mask:Color_write_mask.t list
+    -> unit
+    -> Render_pipeline.t
 
   (** Create a bind group layout for a single storage buffer *)
-  val create_bind_group_layout_for_storage_buffer : t -> ?label:string -> binding:int ->
-    ?read_only:bool -> unit -> Bind_group_layout.t
+  val create_bind_group_layout_for_storage_buffer
+    :  t
+    -> ?label:string
+    -> binding:int
+    -> ?read_only:bool
+    -> unit
+    -> Bind_group_layout.t
 
   (** Create a bind group with a single buffer binding *)
-  val create_bind_group : t -> ?label:string -> layout:Bind_group_layout.t ->
-    binding:int -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit -> Bind_group.t
+  val create_bind_group
+    :  t
+    -> ?label:string
+    -> layout:Bind_group_layout.t
+    -> binding:int
+    -> buffer:Buffer.t
+    -> offset:int64
+    -> size:int64
+    -> unit
+    -> Bind_group.t
 
   (** Create a pipeline layout (currently supports single bind group layout) *)
-  val create_pipeline_layout : t -> ?label:string -> bind_group_layout:Bind_group_layout.t ->
-    unit -> Pipeline_layout.t
+  val create_pipeline_layout
+    :  t
+    -> ?label:string
+    -> bind_group_layout:Bind_group_layout.t
+    -> unit
+    -> Pipeline_layout.t
 
   (** Poll the device for completed work *)
   val poll : t -> ?wait:bool -> unit -> unit
@@ -1026,44 +1280,93 @@ module Adapter : sig
   val request_device : t -> Device.t
   val has_feature : t -> feature:Feature_name.t -> bool
 end
+
 module Instance : sig
   type t
 
   val create : unit -> t
   val release : t -> unit
-  val request_adapter : t -> Adapter.t
+
+  val request_adapter
+    :  t
+    -> ?power_preference:Power_preference.t
+    -> ?backend_type:Backend_type.t
+    -> unit
+    -> Adapter.t
 end
 
 (** Begin a compute pass on a command encoder *)
-val begin_compute_pass : Command_encoder.t -> ?label:string -> unit -> Compute_pass_encoder.t
+val begin_compute_pass
+  :  Command_encoder.t
+  -> ?label:string
+  -> unit
+  -> Compute_pass_encoder.t
 
 (** Begin a render pass on a command encoder with a single color attachment *)
-val begin_render_pass : Command_encoder.t -> ?label:string -> color_view:Texture_view.t ->
-  clear_color:(float * float * float * float) -> unit -> Render_pass_encoder.t
+val begin_render_pass
+  :  Command_encoder.t
+  -> ?label:string
+  -> color_view:Texture_view.t
+  -> ?load_op:Load_op.t
+  -> ?store_op:Store_op.t
+  -> clear_color:float * float * float * float
+  -> unit
+  -> Render_pass_encoder.t
 
 (** Finish recording commands and get a command buffer *)
 val finish : Command_encoder.t -> ?label:string -> unit -> Command_buffer.t
 
 (** Set a bind group on a compute pass encoder *)
-val set_bind_group : Compute_pass_encoder.t -> index:int -> bind_group:Bind_group.t -> unit
+val set_bind_group
+  :  Compute_pass_encoder.t
+  -> index:int
+  -> bind_group:Bind_group.t
+  -> unit
 
 (** Set a bind group on a render pass encoder *)
-val set_bind_group_render : Render_pass_encoder.t -> index:int -> bind_group:Bind_group.t -> unit
+val set_bind_group_render
+  :  Render_pass_encoder.t
+  -> index:int
+  -> bind_group:Bind_group.t
+  -> unit
 
 (** Copy texture to buffer (for readback) *)
-val copy_texture_to_buffer : Command_encoder.t -> texture:Texture.t ->
-  buffer:Buffer.t -> size:(int * int) -> bytes_per_row:int -> unit -> unit
+val copy_texture_to_buffer
+  :  Command_encoder.t
+  -> texture:Texture.t
+  -> buffer:Buffer.t
+  -> size:int * int
+  -> bytes_per_row:int
+  -> unit
+  -> unit
 
 (** Map a buffer for CPU access (synchronous) *)
 val map_buffer : Buffer.t -> mode:Map_mode.t list -> offset:int64 -> size:int64 -> unit
 
 (** Get mapped buffer data as a bigarray *)
-val get_mapped_range : Buffer.t -> offset:int64 -> size:int64 ->
-  (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+val get_mapped_range
+  :  Buffer.t
+  -> offset:int64
+  -> size:int64
+  -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 
 (** Get const mapped buffer data as a bigarray (for read-only access) *)
-val get_const_mapped_range : Buffer.t -> offset:int64 -> size:int64 ->
-  (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+val get_const_mapped_range
+  :  Buffer.t
+  -> offset:int64
+  -> size:int64
+  -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 
 (** Create a texture view from a texture *)
-val create_texture_view : Texture.t -> ?label:string -> unit -> Texture_view.t
+val create_texture_view
+  :  Texture.t
+  -> ?label:string
+  -> ?format:Texture_format.t
+  -> ?dimension:Texture_view_dimension.t
+  -> ?aspect:Texture_aspect.t
+  -> ?base_mip_level:int
+  -> ?mip_level_count:int
+  -> ?base_array_layer:int
+  -> ?array_layer_count:int
+  -> unit
+  -> Texture_view.t

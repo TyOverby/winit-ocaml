@@ -26,10 +26,10 @@ let manual_implementations =
       (* Adapter methods *)
     ; "adapter", "get_info" (* uses special struct return *)
     ; "adapter", "request_device" (* async, we have sync wrapper *)
-    ; "adapter", "get_limits" (* uses struct output parameter *)
     ; "adapter", "get_features"
-      (* uses struct output parameter *)
+      (* output struct with array member *)
       (* Device methods *)
+    ; "device", "get_features" (* output struct with array member *)
     ; "device", "create_buffer" (* uses descriptor struct *)
     ; "device", "create_shader_module" (* uses descriptor struct *)
     ; "device", "create_command_encoder" (* uses descriptor struct *)
@@ -44,8 +44,6 @@ let manual_implementations =
     ; "device", "create_render_bundle_encoder" (* uses descriptor struct *)
     ; "device", "pop_error_scope" (* async callback *)
     ; "device", "get_queue" (* hand-written for cleaner return type *)
-    ; "device", "get_limits" (* uses struct output parameter *)
-    ; "device", "get_features" (* uses struct output parameter *)
     ; "device", "get_lost_future" (* returns Future struct *)
     ; "device", "get_adapter_info"
       (* returns struct *)
@@ -62,18 +60,12 @@ let manual_implementations =
     ; "command_encoder", "copy_texture_to_buffer" (* uses structs *)
     ; "command_encoder", "copy_texture_to_texture"
       (* uses structs *)
-      (* Compute pass encoder methods - keep only array-based *)
-    ; "compute_pass_encoder", "set_bind_group"
-      (* uses array for dynamic offsets *)
       (* Render pass encoder methods - keep only complex ones *)
-    ; "render_pass_encoder", "set_bind_group" (* uses array for dynamic offsets *)
     ; "render_pass_encoder", "set_vertex_buffer" (* manual for better API *)
     ; "render_pass_encoder", "set_index_buffer" (* manual for better API *)
-    ; "render_pass_encoder", "set_blend_constant" (* uses struct *)
-    ; "render_pass_encoder", "execute_bundles"
-      (* uses array *)
+    ; "render_pass_encoder", "set_blend_constant"
+      (* uses struct *)
       (* Render bundle encoder methods - keep only complex ones *)
-    ; "render_bundle_encoder", "set_bind_group" (* uses array *)
     ; "render_bundle_encoder", "set_vertex_buffer" (* manual *)
     ; "render_bundle_encoder", "set_index_buffer"
       (* manual *)
@@ -87,11 +79,7 @@ let manual_implementations =
       (* async callback *)
       (* Surface methods - mostly for windowed rendering *)
     ; "surface", "configure" (* uses struct *)
-    ; "surface", "get_capabilities" (* uses struct output *)
-    ; "surface", "get_current_texture" (* uses struct output *)
-    ; "surface", "present" (* simple but for windowed *)
-    ; "surface", "unconfigure" (* simple but for windowed *)
-    ; "surface", "set_label" (* simple but for windowed *)
+    ; "surface", "get_capabilities" (* uses struct output with arrays *)
     ]
 ;;
 
@@ -249,7 +237,7 @@ let rec is_simple_arg_type (type_ref : Ir.type_ref) : bool =
   | Optional inner -> is_simple_arg_type inner
   | Struct _ -> false (* Structs handled separately *)
   | Callback _ -> false
-  | Array _ -> false (* Arrays need special handling *)
+  | Array { elem; _ } -> is_simple_arg_type elem (* Arrays of simple types are OK *)
   | Pointer _ -> false
 ;;
 
@@ -279,6 +267,41 @@ let method_has_simple_struct_arg (structs : Ir.struct_ list) (method_ : Ir.metho
   | _ -> false
 ;;
 
+(** Check if a struct can be used for output (has only simple readable members) *)
+let is_simple_output_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
+  match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
+  | None -> false
+  | Some struct_ ->
+    (* Output structs must be base_out or base_in_out *)
+    let is_output_struct =
+      match struct_.type_ with
+      | Base_out | Base_in_out -> true
+      | Base_in | Standalone -> false
+    in
+    is_output_struct
+    && List.for_all struct_.members ~f:(fun member -> is_simple_member_type member.type_)
+;;
+
+(** Check if a method has exactly one output struct argument (mutable pointer to struct) *)
+let method_has_output_struct_arg (structs : Ir.struct_ list) (method_ : Ir.method_)
+  : (Ir.arg * Ir.struct_) option
+  =
+  let output_struct_args =
+    List.filter_map method_.args ~f:(fun arg ->
+      match arg.type_, arg.pointer with
+      | Struct name, Some `Mutable ->
+        if is_simple_output_struct structs name
+        then
+          List.find structs ~f:(fun s -> String.equal s.name name)
+          |> Option.map ~f:(fun s -> arg, s)
+        else None
+      | _ -> None)
+  in
+  match output_struct_args with
+  | [ pair ] -> Some pair
+  | _ -> None
+;;
+
 (** Check if a return type is "simple" *)
 let is_simple_return_type (type_ref : Ir.type_ref) : bool =
   match type_ref with
@@ -306,7 +329,8 @@ let method_is_high_level_simple (method_ : Ir.method_) : bool =
     args_ok && return_ok)
 ;;
 
-(** Check if a method can be auto-generated (either simple args or simple struct arg) *)
+(** Check if a method can be auto-generated (either simple args, simple struct arg, or
+    output struct) *)
 let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bool =
   if method_is_async method_
   then false
@@ -333,7 +357,13 @@ let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bo
             | Struct _ -> true (* will check separately *)
             | _ -> is_simple_arg_type arg.type_)
         in
-        non_struct_args_simple && method_has_simple_struct_arg structs method_)))
+        if non_struct_args_simple && method_has_simple_struct_arg structs method_
+        then true
+        else (
+          (* Check if there's an output struct arg *)
+          match method_has_output_struct_arg structs method_ with
+          | Some _ -> non_struct_args_simple
+          | None -> false))))
 ;;
 
 (** Get high-level OCaml type for a type_ref (for arguments) *)
@@ -351,7 +381,7 @@ let rec high_level_arg_type (type_ref : Ir.type_ref) : string =
   | Optional inner -> high_level_arg_type inner ^ " option"
   | Struct _ -> "nativeint" (* fallback *)
   | Callback _ -> "nativeint"
-  | Array _ -> "nativeint array"
+  | Array { elem; _ } -> high_level_arg_type elem ^ " list"
   | Pointer _ -> "nativeint"
 ;;
 
@@ -383,6 +413,18 @@ let arg_to_low_level (arg_name : string) (type_ref : Ir.type_ref) : string =
       arg_name
       (ocaml_module_name name)
   | Optional _ -> arg_name (* shouldn't happen for simple types *)
+  | Array { elem = Object name; _ } ->
+    (* Convert list of objects to array of handles *)
+    sprintf
+      "(Array.of_list (List.map (fun x -> x.%s.handle) %s))"
+      (ocaml_module_name name)
+      arg_name
+  | Array { elem = Primitive _; _ } ->
+    (* Convert list of primitives to array *)
+    sprintf "(Array.of_list %s)" arg_name
+  | Array { elem = Enum name; _ } ->
+    (* Convert list of enums to array of ints *)
+    sprintf "(Array.of_list (List.map %s.to_int %s))" (ocaml_module_name name) arg_name
   | _ -> arg_name
 ;;
 
@@ -541,6 +583,115 @@ let gen_ml_method_with_struct
   sprintf "  let %s %s =\n    %s\n" method_name param_list body
 ;;
 
+(** Generate ML implementation for a method with output struct argument *)
+let gen_ml_method_with_output_struct
+  (obj : Ir.object_)
+  (method_ : Ir.method_)
+  (struct_ : Ir.struct_)
+  (_arg : Ir.arg)
+  : string
+  =
+  let method_name = escape_keyword method_.name in
+  let struct_module = ocaml_module_name struct_.name in
+  let struct_var = "output" in
+  (* Get other args that are not the output struct *)
+  let other_args =
+    List.filter method_.args ~f:(fun a ->
+      not
+        (match a.type_ with
+         | Struct _ -> true
+         | _ -> false))
+  in
+  (* Build parameter list *)
+  let param_list =
+    if List.is_empty other_args
+    then "t"
+    else
+      "t "
+      ^ String.concat
+          ~sep:" "
+          (List.map other_args ~f:(fun a -> sprintf "~%s" (escape_keyword a.name)))
+  in
+  (* Create the output struct *)
+  let create_struct =
+    sprintf
+      "let %s = Wgpu_low.%s.%s_create () in"
+      struct_var
+      struct_module
+      (String.lowercase struct_.name)
+  in
+  (* Build call args *)
+  let call_args =
+    List.map method_.args ~f:(fun arg ->
+      match arg.type_ with
+      | Struct _ -> struct_var
+      | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
+  in
+  let call =
+    sprintf
+      "let _status = Wgpu_low.%s_%s t.handle %s in"
+      obj.name
+      method_.name
+      (String.concat ~sep:" " call_args)
+  in
+  (* Read fields from the struct *)
+  let read_fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      (* Skip nextInChain *)
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let field_name = escape_keyword member.name in
+        let getter_name =
+          sprintf
+            "Wgpu_low.%s.%s_get_%s"
+            struct_module
+            (String.lowercase struct_.name)
+            member.name
+        in
+        let value_expr =
+          match member.type_ with
+          | Enum name ->
+            sprintf "(%s.of_int (%s %s))" (ocaml_module_name name) getter_name struct_var
+          | Object name ->
+            sprintf
+              "({ %s.handle = %s %s } : %s.t)"
+              (ocaml_module_name name)
+              getter_name
+              struct_var
+              (ocaml_module_name name)
+          | _ -> sprintf "(%s %s)" getter_name struct_var
+        in
+        Some (sprintf "let %s = %s in" field_name value_expr)))
+  in
+  (* Build the record *)
+  let record_fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else Some (sprintf "%s" (escape_keyword member.name)))
+  in
+  let build_record =
+    sprintf "let result = { %s } in" (String.concat ~sep:"; " record_fields)
+  in
+  (* Free the struct *)
+  let free_struct =
+    sprintf
+      "Wgpu_low.%s.%s_free %s;"
+      struct_module
+      (String.lowercase struct_.name)
+      struct_var
+  in
+  (* Return result *)
+  let return_result = "result" in
+  (* Combine all lines *)
+  let body_lines =
+    [ create_struct; call ] @ read_fields @ [ build_record; free_struct; return_result ]
+  in
+  let body = String.concat ~sep:"\n    " body_lines in
+  sprintf "  let %s %s =\n    %s\n" method_name param_list body
+;;
+
 (** Generate ML implementation for a method *)
 let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
   : string option
@@ -551,45 +702,50 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
   else if not (method_is_high_level structs method_)
   then None
   else (
-    (* Check if this method has a struct argument *)
-    let struct_arg =
-      List.find method_.args ~f:(fun arg ->
-        match arg.type_ with
-        | Struct _ -> true
-        | _ -> false)
-    in
-    match struct_arg with
-    | Some arg ->
-      (match arg.type_ with
-       | Struct struct_name ->
-         (match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
-          | Some struct_ -> Some (gen_ml_method_with_struct obj method_ struct_ arg)
-          | None -> None)
-       | _ -> None)
+    (* First check for output struct arg *)
+    match method_has_output_struct_arg structs method_ with
+    | Some (arg, struct_) ->
+      Some (gen_ml_method_with_output_struct obj method_ struct_ arg)
     | None ->
-      (* Original simple method generation *)
-      let method_name = escape_keyword method_.name in
-      let low_level_func = sprintf "Wgpu_low.%s_%s" obj.name method_.name in
-      let args =
-        List.map method_.args ~f:(fun arg ->
-          let converted = arg_to_low_level arg.name arg.type_ in
-          arg.name, converted)
+      (* Check if this method has an input struct argument *)
+      let struct_arg =
+        List.find method_.args ~f:(fun arg ->
+          match arg.type_ with
+          | Struct _ -> true
+          | _ -> false)
       in
-      let arg_names = List.map args ~f:fst in
-      let arg_conversions = List.map args ~f:snd in
-      let param_list =
-        if List.is_empty arg_names
-        then "t"
-        else "t " ^ String.concat ~sep:" " (List.map arg_names ~f:(sprintf "~%s"))
-      in
-      let call_args = "t.handle" :: arg_conversions in
-      let call = sprintf "%s %s" low_level_func (String.concat ~sep:" " call_args) in
-      let body =
-        match method_.returns with
-        | None -> call
-        | Some ret -> return_to_high_level call ret.type_
-      in
-      Some (sprintf "  let %s %s = %s\n" method_name param_list body))
+      (match struct_arg with
+       | Some arg ->
+         (match arg.type_ with
+          | Struct struct_name ->
+            (match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
+             | Some struct_ -> Some (gen_ml_method_with_struct obj method_ struct_ arg)
+             | None -> None)
+          | _ -> None)
+       | None ->
+         (* Original simple method generation *)
+         let method_name = escape_keyword method_.name in
+         let low_level_func = sprintf "Wgpu_low.%s_%s" obj.name method_.name in
+         let args =
+           List.map method_.args ~f:(fun arg ->
+             let converted = arg_to_low_level arg.name arg.type_ in
+             arg.name, converted)
+         in
+         let arg_names = List.map args ~f:fst in
+         let arg_conversions = List.map args ~f:snd in
+         let param_list =
+           if List.is_empty arg_names
+           then "t"
+           else "t " ^ String.concat ~sep:" " (List.map arg_names ~f:(sprintf "~%s"))
+         in
+         let call_args = "t.handle" :: arg_conversions in
+         let call = sprintf "%s %s" low_level_func (String.concat ~sep:" " call_args) in
+         let body =
+           match method_.returns with
+           | None -> call
+           | Some ret -> return_to_high_level call ret.type_
+         in
+         Some (sprintf "  let %s %s = %s\n" method_name param_list body)))
 ;;
 
 (** Get high-level OCaml type for a struct member *)
@@ -607,6 +763,21 @@ let high_level_member_type (member : Ir.struct_member) : string =
   | Optional (Object name) -> ocaml_module_name name ^ ".t option"
   | Optional inner -> high_level_arg_type inner ^ " option"
   | _ -> "nativeint"
+;;
+
+(** Generate record type definition for an output struct *)
+let gen_output_struct_record_type (struct_ : Ir.struct_) : string =
+  let type_name = String.lowercase struct_.name in
+  let fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let field_name = escape_keyword member.name in
+        let field_type = high_level_member_type member in
+        Some (sprintf "  %s : %s" field_name field_type)))
+  in
+  sprintf "type %s = {\n%s\n}\n" type_name (String.concat ~sep:";\n" fields)
 ;;
 
 (** Generate MLI signature for a method with struct argument *)
@@ -661,6 +832,41 @@ let gen_mli_method_with_struct
   sprintf "  val %s : %s\n" method_name type_sig
 ;;
 
+(** Generate MLI signature for a method with output struct argument *)
+let gen_mli_method_with_output_struct
+  (_obj : Ir.object_)
+  (method_ : Ir.method_)
+  (struct_ : Ir.struct_)
+  : string
+  =
+  let method_name = escape_keyword method_.name in
+  (* Get other args that are not the output struct *)
+  let other_args =
+    List.filter method_.args ~f:(fun a ->
+      not
+        (match a.type_ with
+         | Struct _ -> true
+         | _ -> false))
+  in
+  let other_param_types =
+    List.map other_args ~f:(fun arg ->
+      let param_name = escape_keyword arg.name in
+      let type_str = high_level_arg_type arg.type_ in
+      if arg.optional
+      then sprintf "?%s:%s" param_name type_str
+      else sprintf "%s:%s" param_name type_str)
+  in
+  (* Build record type name from struct name *)
+  let record_type_name = String.lowercase struct_.name in
+  let return_type = record_type_name in
+  let type_sig =
+    if List.is_empty other_param_types
+    then sprintf "t -> %s" return_type
+    else sprintf "t -> %s -> %s" (String.concat ~sep:" -> " other_param_types) return_type
+  in
+  sprintf "  val %s : %s\n" method_name type_sig
+;;
+
 (** Generate MLI signature for a method *)
 let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
   : string option
@@ -671,39 +877,43 @@ let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.
   else if not (method_is_high_level structs method_)
   then None
   else (
-    (* Check if this method has a struct argument *)
-    let struct_arg =
-      List.find method_.args ~f:(fun arg ->
-        match arg.type_ with
-        | Struct _ -> true
-        | _ -> false)
-    in
-    match struct_arg with
-    | Some arg ->
-      (match arg.type_ with
-       | Struct struct_name ->
-         (match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
-          | Some struct_ -> Some (gen_mli_method_with_struct obj method_ struct_)
-          | None -> None)
-       | _ -> None)
+    (* First check for output struct arg *)
+    match method_has_output_struct_arg structs method_ with
+    | Some (_arg, struct_) -> Some (gen_mli_method_with_output_struct obj method_ struct_)
     | None ->
-      (* Original simple method generation *)
-      let method_name = escape_keyword method_.name in
-      let arg_types =
-        List.map method_.args ~f:(fun arg ->
-          sprintf "%s:%s" arg.name (high_level_arg_type arg.type_))
+      (* Check if this method has an input struct argument *)
+      let struct_arg =
+        List.find method_.args ~f:(fun arg ->
+          match arg.type_ with
+          | Struct _ -> true
+          | _ -> false)
       in
-      let return_type =
-        match method_.returns with
-        | None -> "unit"
-        | Some ret -> high_level_return_type ret.type_
-      in
-      let type_sig =
-        if List.is_empty arg_types
-        then sprintf "t -> %s" return_type
-        else sprintf "t -> %s -> %s" (String.concat ~sep:" -> " arg_types) return_type
-      in
-      Some (sprintf "  val %s : %s\n" method_name type_sig))
+      (match struct_arg with
+       | Some arg ->
+         (match arg.type_ with
+          | Struct struct_name ->
+            (match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
+             | Some struct_ -> Some (gen_mli_method_with_struct obj method_ struct_)
+             | None -> None)
+          | _ -> None)
+       | None ->
+         (* Original simple method generation *)
+         let method_name = escape_keyword method_.name in
+         let arg_types =
+           List.map method_.args ~f:(fun arg ->
+             sprintf "%s:%s" arg.name (high_level_arg_type arg.type_))
+         in
+         let return_type =
+           match method_.returns with
+           | None -> "unit"
+           | Some ret -> high_level_return_type ret.type_
+         in
+         let type_sig =
+           if List.is_empty arg_types
+           then sprintf "t -> %s" return_type
+           else sprintf "t -> %s -> %s" (String.concat ~sep:" -> " arg_types) return_type
+         in
+         Some (sprintf "  val %s : %s\n" method_name type_sig)))
 ;;
 
 (** Generate high-level OCaml code for an enum type (re-exports low-level) *)
@@ -771,16 +981,26 @@ let gen_mli_bitflag (bitflag : Ir.bitflag) : string =
 (** Generate high-level OCaml code for an object type with methods *)
 let gen_ml_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
   let module_name = ocaml_module_name obj.name in
+  (* Collect output struct types used by this object's methods *)
+  let output_struct_types =
+    List.filter_map obj.methods ~f:(fun method_ ->
+      match method_has_output_struct_arg structs method_ with
+      | Some (_arg, struct_) -> Some (gen_output_struct_record_type struct_)
+      | None -> None)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+  in
   let methods =
     List.filter_map obj.methods ~f:(gen_ml_method structs obj) |> String.concat ~sep:""
   in
   sprintf
     "module %s = struct\n\
     \  type t = { handle : Wgpu_low.%s }\n\n\
-    \  let release t = Wgpu_low.%s_release t.handle\n\
+     %s  let release t = Wgpu_low.%s_release t.handle\n\
      %send\n"
     module_name
     obj.name
+    (if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n")
     obj.name
     methods
 ;;
@@ -793,13 +1013,23 @@ let gen_mli_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
     | None -> ""
     | Some doc -> sprintf "  (** %s *)\n\n" doc
   in
+  (* Collect output struct types used by this object's methods *)
+  let output_struct_types =
+    List.filter_map obj.methods ~f:(fun method_ ->
+      match method_has_output_struct_arg structs method_ with
+      | Some (_arg, struct_) -> Some (gen_output_struct_record_type struct_)
+      | None -> None)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+  in
   let methods =
     List.filter_map obj.methods ~f:(gen_mli_method structs obj) |> String.concat ~sep:""
   in
   sprintf
-    "module %s : sig\n%s  type t\n\n  val release : t -> unit\n%send\n"
+    "module %s : sig\n%s  type t\n\n%s  val release : t -> unit\n%send\n"
     module_name
     doc_comment
+    (if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n")
     methods
 ;;
 
@@ -818,10 +1048,11 @@ let object_order =
   ; "render_pipeline"
   ; "sampler"
   ; "shader_module"
-  ; "surface"
   ; "texture_view"
     (* texture_view before texture since Texture.create_view returns Texture_view.t *)
-  ; "texture" (* Objects that depend on above *)
+  ; "texture"
+    (* surface after texture because surface_texture output struct references Texture.t *)
+  ; "surface" (* Objects that depend on above *)
   ; "command_encoder"
   ; "compute_pass_encoder"
   ; "render_bundle_encoder"
@@ -846,9 +1077,12 @@ let gen_ml (api : Ir.api) : string =
   let bitflags = List.map api.bitflags ~f:gen_ml_bitflag |> String.concat ~sep:"\n" in
   (* Filter out objects we handle specially *)
   let special_objects = [ "instance"; "adapter"; "device"; "queue" ] in
-  let objects =
+  let regular_objects =
     List.filter api.objects ~f:(fun obj ->
       not (List.mem special_objects obj.name ~equal:String.equal))
+  in
+  let objects =
+    regular_objects
     |> sort_objects
     |> List.map ~f:(gen_ml_object api.structs)
     |> String.concat ~sep:"\n"
@@ -1117,9 +1351,12 @@ let gen_mli (api : Ir.api) : string =
   let bitflags = List.map api.bitflags ~f:gen_mli_bitflag |> String.concat ~sep:"\n" in
   (* Filter out objects we handle specially *)
   let special_objects = [ "instance"; "adapter"; "device"; "queue" ] in
-  let objects =
+  let regular_objects =
     List.filter api.objects ~f:(fun obj ->
       not (List.mem special_objects obj.name ~equal:String.equal))
+  in
+  let objects =
+    regular_objects
     |> sort_objects
     |> List.map ~f:(gen_mli_object api.structs)
     |> String.concat ~sep:"\n"
