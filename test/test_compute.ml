@@ -1,5 +1,34 @@
 open! Core
 
+(* Write RGBA pixel data to a PPM file (P6 binary format) *)
+let write_ppm ~filename ~width ~height ~data ~bytes_per_row =
+  Out_channel.with_file filename ~f:(fun oc ->
+    (* PPM header: P6 for binary RGB *)
+    Out_channel.fprintf oc "P6\n%d %d\n255\n" width height;
+    (* Write RGB data (skip alpha) *)
+    for y = 0 to height - 1 do
+      for x = 0 to width - 1 do
+        let offset = (y * bytes_per_row) + (x * 4) in
+        let r = Bigarray.Array1.get data offset in
+        let g = Bigarray.Array1.get data (offset + 1) in
+        let b = Bigarray.Array1.get data (offset + 2) in
+        Out_channel.output_char oc (Char.of_int_exn r);
+        Out_channel.output_char oc (Char.of_int_exn g);
+        Out_channel.output_char oc (Char.of_int_exn b)
+      done
+    done)
+;;
+
+(* Convert PPM to PNG using ImageMagick *)
+let ppm_to_png ~ppm_file ~png_file =
+  let cmd = sprintf "convert %s %s" ppm_file png_file in
+  match Core_unix.system cmd with
+  | Ok () -> true
+  | Error _ ->
+    eprintf "Warning: ImageMagick convert failed. PPM file saved as %s\n" ppm_file;
+    false
+;;
+
 let test_instance_and_adapter () =
   print_endline "Creating wgpu instance...";
   let instance = Wgpu.Instance.create () in
@@ -383,6 +412,16 @@ let test_render_clear () =
   if !all_correct
   then print_endline "SUCCESS: All pixels correctly cleared to red!"
   else print_endline "FAILURE: Some pixels incorrect.";
+  (* Write output to PPM and convert to PNG *)
+  let ppm_file = "render_clear.ppm" in
+  let png_file = "render_clear.png" in
+  write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
+  printf "  Written to %s\n" ppm_file;
+  if ppm_to_png ~ppm_file ~png_file
+  then (
+    printf "  Converted to %s\n" png_file;
+    (* Remove the PPM file since we have PNG *)
+    Core_unix.unlink ppm_file);
   Wgpu_low.buffer_unmap readback_buffer;
   (* Cleanup *)
   Wgpu_low.command_buffer_release command_buffer;
