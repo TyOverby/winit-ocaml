@@ -55,57 +55,33 @@ let manual_implementations =
     ; "queue", "write_texture" (* uses structs and pointer *)
     ; "queue", "on_submitted_work_done"
       (* async callback *)
-      (* Command encoder methods *)
-    ; "command_encoder", "begin_compute_pass" (* uses descriptor struct *)
-    ; "command_encoder", "begin_render_pass" (* uses descriptor struct *)
-    ; "command_encoder", "finish" (* uses descriptor struct *)
-    ; "command_encoder", "copy_buffer_to_buffer" (* implemented separately *)
+      (* Command encoder methods - keep only complex ones *)
+    ; "command_encoder", "begin_compute_pass" (* uses descriptor struct with arrays *)
+    ; "command_encoder", "begin_render_pass" (* uses descriptor struct with arrays *)
     ; "command_encoder", "copy_buffer_to_texture" (* uses structs *)
     ; "command_encoder", "copy_texture_to_buffer" (* uses structs *)
-    ; "command_encoder", "copy_texture_to_texture" (* uses structs *)
-    ; "command_encoder", "clear_buffer" (* simple, could auto-gen but may want manual *)
-    ; "command_encoder", "resolve_query_set" (* manual for clarity *)
-    ; "command_encoder", "write_timestamp"
-      (* manual for clarity *)
-      (* Compute pass encoder methods *)
-    ; "compute_pass_encoder", "set_bind_group" (* uses array for dynamic offsets *)
-    ; "compute_pass_encoder", "push_debug_group" (* simple but keeping manual *)
-    ; "compute_pass_encoder", "pop_debug_group" (* simple but keeping manual *)
-    ; "compute_pass_encoder", "insert_debug_marker"
-      (* simple but keeping manual *)
-      (* Render pass encoder methods *)
+    ; "command_encoder", "copy_texture_to_texture"
+      (* uses structs *)
+      (* Compute pass encoder methods - keep only array-based *)
+    ; "compute_pass_encoder", "set_bind_group"
+      (* uses array for dynamic offsets *)
+      (* Render pass encoder methods - keep only complex ones *)
     ; "render_pass_encoder", "set_bind_group" (* uses array for dynamic offsets *)
     ; "render_pass_encoder", "set_vertex_buffer" (* manual for better API *)
     ; "render_pass_encoder", "set_index_buffer" (* manual for better API *)
-    ; "render_pass_encoder", "set_scissor_rect" (* simple, could auto-gen *)
-    ; "render_pass_encoder", "set_viewport" (* simple, could auto-gen *)
     ; "render_pass_encoder", "set_blend_constant" (* uses struct *)
-    ; "render_pass_encoder", "set_stencil_reference" (* simple *)
-    ; "render_pass_encoder", "execute_bundles" (* uses array *)
-    ; "render_pass_encoder", "begin_occlusion_query" (* simple *)
-    ; "render_pass_encoder", "end_occlusion_query" (* simple *)
-    ; "render_pass_encoder", "push_debug_group" (* simple *)
-    ; "render_pass_encoder", "pop_debug_group" (* simple *)
-    ; "render_pass_encoder", "insert_debug_marker" (* simple *)
-    ; "render_pass_encoder", "write_timestamp"
-      (* simple *)
-      (* Render bundle encoder methods *)
+    ; "render_pass_encoder", "execute_bundles"
+      (* uses array *)
+      (* Render bundle encoder methods - keep only complex ones *)
     ; "render_bundle_encoder", "set_bind_group" (* uses array *)
     ; "render_bundle_encoder", "set_vertex_buffer" (* manual *)
-    ; "render_bundle_encoder", "set_index_buffer" (* manual *)
-    ; "render_bundle_encoder", "finish" (* uses descriptor *)
-    ; "render_bundle_encoder", "push_debug_group" (* simple *)
-    ; "render_bundle_encoder", "pop_debug_group" (* simple *)
-    ; "render_bundle_encoder", "insert_debug_marker"
-      (* simple *)
+    ; "render_bundle_encoder", "set_index_buffer"
+      (* manual *)
       (* Buffer methods *)
     ; "buffer", "map_async" (* async, we have sync wrapper *)
     ; "buffer", "get_mapped_range" (* returns pointer, we have bigarray wrapper *)
     ; "buffer", "get_const_mapped_range"
       (* returns pointer, we have bigarray wrapper *)
-      (* Texture methods *)
-    ; "texture", "create_view"
-      (* uses descriptor struct *)
       (* Shader module methods *)
     ; "shader_module", "get_compilation_info"
       (* async callback *)
@@ -233,6 +209,36 @@ let escape_keyword (name : string) : string =
 (** Check if a method uses callbacks (async) *)
 let method_is_async (method_ : Ir.method_) : bool = Option.is_some method_.callback
 
+(** Check if a type is simple (primitive, enum, bitflag, or object) *)
+let rec is_simple_member_type (type_ref : Ir.type_ref) : bool =
+  match type_ref with
+  | Primitive _ -> true
+  | Enum _ -> true
+  | Bitflag _ -> true
+  | Object _ -> true
+  | Optional inner -> is_simple_member_type inner
+  | Struct _ -> false
+  | Callback _ -> false
+  | Array _ -> false
+  | Pointer _ -> false
+;;
+
+(** Check if a struct has only simple members (no nested structs or arrays) and is an
+    input struct *)
+let is_simple_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
+  match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
+  | None -> false
+  | Some struct_ ->
+    (* Only input structs can be auto-generated - not output structs *)
+    let is_input_struct =
+      match struct_.type_ with
+      | Base_in | Standalone -> true
+      | Base_out | Base_in_out -> false
+    in
+    is_input_struct
+    && List.for_all struct_.members ~f:(fun member -> is_simple_member_type member.type_)
+;;
+
 (** Check if an argument type is "simple" (can be easily converted) *)
 let rec is_simple_arg_type (type_ref : Ir.type_ref) : bool =
   match type_ref with
@@ -241,10 +247,36 @@ let rec is_simple_arg_type (type_ref : Ir.type_ref) : bool =
   | Bitflag _ -> true
   | Object _ -> true
   | Optional inner -> is_simple_arg_type inner
-  | Struct _ -> false (* Structs require descriptor setup *)
+  | Struct _ -> false (* Structs handled separately *)
   | Callback _ -> false
   | Array _ -> false (* Arrays need special handling *)
   | Pointer _ -> false
+;;
+
+(** Check if a method has exactly one struct argument and the struct is simple and it's an
+    input arg *)
+let method_has_simple_struct_arg (structs : Ir.struct_ list) (method_ : Ir.method_) : bool
+  =
+  let struct_args =
+    List.filter method_.args ~f:(fun arg ->
+      match arg.type_ with
+      | Struct _ -> true
+      | _ -> false)
+  in
+  match struct_args with
+  | [ arg ] ->
+    (* Must be immutable pointer (input) not mutable (output) *)
+    let is_input =
+      match arg.pointer with
+      | Some `Immutable | None -> true
+      | Some `Mutable -> false
+    in
+    is_input
+    &&
+      (match arg.type_ with
+      | Struct name -> is_simple_struct structs name
+      | _ -> false)
+  | _ -> false
 ;;
 
 (** Check if a return type is "simple" *)
@@ -258,8 +290,8 @@ let is_simple_return_type (type_ref : Ir.type_ref) : bool =
   | _ -> false
 ;;
 
-(** Check if a method can be included in the high-level API *)
-let method_is_high_level (method_ : Ir.method_) : bool =
+(** Check if a method can be included in the high-level API (simple args only) *)
+let method_is_high_level_simple (method_ : Ir.method_) : bool =
   if method_is_async method_
   then false
   else (
@@ -272,6 +304,36 @@ let method_is_high_level (method_ : Ir.method_) : bool =
       | Some ret -> is_simple_return_type ret.type_
     in
     args_ok && return_ok)
+;;
+
+(** Check if a method can be auto-generated (either simple args or simple struct arg) *)
+let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bool =
+  if method_is_async method_
+  then false
+  else (
+    let return_ok =
+      match method_.returns with
+      | None -> true
+      | Some ret -> is_simple_return_type ret.type_
+    in
+    if not return_ok
+    then false
+    else (
+      (* Check if all args are simple *)
+      let all_simple =
+        List.for_all method_.args ~f:(fun arg -> is_simple_arg_type arg.type_)
+      in
+      if all_simple
+      then true
+      else (
+        (* Check if there's exactly one struct arg and it's simple, with other args simple *)
+        let non_struct_args_simple =
+          List.for_all method_.args ~f:(fun arg ->
+            match arg.type_ with
+            | Struct _ -> true (* will check separately *)
+            | _ -> is_simple_arg_type arg.type_)
+        in
+        non_struct_args_simple && method_has_simple_struct_arg structs method_)))
 ;;
 
 (** Get high-level OCaml type for a type_ref (for arguments) *)
@@ -302,8 +364,8 @@ let high_level_return_type (type_ref : Ir.type_ref) : string =
   | Primitive (Float32 | Float64) -> "float"
   | Primitive (String | Out_string | String_with_default_empty) -> "string"
   | Primitive C_void -> "nativeint"
-  | Enum _ -> "int" (* TODO: add of_int to enums *)
-  | Bitflag _ -> "int" (* bitflags return raw int, no of_int yet *)
+  | Enum name -> ocaml_module_name name ^ ".t"
+  | Bitflag _ -> "int" (* bitflags return raw int - could be combination of flags *)
   | Object name -> ocaml_module_name name ^ ".t"
   | _ -> "nativeint"
 ;;
@@ -328,8 +390,8 @@ let arg_to_low_level (arg_name : string) (type_ref : Ir.type_ref) : string =
 let return_to_high_level (result_expr : string) (type_ref : Ir.type_ref) : string =
   match type_ref with
   | Primitive _ -> result_expr
-  | Enum _ -> result_expr (* enums return as ints for now *)
-  | Bitflag _ -> result_expr (* bitflags return as ints for now *)
+  | Enum name -> sprintf "(%s.of_int (%s))" (ocaml_module_name name) result_expr
+  | Bitflag _ -> result_expr (* bitflags return as ints - could be combination of flags *)
   | Object name ->
     sprintf
       "({ %s.handle = %s } : %s.t)"
@@ -339,61 +401,309 @@ let return_to_high_level (result_expr : string) (type_ref : Ir.type_ref) : strin
   | _ -> result_expr
 ;;
 
+(** Generate code to convert a struct member value to low-level *)
+let member_to_low_level (member_name : string) (type_ref : Ir.type_ref) : string =
+  match type_ref with
+  | Primitive _ -> member_name
+  | Enum name -> sprintf "(%s.to_int %s)" (ocaml_module_name name) member_name
+  | Bitflag name -> sprintf "(%s.list_to_int %s)" (ocaml_module_name name) member_name
+  | Object name -> sprintf "%s.%s.handle" member_name (ocaml_module_name name)
+  | Optional (Enum name) ->
+    sprintf
+      "(match %s with Some x -> %s.to_int x | None -> 0)"
+      member_name
+      (ocaml_module_name name)
+  | Optional (Object name) ->
+    sprintf
+      "(match %s with Some x -> x.%s.handle | None -> 0n)"
+      member_name
+      (ocaml_module_name name)
+  | Optional _ -> member_name
+  | _ -> member_name
+;;
+
+(** Get default value for a type (used for optional struct members) *)
+let default_value_for_type (type_ref : Ir.type_ref) : string =
+  match type_ref with
+  | Primitive String_with_default_empty -> {|""|}
+  | Primitive Bool -> "false"
+  | Primitive (Uint32 | Int32) -> "0"
+  | Primitive (Uint64 | Int64 | Usize) -> "0L"
+  | Primitive (Float32 | Float64) -> "0.0"
+  | Optional _ -> "None"
+  | _ -> {|""|}
+;;
+
+(** Generate ML implementation for a method with struct argument *)
+let gen_ml_method_with_struct
+  (obj : Ir.object_)
+  (method_ : Ir.method_)
+  (struct_ : Ir.struct_)
+  (struct_arg : Ir.arg)
+  : string
+  =
+  ignore struct_arg;
+  let method_name = escape_keyword method_.name in
+  let low_level_func = sprintf "Wgpu_low.%s_%s" obj.name method_.name in
+  ignore low_level_func;
+  let struct_module = ocaml_module_name struct_.name in
+  let desc_var = "desc" in
+  (* Get non-struct args *)
+  let other_args =
+    List.filter method_.args ~f:(fun arg ->
+      match arg.type_ with
+      | Struct _ -> false
+      | _ -> true)
+  in
+  (* Build parameter list from struct members + other args *)
+  let struct_params =
+    List.map struct_.members ~f:(fun member ->
+      let param_name = escape_keyword member.name in
+      let is_optional =
+        member.optional
+        ||
+        match member.type_ with
+        | Primitive String_with_default_empty -> true
+        | Optional _ -> true
+        | _ -> false
+      in
+      param_name, member, is_optional)
+  in
+  let other_params =
+    List.map other_args ~f:(fun arg -> escape_keyword arg.name, arg, arg.optional)
+  in
+  (* Build function signature *)
+  let param_strs =
+    List.filter_map struct_params ~f:(fun (name, member, is_opt) ->
+      if is_opt
+      then Some (sprintf "?(%s = %s)" name (default_value_for_type member.type_))
+      else Some (sprintf "~%s" name))
+    @ List.filter_map other_params ~f:(fun (name, _arg, is_opt) ->
+      if is_opt then Some (sprintf "?%s" name) else Some (sprintf "~%s" name))
+  in
+  let param_list = "t " ^ String.concat ~sep:" " param_strs ^ " ()" in
+  (* Generate struct creation and field setting *)
+  let create_struct =
+    sprintf
+      "let %s = Wgpu_low.%s.%s_create () in"
+      desc_var
+      struct_module
+      (String.lowercase struct_.name)
+  in
+  let set_fields =
+    List.map struct_.members ~f:(fun member ->
+      let param_name = escape_keyword member.name in
+      let converted = member_to_low_level param_name member.type_ in
+      sprintf
+        "Wgpu_low.%s.%s_set_%s %s %s;"
+        struct_module
+        (String.lowercase struct_.name)
+        member.name
+        desc_var
+        converted)
+  in
+  (* Build the call *)
+  let call_args =
+    List.map method_.args ~f:(fun arg ->
+      match arg.type_ with
+      | Struct _ -> desc_var
+      | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
+  in
+  let call =
+    sprintf
+      "Wgpu_low.%s_%s t.handle %s"
+      obj.name
+      method_.name
+      (String.concat ~sep:" " call_args)
+  in
+  (* Generate result handling and struct freeing *)
+  let result_and_free =
+    match method_.returns with
+    | None ->
+      sprintf
+        "%s;\nWgpu_low.%s.%s_free %s"
+        call
+        struct_module
+        (String.lowercase struct_.name)
+        desc_var
+    | Some ret ->
+      sprintf
+        "let result = %s in\nWgpu_low.%s.%s_free %s;\n%s"
+        call
+        struct_module
+        (String.lowercase struct_.name)
+        desc_var
+        (return_to_high_level "result" ret.type_)
+  in
+  (* Put it all together *)
+  let body_lines = [ create_struct ] @ set_fields @ [ result_and_free ] in
+  let body = String.concat ~sep:"\n    " body_lines in
+  sprintf "  let %s %s =\n    %s\n" method_name param_list body
+;;
+
 (** Generate ML implementation for a method *)
-let gen_ml_method (obj : Ir.object_) (method_ : Ir.method_) : string option =
-  if not (method_is_high_level method_)
+let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
+  : string option
+  =
+  (* Skip methods that are manually implemented *)
+  if Set.mem manual_implementations (obj.name, method_.name)
+  then None
+  else if not (method_is_high_level structs method_)
   then None
   else (
-    let method_name = escape_keyword method_.name in
-    let low_level_func = sprintf "Wgpu_low.%s_%s" obj.name method_.name in
-    (* Build argument list *)
-    let args =
-      List.map method_.args ~f:(fun arg ->
-        let converted = arg_to_low_level arg.name arg.type_ in
-        arg.name, converted)
+    (* Check if this method has a struct argument *)
+    let struct_arg =
+      List.find method_.args ~f:(fun arg ->
+        match arg.type_ with
+        | Struct _ -> true
+        | _ -> false)
     in
-    let arg_names = List.map args ~f:fst in
-    let arg_conversions = List.map args ~f:snd in
-    (* Build function signature *)
-    let param_list =
-      if List.is_empty arg_names
-      then "t"
-      else "t " ^ String.concat ~sep:" " (List.map arg_names ~f:(sprintf "~%s"))
-    in
-    (* Build call *)
-    let call_args = "t.handle" :: arg_conversions in
-    let call = sprintf "%s %s" low_level_func (String.concat ~sep:" " call_args) in
-    (* Build return *)
-    let body =
-      match method_.returns with
-      | None -> call
-      | Some ret -> return_to_high_level call ret.type_
-    in
-    Some (sprintf "  let %s %s = %s\n" method_name param_list body))
+    match struct_arg with
+    | Some arg ->
+      (match arg.type_ with
+       | Struct struct_name ->
+         (match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
+          | Some struct_ -> Some (gen_ml_method_with_struct obj method_ struct_ arg)
+          | None -> None)
+       | _ -> None)
+    | None ->
+      (* Original simple method generation *)
+      let method_name = escape_keyword method_.name in
+      let low_level_func = sprintf "Wgpu_low.%s_%s" obj.name method_.name in
+      let args =
+        List.map method_.args ~f:(fun arg ->
+          let converted = arg_to_low_level arg.name arg.type_ in
+          arg.name, converted)
+      in
+      let arg_names = List.map args ~f:fst in
+      let arg_conversions = List.map args ~f:snd in
+      let param_list =
+        if List.is_empty arg_names
+        then "t"
+        else "t " ^ String.concat ~sep:" " (List.map arg_names ~f:(sprintf "~%s"))
+      in
+      let call_args = "t.handle" :: arg_conversions in
+      let call = sprintf "%s %s" low_level_func (String.concat ~sep:" " call_args) in
+      let body =
+        match method_.returns with
+        | None -> call
+        | Some ret -> return_to_high_level call ret.type_
+      in
+      Some (sprintf "  let %s %s = %s\n" method_name param_list body))
+;;
+
+(** Get high-level OCaml type for a struct member *)
+let high_level_member_type (member : Ir.struct_member) : string =
+  match member.type_ with
+  | Primitive Bool -> "bool"
+  | Primitive (Uint32 | Int32) -> "int"
+  | Primitive (Uint64 | Int64 | Usize) -> "int64"
+  | Primitive (Float32 | Float64) -> "float"
+  | Primitive (String | Out_string | String_with_default_empty) -> "string"
+  | Enum name -> ocaml_module_name name ^ ".t"
+  | Bitflag name -> ocaml_module_name name ^ ".t list"
+  | Object name -> ocaml_module_name name ^ ".t"
+  | Optional (Enum name) -> ocaml_module_name name ^ ".t option"
+  | Optional (Object name) -> ocaml_module_name name ^ ".t option"
+  | Optional inner -> high_level_arg_type inner ^ " option"
+  | _ -> "nativeint"
+;;
+
+(** Generate MLI signature for a method with struct argument *)
+let gen_mli_method_with_struct
+  (_obj : Ir.object_)
+  (method_ : Ir.method_)
+  (struct_ : Ir.struct_)
+  : string
+  =
+  let method_name = escape_keyword method_.name in
+  (* Get non-struct args *)
+  let other_args =
+    List.filter method_.args ~f:(fun arg ->
+      match arg.type_ with
+      | Struct _ -> false
+      | _ -> true)
+  in
+  (* Build parameter types from struct members + other args *)
+  let struct_param_types =
+    List.map struct_.members ~f:(fun member ->
+      let param_name = escape_keyword member.name in
+      let type_str = high_level_member_type member in
+      let is_optional =
+        member.optional
+        ||
+        match member.type_ with
+        | Primitive String_with_default_empty -> true
+        | Optional _ -> true
+        | _ -> false
+      in
+      if is_optional
+      then sprintf "?%s:%s" param_name type_str
+      else sprintf "%s:%s" param_name type_str)
+  in
+  let other_param_types =
+    List.map other_args ~f:(fun arg ->
+      let param_name = escape_keyword arg.name in
+      let type_str = high_level_arg_type arg.type_ in
+      if arg.optional
+      then sprintf "?%s:%s" param_name type_str
+      else sprintf "%s:%s" param_name type_str)
+  in
+  let return_type =
+    match method_.returns with
+    | None -> "unit"
+    | Some ret -> high_level_return_type ret.type_
+  in
+  let all_params = struct_param_types @ other_param_types in
+  let type_sig =
+    sprintf "t -> %s -> unit -> %s" (String.concat ~sep:" -> " all_params) return_type
+  in
+  sprintf "  val %s : %s\n" method_name type_sig
 ;;
 
 (** Generate MLI signature for a method *)
-let gen_mli_method (_obj : Ir.object_) (method_ : Ir.method_) : string option =
-  if not (method_is_high_level method_)
+let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
+  : string option
+  =
+  (* Skip methods that are manually implemented *)
+  if Set.mem manual_implementations (obj.name, method_.name)
+  then None
+  else if not (method_is_high_level structs method_)
   then None
   else (
-    let method_name = escape_keyword method_.name in
-    (* Build argument types *)
-    let arg_types =
-      List.map method_.args ~f:(fun arg ->
-        sprintf "%s:%s" arg.name (high_level_arg_type arg.type_))
+    (* Check if this method has a struct argument *)
+    let struct_arg =
+      List.find method_.args ~f:(fun arg ->
+        match arg.type_ with
+        | Struct _ -> true
+        | _ -> false)
     in
-    let return_type =
-      match method_.returns with
-      | None -> "unit"
-      | Some ret -> high_level_return_type ret.type_
-    in
-    let type_sig =
-      if List.is_empty arg_types
-      then sprintf "t -> %s" return_type
-      else sprintf "t -> %s -> %s" (String.concat ~sep:" -> " arg_types) return_type
-    in
-    Some (sprintf "  val %s : %s\n" method_name type_sig))
+    match struct_arg with
+    | Some arg ->
+      (match arg.type_ with
+       | Struct struct_name ->
+         (match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
+          | Some struct_ -> Some (gen_mli_method_with_struct obj method_ struct_)
+          | None -> None)
+       | _ -> None)
+    | None ->
+      (* Original simple method generation *)
+      let method_name = escape_keyword method_.name in
+      let arg_types =
+        List.map method_.args ~f:(fun arg ->
+          sprintf "%s:%s" arg.name (high_level_arg_type arg.type_))
+      in
+      let return_type =
+        match method_.returns with
+        | None -> "unit"
+        | Some ret -> high_level_return_type ret.type_
+      in
+      let type_sig =
+        if List.is_empty arg_types
+        then sprintf "t -> %s" return_type
+        else sprintf "t -> %s -> %s" (String.concat ~sep:" -> " arg_types) return_type
+      in
+      Some (sprintf "  val %s : %s\n" method_name type_sig))
 ;;
 
 (** Generate high-level OCaml code for an enum type (re-exports low-level) *)
@@ -416,7 +726,12 @@ let gen_mli_enum (enum : Ir.enum) : string =
     |> String.concat ~sep:"\n"
   in
   sprintf
-    "module %s : sig\n%s  type t =\n%s\n\n  val to_int : t -> int\nend\n"
+    "module %s : sig\n\
+     %s  type t =\n\
+     %s\n\n\
+    \  val to_int : t -> int\n\
+    \  val of_int : int -> t\n\
+     end\n"
     module_name
     doc_comment
     variants
@@ -454,10 +769,10 @@ let gen_mli_bitflag (bitflag : Ir.bitflag) : string =
 ;;
 
 (** Generate high-level OCaml code for an object type with methods *)
-let gen_ml_object (obj : Ir.object_) : string =
+let gen_ml_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
   let module_name = ocaml_module_name obj.name in
   let methods =
-    List.filter_map obj.methods ~f:(gen_ml_method obj) |> String.concat ~sep:""
+    List.filter_map obj.methods ~f:(gen_ml_method structs obj) |> String.concat ~sep:""
   in
   sprintf
     "module %s = struct\n\
@@ -471,7 +786,7 @@ let gen_ml_object (obj : Ir.object_) : string =
 ;;
 
 (** Generate MLI for an object type with methods *)
-let gen_mli_object (obj : Ir.object_) : string =
+let gen_mli_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
   let module_name = ocaml_module_name obj.name in
   let doc_comment =
     match useful_doc obj.doc with
@@ -479,7 +794,7 @@ let gen_mli_object (obj : Ir.object_) : string =
     | Some doc -> sprintf "  (** %s *)\n\n" doc
   in
   let methods =
-    List.filter_map obj.methods ~f:(gen_mli_method obj) |> String.concat ~sep:""
+    List.filter_map obj.methods ~f:(gen_mli_method structs obj) |> String.concat ~sep:""
   in
   sprintf
     "module %s : sig\n%s  type t\n\n  val release : t -> unit\n%send\n"
@@ -504,8 +819,9 @@ let object_order =
   ; "sampler"
   ; "shader_module"
   ; "surface"
-  ; "texture"
-  ; "texture_view" (* Objects that depend on above *)
+  ; "texture_view"
+    (* texture_view before texture since Texture.create_view returns Texture_view.t *)
+  ; "texture" (* Objects that depend on above *)
   ; "command_encoder"
   ; "compute_pass_encoder"
   ; "render_bundle_encoder"
@@ -534,19 +850,28 @@ let gen_ml (api : Ir.api) : string =
     List.filter api.objects ~f:(fun obj ->
       not (List.mem special_objects obj.name ~equal:String.equal))
     |> sort_objects
-    |> List.map ~f:gen_ml_object
+    |> List.map ~f:(gen_ml_object api.structs)
     |> String.concat ~sep:"\n"
   in
   (* Adapter module *)
   let adapter_module =
     {|module Adapter_info = struct
-  type t = Wgpu_low.adapter_info =
+  type t =
     { vendor : string
     ; architecture : string
     ; device : string
     ; description : string
-    ; backend_type : int
-    ; adapter_type : int
+    ; backend_type : Backend_type.t
+    ; adapter_type : Adapter_type.t
+    }
+
+  let of_low (info : Wgpu_low.adapter_info) : t =
+    { vendor = info.vendor
+    ; architecture = info.architecture
+    ; device = info.device
+    ; description = info.description
+    ; backend_type = Backend_type.of_int info.backend_type
+    ; adapter_type = Adapter_type.of_int info.adapter_type
     }
 end
 
@@ -612,9 +937,34 @@ module Device = struct
     Wgpu_low.Texture_descriptor.texture_descriptor_free desc;
     ({ Texture.handle = texture } : Texture.t)
 
-  let create_sampler t ?(label = "") () =
-    ignore (label : string);
-    let sampler = Wgpu_low.device_create_sampler t.handle 0n in
+  let create_sampler t ?(label = "")
+      ?(address_mode_u = Address_mode.Clamp_to_edge)
+      ?(address_mode_v = Address_mode.Clamp_to_edge)
+      ?(address_mode_w = Address_mode.Clamp_to_edge)
+      ?(mag_filter = Filter_mode.Nearest)
+      ?(min_filter = Filter_mode.Nearest)
+      ?(mipmap_filter = Mipmap_filter_mode.Nearest)
+      ?(lod_min_clamp = 0.0)
+      ?(lod_max_clamp = 32.0)
+      ?(compare : Compare_function.t option)
+      ?(max_anisotropy = 1)
+      () =
+    let desc = Wgpu_low.Sampler_descriptor.sampler_descriptor_create () in
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_label desc label;
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_u desc (Address_mode.to_int address_mode_u);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_v desc (Address_mode.to_int address_mode_v);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_w desc (Address_mode.to_int address_mode_w);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_mag_filter desc (Filter_mode.to_int mag_filter);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_min_filter desc (Filter_mode.to_int min_filter);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_mipmap_filter desc (Mipmap_filter_mode.to_int mipmap_filter);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_lod_min_clamp desc lod_min_clamp;
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_lod_max_clamp desc lod_max_clamp;
+    (match compare with
+     | Some cmp -> Wgpu_low.Sampler_descriptor.sampler_descriptor_set_compare desc (Compare_function.to_int cmp)
+     | None -> ());
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_max_anisotropy desc max_anisotropy;
+    let sampler = Wgpu_low.device_create_sampler t.handle desc in
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_free desc;
     ({ Sampler.handle = sampler } : Sampler.t)
 
   let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
@@ -623,10 +973,32 @@ module Device = struct
     ({ Compute_pipeline.handle = pipeline } : Compute_pipeline.t)
 
   let create_render_pipeline t ?(label = "") ~shader_module ~vertex_entry_point
-      ~fragment_entry_point ~color_format () =
-    let pipeline = Wgpu_low.device_create_render_pipeline_simple t.handle
+      ~fragment_entry_point ~color_format
+      ?(topology = Primitive_topology.Triangle_list)
+      ?(front_face = Front_face.Ccw)
+      ?(cull_mode = Cull_mode.None)
+      ?(blend : (Blend_factor.t * Blend_factor.t * Blend_operation.t *
+                 Blend_factor.t * Blend_factor.t * Blend_operation.t) option)
+      ?(write_mask = [ Color_write_mask.All ])
+      () =
+    let blend_enabled, color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op =
+      match blend with
+      | None -> false, Blend_factor.One, Blend_factor.Zero, Blend_operation.Add,
+                       Blend_factor.One, Blend_factor.Zero, Blend_operation.Add
+      | Some (cs, cd, co, as_, ad, ao) -> true, cs, cd, co, as_, ad, ao
+    in
+    let pipeline = Wgpu_low.device_create_render_pipeline_full t.handle
       label shader_module.Shader_module.handle vertex_entry_point
-      fragment_entry_point (Texture_format.to_int color_format) in
+      fragment_entry_point (Texture_format.to_int color_format)
+      (Primitive_topology.to_int topology)
+      (Front_face.to_int front_face)
+      (Cull_mode.to_int cull_mode)
+      blend_enabled
+      (Blend_factor.to_int color_src) (Blend_factor.to_int color_dst)
+      (Blend_operation.to_int color_op)
+      (Blend_factor.to_int alpha_src) (Blend_factor.to_int alpha_dst)
+      (Blend_operation.to_int alpha_op)
+      (Color_write_mask.list_to_int write_mask) in
     ({ Render_pipeline.handle = pipeline } : Render_pipeline.t)
 
   let create_bind_group_layout_for_storage_buffer t ?(label = "") ~binding ?(read_only = false) () =
@@ -650,7 +1022,7 @@ end
 module Adapter = struct
   type t = { handle : Wgpu_low.adapter }
 
-  let get_info t = Wgpu_low.adapter_get_info t.handle
+  let get_info t = Adapter_info.of_low (Wgpu_low.adapter_get_info t.handle)
   let release t = Wgpu_low.adapter_release t.handle
   let request_device t =
     let device = Wgpu_low.adapter_request_device_sync t.handle in
@@ -667,8 +1039,13 @@ end
   let create () = { handle = Wgpu_low.create_instance () }
   let release t = Wgpu_low.instance_release t.handle
 
-  let request_adapter t =
-    let adapter = Wgpu_low.instance_request_adapter_sync t.handle in
+  let request_adapter t
+      ?(power_preference = Power_preference.Undefined)
+      ?(backend_type = Backend_type.Undefined)
+      () =
+    let adapter = Wgpu_low.instance_request_adapter_sync t.handle
+      (Power_preference.to_int power_preference)
+      (Backend_type.to_int backend_type) in
     { Adapter.handle = adapter }
 end
 
@@ -678,10 +1055,14 @@ let begin_compute_pass (encoder : Command_encoder.t) ?(label = "") () =
   let pass = Wgpu_low.command_encoder_begin_compute_pass_simple encoder.handle label in
   ({ Compute_pass_encoder.handle = pass } : Compute_pass_encoder.t)
 
-let begin_render_pass (encoder : Command_encoder.t) ?(label = "") ~color_view ~clear_color () =
+let begin_render_pass (encoder : Command_encoder.t) ?(label = "") ~color_view
+    ?(load_op = Load_op.Clear) ?(store_op = Store_op.Store)
+    ~clear_color () =
   let (r, g, b, a) = clear_color in
-  let pass = Wgpu_low.command_encoder_begin_render_pass_simple encoder.handle
-    label color_view.Texture_view.handle r g b a in
+  let pass = Wgpu_low.command_encoder_begin_render_pass_configurable encoder.handle
+    label color_view.Texture_view.handle
+    (Load_op.to_int load_op) (Store_op.to_int store_op)
+    r g b a in
   ({ Render_pass_encoder.handle = pass } : Render_pass_encoder.t)
 
 let finish (encoder : Command_encoder.t) ?(label = "") () =
@@ -708,8 +1089,21 @@ let get_mapped_range (buffer : Buffer.t) ~offset ~size =
 let get_const_mapped_range (buffer : Buffer.t) ~offset ~size =
   Wgpu_low.buffer_get_const_mapped_range_bigarray buffer.handle offset size
 
-let create_texture_view (texture : Texture.t) ?(label = "") () =
-  let view = Wgpu_low.texture_create_view_simple texture.handle label in
+let create_texture_view (texture : Texture.t) ?(label = "")
+    ?(format = Texture_format.Undefined)
+    ?(dimension = Texture_view_dimension.Undefined)
+    ?(aspect = Texture_aspect.All)
+    ?(base_mip_level = 0)
+    ?(mip_level_count = 0xFFFFFFFF) (* WGPU_MIP_LEVEL_COUNT_UNDEFINED *)
+    ?(base_array_layer = 0)
+    ?(array_layer_count = 0xFFFFFFFF) (* WGPU_ARRAY_LAYER_COUNT_UNDEFINED *)
+    () =
+  let view = Wgpu_low.texture_create_view_configurable texture.handle label
+    (Texture_format.to_int format)
+    (Texture_view_dimension.to_int dimension)
+    (Texture_aspect.to_int aspect)
+    base_mip_level mip_level_count
+    base_array_layer array_layer_count in
   ({ Texture_view.handle = view } : Texture_view.t)
 |}
   in
@@ -727,7 +1121,7 @@ let gen_mli (api : Ir.api) : string =
     List.filter api.objects ~f:(fun obj ->
       not (List.mem special_objects obj.name ~equal:String.equal))
     |> sort_objects
-    |> List.map ~f:gen_mli_object
+    |> List.map ~f:(gen_mli_object api.structs)
     |> String.concat ~sep:"\n"
   in
   (* Adapter module *)
@@ -738,8 +1132,8 @@ let gen_mli (api : Ir.api) : string =
     ; architecture : string
     ; device : string
     ; description : string
-    ; backend_type : int
-    ; adapter_type : int
+    ; backend_type : Backend_type.t
+    ; adapter_type : Adapter_type.t
     }
 end
 
@@ -779,17 +1173,30 @@ module Device : sig
     ?dimension:Texture_dimension.t -> ?mip_level_count:int -> ?sample_count:int ->
     unit -> Texture.t
 
-  (** Create a sampler with default settings *)
-  val create_sampler : t -> ?label:string -> unit -> Sampler.t
+  (** Create a sampler *)
+  val create_sampler : t -> ?label:string ->
+    ?address_mode_u:Address_mode.t -> ?address_mode_v:Address_mode.t ->
+    ?address_mode_w:Address_mode.t -> ?mag_filter:Filter_mode.t ->
+    ?min_filter:Filter_mode.t -> ?mipmap_filter:Mipmap_filter_mode.t ->
+    ?lod_min_clamp:float -> ?lod_max_clamp:float ->
+    ?compare:Compare_function.t -> ?max_anisotropy:int ->
+    unit -> Sampler.t
 
   (** Create a compute pipeline *)
   val create_compute_pipeline : t -> ?label:string -> layout:Pipeline_layout.t ->
     module_:Shader_module.t -> entry_point:string -> unit -> Compute_pipeline.t
 
-  (** Create a render pipeline (uses single shader module for vertex and fragment) *)
+  (** Create a render pipeline (uses single shader module for vertex and fragment).
+      The [blend] parameter is a tuple of (color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op). *)
   val create_render_pipeline : t -> ?label:string -> shader_module:Shader_module.t ->
     vertex_entry_point:string -> fragment_entry_point:string ->
-    color_format:Texture_format.t -> unit -> Render_pipeline.t
+    color_format:Texture_format.t ->
+    ?topology:Primitive_topology.t -> ?front_face:Front_face.t ->
+    ?cull_mode:Cull_mode.t ->
+    ?blend:(Blend_factor.t * Blend_factor.t * Blend_operation.t *
+            Blend_factor.t * Blend_factor.t * Blend_operation.t) ->
+    ?write_mask:Color_write_mask.t list ->
+    unit -> Render_pipeline.t
 
   (** Create a bind group layout for a single storage buffer *)
   val create_bind_group_layout_for_storage_buffer : t -> ?label:string -> binding:int ->
@@ -824,7 +1231,8 @@ end
 
   val create : unit -> t
   val release : t -> unit
-  val request_adapter : t -> Adapter.t
+  val request_adapter : t -> ?power_preference:Power_preference.t ->
+    ?backend_type:Backend_type.t -> unit -> Adapter.t
 end
 
 (** Begin a compute pass on a command encoder *)
@@ -832,6 +1240,7 @@ val begin_compute_pass : Command_encoder.t -> ?label:string -> unit -> Compute_p
 
 (** Begin a render pass on a command encoder with a single color attachment *)
 val begin_render_pass : Command_encoder.t -> ?label:string -> color_view:Texture_view.t ->
+  ?load_op:Load_op.t -> ?store_op:Store_op.t ->
   clear_color:(float * float * float * float) -> unit -> Render_pass_encoder.t
 
 (** Finish recording commands and get a command buffer *)
@@ -859,7 +1268,10 @@ val get_const_mapped_range : Buffer.t -> offset:int64 -> size:int64 ->
   (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 
 (** Create a texture view from a texture *)
-val create_texture_view : Texture.t -> ?label:string -> unit -> Texture_view.t
+val create_texture_view : Texture.t -> ?label:string ->
+  ?format:Texture_format.t -> ?dimension:Texture_view_dimension.t ->
+  ?aspect:Texture_aspect.t -> ?base_mip_level:int -> ?mip_level_count:int ->
+  ?base_array_layer:int -> ?array_layer_count:int -> unit -> Texture_view.t
 |}
   in
   String.concat [ header; enums; bitflags; objects; adapter_module; instance_module ]
@@ -871,7 +1283,7 @@ let validate_method_coverage (api : Ir.api) : string list =
   let errors = ref [] in
   List.iter api.objects ~f:(fun obj ->
     List.iter obj.methods ~f:(fun method_ ->
-      if not (method_is_high_level method_)
+      if not (method_is_high_level api.structs method_)
       then
         if (* This method isn't auto-generated, check if it's accounted for *)
            not (method_is_accounted_for obj.name method_.name)
@@ -882,7 +1294,11 @@ let validate_method_coverage (api : Ir.api) : string list =
             else (
               let non_simple_args =
                 List.filter method_.args ~f:(fun arg ->
-                  not (is_simple_arg_type arg.type_))
+                  match arg.type_ with
+                  | Struct name ->
+                    (* Check if struct is simple *)
+                    not (is_simple_struct api.structs name)
+                  | _ -> not (is_simple_arg_type arg.type_))
                 |> List.map ~f:(fun arg ->
                   sprintf
                     "%s: %s"
