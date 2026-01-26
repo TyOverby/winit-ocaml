@@ -1003,3 +1003,46 @@ The generator now has infrastructure to inject auto-generated methods into speci
 2. Add chained struct support (nextInChain pattern)
 3. Document the complete high-level API
 4. Gradually migrate simple special object methods to auto-generation
+
+---
+
+## 2026-01-26: Device Methods Migrated to Auto-Generation
+
+### Accomplished
+Migrated multiple Device methods from hardcoded implementations to auto-generation:
+
+**Array-of-struct methods** (using entry struct infrastructure):
+- `create_bind_group_layout` - takes `entries:Bind_group_layout_entry.t list`
+- `create_bind_group` - takes `entries:Bind_group_entry.t list`
+- `create_pipeline_layout` - takes `bind_group_layouts:Bind_group_layout.t list`
+
+**Simple descriptor methods**:
+- `create_query_set` - simple descriptor with label, type (enum), count
+- `create_render_bundle_encoder` - descriptor with array of enums
+
+**Simple methods** (no descriptors):
+- `destroy` - no args, no return
+- `has_feature` - enum arg, bool return
+- `push_error_scope` - enum arg, no return
+- `set_label` - string arg, no return
+
+### Generator Improvements
+- Fixed `default_value_for_type` to handle `Pointer { inner = Array _ }` as `[]`
+- Fixed `generate_array_of_structs_conversion` to add type annotations on lambda parameters
+- Fixed `member_to_low_level` to handle `Pointer { inner = Array { elem = Object/Enum } }`
+
+### Code Reduction
+- Removed ~200 lines of hardcoded implementations
+- Methods now auto-generated from YAML specification
+- Test updated to use new entries-based API for `create_bind_group`
+
+### Methods Still Manual
+- `release`, `get_queue`, `poll` - special return types or C helpers
+- `create_buffer`, `create_texture`, `create_sampler` - complex descriptor handling
+- `create_shader_module` - uses chained WGSL struct
+- `create_compute_pipeline`, `create_render_pipeline` - deeply nested descriptors
+
+### Next Steps
+1. Consider migrating more descriptor-based methods
+2. Add chained struct support (nextInChain pattern)
+3. Document the complete high-level API
