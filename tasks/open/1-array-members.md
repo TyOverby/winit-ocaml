@@ -6,6 +6,8 @@ Enable auto-generation of methods where descriptor structs contain arrays of oth
 - `device.create_bind_group_layout` - uses `bind_group_layout_descriptor` with array of `bind_group_layout_entry`
 - `device.create_bind_group` - uses `bind_group_descriptor` with array of `bind_group_entry`
 
+Once this task is done, we'll be able to remove more hardcoded functions in the generator.
+
 ## Current State
 
 ### What's Done
