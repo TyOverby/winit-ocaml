@@ -772,7 +772,7 @@ module Bind_Group_Descriptor : sig
   val bind_group_descriptor_free : t -> unit
   val bind_group_descriptor_set_label : t -> string -> unit
   val bind_group_descriptor_set_layout : t -> nativeint -> unit
-  val bind_group_descriptor_set_entries : t -> nativeint -> unit
+  val bind_group_descriptor_set_entries : t -> nativeint array -> unit
   val bind_group_descriptor_get_label : t -> string
   val bind_group_descriptor_get_layout : t -> nativeint
   val bind_group_descriptor_get_entries : t -> nativeint
@@ -801,7 +801,7 @@ module Bind_Group_Layout_Descriptor : sig
   val bind_group_layout_descriptor_create : unit -> t
   val bind_group_layout_descriptor_free : t -> unit
   val bind_group_layout_descriptor_set_label : t -> string -> unit
-  val bind_group_layout_descriptor_set_entries : t -> nativeint -> unit
+  val bind_group_layout_descriptor_set_entries : t -> nativeint array -> unit
   val bind_group_layout_descriptor_get_label : t -> string
   val bind_group_layout_descriptor_get_entries : t -> nativeint
 end
@@ -918,7 +918,7 @@ module Compilation_Info : sig
   type t = nativeint
   val compilation_info_create : unit -> t
   val compilation_info_free : t -> unit
-  val compilation_info_set_messages : t -> nativeint -> unit
+  val compilation_info_set_messages : t -> nativeint array -> unit
   val compilation_info_get_messages : t -> nativeint
 end
 
@@ -1015,7 +1015,7 @@ module Device_Descriptor : sig
   val device_descriptor_create : unit -> t
   val device_descriptor_free : t -> unit
   val device_descriptor_set_label : t -> string -> unit
-  val device_descriptor_set_required_features : t -> nativeint -> unit
+  val device_descriptor_set_required_features : t -> int array -> unit
   val device_descriptor_set_required_limits : t -> nativeint -> unit
   val device_descriptor_set_default_queue : t -> nativeint -> unit
   val device_descriptor_set_device_lost_callback_info : t -> nativeint -> unit
@@ -1046,8 +1046,8 @@ module Fragment_State : sig
   val fragment_state_free : t -> unit
   val fragment_state_set_module : t -> nativeint -> unit
   val fragment_state_set_entry_point : t -> string -> unit
-  val fragment_state_set_constants : t -> nativeint -> unit
-  val fragment_state_set_targets : t -> nativeint -> unit
+  val fragment_state_set_constants : t -> nativeint array -> unit
+  val fragment_state_set_targets : t -> nativeint array -> unit
   val fragment_state_get_module : t -> nativeint
   val fragment_state_get_entry_point : t -> string
   val fragment_state_get_constants : t -> nativeint
@@ -1187,7 +1187,7 @@ module Pipeline_Layout_Descriptor : sig
   val pipeline_layout_descriptor_create : unit -> t
   val pipeline_layout_descriptor_free : t -> unit
   val pipeline_layout_descriptor_set_label : t -> string -> unit
-  val pipeline_layout_descriptor_set_bind_group_layouts : t -> nativeint -> unit
+  val pipeline_layout_descriptor_set_bind_group_layouts : t -> nativeint array -> unit
   val pipeline_layout_descriptor_get_label : t -> string
   val pipeline_layout_descriptor_get_bind_group_layouts : t -> nativeint
 end
@@ -1214,7 +1214,7 @@ module Programmable_Stage_Descriptor : sig
   val programmable_stage_descriptor_free : t -> unit
   val programmable_stage_descriptor_set_module : t -> nativeint -> unit
   val programmable_stage_descriptor_set_entry_point : t -> string -> unit
-  val programmable_stage_descriptor_set_constants : t -> nativeint -> unit
+  val programmable_stage_descriptor_set_constants : t -> nativeint array -> unit
   val programmable_stage_descriptor_get_module : t -> nativeint
   val programmable_stage_descriptor_get_entry_point : t -> string
   val programmable_stage_descriptor_get_constants : t -> nativeint
@@ -1253,7 +1253,7 @@ module Render_Bundle_Encoder_Descriptor : sig
   val render_bundle_encoder_descriptor_create : unit -> t
   val render_bundle_encoder_descriptor_free : t -> unit
   val render_bundle_encoder_descriptor_set_label : t -> string -> unit
-  val render_bundle_encoder_descriptor_set_color_formats : t -> nativeint -> unit
+  val render_bundle_encoder_descriptor_set_color_formats : t -> int array -> unit
   val render_bundle_encoder_descriptor_set_depth_stencil_format : t -> int -> unit
   val render_bundle_encoder_descriptor_set_sample_count : t -> int -> unit
   val render_bundle_encoder_descriptor_set_depth_read_only : t -> bool -> unit
@@ -1313,7 +1313,7 @@ module Render_Pass_Descriptor : sig
   val render_pass_descriptor_create : unit -> t
   val render_pass_descriptor_free : t -> unit
   val render_pass_descriptor_set_label : t -> string -> unit
-  val render_pass_descriptor_set_color_attachments : t -> nativeint -> unit
+  val render_pass_descriptor_set_color_attachments : t -> nativeint array -> unit
   val render_pass_descriptor_set_depth_stencil_attachment : t -> nativeint -> unit
   val render_pass_descriptor_set_occlusion_query_set : t -> nativeint -> unit
   val render_pass_descriptor_set_timestamp_writes : t -> nativeint -> unit
@@ -1472,7 +1472,7 @@ module Supported_Features : sig
   type t = nativeint
   val supported_features_create : unit -> t
   val supported_features_free : t -> unit
-  val supported_features_set_features : t -> nativeint -> unit
+  val supported_features_set_features : t -> int array -> unit
   val supported_features_get_features : t -> nativeint
 end
 
@@ -1480,7 +1480,7 @@ module Supported_WGSL_Language_Features : sig
   type t = nativeint
   val supported_WGSL_language_features_create : unit -> t
   val supported_WGSL_language_features_free : t -> unit
-  val supported_WGSL_language_features_set_features : t -> nativeint -> unit
+  val supported_WGSL_language_features_set_features : t -> int array -> unit
   val supported_WGSL_language_features_get_features : t -> nativeint
 end
 
@@ -1489,9 +1489,9 @@ module Surface_Capabilities : sig
   val surface_capabilities_create : unit -> t
   val surface_capabilities_free : t -> unit
   val surface_capabilities_set_usages : t -> int -> unit
-  val surface_capabilities_set_formats : t -> nativeint -> unit
-  val surface_capabilities_set_present_modes : t -> nativeint -> unit
-  val surface_capabilities_set_alpha_modes : t -> nativeint -> unit
+  val surface_capabilities_set_formats : t -> int array -> unit
+  val surface_capabilities_set_present_modes : t -> int array -> unit
+  val surface_capabilities_set_alpha_modes : t -> int array -> unit
   val surface_capabilities_get_usages : t -> int
   val surface_capabilities_get_formats : t -> nativeint
   val surface_capabilities_get_present_modes : t -> nativeint
@@ -1507,7 +1507,7 @@ module Surface_Configuration : sig
   val surface_configuration_set_usage : t -> int -> unit
   val surface_configuration_set_width : t -> int -> unit
   val surface_configuration_set_height : t -> int -> unit
-  val surface_configuration_set_view_formats : t -> nativeint -> unit
+  val surface_configuration_set_view_formats : t -> int array -> unit
   val surface_configuration_set_alpha_mode : t -> int -> unit
   val surface_configuration_set_present_mode : t -> int -> unit
   val surface_configuration_get_device : t -> nativeint
@@ -1653,7 +1653,7 @@ module Texture_Descriptor : sig
   val texture_descriptor_set_format : t -> int -> unit
   val texture_descriptor_set_mip_level_count : t -> int -> unit
   val texture_descriptor_set_sample_count : t -> int -> unit
-  val texture_descriptor_set_view_formats : t -> nativeint -> unit
+  val texture_descriptor_set_view_formats : t -> int array -> unit
   val texture_descriptor_get_label : t -> string
   val texture_descriptor_get_usage : t -> int
   val texture_descriptor_get_dimension : t -> int
@@ -1706,7 +1706,7 @@ module Vertex_Buffer_Layout : sig
   val vertex_buffer_layout_free : t -> unit
   val vertex_buffer_layout_set_step_mode : t -> int -> unit
   val vertex_buffer_layout_set_array_stride : t -> int64 -> unit
-  val vertex_buffer_layout_set_attributes : t -> nativeint -> unit
+  val vertex_buffer_layout_set_attributes : t -> nativeint array -> unit
   val vertex_buffer_layout_get_step_mode : t -> int
   val vertex_buffer_layout_get_array_stride : t -> int64
   val vertex_buffer_layout_get_attributes : t -> nativeint
@@ -1718,8 +1718,8 @@ module Vertex_State : sig
   val vertex_state_free : t -> unit
   val vertex_state_set_module : t -> nativeint -> unit
   val vertex_state_set_entry_point : t -> string -> unit
-  val vertex_state_set_constants : t -> nativeint -> unit
-  val vertex_state_set_buffers : t -> nativeint -> unit
+  val vertex_state_set_constants : t -> nativeint array -> unit
+  val vertex_state_set_buffers : t -> nativeint array -> unit
   val vertex_state_get_module : t -> nativeint
   val vertex_state_get_entry_point : t -> string
   val vertex_state_get_constants : t -> nativeint

@@ -260,6 +260,21 @@ CAMLprim value caml_wgpu_%s_free(value handle) {
     c_name
 ;;
 
+(** Compute the count field name for an array field.
+    e.g., "entries" -> "entryCount", "bind_group_layouts" -> "bindGroupLayoutCount" *)
+let array_count_field_name (array_field : string) : string =
+  let camel = to_camel_case array_field in
+  (* Remove trailing 's' to get singular, then add 'Count' *)
+  let singular =
+    if String.is_suffix camel ~suffix:"ies"
+    then String.chop_suffix_exn camel ~suffix:"ies" ^ "y"
+    else if String.is_suffix camel ~suffix:"s"
+    then String.chop_suffix_exn camel ~suffix:"s"
+    else camel
+  in
+  singular ^ "Count"
+;;
+
 (** Generate C setter for a struct member *)
 let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : string =
   let c_struct = c_type_name struct_.name in
@@ -301,16 +316,96 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
         c_field
         (c_type_of_type_ref member.type_)
     | Callback _ -> sprintf "  (void)s; /* TODO: callback field %s */" c_field
-    | Array _ -> sprintf "  (void)s; /* TODO: array field %s */" c_field
+    | Array { elem; _ } ->
+      let elem_c_type = c_type_of_type_ref elem in
+      let count_field = array_count_field_name member.name in
+      let copy_code =
+        match elem with
+        | Object _ ->
+          sprintf
+            "  for (size_t i = 0; i < count; i++) {\n\
+            \    arr[i] = (%s)Nativeint_val(Field(val, i));\n\
+            \  }"
+            elem_c_type
+        | Struct _ ->
+          sprintf
+            "  for (size_t i = 0; i < count; i++) {\n\
+            \    arr[i] = *(%s*)Nativeint_val(Field(val, i));\n\
+            \  }"
+            elem_c_type
+        | Enum _ | Bitflag _ ->
+          "  for (size_t i = 0; i < count; i++) {\n\
+          \    arr[i] = Int_val(Field(val, i));\n\
+          \  }"
+        | Primitive Uint32 | Primitive Int32 ->
+          "  for (size_t i = 0; i < count; i++) {\n\
+          \    arr[i] = Int_val(Field(val, i));\n\
+          \  }"
+        | _ ->
+          sprintf "  /* TODO: copy %s elements */" elem_c_type
+      in
+      sprintf
+        "  size_t count = Wosize_val(val);\n\
+        \  %s* arr = (count > 0) ? malloc(count * sizeof(%s)) : NULL;\n\
+         %s\n\
+        \  s->%s = count;\n\
+        \  s->%s = arr;"
+        elem_c_type
+        elem_c_type
+        copy_code
+        count_field
+        c_field
     | Optional inner ->
       (match inner with
        | Object _ ->
          sprintf "  s->%s = (%s)Nativeint_val(val);" c_field (c_type_of_type_ref inner)
+       | Struct name ->
+         sprintf "  s->%s = (%s*)Nativeint_val(val);" c_field (c_type_name name)
        | _ -> sprintf "  (void)s; /* TODO: optional field %s */" c_field)
     | Pointer { inner; _ } ->
       (match inner with
        | Struct name ->
          sprintf "  s->%s = (%s*)Nativeint_val(val);" c_field (c_type_name name)
+       | Array { elem; _ } ->
+         (* Pointer to array - same as array but with pointer indirection *)
+         let elem_c_type = c_type_of_type_ref elem in
+         let count_field = array_count_field_name member.name in
+         let copy_code =
+           match elem with
+           | Object _ ->
+             sprintf
+               "  for (size_t i = 0; i < count; i++) {\n\
+               \    arr[i] = (%s)Nativeint_val(Field(val, i));\n\
+               \  }"
+               elem_c_type
+           | Struct _ ->
+             sprintf
+               "  for (size_t i = 0; i < count; i++) {\n\
+               \    arr[i] = *(%s*)Nativeint_val(Field(val, i));\n\
+               \  }"
+               elem_c_type
+           | Enum _ | Bitflag _ ->
+             "  for (size_t i = 0; i < count; i++) {\n\
+             \    arr[i] = Int_val(Field(val, i));\n\
+             \  }"
+           | Primitive Uint32 | Primitive Int32 ->
+             "  for (size_t i = 0; i < count; i++) {\n\
+             \    arr[i] = Int_val(Field(val, i));\n\
+             \  }"
+           | _ ->
+             sprintf "  /* TODO: copy %s elements */" elem_c_type
+         in
+         sprintf
+           "  size_t count = Wosize_val(val);\n\
+           \  %s* arr = (count > 0) ? malloc(count * sizeof(%s)) : NULL;\n\
+            %s\n\
+           \  s->%s = count;\n\
+           \  s->%s = arr;"
+           elem_c_type
+           elem_c_type
+           copy_code
+           count_field
+           c_field
        | _ -> sprintf "  (void)s; /* TODO: pointer field %s */" c_field)
   in
   sprintf
@@ -418,7 +513,17 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
         | Primitive (String | Out_string | String_with_default_empty) -> "string"
         | Primitive C_void -> "nativeint"
         | Enum _ | Bitflag _ -> "int"
-        | Object _ | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
+        | Array { elem; _ } ->
+          (match elem with
+           | Enum _ | Bitflag _ -> "int array"
+           | Primitive (Uint32 | Int32) -> "int array"
+           | _ -> "nativeint array")
+        | Pointer { inner = Array { elem; _ }; _ } ->
+          (match elem with
+           | Enum _ | Bitflag _ -> "int array"
+           | Primitive (Uint32 | Int32) -> "int array"
+           | _ -> "nativeint array")
+        | Object _ | Struct _ | Callback _ | Optional _ | Pointer _ ->
           "nativeint"
       in
       sprintf
@@ -478,7 +583,17 @@ let gen_mli_struct (struct_ : Ir.struct_) : string =
         | Primitive (String | Out_string | String_with_default_empty) -> "string"
         | Primitive C_void -> "nativeint"
         | Enum _ | Bitflag _ -> "int"
-        | Object _ | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
+        | Array { elem; _ } ->
+          (match elem with
+           | Enum _ | Bitflag _ -> "int array"
+           | Primitive (Uint32 | Int32) -> "int array"
+           | _ -> "nativeint array")
+        | Pointer { inner = Array { elem; _ }; _ } ->
+          (match elem with
+           | Enum _ | Bitflag _ -> "int array"
+           | Primitive (Uint32 | Int32) -> "int array"
+           | _ -> "nativeint array")
+        | Object _ | Struct _ | Callback _ | Optional _ | Pointer _ ->
           "nativeint"
       in
       sprintf "  val %s_set_%s : t -> %s -> unit" type_name member.name ml_type)

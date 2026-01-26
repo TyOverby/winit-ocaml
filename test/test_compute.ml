@@ -587,11 +587,92 @@ fn fs_main() -> @location(0) vec4<f32> {
   print_endline "All resources released."
 ;;
 
+let test_bind_group_with_generated_api () =
+  print_endline "\n=== Testing Bind Group with Generated Struct APIs ===";
+  (* Create instance, adapter, device *)
+  let instance = Wgpu_low.create_instance () in
+  let adapter = Wgpu_low.instance_request_adapter_sync instance in
+  let device = Wgpu_low.adapter_request_device_sync adapter in
+  print_endline "Device obtained.";
+  (* Create a buffer to bind *)
+  let buffer_desc = Wgpu_low.Buffer_Descriptor.buffer_descriptor_create () in
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_label buffer_desc "test_buffer";
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_size buffer_desc 256L;
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_usage buffer_desc 0x88;
+  (* Storage | CopyDst *)
+  let buffer = Wgpu_low.device_create_buffer device buffer_desc in
+  print_endline "Buffer created.";
+  (* Create buffer binding layout using generated API *)
+  let buffer_binding =
+    Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_create ()
+  in
+  (* type = Storage = 3 *)
+  Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_set_type buffer_binding 3;
+  Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_set_has_dynamic_offset buffer_binding false;
+  Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_set_min_binding_size buffer_binding 0L;
+  print_endline "Buffer binding layout created.";
+  (* Create bind group layout entry using generated API *)
+  let layout_entry = Wgpu_low.Bind_Group_Layout_Entry.bind_group_layout_entry_create () in
+  Wgpu_low.Bind_Group_Layout_Entry.bind_group_layout_entry_set_binding layout_entry 0;
+  (* visibility = Compute = 0x4 *)
+  Wgpu_low.Bind_Group_Layout_Entry.bind_group_layout_entry_set_visibility layout_entry 0x4;
+  (* Set the buffer binding layout (embedded struct copy) *)
+  Wgpu_low.Bind_Group_Layout_Entry.bind_group_layout_entry_set_buffer layout_entry buffer_binding;
+  print_endline "Layout entry created with buffer binding.";
+  (* Create bind group layout descriptor using generated API *)
+  let layout_desc =
+    Wgpu_low.Bind_Group_Layout_Descriptor.bind_group_layout_descriptor_create ()
+  in
+  Wgpu_low.Bind_Group_Layout_Descriptor.bind_group_layout_descriptor_set_label
+    layout_desc
+    "test_layout";
+  (* Set entries array - this tests the array setter! *)
+  Wgpu_low.Bind_Group_Layout_Descriptor.bind_group_layout_descriptor_set_entries
+    layout_desc
+    [| layout_entry |];
+  print_endline "Layout descriptor with entries array set.";
+  (* Create the bind group layout *)
+  let layout = Wgpu_low.device_create_bind_group_layout device layout_desc in
+  print_endline "Bind group layout created!";
+  (* Create bind group entry *)
+  let entry = Wgpu_low.Bind_Group_Entry.bind_group_entry_create () in
+  Wgpu_low.Bind_Group_Entry.bind_group_entry_set_binding entry 0;
+  Wgpu_low.Bind_Group_Entry.bind_group_entry_set_buffer entry buffer;
+  Wgpu_low.Bind_Group_Entry.bind_group_entry_set_offset entry 0L;
+  Wgpu_low.Bind_Group_Entry.bind_group_entry_set_size entry 256L;
+  print_endline "Bind group entry created.";
+  (* Create bind group descriptor *)
+  let bind_group_desc = Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_create () in
+  Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_set_label bind_group_desc "test_bind_group";
+  Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_set_layout bind_group_desc layout;
+  Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_set_entries bind_group_desc [| entry |];
+  print_endline "Bind group descriptor with entries array set.";
+  (* Create the bind group *)
+  let bind_group = Wgpu_low.device_create_bind_group device bind_group_desc in
+  print_endline "Bind group created!";
+  print_endline "SUCCESS: All generated struct APIs worked correctly!";
+  (* Cleanup *)
+  Wgpu_low.bind_group_release bind_group;
+  Wgpu_low.Bind_Group_Descriptor.bind_group_descriptor_free bind_group_desc;
+  Wgpu_low.Bind_Group_Entry.bind_group_entry_free entry;
+  Wgpu_low.bind_group_layout_release layout;
+  Wgpu_low.Bind_Group_Layout_Descriptor.bind_group_layout_descriptor_free layout_desc;
+  Wgpu_low.Bind_Group_Layout_Entry.bind_group_layout_entry_free layout_entry;
+  Wgpu_low.Buffer_Binding_Layout.buffer_binding_layout_free buffer_binding;
+  Wgpu_low.buffer_release buffer;
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_free buffer_desc;
+  Wgpu_low.device_release device;
+  Wgpu_low.adapter_release adapter;
+  Wgpu_low.instance_release instance;
+  print_endline "All resources released."
+;;
+
 let () =
   test_instance_and_adapter ();
   test_buffer_descriptor ();
   test_buffer_creation ();
   test_compute_shader ();
   test_render_clear ();
-  test_render_triangle ()
+  test_render_triangle ();
+  test_bind_group_with_generated_api ()
 ;;

@@ -2300,7 +2300,13 @@ CAMLprim value caml_wgpu_bind_group_descriptor_set_layout(value handle, value va
 CAMLprim value caml_wgpu_bind_group_descriptor_set_entries(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUBindGroupDescriptor *s = (WGPUBindGroupDescriptor*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field entries */
+  size_t count = Wosize_val(val);
+  WGPUBindGroupEntry* arr = (count > 0) ? malloc(count * sizeof(WGPUBindGroupEntry)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPUBindGroupEntry*)Nativeint_val(Field(val, i));
+  }
+  s->entryCount = count;
+  s->entries = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -2451,7 +2457,13 @@ CAMLprim value caml_wgpu_bind_group_layout_descriptor_set_label(value handle, va
 CAMLprim value caml_wgpu_bind_group_layout_descriptor_set_entries(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUBindGroupLayoutDescriptor *s = (WGPUBindGroupLayoutDescriptor*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field entries */
+  size_t count = Wosize_val(val);
+  WGPUBindGroupLayoutEntry* arr = (count > 0) ? malloc(count * sizeof(WGPUBindGroupLayoutEntry)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPUBindGroupLayoutEntry*)Nativeint_val(Field(val, i));
+  }
+  s->entryCount = count;
+  s->entries = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -3021,7 +3033,13 @@ CAMLprim value caml_wgpu_compilation_info_free(value handle) {
 CAMLprim value caml_wgpu_compilation_info_set_messages(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUCompilationInfo *s = (WGPUCompilationInfo*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field messages */
+  size_t count = Wosize_val(val);
+  WGPUCompilationMessage* arr = (count > 0) ? malloc(count * sizeof(WGPUCompilationMessage)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPUCompilationMessage*)Nativeint_val(Field(val, i));
+  }
+  s->messageCount = count;
+  s->messages = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -3529,7 +3547,13 @@ CAMLprim value caml_wgpu_device_descriptor_set_label(value handle, value val) {
 CAMLprim value caml_wgpu_device_descriptor_set_required_features(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUDeviceDescriptor *s = (WGPUDeviceDescriptor*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field requiredFeatures */
+  size_t count = Wosize_val(val);
+  WGPUFeatureName* arr = (count > 0) ? malloc(count * sizeof(WGPUFeatureName)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }
+  s->requiredFeatureCount = count;
+  s->requiredFeatures = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -3698,14 +3722,26 @@ CAMLprim value caml_wgpu_fragment_state_set_entry_point(value handle, value val)
 CAMLprim value caml_wgpu_fragment_state_set_constants(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUFragmentState *s = (WGPUFragmentState*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field constants */
+  size_t count = Wosize_val(val);
+  WGPUConstantEntry* arr = (count > 0) ? malloc(count * sizeof(WGPUConstantEntry)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPUConstantEntry*)Nativeint_val(Field(val, i));
+  }
+  s->constantCount = count;
+  s->constants = arr;
   CAMLreturn(Val_unit);
 }
 
 CAMLprim value caml_wgpu_fragment_state_set_targets(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUFragmentState *s = (WGPUFragmentState*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field targets */
+  size_t count = Wosize_val(val);
+  WGPUColorTargetState* arr = (count > 0) ? malloc(count * sizeof(WGPUColorTargetState)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPUColorTargetState*)Nativeint_val(Field(val, i));
+  }
+  s->targetCount = count;
+  s->targets = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -4448,7 +4484,13 @@ CAMLprim value caml_wgpu_pipeline_layout_descriptor_set_label(value handle, valu
 CAMLprim value caml_wgpu_pipeline_layout_descriptor_set_bind_group_layouts(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUPipelineLayoutDescriptor *s = (WGPUPipelineLayoutDescriptor*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field bindGroupLayouts */
+  size_t count = Wosize_val(val);
+  WGPUBindGroupLayout* arr = (count > 0) ? malloc(count * sizeof(WGPUBindGroupLayout)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = (WGPUBindGroupLayout)Nativeint_val(Field(val, i));
+  }
+  s->bindGroupLayoutCount = count;
+  s->bindGroupLayouts = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -4587,7 +4629,13 @@ CAMLprim value caml_wgpu_programmable_stage_descriptor_set_entry_point(value han
 CAMLprim value caml_wgpu_programmable_stage_descriptor_set_constants(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUProgrammableStageDescriptor *s = (WGPUProgrammableStageDescriptor*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field constants */
+  size_t count = Wosize_val(val);
+  WGPUConstantEntry* arr = (count > 0) ? malloc(count * sizeof(WGPUConstantEntry)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPUConstantEntry*)Nativeint_val(Field(val, i));
+  }
+  s->constantCount = count;
+  s->constants = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -4777,7 +4825,13 @@ CAMLprim value caml_wgpu_render_bundle_encoder_descriptor_set_label(value handle
 CAMLprim value caml_wgpu_render_bundle_encoder_descriptor_set_color_formats(value handle, value val) {
   CAMLparam2(handle, val);
   WGPURenderBundleEncoderDescriptor *s = (WGPURenderBundleEncoderDescriptor*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field colorFormats */
+  size_t count = Wosize_val(val);
+  WGPUTextureFormat* arr = (count > 0) ? malloc(count * sizeof(WGPUTextureFormat)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }
+  s->colorFormatCount = count;
+  s->colorFormats = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -5109,7 +5163,13 @@ CAMLprim value caml_wgpu_render_pass_descriptor_set_label(value handle, value va
 CAMLprim value caml_wgpu_render_pass_descriptor_set_color_attachments(value handle, value val) {
   CAMLparam2(handle, val);
   WGPURenderPassDescriptor *s = (WGPURenderPassDescriptor*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field colorAttachments */
+  size_t count = Wosize_val(val);
+  WGPURenderPassColorAttachment* arr = (count > 0) ? malloc(count * sizeof(WGPURenderPassColorAttachment)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPURenderPassColorAttachment*)Nativeint_val(Field(val, i));
+  }
+  s->colorAttachmentCount = count;
+  s->colorAttachments = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -5915,7 +5975,13 @@ CAMLprim value caml_wgpu_supported_features_free(value handle) {
 CAMLprim value caml_wgpu_supported_features_set_features(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSupportedFeatures *s = (WGPUSupportedFeatures*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field features */
+  size_t count = Wosize_val(val);
+  WGPUFeatureName* arr = (count > 0) ? malloc(count * sizeof(WGPUFeatureName)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }
+  s->featureCount = count;
+  s->features = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -5946,7 +6012,13 @@ CAMLprim value caml_wgpu_supported_wgsl_language_features_free(value handle) {
 CAMLprim value caml_wgpu_supported_wgsl_language_features_set_features(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSupportedWGSLLanguageFeatures *s = (WGPUSupportedWGSLLanguageFeatures*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field features */
+  size_t count = Wosize_val(val);
+  WGPUWGSLLanguageFeatureName* arr = (count > 0) ? malloc(count * sizeof(WGPUWGSLLanguageFeatureName)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }
+  s->featureCount = count;
+  s->features = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -5984,21 +6056,39 @@ CAMLprim value caml_wgpu_surface_capabilities_set_usages(value handle, value val
 CAMLprim value caml_wgpu_surface_capabilities_set_formats(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSurfaceCapabilities *s = (WGPUSurfaceCapabilities*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field formats */
+  size_t count = Wosize_val(val);
+  WGPUTextureFormat* arr = (count > 0) ? malloc(count * sizeof(WGPUTextureFormat)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }
+  s->formatCount = count;
+  s->formats = arr;
   CAMLreturn(Val_unit);
 }
 
 CAMLprim value caml_wgpu_surface_capabilities_set_present_modes(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSurfaceCapabilities *s = (WGPUSurfaceCapabilities*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field presentModes */
+  size_t count = Wosize_val(val);
+  WGPUPresentMode* arr = (count > 0) ? malloc(count * sizeof(WGPUPresentMode)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }
+  s->presentModeCount = count;
+  s->presentModes = arr;
   CAMLreturn(Val_unit);
 }
 
 CAMLprim value caml_wgpu_surface_capabilities_set_alpha_modes(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSurfaceCapabilities *s = (WGPUSurfaceCapabilities*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field alphaModes */
+  size_t count = Wosize_val(val);
+  WGPUCompositeAlphaMode* arr = (count > 0) ? malloc(count * sizeof(WGPUCompositeAlphaMode)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }
+  s->alphaModeCount = count;
+  s->alphaModes = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -6084,7 +6174,13 @@ CAMLprim value caml_wgpu_surface_configuration_set_height(value handle, value va
 CAMLprim value caml_wgpu_surface_configuration_set_view_formats(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSurfaceConfiguration *s = (WGPUSurfaceConfiguration*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field viewFormats */
+  size_t count = Wosize_val(val);
+  WGPUTextureFormat* arr = (count > 0) ? malloc(count * sizeof(WGPUTextureFormat)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }
+  s->viewFormatCount = count;
+  s->viewFormats = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -6767,7 +6863,13 @@ CAMLprim value caml_wgpu_texture_descriptor_set_sample_count(value handle, value
 CAMLprim value caml_wgpu_texture_descriptor_set_view_formats(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUTextureDescriptor *s = (WGPUTextureDescriptor*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field viewFormats */
+  size_t count = Wosize_val(val);
+  WGPUTextureFormat* arr = (count > 0) ? malloc(count * sizeof(WGPUTextureFormat)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }
+  s->viewFormatCount = count;
+  s->viewFormats = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -7055,7 +7157,13 @@ CAMLprim value caml_wgpu_vertex_buffer_layout_set_array_stride(value handle, val
 CAMLprim value caml_wgpu_vertex_buffer_layout_set_attributes(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUVertexBufferLayout *s = (WGPUVertexBufferLayout*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field attributes */
+  size_t count = Wosize_val(val);
+  WGPUVertexAttribute* arr = (count > 0) ? malloc(count * sizeof(WGPUVertexAttribute)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPUVertexAttribute*)Nativeint_val(Field(val, i));
+  }
+  s->attributeCount = count;
+  s->attributes = arr;
   CAMLreturn(Val_unit);
 }
 
@@ -7114,14 +7222,26 @@ CAMLprim value caml_wgpu_vertex_state_set_entry_point(value handle, value val) {
 CAMLprim value caml_wgpu_vertex_state_set_constants(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUVertexState *s = (WGPUVertexState*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field constants */
+  size_t count = Wosize_val(val);
+  WGPUConstantEntry* arr = (count > 0) ? malloc(count * sizeof(WGPUConstantEntry)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPUConstantEntry*)Nativeint_val(Field(val, i));
+  }
+  s->constantCount = count;
+  s->constants = arr;
   CAMLreturn(Val_unit);
 }
 
 CAMLprim value caml_wgpu_vertex_state_set_buffers(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUVertexState *s = (WGPUVertexState*)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field buffers */
+  size_t count = Wosize_val(val);
+  WGPUVertexBufferLayout* arr = (count > 0) ? malloc(count * sizeof(WGPUVertexBufferLayout)) : NULL;
+  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(WGPUVertexBufferLayout*)Nativeint_val(Field(val, i));
+  }
+  s->bufferCount = count;
+  s->buffers = arr;
   CAMLreturn(Val_unit);
 }
 

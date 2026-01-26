@@ -316,3 +316,45 @@ All resources released.
 2. Add texture sampling support
 3. Document the high-level API
 4. Consider adding more complex examples (textured quad, etc.)
+
+---
+
+## 2026-01-25: Improved Code Generator - Array and Struct Field Support
+
+### Accomplished
+- **Array field setters in structs**: Generator now produces proper setters for array fields
+  - Computes count field name (e.g., `entries` -> `entryCount`)
+  - Allocates C array with malloc
+  - Copies elements from OCaml array
+  - Sets both count and pointer fields
+  - Handles arrays of objects, structs, enums, and primitives
+
+- **Pointer-to-array fields**: Added special handling for fields with `pointer: immutable` wrapping an array type
+
+- **OCaml type generation**: Array setters now have proper types (`nativeint array` for objects/structs, `int array` for enums)
+
+### Test Verification
+```
+=== Testing Bind Group with Generated Struct APIs ===
+Device obtained.
+Buffer created.
+Buffer binding layout created.
+Layout entry created with buffer binding.
+Layout descriptor with entries array set.
+Bind group layout created!
+Bind group entry created.
+Bind group descriptor with entries array set.
+Bind group created!
+SUCCESS: All generated struct APIs worked correctly!
+```
+
+### Technical Details
+- Added `array_count_field_name` function to compute count field from array field name
+- Handles plural-to-singular conversion (entries -> entry, layouts -> layout)
+- Array memory is allocated with `malloc` (caller responsible for cleanup via `struct_free`)
+- Test demonstrates creating bind groups using only auto-generated APIs (no hand-coded helpers)
+
+### Next Steps
+1. Continue reducing hand-coded helpers
+2. Consider generating high-level OCaml builder functions for common patterns
+3. Document the struct API usage patterns
