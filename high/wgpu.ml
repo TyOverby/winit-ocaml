@@ -962,32 +962,9 @@ module Device = struct
   let release t = Wgpu_low.device_release t.handle
   let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
 
-  let create_buffer t ?(label = "") ~size ~usage ?(mapped_at_creation = false) () =
-    let desc = Wgpu_low.Buffer_descriptor.buffer_descriptor_create () in
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_label desc label;
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_size desc size;
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_usage
-      desc
-      (Buffer_usage.list_to_int usage);
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_mapped_at_creation
-      desc
-      mapped_at_creation;
-    let buffer = Wgpu_low.device_create_buffer t.handle desc in
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_free desc;
-    ({ Buffer.handle = buffer } : Buffer.t)
-  ;;
-
   let create_shader_module t ?(label = "") ~wgsl () =
     let shader = Wgpu_low.device_create_shader_module_wgsl t.handle label wgsl in
     ({ Shader_module.handle = shader } : Shader_module.t)
-  ;;
-
-  let create_command_encoder t ?(label = "") () =
-    let desc = Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_create () in
-    Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_set_label desc label;
-    let encoder = Wgpu_low.device_create_command_encoder t.handle desc in
-    Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_free desc;
-    ({ Command_encoder.handle = encoder } : Command_encoder.t)
   ;;
 
   let create_texture
@@ -1026,55 +1003,6 @@ module Device = struct
     Wgpu_low.Extent_3d.extent_3D_free extent;
     Wgpu_low.Texture_descriptor.texture_descriptor_free desc;
     ({ Texture.handle = texture } : Texture.t)
-  ;;
-
-  let create_sampler
-    t
-    ?(label = "")
-    ?(address_mode_u = Address_mode.Clamp_to_edge)
-    ?(address_mode_v = Address_mode.Clamp_to_edge)
-    ?(address_mode_w = Address_mode.Clamp_to_edge)
-    ?(mag_filter = Filter_mode.Nearest)
-    ?(min_filter = Filter_mode.Nearest)
-    ?(mipmap_filter = Mipmap_filter_mode.Nearest)
-    ?(lod_min_clamp = 0.0)
-    ?(lod_max_clamp = 32.0)
-    ?(compare : Compare_function.t option)
-    ?(max_anisotropy = 1)
-    ()
-    =
-    let desc = Wgpu_low.Sampler_descriptor.sampler_descriptor_create () in
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_label desc label;
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_u
-      desc
-      (Address_mode.to_int address_mode_u);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_v
-      desc
-      (Address_mode.to_int address_mode_v);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_w
-      desc
-      (Address_mode.to_int address_mode_w);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_mag_filter
-      desc
-      (Filter_mode.to_int mag_filter);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_min_filter
-      desc
-      (Filter_mode.to_int min_filter);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_mipmap_filter
-      desc
-      (Mipmap_filter_mode.to_int mipmap_filter);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_lod_min_clamp desc lod_min_clamp;
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_lod_max_clamp desc lod_max_clamp;
-    (match compare with
-     | Some cmp ->
-       Wgpu_low.Sampler_descriptor.sampler_descriptor_set_compare
-         desc
-         (Compare_function.to_int cmp)
-     | None -> ());
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_max_anisotropy desc max_anisotropy;
-    let sampler = Wgpu_low.device_create_sampler t.handle desc in
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_free desc;
-    ({ Sampler.handle = sampler } : Sampler.t)
   ;;
 
   let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
@@ -1357,6 +1285,33 @@ module Device = struct
     ({ Bind_group_layout.handle = result } : Bind_group_layout.t)
   ;;
 
+  let create_buffer t ?(label = "") ~usage ~size ~mapped_at_creation () =
+    let desc_descriptor = Wgpu_low.Buffer_descriptor.buffer_descriptor_create () in
+    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_label desc_descriptor label;
+    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_usage
+      desc_descriptor
+      (Buffer_usage.list_to_int usage);
+    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_size desc_descriptor size;
+    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_mapped_at_creation
+      desc_descriptor
+      mapped_at_creation;
+    let result = Wgpu_low.device_create_buffer t.handle desc_descriptor in
+    Wgpu_low.Buffer_descriptor.buffer_descriptor_free desc_descriptor;
+    ({ Buffer.handle = result } : Buffer.t)
+  ;;
+
+  let create_command_encoder t ?(label = "") () =
+    let desc_descriptor =
+      Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_create ()
+    in
+    Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_set_label
+      desc_descriptor
+      label;
+    let result = Wgpu_low.device_create_command_encoder t.handle desc_descriptor in
+    Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_free desc_descriptor;
+    ({ Command_encoder.handle = result } : Command_encoder.t)
+  ;;
+
   let create_pipeline_layout t ?(label = "") ?(bind_group_layouts = []) () =
     let desc_descriptor =
       Wgpu_low.Pipeline_layout_descriptor.pipeline_layout_descriptor_create ()
@@ -1424,6 +1379,58 @@ module Device = struct
     Wgpu_low.Render_bundle_encoder_descriptor.render_bundle_encoder_descriptor_free
       desc_descriptor;
     ({ Render_bundle_encoder.handle = result } : Render_bundle_encoder.t)
+  ;;
+
+  let create_sampler
+    t
+    ?(label = "")
+    ~address_mode_u
+    ~address_mode_v
+    ~address_mode_w
+    ~mag_filter
+    ~min_filter
+    ~mipmap_filter
+    ~lod_min_clamp
+    ~lod_max_clamp
+    ~compare
+    ~max_anisotropy
+    ()
+    =
+    let desc_descriptor = Wgpu_low.Sampler_descriptor.sampler_descriptor_create () in
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_label desc_descriptor label;
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_u
+      desc_descriptor
+      (Address_mode.to_int address_mode_u);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_v
+      desc_descriptor
+      (Address_mode.to_int address_mode_v);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_w
+      desc_descriptor
+      (Address_mode.to_int address_mode_w);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_mag_filter
+      desc_descriptor
+      (Filter_mode.to_int mag_filter);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_min_filter
+      desc_descriptor
+      (Filter_mode.to_int min_filter);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_mipmap_filter
+      desc_descriptor
+      (Mipmap_filter_mode.to_int mipmap_filter);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_lod_min_clamp
+      desc_descriptor
+      lod_min_clamp;
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_lod_max_clamp
+      desc_descriptor
+      lod_max_clamp;
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_compare
+      desc_descriptor
+      (Compare_function.to_int compare);
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_max_anisotropy
+      desc_descriptor
+      max_anisotropy;
+    let result = Wgpu_low.device_create_sampler t.handle desc_descriptor in
+    Wgpu_low.Sampler_descriptor.sampler_descriptor_free desc_descriptor;
+    ({ Sampler.handle = result } : Sampler.t)
   ;;
 
   let destroy t = Wgpu_low.device_destroy t.handle

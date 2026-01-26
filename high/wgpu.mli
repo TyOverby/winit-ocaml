@@ -1331,21 +1331,8 @@ module Device : sig
   val release : t -> unit
   val get_queue : t -> Queue.t
 
-  (** Create a GPU buffer *)
-  val create_buffer
-    :  t
-    -> ?label:string
-    -> size:int64
-    -> usage:Buffer_usage.t list
-    -> ?mapped_at_creation:bool
-    -> unit
-    -> Buffer.t
-
   (** Create a shader module from WGSL source *)
   val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
-
-  (** Create a command encoder *)
-  val create_command_encoder : t -> ?label:string -> unit -> Command_encoder.t
 
   (** Create a texture *)
   val create_texture
@@ -1359,23 +1346,6 @@ module Device : sig
     -> ?sample_count:int
     -> unit
     -> Texture.t
-
-  (** Create a sampler *)
-  val create_sampler
-    :  t
-    -> ?label:string
-    -> ?address_mode_u:Address_mode.t
-    -> ?address_mode_v:Address_mode.t
-    -> ?address_mode_w:Address_mode.t
-    -> ?mag_filter:Filter_mode.t
-    -> ?min_filter:Filter_mode.t
-    -> ?mipmap_filter:Mipmap_filter_mode.t
-    -> ?lod_min_clamp:float
-    -> ?lod_max_clamp:float
-    -> ?compare:Compare_function.t
-    -> ?max_anisotropy:int
-    -> unit
-    -> Sampler.t
 
   (** Create a compute pipeline *)
   val create_compute_pipeline
@@ -1470,6 +1440,17 @@ module Device : sig
     -> unit
     -> Bind_group_layout.t
 
+  val create_buffer
+    :  t
+    -> ?label:string
+    -> usage:Buffer_usage.t list
+    -> size:int64
+    -> mapped_at_creation:bool
+    -> unit
+    -> Buffer.t
+
+  val create_command_encoder : t -> ?label:string -> unit -> Command_encoder.t
+
   val create_pipeline_layout
     :  t
     -> ?label:string
@@ -1495,6 +1476,22 @@ module Device : sig
     -> stencil_read_only:bool
     -> unit
     -> Render_bundle_encoder.t
+
+  val create_sampler
+    :  t
+    -> ?label:string
+    -> address_mode_u:Address_mode.t
+    -> address_mode_v:Address_mode.t
+    -> address_mode_w:Address_mode.t
+    -> mag_filter:Filter_mode.t
+    -> min_filter:Filter_mode.t
+    -> mipmap_filter:Mipmap_filter_mode.t
+    -> lod_min_clamp:float
+    -> lod_max_clamp:float
+    -> compare:Compare_function.t
+    -> max_anisotropy:int
+    -> unit
+    -> Sampler.t
 
   val destroy : t -> unit
   val get_limits : t -> limits

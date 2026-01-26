@@ -66,6 +66,7 @@ let test_buffer_creation () =
         ; Wgpu.Buffer_usage.Copy_dst
         ; Wgpu.Buffer_usage.Copy_src
         ]
+      ~mapped_at_creation:false
       ()
   in
   print_endline "Buffer created!";
@@ -121,6 +122,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         ; Wgpu.Buffer_usage.Copy_dst
         ; Wgpu.Buffer_usage.Copy_src
         ]
+      ~mapped_at_creation:false
       ()
   in
   print_endline "Storage buffer created.";
@@ -130,6 +132,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       device
       ~size:(Int64.of_int data_size)
       ~usage:[ Wgpu.Buffer_usage.Map_read; Wgpu.Buffer_usage.Copy_dst ]
+      ~mapped_at_creation:false
       ()
   in
   print_endline "Readback buffer created.";
@@ -308,6 +311,7 @@ let test_render_clear () =
       ~label:"readback_buffer"
       ~size:(Int64.of_int buffer_size)
       ~usage:[ Wgpu.Buffer_usage.Map_read; Wgpu.Buffer_usage.Copy_dst ]
+      ~mapped_at_creation:false
       ()
   in
   print_endline "Readback buffer created.";
@@ -472,6 +476,7 @@ fn fs_main() -> @location(0) vec4<f32> {
       ~label:"readback_buffer"
       ~size:(Int64.of_int buffer_size)
       ~usage:[ Wgpu.Buffer_usage.Map_read; Wgpu.Buffer_usage.Copy_dst ]
+      ~mapped_at_creation:false
       ()
   in
   print_endline "Readback buffer created.";

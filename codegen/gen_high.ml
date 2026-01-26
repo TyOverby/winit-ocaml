@@ -36,13 +36,10 @@ let manual_implementations =
     ; "device", "release" (* manually implemented *)
     ; "device", "poll" (* manually implemented *)
     ; "device", "get_features" (* output struct with array member *)
-    ; "device", "create_buffer" (* uses descriptor struct *)
-    ; "device", "create_shader_module" (* uses descriptor struct *)
-    ; "device", "create_command_encoder" (* uses descriptor struct *)
-    ; "device", "create_texture" (* uses descriptor struct *)
-    ; "device", "create_sampler" (* uses descriptor struct *)
-    ; "device", "create_compute_pipeline" (* uses descriptor struct *)
-    ; "device", "create_render_pipeline" (* uses descriptor struct *)
+    ; "device", "create_shader_module" (* uses chained WGSL struct *)
+    ; "device", "create_texture" (* uses nested extent_3D struct *)
+    ; "device", "create_compute_pipeline" (* uses nested programmable_stage *)
+    ; "device", "create_render_pipeline" (* deeply nested descriptors *)
     ; "device", "create_bind_group_layout_for_storage_buffer" (* convenience helper *)
     ; "device", "pop_error_scope" (* async callback *)
     ; "device", "get_queue" (* hand-written for cleaner return type *)
@@ -1843,26 +1840,9 @@ module Device = struct
   let release t = Wgpu_low.device_release t.handle
   let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
 
-  let create_buffer t ?(label = "") ~size ~usage ?(mapped_at_creation = false) () =
-    let desc = Wgpu_low.Buffer_descriptor.buffer_descriptor_create () in
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_label desc label;
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_size desc size;
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_usage desc (Buffer_usage.list_to_int usage);
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_set_mapped_at_creation desc mapped_at_creation;
-    let buffer = Wgpu_low.device_create_buffer t.handle desc in
-    Wgpu_low.Buffer_descriptor.buffer_descriptor_free desc;
-    ({ Buffer.handle = buffer } : Buffer.t)
-
   let create_shader_module t ?(label = "") ~wgsl () =
     let shader = Wgpu_low.device_create_shader_module_wgsl t.handle label wgsl in
     ({ Shader_module.handle = shader } : Shader_module.t)
-
-  let create_command_encoder t ?(label = "") () =
-    let desc = Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_create () in
-    Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_set_label desc label;
-    let encoder = Wgpu_low.device_create_command_encoder t.handle desc in
-    Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_free desc;
-    ({ Command_encoder.handle = encoder } : Command_encoder.t)
 
   let create_texture t ?(label = "") ~size ~format ~usage ?(dimension = Texture_dimension.N2d)
       ?(mip_level_count = 1) ?(sample_count = 1) () =
@@ -1883,36 +1863,6 @@ module Device = struct
     Wgpu_low.Extent_3d.extent_3D_free extent;
     Wgpu_low.Texture_descriptor.texture_descriptor_free desc;
     ({ Texture.handle = texture } : Texture.t)
-
-  let create_sampler t ?(label = "")
-      ?(address_mode_u = Address_mode.Clamp_to_edge)
-      ?(address_mode_v = Address_mode.Clamp_to_edge)
-      ?(address_mode_w = Address_mode.Clamp_to_edge)
-      ?(mag_filter = Filter_mode.Nearest)
-      ?(min_filter = Filter_mode.Nearest)
-      ?(mipmap_filter = Mipmap_filter_mode.Nearest)
-      ?(lod_min_clamp = 0.0)
-      ?(lod_max_clamp = 32.0)
-      ?(compare : Compare_function.t option)
-      ?(max_anisotropy = 1)
-      () =
-    let desc = Wgpu_low.Sampler_descriptor.sampler_descriptor_create () in
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_label desc label;
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_u desc (Address_mode.to_int address_mode_u);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_v desc (Address_mode.to_int address_mode_v);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_address_mode_w desc (Address_mode.to_int address_mode_w);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_mag_filter desc (Filter_mode.to_int mag_filter);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_min_filter desc (Filter_mode.to_int min_filter);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_mipmap_filter desc (Mipmap_filter_mode.to_int mipmap_filter);
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_lod_min_clamp desc lod_min_clamp;
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_lod_max_clamp desc lod_max_clamp;
-    (match compare with
-     | Some cmp -> Wgpu_low.Sampler_descriptor.sampler_descriptor_set_compare desc (Compare_function.to_int cmp)
-     | None -> ());
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_set_max_anisotropy desc max_anisotropy;
-    let sampler = Wgpu_low.device_create_sampler t.handle desc in
-    Wgpu_low.Sampler_descriptor.sampler_descriptor_free desc;
-    ({ Sampler.handle = sampler } : Sampler.t)
 
   let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
     let stage_desc = Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_create () in
@@ -2150,30 +2100,14 @@ module Device : sig
   val release : t -> unit
   val get_queue : t -> Queue.t
 
-  (** Create a GPU buffer *)
-  val create_buffer : t -> ?label:string -> size:int64 -> usage:Buffer_usage.t list ->
-    ?mapped_at_creation:bool -> unit -> Buffer.t
-
   (** Create a shader module from WGSL source *)
   val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
-
-  (** Create a command encoder *)
-  val create_command_encoder : t -> ?label:string -> unit -> Command_encoder.t
 
   (** Create a texture *)
   val create_texture : t -> ?label:string -> size:(int * int * int) ->
     format:Texture_format.t -> usage:Texture_usage.t list ->
     ?dimension:Texture_dimension.t -> ?mip_level_count:int -> ?sample_count:int ->
     unit -> Texture.t
-
-  (** Create a sampler *)
-  val create_sampler : t -> ?label:string ->
-    ?address_mode_u:Address_mode.t -> ?address_mode_v:Address_mode.t ->
-    ?address_mode_w:Address_mode.t -> ?mag_filter:Filter_mode.t ->
-    ?min_filter:Filter_mode.t -> ?mipmap_filter:Mipmap_filter_mode.t ->
-    ?lod_min_clamp:float -> ?lod_max_clamp:float ->
-    ?compare:Compare_function.t -> ?max_anisotropy:int ->
-    unit -> Sampler.t
 
   (** Create a compute pipeline *)
   val create_compute_pipeline : t -> ?label:string -> layout:Pipeline_layout.t ->
