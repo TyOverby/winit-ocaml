@@ -2,6 +2,16 @@ open! Core
 
 (** Generate high-level idiomatic OCaml bindings *)
 
+(** Filter out unhelpful doc strings like "TODO" *)
+let useful_doc (doc : string) : string option =
+  let doc = String.strip doc in
+  if String.is_empty doc
+     || String.equal doc "TODO"
+     || String.is_prefix doc ~prefix:"TODO\n"
+  then None
+  else Some doc
+;;
+
 (** Get the OCaml module name for a type *)
 let ocaml_module_name (name : string) : string =
   String.capitalize name
@@ -27,8 +37,11 @@ let gen_ml_enum (enum : Ir.enum) : string =
 (** Generate MLI for an enum type *)
 let gen_mli_enum (enum : Ir.enum) : string =
   let module_name = ocaml_module_name enum.name in
-  let doc = String.strip enum.doc in
-  let doc_comment = if String.is_empty doc then "" else sprintf "  (** %s *)\n" doc in
+  let doc_comment =
+    match useful_doc enum.doc with
+    | None -> ""
+    | Some doc -> sprintf "  (** %s *)\n" doc
+  in
   let variants =
     List.map enum.entries ~f:(fun entry ->
       sprintf "  | %s" (normalize_enum_entry_name entry.name))
@@ -50,8 +63,11 @@ let gen_ml_bitflag (bitflag : Ir.bitflag) : string =
 (** Generate MLI for a bitflag type *)
 let gen_mli_bitflag (bitflag : Ir.bitflag) : string =
   let module_name = ocaml_module_name bitflag.name in
-  let doc = String.strip bitflag.doc in
-  let doc_comment = if String.is_empty doc then "" else sprintf "  (** %s *)\n" doc in
+  let doc_comment =
+    match useful_doc bitflag.doc with
+    | None -> ""
+    | Some doc -> sprintf "  (** %s *)\n" doc
+  in
   let variants =
     List.map bitflag.entries ~f:(fun entry ->
       sprintf "  | %s" (normalize_enum_entry_name entry.name))
@@ -85,8 +101,11 @@ let gen_ml_object (obj : Ir.object_) : string =
 (** Generate MLI for an object type *)
 let gen_mli_object (obj : Ir.object_) : string =
   let module_name = ocaml_module_name obj.name in
-  let doc = String.strip obj.doc in
-  let doc_comment = if String.is_empty doc then "" else sprintf "  (** %s *)\n\n" doc in
+  let doc_comment =
+    match useful_doc obj.doc with
+    | None -> ""
+    | Some doc -> sprintf "  (** %s *)\n\n" doc
+  in
   sprintf
     "module %s : sig\n%s  type t\n\n  val release : t -> unit\nend\n"
     module_name
