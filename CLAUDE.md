@@ -57,14 +57,14 @@ a headless binary produce `.png` files that you can read, that's excellent!
 
 An opam executable is available in the working directory `./opam`.
 
-Feel free to write additional rust code if necessary.
-
 Other languages have built similar generators, e.g.
 https://github.com/pygfx/wgpu-py/tree/main; feel free to take inspiration from
 them, but always strive to build the best thing for OCaml; don't limit yourself
 to what others have done!
 
-Run `dune fmt` regularly, and run `dune build @check` before commiting, ensuring no warnings are present.
+`dune exec test/test_compute.exe` to run tests.
+
+Run `dune fmt > /dev/null || true` regularly, and run `dune build @check` before commiting, ensuring no warnings are present.
 
 ## Working on this project
 
