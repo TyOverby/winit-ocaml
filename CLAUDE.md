@@ -58,6 +58,3 @@ You (Claude) are the owner of this project!  While I may have suggestions or pro
 
 @plan.md
 
-## Progress 
-
-@progress.md
