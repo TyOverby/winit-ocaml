@@ -1330,10 +1330,6 @@ module Device : sig
 
   val release : t -> unit
   val get_queue : t -> Queue.t
-  val destroy : t -> unit
-  val has_feature : t -> feature:Feature_name.t -> bool
-  val push_error_scope : t -> filter:Error_filter.t -> unit
-  val set_label : t -> label:string -> unit
 
   (** Create a GPU buffer *)
   val create_buffer
@@ -1500,7 +1496,11 @@ module Device : sig
     -> unit
     -> Render_bundle_encoder.t
 
+  val destroy : t -> unit
   val get_limits : t -> limits
+  val has_feature : t -> feature:Feature_name.t -> bool
+  val push_error_scope : t -> filter:Error_filter.t -> unit
+  val set_label : t -> label:string -> unit
 
   (** Poll the device for completed work *)
   val poll : t -> ?wait:bool -> unit -> unit

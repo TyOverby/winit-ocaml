@@ -961,17 +961,6 @@ module Device = struct
 
   let release t = Wgpu_low.device_release t.handle
   let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
-  let destroy t = Wgpu_low.device_destroy t.handle
-
-  let has_feature t ~feature =
-    Wgpu_low.device_has_feature t.handle (Feature_name.to_int feature)
-  ;;
-
-  let push_error_scope t ~filter =
-    Wgpu_low.device_push_error_scope t.handle (Error_filter.to_int filter)
-  ;;
-
-  let set_label t ~label = Wgpu_low.device_set_label t.handle label
 
   let create_buffer t ?(label = "") ~size ~usage ?(mapped_at_creation = false) () =
     let desc = Wgpu_low.Buffer_descriptor.buffer_descriptor_create () in
@@ -1437,6 +1426,8 @@ module Device = struct
     ({ Render_bundle_encoder.handle = result } : Render_bundle_encoder.t)
   ;;
 
+  let destroy t = Wgpu_low.device_destroy t.handle
+
   let get_limits t =
     let output = Wgpu_low.Limits.limits_create () in
     let _status = Wgpu_low.device_get_limits t.handle output in
@@ -1561,6 +1552,15 @@ module Device = struct
     result
   ;;
 
+  let has_feature t ~feature =
+    Wgpu_low.device_has_feature t.handle (Feature_name.to_int feature)
+  ;;
+
+  let push_error_scope t ~filter =
+    Wgpu_low.device_push_error_scope t.handle (Error_filter.to_int filter)
+  ;;
+
+  let set_label t ~label = Wgpu_low.device_set_label t.handle label
   let poll t ?(wait = false) () = Wgpu_low.device_poll t.handle wait
 end
 

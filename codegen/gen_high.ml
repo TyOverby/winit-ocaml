@@ -34,10 +34,6 @@ let manual_implementations =
       (* output struct with array member *)
       (* Device methods - manually implemented in adapter_module_prefix *)
     ; "device", "release" (* manually implemented *)
-    ; "device", "destroy" (* manually implemented *)
-    ; "device", "has_feature" (* manually implemented *)
-    ; "device", "push_error_scope" (* manually implemented *)
-    ; "device", "set_label" (* manually implemented *)
     ; "device", "poll" (* manually implemented *)
     ; "device", "get_features" (* output struct with array member *)
     ; "device", "create_buffer" (* uses descriptor struct *)
@@ -1846,10 +1842,6 @@ module Device = struct
 
   let release t = Wgpu_low.device_release t.handle
   let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
-  let destroy t = Wgpu_low.device_destroy t.handle
-  let has_feature t ~feature = Wgpu_low.device_has_feature t.handle (Feature_name.to_int feature)
-  let push_error_scope t ~filter = Wgpu_low.device_push_error_scope t.handle (Error_filter.to_int filter)
-  let set_label t ~label = Wgpu_low.device_set_label t.handle label
 
   let create_buffer t ?(label = "") ~size ~usage ?(mapped_at_creation = false) () =
     let desc = Wgpu_low.Buffer_descriptor.buffer_descriptor_create () in
@@ -2157,10 +2149,6 @@ module Device : sig
 
   val release : t -> unit
   val get_queue : t -> Queue.t
-  val destroy : t -> unit
-  val has_feature : t -> feature:Feature_name.t -> bool
-  val push_error_scope : t -> filter:Error_filter.t -> unit
-  val set_label : t -> label:string -> unit
 
   (** Create a GPU buffer *)
   val create_buffer : t -> ?label:string -> size:int64 -> usage:Buffer_usage.t list ->
