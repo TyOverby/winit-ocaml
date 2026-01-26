@@ -502,6 +502,71 @@ Methods with these signature patterns are currently skipped:
 - Array arguments (like `submit` which takes command buffer array)
 
 ### Next Steps
-1. Add descriptor builder functions for common create methods
+1. ~~Add descriptor builder functions for common create methods~~ ✅
 2. Consider adding `of_int` to enums/bitflags for return type conversion
-3. Add the special-cased Instance/Adapter/Device/Queue methods
+3. ~~Add the special-cased Instance/Adapter/Device/Queue methods~~ ✅
+
+---
+
+## 2026-01-25: Builder Functions for High-Level API
+
+### Accomplished
+- **Device builder functions**: Create GPU resources with idiomatic OCaml API
+  - `create_buffer` - buffers with labeled size, usage, mapped_at_creation
+  - `create_shader_module` - shader from WGSL source
+  - `create_command_encoder` - command encoder
+  - `create_texture` - textures with size, format, usage, dimension, mip_level_count
+  - `create_sampler` - sampler (basic)
+  - `create_compute_pipeline` - compute pipeline from layout and shader
+  - `create_render_pipeline` - render pipeline from shader module
+  - `create_bind_group_layout_for_storage_buffer` - layout for storage buffer binding
+  - `create_bind_group` - bind group with buffer binding
+  - `create_pipeline_layout` - pipeline layout from bind group layout
+  - `poll` - poll device for completed work
+
+- **Queue methods**:
+  - `submit` - submit command buffers
+  - `write_buffer` - write data to buffer
+
+- **Convenience functions** for command encoding:
+  - `begin_compute_pass`, `begin_render_pass`, `finish`
+  - `set_bind_group`, `set_bind_group_render`
+  - `copy_texture_to_buffer`
+  - `map_buffer`, `get_mapped_range`
+
+### API Example
+```ocaml
+(* Create a buffer with labeled arguments *)
+let buffer = Device.create_buffer device
+  ~size:1024L
+  ~usage:[Buffer_Usage.Storage; Buffer_Usage.Copy_dst]
+  ~mapped_at_creation:false
+  ()
+
+(* Create a texture *)
+let texture = Device.create_texture device
+  ~size:(64, 64, 1)
+  ~format:Texture_Format.Rgba8unorm
+  ~usage:[Texture_Usage.Render_attachment; Texture_Usage.Copy_src]
+  ()
+
+(* Record and submit commands *)
+let encoder = Device.create_command_encoder device () in
+let pass = begin_render_pass encoder ~color_view ~clear_color:(1.0, 0.0, 0.0, 1.0) () in
+Render_Pass_Encoder.draw pass ~vertex_count:3 ~instance_count:1 ~first_vertex:0 ~first_instance:0;
+Render_Pass_Encoder.end_ pass;
+let cmd_buffer = finish encoder () in
+Queue.submit queue ~command_buffers:[cmd_buffer]
+```
+
+### Technical Details
+- Builder functions internally create descriptors, set fields, call low-level functions, then free descriptors
+- Uses optional parameters with sensible defaults
+- Bitflag usage parameters accept lists: `~usage:[Buffer_Usage.Storage; Buffer_Usage.Copy_dst]`
+- Status codes from sync functions are properly ignored
+
+### Next Steps
+1. Add vertex buffer support for custom geometry
+2. Add texture sampling support
+3. Document the complete high-level API
+4. Consider adding more complex examples (textured quad, etc.)
