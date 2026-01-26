@@ -566,6 +566,57 @@ Queue.submit queue ~command_buffers:[cmd_buffer]
 - Status codes from sync functions are properly ignored
 
 ### Next Steps
+1. ~~Convert all tests to use high-level API~~ ✅
+2. Add vertex buffer support for custom geometry
+3. Add texture sampling support
+4. Document the complete high-level API
+
+---
+
+## 2026-01-25: Tests Converted to High-Level API
+
+### Accomplished
+- **All tests now use only the Wgpu module** (high-level API)
+- Removed low-level API tests that were specific to struct generation
+- Added new convenience functions:
+  - `create_texture_view` - create texture view from texture
+  - `get_const_mapped_range` - get const mapped buffer data as bigarray
+
+### Test Suite (all passing)
+1. **test_instance_and_adapter** - Instance and adapter enumeration
+2. **test_buffer_creation** - Buffer creation with typed usage flags
+3. **test_compute_shader** - Complete compute pipeline with GPU execution
+4. **test_render_clear** - Render pass that clears to solid color
+5. **test_render_triangle** - Full render pipeline with vertex/fragment shaders
+
+### API Demonstrated in Tests
+```ocaml
+(* High-level buffer creation with type-safe usage flags *)
+let buffer = Wgpu.Device.create_buffer device
+  ~size:256L
+  ~usage:[ Wgpu.Buffer_Usage.Storage; Wgpu.Buffer_Usage.Copy_dst ]
+  ()
+
+(* Typed texture format enum *)
+let texture = Wgpu.Device.create_texture device
+  ~size:(64, 64, 1)
+  ~format:Wgpu.Texture_Format.Rgba8_unorm
+  ~usage:[ Wgpu.Texture_Usage.Render_attachment; Wgpu.Texture_Usage.Copy_src ]
+  ()
+
+(* Convenience function for texture views *)
+let view = Wgpu.create_texture_view texture ()
+
+(* Type-safe map mode *)
+Wgpu.map_buffer buffer ~mode:[ Wgpu.Map_Mode.Read ] ~offset:0L ~size:256L
+```
+
+### Code Reduction
+- Test file reduced from 705 lines to 537 lines (~24% reduction)
+- Removed verbose descriptor creation/cleanup boilerplate
+- All tests more readable and maintainable
+
+### Next Steps
 1. Add vertex buffer support for custom geometry
 2. Add texture sampling support
 3. Document the complete high-level API
