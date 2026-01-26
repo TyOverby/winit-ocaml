@@ -3161,3 +3161,18 @@ external device_create_pipeline_layout_single :
 external device_create_compute_pipeline_simple :
   device -> string -> pipeline_layout -> shader_module -> string -> compute_pipeline
   = "caml_wgpu_device_create_compute_pipeline_simple"
+
+external device_create_texture_2d :
+  device -> string -> int -> int -> int -> int -> texture
+  = "caml_wgpu_device_create_texture_2d_bytecode" "caml_wgpu_device_create_texture_2d"
+
+external texture_create_view_simple : texture -> string -> texture_view
+  = "caml_wgpu_texture_create_view_simple"
+
+external command_encoder_begin_render_pass_simple :
+  command_encoder -> string -> texture_view -> float -> float -> float -> float -> render_pass_encoder
+  = "caml_wgpu_command_encoder_begin_render_pass_simple_bytecode" "caml_wgpu_command_encoder_begin_render_pass_simple"
+
+external command_encoder_copy_texture_to_buffer_simple :
+  command_encoder -> texture -> buffer -> int -> int -> int -> unit
+  = "caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode" "caml_wgpu_command_encoder_copy_texture_to_buffer_simple"

@@ -1975,3 +1975,14 @@ val device_create_pipeline_layout_single :
 
 val device_create_compute_pipeline_simple :
   device -> string -> pipeline_layout -> shader_module -> string -> compute_pipeline
+
+val device_create_texture_2d :
+  device -> string -> int -> int -> int -> int -> texture
+
+val texture_create_view_simple : texture -> string -> texture_view
+
+val command_encoder_begin_render_pass_simple :
+  command_encoder -> string -> texture_view -> float -> float -> float -> float -> render_pass_encoder
+
+val command_encoder_copy_texture_to_buffer_simple :
+  command_encoder -> texture -> buffer -> int -> int -> int -> unit

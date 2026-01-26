@@ -271,9 +271,138 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
   print_endline "All resources released."
 ;;
 
+let test_render_clear () =
+  print_endline "\n=== Testing Render Pass (Clear to Color) ===";
+  (* Create instance, adapter, device *)
+  let instance = Wgpu_low.create_instance () in
+  let adapter = Wgpu_low.instance_request_adapter_sync instance in
+  let device = Wgpu_low.adapter_request_device_sync adapter in
+  let queue = Wgpu_low.device_get_queue device in
+  print_endline "Device and queue obtained.";
+  (* Create render target texture *)
+  let width = 64 in
+  let height = 64 in
+  (* RGBA8Unorm = 18 from webgpu.h, RenderAttachment | CopySrc = 0x10 | 0x01 = 0x11 *)
+  let texture_format = 18 in
+  let texture_usage = 0x11 in
+  let texture =
+    Wgpu_low.device_create_texture_2d
+      device
+      "render_target"
+      width
+      height
+      texture_format
+      texture_usage
+  in
+  print_endline "Render target texture created.";
+  (* Create texture view *)
+  let texture_view = Wgpu_low.texture_create_view_simple texture "render_target_view" in
+  print_endline "Texture view created.";
+  (* Create readback buffer - 4 bytes per pixel (RGBA8) *)
+  let bytes_per_pixel = 4 in
+  (* Align bytes per row to 256 (wgpu requirement) *)
+  let bytes_per_row = ((width * bytes_per_pixel) + 255) / 256 * 256 in
+  let buffer_size = bytes_per_row * height in
+  let readback_desc = Wgpu_low.Buffer_Descriptor.buffer_descriptor_create () in
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_label readback_desc "readback_buffer";
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_size
+    readback_desc
+    (Int64.of_int buffer_size);
+  (* MapRead | CopyDst = 0x01 | 0x08 = 0x09 *)
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_usage readback_desc 0x09;
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_set_mapped_at_creation readback_desc false;
+  let readback_buffer = Wgpu_low.device_create_buffer device readback_desc in
+  print_endline "Readback buffer created.";
+  (* Create command encoder *)
+  let encoder = Wgpu_low.device_create_command_encoder_simple device "render_encoder" in
+  (* Begin render pass that clears to red (R=1, G=0, B=0, A=1) *)
+  let render_pass =
+    Wgpu_low.command_encoder_begin_render_pass_simple
+      encoder
+      "clear_pass"
+      texture_view
+      1.0
+      0.0
+      0.0
+      1.0
+  in
+  print_endline "Render pass started (clearing to red).";
+  (* End render pass immediately (just the clear) *)
+  Wgpu_low.render_pass_encoder_end render_pass;
+  print_endline "Render pass ended.";
+  (* Copy texture to buffer *)
+  Wgpu_low.command_encoder_copy_texture_to_buffer_simple
+    encoder
+    texture
+    readback_buffer
+    width
+    height
+    bytes_per_row;
+  print_endline "Copy texture to buffer command recorded.";
+  (* Finish and submit *)
+  let command_buffer = Wgpu_low.command_encoder_finish_simple encoder "render_commands" in
+  Wgpu_low.queue_submit queue [| command_buffer |];
+  print_endline "Commands submitted.";
+  (* Poll for completion *)
+  Wgpu_low.device_poll device true;
+  print_endline "Device polled.";
+  (* Map readback buffer and verify *)
+  let _status =
+    Wgpu_low.buffer_map_sync readback_buffer 1 0L (Int64.of_int buffer_size)
+  in
+  Wgpu_low.device_poll device true;
+  let mapped_data =
+    Wgpu_low.buffer_get_const_mapped_range_bigarray
+      readback_buffer
+      0L
+      (Int64.of_int buffer_size)
+  in
+  print_endline "Buffer mapped for reading.";
+  (* Check first pixel: should be red (255, 0, 0, 255) in RGBA8 *)
+  let r = Bigarray.Array1.get mapped_data 0 in
+  let g = Bigarray.Array1.get mapped_data 1 in
+  let b = Bigarray.Array1.get mapped_data 2 in
+  let a = Bigarray.Array1.get mapped_data 3 in
+  printf "  First pixel: R=%d G=%d B=%d A=%d\n" r g b a;
+  (* Verify all pixels are red *)
+  let all_correct = ref true in
+  for y = 0 to height - 1 do
+    for x = 0 to width - 1 do
+      let offset = (y * bytes_per_row) + (x * bytes_per_pixel) in
+      let pr = Bigarray.Array1.get mapped_data offset in
+      let pg = Bigarray.Array1.get mapped_data (offset + 1) in
+      let pb = Bigarray.Array1.get mapped_data (offset + 2) in
+      let pa = Bigarray.Array1.get mapped_data (offset + 3) in
+      if pr <> 255 || pg <> 0 || pb <> 0 || pa <> 255
+      then (
+        if !all_correct
+        then printf "  ERROR at (%d,%d): R=%d G=%d B=%d A=%d\n" x y pr pg pb pa;
+        all_correct := false)
+    done
+  done;
+  if !all_correct
+  then print_endline "SUCCESS: All pixels correctly cleared to red!"
+  else print_endline "FAILURE: Some pixels incorrect.";
+  Wgpu_low.buffer_unmap readback_buffer;
+  (* Cleanup *)
+  Wgpu_low.command_buffer_release command_buffer;
+  Wgpu_low.render_pass_encoder_release render_pass;
+  Wgpu_low.command_encoder_release encoder;
+  Wgpu_low.Buffer_Descriptor.buffer_descriptor_free readback_desc;
+  Wgpu_low.buffer_release readback_buffer;
+  Wgpu_low.texture_view_release texture_view;
+  Wgpu_low.texture_release texture;
+  Wgpu_low.queue_release queue;
+  Wgpu_low.device_release device;
+  Wgpu_low.adapter_release adapter;
+  Wgpu_low.instance_release instance;
+  print_endline "All resources released."
+;;
+
 let () =
   test_instance_and_adapter ();
   test_buffer_descriptor ();
   test_buffer_creation ();
-  test_compute_shader ()
+  test_compute_shader ();
+  test_render_clear ()
 ;;

@@ -202,7 +202,68 @@ All resources released.
 - Combination allows full pipeline construction
 
 ### Next Steps
-1. Implement texture creation and render pipelines
+1. ~~Implement texture creation and render pipelines~~ ✅
 2. Add render-to-PNG example for visual verification
-3. Consider implementing full array argument support in generator
+3. ~~Consider implementing full array argument support in generator~~ ✅
+4. Document the high-level API
+
+---
+
+## 2026-01-25: Array Argument Support & Render Pipeline
+
+### Accomplished
+- **Array Argument Generation**: Complete
+  - Added `gen_c_array_conversion` function in gen_low.ml
+  - Methods with array arguments now auto-generate correctly
+  - Arrays converted to (count, pointer) pairs for C API
+  - Supports object arrays, enum arrays, and primitive arrays
+  - `queue_submit` and other array methods now work automatically
+
+- **Render Pipeline Basics**: Complete
+  - Texture creation with `device_create_texture_2d` helper
+  - Texture view creation with `texture_create_view_simple` helper
+  - Render pass with `command_encoder_begin_render_pass_simple`
+  - Texture-to-buffer copy with `command_encoder_copy_texture_to_buffer_simple`
+
+### Helper Functions Added
+- `device_create_texture_2d` - create 2D texture with format and usage
+- `texture_create_view_simple` - create default texture view
+- `command_encoder_begin_render_pass_simple` - begin render pass with single color attachment (clear)
+- `command_encoder_copy_texture_to_buffer_simple` - copy texture to buffer for readback
+
+### Test Verification
+```
+=== Testing Render Pass (Clear to Color) ===
+Device and queue obtained.
+Render target texture created.
+Texture view created.
+Readback buffer created.
+Render pass started (clearing to red).
+Render pass ended.
+Copy texture to buffer command recorded.
+Commands submitted.
+Device polled.
+Buffer mapped for reading.
+  First pixel: R=255 G=0 B=0 A=255
+SUCCESS: All pixels correctly cleared to red!
+All resources released.
+```
+
+### Technical Details
+- Created 64x64 RGBA8Unorm texture as render target
+- Cleared to solid red (1.0, 0.0, 0.0, 1.0)
+- Copied to readback buffer with 256-byte row alignment
+- Verified all 4096 pixels are exactly (255, 0, 0, 255)
+- Used `WGPU_DEPTH_SLICE_UNDEFINED` for 2D texture render pass
+- Used `WGPU_MIP_LEVEL_COUNT_UNDEFINED` for texture view defaults
+
+### Edge Cases Fixed
+- `depthSlice` must be `WGPU_DEPTH_SLICE_UNDEFINED` for non-3D textures
+- `mipLevelCount` = 0 is invalid; use `WGPU_MIP_LEVEL_COUNT_UNDEFINED` (UINT32_MAX)
+- Texture usage flags: RenderAttachment (0x10) | CopySrc (0x01) = 0x11
+
+### Next Steps
+1. Implement PNG output for visual verification
+2. Add full render pipeline (shaders, vertex buffers)
+3. Create triangle rendering example
 4. Document the high-level API

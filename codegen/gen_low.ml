@@ -701,8 +701,7 @@ let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
     (* Build return handling *)
     let return_code =
       match method_.returns with
-      | None ->
-        sprintf "  %s(%s);\n  CAMLreturn(Val_unit);" c_func c_call_args
+      | None -> sprintf "  %s(%s);\n  CAMLreturn(Val_unit);" c_func c_call_args
       | Some ret ->
         let ret_c_type = c_type_of_type_ref ret.type_ in
         (match ret.type_ with
@@ -1317,6 +1316,142 @@ CAMLprim value caml_wgpu_device_create_compute_pipeline_simple(value device_val,
   CAMLreturn(caml_copy_nativeint((intnat)pipeline));
 }
 
+/* Create a 2D texture with given dimensions, format, and usage */
+CAMLprim value caml_wgpu_device_create_texture_2d(value device_val, value label_val, value width_val, value height_val, value format_val, value usage_val) {
+  CAMLparam5(device_val, label_val, width_val, height_val, format_val);
+  CAMLxparam1(usage_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char* label = String_val(label_val);
+  uint32_t width = Int_val(width_val);
+  uint32_t height = Int_val(height_val);
+  WGPUTextureFormat format = Int_val(format_val);
+  WGPUTextureUsage usage = Int_val(usage_val);
+
+  WGPUTextureDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+    .usage = usage,
+    .dimension = WGPUTextureDimension_2D,
+    .size = { .width = width, .height = height, .depthOrArrayLayers = 1 },
+    .format = format,
+    .mipLevelCount = 1,
+    .sampleCount = 1,
+    .viewFormatCount = 0,
+    .viewFormats = NULL,
+  };
+
+  WGPUTexture texture = wgpuDeviceCreateTexture(device, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)texture));
+}
+
+CAMLprim value caml_wgpu_device_create_texture_2d_bytecode(value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_device_create_texture_2d(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+}
+
+/* Create texture view with default settings */
+CAMLprim value caml_wgpu_texture_create_view_simple(value texture_val, value label_val) {
+  CAMLparam2(texture_val, label_val);
+  WGPUTexture texture = (WGPUTexture)Nativeint_val(texture_val);
+  const char* label = String_val(label_val);
+
+  WGPUTextureViewDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+    .format = WGPUTextureFormat_Undefined, /* Use texture's format */
+    .dimension = WGPUTextureViewDimension_Undefined, /* Use texture's dimension */
+    .baseMipLevel = 0,
+    .mipLevelCount = WGPU_MIP_LEVEL_COUNT_UNDEFINED, /* Use all mip levels */
+    .baseArrayLayer = 0,
+    .arrayLayerCount = WGPU_ARRAY_LAYER_COUNT_UNDEFINED, /* Use all array layers */
+    .aspect = WGPUTextureAspect_All,
+  };
+
+  WGPUTextureView view = wgpuTextureCreateView(texture, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)view));
+}
+
+/* Begin a render pass with a single color attachment (clear to given color) */
+CAMLprim value caml_wgpu_command_encoder_begin_render_pass_simple(
+    value encoder_val, value label_val, value view_val,
+    value r_val, value g_val, value b_val, value a_val) {
+  CAMLparam5(encoder_val, label_val, view_val, r_val, g_val);
+  CAMLxparam2(b_val, a_val);
+  WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
+  const char* label = String_val(label_val);
+  WGPUTextureView view = (WGPUTextureView)Nativeint_val(view_val);
+  double r = Double_val(r_val);
+  double g = Double_val(g_val);
+  double b = Double_val(b_val);
+  double a = Double_val(a_val);
+
+  WGPURenderPassColorAttachment color_attachment = {
+    .view = view,
+    .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED, /* Required for non-3D textures */
+    .resolveTarget = NULL,
+    .loadOp = WGPULoadOp_Clear,
+    .storeOp = WGPUStoreOp_Store,
+    .clearValue = { .r = r, .g = g, .b = b, .a = a },
+  };
+
+  WGPURenderPassDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+    .colorAttachmentCount = 1,
+    .colorAttachments = &color_attachment,
+    .depthStencilAttachment = NULL,
+    .occlusionQuerySet = NULL,
+    .timestampWrites = NULL,
+  };
+
+  WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)pass));
+}
+
+CAMLprim value caml_wgpu_command_encoder_begin_render_pass_simple_bytecode(value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_command_encoder_begin_render_pass_simple(
+    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]);
+}
+
+/* Copy texture to buffer (simplified - full texture from origin 0,0) */
+CAMLprim value caml_wgpu_command_encoder_copy_texture_to_buffer_simple(
+    value encoder_val, value texture_val, value buffer_val,
+    value width_val, value height_val, value bytes_per_row_val) {
+  CAMLparam5(encoder_val, texture_val, buffer_val, width_val, height_val);
+  CAMLxparam1(bytes_per_row_val);
+  WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
+  WGPUTexture texture = (WGPUTexture)Nativeint_val(texture_val);
+  WGPUBuffer buffer = (WGPUBuffer)Nativeint_val(buffer_val);
+  uint32_t width = Int_val(width_val);
+  uint32_t height = Int_val(height_val);
+  uint32_t bytes_per_row = Int_val(bytes_per_row_val);
+
+  WGPUTexelCopyTextureInfo source = {
+    .texture = texture,
+    .mipLevel = 0,
+    .origin = { .x = 0, .y = 0, .z = 0 },
+    .aspect = WGPUTextureAspect_All,
+  };
+
+  WGPUTexelCopyBufferInfo destination = {
+    .layout = {
+      .offset = 0,
+      .bytesPerRow = bytes_per_row,
+      .rowsPerImage = height,
+    },
+    .buffer = buffer,
+  };
+
+  WGPUExtent3D extent = { .width = width, .height = height, .depthOrArrayLayers = 1 };
+
+  wgpuCommandEncoderCopyTextureToBuffer(encoder, &source, &destination, &extent);
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode(value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_command_encoder_copy_texture_to_buffer_simple(
+    argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+}
+
 |}
 ;;
 
@@ -1459,6 +1594,21 @@ external device_create_pipeline_layout_single :
 external device_create_compute_pipeline_simple :
   device -> string -> pipeline_layout -> shader_module -> string -> compute_pipeline
   = "caml_wgpu_device_create_compute_pipeline_simple"
+
+external device_create_texture_2d :
+  device -> string -> int -> int -> int -> int -> texture
+  = "caml_wgpu_device_create_texture_2d_bytecode" "caml_wgpu_device_create_texture_2d"
+
+external texture_create_view_simple : texture -> string -> texture_view
+  = "caml_wgpu_texture_create_view_simple"
+
+external command_encoder_begin_render_pass_simple :
+  command_encoder -> string -> texture_view -> float -> float -> float -> float -> render_pass_encoder
+  = "caml_wgpu_command_encoder_begin_render_pass_simple_bytecode" "caml_wgpu_command_encoder_begin_render_pass_simple"
+
+external command_encoder_copy_texture_to_buffer_simple :
+  command_encoder -> texture -> buffer -> int -> int -> int -> unit
+  = "caml_wgpu_command_encoder_copy_texture_to_buffer_simple_bytecode" "caml_wgpu_command_encoder_copy_texture_to_buffer_simple"
 |}
   in
   String.concat
@@ -1534,6 +1684,17 @@ val device_create_pipeline_layout_single :
 
 val device_create_compute_pipeline_simple :
   device -> string -> pipeline_layout -> shader_module -> string -> compute_pipeline
+
+val device_create_texture_2d :
+  device -> string -> int -> int -> int -> int -> texture
+
+val texture_create_view_simple : texture -> string -> texture_view
+
+val command_encoder_begin_render_pass_simple :
+  command_encoder -> string -> texture_view -> float -> float -> float -> float -> render_pass_encoder
+
+val command_encoder_copy_texture_to_buffer_simple :
+  command_encoder -> texture -> buffer -> int -> int -> int -> unit
 |}
   in
   String.concat
