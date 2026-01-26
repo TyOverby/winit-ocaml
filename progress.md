@@ -860,3 +860,35 @@ previously required hand-written C helpers:
 ### Next Steps
 1. Support descriptors with array members (bind group layout entries, etc.)
 2. Add chained struct support (nextInChain pattern)
+
+---
+
+## 2026-01-26: Pointer-to-Array Support for Descriptors
+
+### Accomplished
+- **Pointer-to-array recognition**: Updated `is_simple_member_type` and `is_simple_member_type_with_nested`
+  to recognize `Pointer { inner = Array _ }` as simple types
+  - This is a common C idiom where arrays are passed as pointers
+  - The low-level bindings already handle the pointer aspect
+
+- **create_pipeline_layout supports multiple bind group layouts**:
+  - Changed from `~bind_group_layout:Bind_group_layout.t` to `~bind_group_layouts:Bind_group_layout.t list`
+  - Uses the auto-generated `Pipeline_layout_descriptor` struct with array setter
+  - Removed `device_create_pipeline_layout_single` hardcoded C helper
+
+### Technical Details
+The YAML specification marks array members as `pointer: immutable`, which was causing the
+IR parser to wrap the type in `Pointer { inner = Array _ }`. The `is_simple_member_type`
+functions were rejecting all `Pointer` types, but pointer-to-array is semantically just
+an array passed by reference, which we can handle.
+
+### Remaining Work
+The harder cases (`create_bind_group_layout`, `create_bind_group`) use arrays of structs
+where each struct has nested struct members. This requires:
+- Defining high-level OCaml record types for entry structs
+- Generating code to convert lists of records to C struct arrays
+- Handling nested struct creation/setting/freeing for each array element
+
+### Next Steps
+1. Continue support for arrays of structs with nested struct members
+2. Add chained struct support (nextInChain pattern)
