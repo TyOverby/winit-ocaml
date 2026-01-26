@@ -962,6 +962,283 @@ CAMLprim value caml_wgpu_adapter_get_info(value adapter_val) {
 
   CAMLreturn(result);
 }
+
+/* Create shader module from WGSL source */
+CAMLprim value caml_wgpu_device_create_shader_module_wgsl(value device_val, value label_val, value code_val) {
+  CAMLparam3(device_val, label_val, code_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char* label = String_val(label_val);
+  const char* code = String_val(code_val);
+
+  WGPUShaderSourceWGSL wgsl_desc = {
+    .chain = { .sType = WGPUSType_ShaderSourceWGSL },
+    .code = { .data = code, .length = caml_string_length(code_val) },
+  };
+
+  WGPUShaderModuleDescriptor desc = {
+    .nextInChain = (WGPUChainedStruct*)&wgsl_desc,
+    .label = { .data = label, .length = caml_string_length(label_val) },
+  };
+
+  WGPUShaderModule module = wgpuDeviceCreateShaderModule(device, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)module));
+}
+
+/* Create command encoder with optional label */
+CAMLprim value caml_wgpu_device_create_command_encoder_simple(value device_val, value label_val) {
+  CAMLparam2(device_val, label_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char* label = String_val(label_val);
+
+  WGPUCommandEncoderDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+  };
+
+  WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)encoder));
+}
+
+/* Begin compute pass with optional label */
+CAMLprim value caml_wgpu_command_encoder_begin_compute_pass_simple(value encoder_val, value label_val) {
+  CAMLparam2(encoder_val, label_val);
+  WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
+  const char* label = String_val(label_val);
+
+  WGPUComputePassDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+  };
+
+  WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)pass));
+}
+
+/* Finish command encoder with optional label */
+CAMLprim value caml_wgpu_command_encoder_finish_simple(value encoder_val, value label_val) {
+  CAMLparam2(encoder_val, label_val);
+  WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
+  const char* label = String_val(label_val);
+
+  WGPUCommandBufferDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+  };
+
+  WGPUCommandBuffer buffer = wgpuCommandEncoderFinish(encoder, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)buffer));
+}
+
+/* Submit single command buffer */
+CAMLprim value caml_wgpu_queue_submit_single(value queue_val, value command_buffer_val) {
+  CAMLparam2(queue_val, command_buffer_val);
+  WGPUQueue queue = (WGPUQueue)Nativeint_val(queue_val);
+  WGPUCommandBuffer command_buffer = (WGPUCommandBuffer)Nativeint_val(command_buffer_val);
+
+  wgpuQueueSubmit(queue, 1, &command_buffer);
+  CAMLreturn(Val_unit);
+}
+
+/* Set bind group on compute pass (no dynamic offsets) */
+CAMLprim value caml_wgpu_compute_pass_encoder_set_bind_group_simple(value pass_val, value index_val, value group_val) {
+  CAMLparam3(pass_val, index_val, group_val);
+  WGPUComputePassEncoder pass = (WGPUComputePassEncoder)Nativeint_val(pass_val);
+  uint32_t index = Int_val(index_val);
+  WGPUBindGroup group = (WGPUBindGroup)Nativeint_val(group_val);
+
+  wgpuComputePassEncoderSetBindGroup(pass, index, group, 0, NULL);
+  CAMLreturn(Val_unit);
+}
+
+/* Poll device for completion */
+CAMLprim value caml_wgpu_device_poll(value device_val, value wait_val) {
+  CAMLparam2(device_val, wait_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  bool wait = Bool_val(wait_val);
+
+  wgpuDevicePoll(device, wait, NULL);
+  CAMLreturn(Val_unit);
+}
+
+/* Map buffer synchronously */
+static void handle_buffer_map_sync(WGPUMapAsyncStatus status, WGPUStringView message, void *userdata1, void *userdata2) {
+  (void)message;
+  (void)userdata2;
+  *(WGPUMapAsyncStatus*)userdata1 = status;
+}
+
+CAMLprim value caml_wgpu_buffer_map_sync(value buffer_val, value mode_val, value offset_val, value size_val) {
+  CAMLparam4(buffer_val, mode_val, offset_val, size_val);
+  WGPUBuffer buffer = (WGPUBuffer)Nativeint_val(buffer_val);
+  WGPUMapMode mode = Int_val(mode_val);
+  size_t offset = Int64_val(offset_val);
+  size_t size = Int64_val(size_val);
+
+  WGPUMapAsyncStatus status = WGPUMapAsyncStatus_Unknown;
+  WGPUBufferMapCallbackInfo callback_info = {
+    .callback = handle_buffer_map_sync,
+    .userdata1 = &status,
+  };
+
+  wgpuBufferMapAsync(buffer, mode, offset, size, callback_info);
+
+  CAMLreturn(Val_int(status));
+}
+
+/* Get mapped range as bigarray */
+CAMLprim value caml_wgpu_buffer_get_mapped_range_bigarray(value buffer_val, value offset_val, value size_val) {
+  CAMLparam3(buffer_val, offset_val, size_val);
+  CAMLlocal1(ba);
+  WGPUBuffer buffer = (WGPUBuffer)Nativeint_val(buffer_val);
+  size_t offset = Int64_val(offset_val);
+  size_t size = Int64_val(size_val);
+
+  void* ptr = wgpuBufferGetMappedRange(buffer, offset, size);
+  if (ptr == NULL) {
+    caml_failwith("wgpuBufferGetMappedRange returned NULL");
+  }
+
+  /* Create a bigarray that wraps the mapped memory */
+  intnat dims[1] = { size };
+  ba = caml_ba_alloc(CAML_BA_UINT8 | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL, 1, ptr, dims);
+
+  CAMLreturn(ba);
+}
+
+/* Get const mapped range as bigarray (for reading) */
+CAMLprim value caml_wgpu_buffer_get_const_mapped_range_bigarray(value buffer_val, value offset_val, value size_val) {
+  CAMLparam3(buffer_val, offset_val, size_val);
+  CAMLlocal1(ba);
+  WGPUBuffer buffer = (WGPUBuffer)Nativeint_val(buffer_val);
+  size_t offset = Int64_val(offset_val);
+  size_t size = Int64_val(size_val);
+
+  const void* ptr = wgpuBufferGetConstMappedRange(buffer, offset, size);
+  if (ptr == NULL) {
+    caml_failwith("wgpuBufferGetConstMappedRange returned NULL");
+  }
+
+  intnat dims[1] = { size };
+  ba = caml_ba_alloc(CAML_BA_UINT8 | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL, 1, (void*)ptr, dims);
+
+  CAMLreturn(ba);
+}
+
+/* Write buffer from bigarray */
+CAMLprim value caml_wgpu_queue_write_buffer_bigarray(value queue_val, value buffer_val, value offset_val, value data_val) {
+  CAMLparam4(queue_val, buffer_val, offset_val, data_val);
+  WGPUQueue queue = (WGPUQueue)Nativeint_val(queue_val);
+  WGPUBuffer buffer = (WGPUBuffer)Nativeint_val(buffer_val);
+  uint64_t offset = Int64_val(offset_val);
+
+  void* data = Caml_ba_data_val(data_val);
+  size_t size = caml_ba_byte_size(Caml_ba_array_val(data_val));
+
+  wgpuQueueWriteBuffer(queue, buffer, offset, data, size);
+  CAMLreturn(Val_unit);
+}
+
+/* Create bind group layout with a single storage buffer entry */
+CAMLprim value caml_wgpu_device_create_bind_group_layout_storage(value device_val, value label_val, value binding_val, value read_only_val) {
+  CAMLparam4(device_val, label_val, binding_val, read_only_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char* label = String_val(label_val);
+  uint32_t binding = Int_val(binding_val);
+  bool read_only = Bool_val(read_only_val);
+
+  WGPUBindGroupLayoutEntry entry = {
+    .binding = binding,
+    .visibility = WGPUShaderStage_Compute,
+    .buffer = {
+      .type = read_only ? WGPUBufferBindingType_ReadOnlyStorage : WGPUBufferBindingType_Storage,
+      .hasDynamicOffset = false,
+      .minBindingSize = 0,
+    },
+  };
+
+  WGPUBindGroupLayoutDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+    .entryCount = 1,
+    .entries = &entry,
+  };
+
+  WGPUBindGroupLayout layout = wgpuDeviceCreateBindGroupLayout(device, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)layout));
+}
+
+/* Create bind group with a single buffer entry */
+CAMLprim value caml_wgpu_device_create_bind_group_buffer(value device_val, value label_val, value layout_val, value binding_val, value buffer_val, value offset_val, value size_val) {
+  CAMLparam5(device_val, label_val, layout_val, binding_val, buffer_val);
+  CAMLxparam2(offset_val, size_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char* label = String_val(label_val);
+  WGPUBindGroupLayout layout = (WGPUBindGroupLayout)Nativeint_val(layout_val);
+  uint32_t binding = Int_val(binding_val);
+  WGPUBuffer buffer = (WGPUBuffer)Nativeint_val(buffer_val);
+  uint64_t offset = Int64_val(offset_val);
+  uint64_t size = Int64_val(size_val);
+
+  WGPUBindGroupEntry entry = {
+    .binding = binding,
+    .buffer = buffer,
+    .offset = offset,
+    .size = size,
+  };
+
+  WGPUBindGroupDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+    .layout = layout,
+    .entryCount = 1,
+    .entries = &entry,
+  };
+
+  WGPUBindGroup group = wgpuDeviceCreateBindGroup(device, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)group));
+}
+
+CAMLprim value caml_wgpu_device_create_bind_group_buffer_bytecode(value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_device_create_bind_group_buffer(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]);
+}
+
+/* Create pipeline layout with a single bind group layout */
+CAMLprim value caml_wgpu_device_create_pipeline_layout_single(value device_val, value label_val, value bind_group_layout_val) {
+  CAMLparam3(device_val, label_val, bind_group_layout_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char* label = String_val(label_val);
+  WGPUBindGroupLayout layout = (WGPUBindGroupLayout)Nativeint_val(bind_group_layout_val);
+
+  WGPUPipelineLayoutDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+    .bindGroupLayoutCount = 1,
+    .bindGroupLayouts = &layout,
+  };
+
+  WGPUPipelineLayout pipeline_layout = wgpuDeviceCreatePipelineLayout(device, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)pipeline_layout));
+}
+
+/* Create compute pipeline from shader module */
+CAMLprim value caml_wgpu_device_create_compute_pipeline_simple(value device_val, value label_val, value layout_val, value shader_val, value entry_point_val) {
+  CAMLparam5(device_val, label_val, layout_val, shader_val, entry_point_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char* label = String_val(label_val);
+  WGPUPipelineLayout layout = (WGPUPipelineLayout)Nativeint_val(layout_val);
+  WGPUShaderModule shader = (WGPUShaderModule)Nativeint_val(shader_val);
+  const char* entry_point = String_val(entry_point_val);
+
+  WGPUComputePipelineDescriptor desc = {
+    .label = { .data = label, .length = caml_string_length(label_val) },
+    .layout = layout,
+    .compute = {
+      .module = shader,
+      .entryPoint = { .data = entry_point, .length = caml_string_length(entry_point_val) },
+      .constantCount = 0,
+      .constants = NULL,
+    },
+  };
+
+  WGPUComputePipeline pipeline = wgpuDeviceCreateComputePipeline(device, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)pipeline));
+}
+
 |}
 ;;
 
@@ -974,6 +1251,7 @@ let gen_c_stubs (api : Ir.api) : string =
 #include <caml/alloc.h>
 #include <caml/custom.h>
 #include <caml/fail.h>
+#include <caml/bigarray.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -1051,6 +1329,58 @@ let adapter_get_info adapter =
     adapter_get_info_raw adapter
   in
   { vendor; architecture; device; description; backend_type; adapter_type }
+
+external device_create_shader_module_wgsl : device -> string -> string -> shader_module
+  = "caml_wgpu_device_create_shader_module_wgsl"
+
+external device_create_command_encoder_simple : device -> string -> command_encoder
+  = "caml_wgpu_device_create_command_encoder_simple"
+
+external command_encoder_begin_compute_pass_simple : command_encoder -> string -> compute_pass_encoder
+  = "caml_wgpu_command_encoder_begin_compute_pass_simple"
+
+external command_encoder_finish_simple : command_encoder -> string -> command_buffer
+  = "caml_wgpu_command_encoder_finish_simple"
+
+external queue_submit_single : queue -> command_buffer -> unit
+  = "caml_wgpu_queue_submit_single"
+
+external compute_pass_encoder_set_bind_group_simple : compute_pass_encoder -> int -> bind_group -> unit
+  = "caml_wgpu_compute_pass_encoder_set_bind_group_simple"
+
+external device_poll : device -> bool -> unit
+  = "caml_wgpu_device_poll"
+
+external buffer_map_sync : buffer -> int -> int64 -> int64 -> int
+  = "caml_wgpu_buffer_map_sync"
+
+external buffer_get_mapped_range_bigarray :
+  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  = "caml_wgpu_buffer_get_mapped_range_bigarray"
+
+external buffer_get_const_mapped_range_bigarray :
+  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  = "caml_wgpu_buffer_get_const_mapped_range_bigarray"
+
+external queue_write_buffer_bigarray :
+  queue -> buffer -> int64 -> (_, _, Bigarray.c_layout) Bigarray.Array1.t -> unit
+  = "caml_wgpu_queue_write_buffer_bigarray"
+
+external device_create_bind_group_layout_storage :
+  device -> string -> int -> bool -> bind_group_layout
+  = "caml_wgpu_device_create_bind_group_layout_storage"
+
+external device_create_bind_group_buffer :
+  device -> string -> bind_group_layout -> int -> buffer -> int64 -> int64 -> bind_group
+  = "caml_wgpu_device_create_bind_group_buffer_bytecode" "caml_wgpu_device_create_bind_group_buffer"
+
+external device_create_pipeline_layout_single :
+  device -> string -> bind_group_layout -> pipeline_layout
+  = "caml_wgpu_device_create_pipeline_layout_single"
+
+external device_create_compute_pipeline_simple :
+  device -> string -> pipeline_layout -> shader_module -> string -> compute_pipeline
+  = "caml_wgpu_device_create_compute_pipeline_simple"
 |}
   in
   String.concat
@@ -1089,6 +1419,43 @@ type adapter_info =
   }
 
 val adapter_get_info : adapter -> adapter_info
+
+val device_create_shader_module_wgsl : device -> string -> string -> shader_module
+
+val device_create_command_encoder_simple : device -> string -> command_encoder
+
+val command_encoder_begin_compute_pass_simple : command_encoder -> string -> compute_pass_encoder
+
+val command_encoder_finish_simple : command_encoder -> string -> command_buffer
+
+val queue_submit_single : queue -> command_buffer -> unit
+
+val compute_pass_encoder_set_bind_group_simple : compute_pass_encoder -> int -> bind_group -> unit
+
+val device_poll : device -> bool -> unit
+
+val buffer_map_sync : buffer -> int -> int64 -> int64 -> int
+
+val buffer_get_mapped_range_bigarray :
+  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+
+val buffer_get_const_mapped_range_bigarray :
+  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+
+val queue_write_buffer_bigarray :
+  queue -> buffer -> int64 -> (_, _, Bigarray.c_layout) Bigarray.Array1.t -> unit
+
+val device_create_bind_group_layout_storage :
+  device -> string -> int -> bool -> bind_group_layout
+
+val device_create_bind_group_buffer :
+  device -> string -> bind_group_layout -> int -> buffer -> int64 -> int64 -> bind_group
+
+val device_create_pipeline_layout_single :
+  device -> string -> bind_group_layout -> pipeline_layout
+
+val device_create_compute_pipeline_simple :
+  device -> string -> pipeline_layout -> shader_module -> string -> compute_pipeline
 |}
   in
   String.concat

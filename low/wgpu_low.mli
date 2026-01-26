@@ -1933,3 +1933,40 @@ type adapter_info =
   }
 
 val adapter_get_info : adapter -> adapter_info
+
+val device_create_shader_module_wgsl : device -> string -> string -> shader_module
+
+val device_create_command_encoder_simple : device -> string -> command_encoder
+
+val command_encoder_begin_compute_pass_simple : command_encoder -> string -> compute_pass_encoder
+
+val command_encoder_finish_simple : command_encoder -> string -> command_buffer
+
+val queue_submit_single : queue -> command_buffer -> unit
+
+val compute_pass_encoder_set_bind_group_simple : compute_pass_encoder -> int -> bind_group -> unit
+
+val device_poll : device -> bool -> unit
+
+val buffer_map_sync : buffer -> int -> int64 -> int64 -> int
+
+val buffer_get_mapped_range_bigarray :
+  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+
+val buffer_get_const_mapped_range_bigarray :
+  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+
+val queue_write_buffer_bigarray :
+  queue -> buffer -> int64 -> (_, _, Bigarray.c_layout) Bigarray.Array1.t -> unit
+
+val device_create_bind_group_layout_storage :
+  device -> string -> int -> bool -> bind_group_layout
+
+val device_create_bind_group_buffer :
+  device -> string -> bind_group_layout -> int -> buffer -> int64 -> int64 -> bind_group
+
+val device_create_pipeline_layout_single :
+  device -> string -> bind_group_layout -> pipeline_layout
+
+val device_create_compute_pipeline_simple :
+  device -> string -> pipeline_layout -> shader_module -> string -> compute_pipeline

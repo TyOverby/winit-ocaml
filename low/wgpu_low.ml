@@ -3109,3 +3109,55 @@ let adapter_get_info adapter =
     adapter_get_info_raw adapter
   in
   { vendor; architecture; device; description; backend_type; adapter_type }
+
+external device_create_shader_module_wgsl : device -> string -> string -> shader_module
+  = "caml_wgpu_device_create_shader_module_wgsl"
+
+external device_create_command_encoder_simple : device -> string -> command_encoder
+  = "caml_wgpu_device_create_command_encoder_simple"
+
+external command_encoder_begin_compute_pass_simple : command_encoder -> string -> compute_pass_encoder
+  = "caml_wgpu_command_encoder_begin_compute_pass_simple"
+
+external command_encoder_finish_simple : command_encoder -> string -> command_buffer
+  = "caml_wgpu_command_encoder_finish_simple"
+
+external queue_submit_single : queue -> command_buffer -> unit
+  = "caml_wgpu_queue_submit_single"
+
+external compute_pass_encoder_set_bind_group_simple : compute_pass_encoder -> int -> bind_group -> unit
+  = "caml_wgpu_compute_pass_encoder_set_bind_group_simple"
+
+external device_poll : device -> bool -> unit
+  = "caml_wgpu_device_poll"
+
+external buffer_map_sync : buffer -> int -> int64 -> int64 -> int
+  = "caml_wgpu_buffer_map_sync"
+
+external buffer_get_mapped_range_bigarray :
+  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  = "caml_wgpu_buffer_get_mapped_range_bigarray"
+
+external buffer_get_const_mapped_range_bigarray :
+  buffer -> int64 -> int64 -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  = "caml_wgpu_buffer_get_const_mapped_range_bigarray"
+
+external queue_write_buffer_bigarray :
+  queue -> buffer -> int64 -> (_, _, Bigarray.c_layout) Bigarray.Array1.t -> unit
+  = "caml_wgpu_queue_write_buffer_bigarray"
+
+external device_create_bind_group_layout_storage :
+  device -> string -> int -> bool -> bind_group_layout
+  = "caml_wgpu_device_create_bind_group_layout_storage"
+
+external device_create_bind_group_buffer :
+  device -> string -> bind_group_layout -> int -> buffer -> int64 -> int64 -> bind_group
+  = "caml_wgpu_device_create_bind_group_buffer_bytecode" "caml_wgpu_device_create_bind_group_buffer"
+
+external device_create_pipeline_layout_single :
+  device -> string -> bind_group_layout -> pipeline_layout
+  = "caml_wgpu_device_create_pipeline_layout_single"
+
+external device_create_compute_pipeline_simple :
+  device -> string -> pipeline_layout -> shader_module -> string -> compute_pipeline
+  = "caml_wgpu_device_create_compute_pipeline_simple"
