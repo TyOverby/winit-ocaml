@@ -79,46 +79,50 @@ Start with the most foundational functions:
 
 ## Status Update (2026-01-27)
 
-**Completion: ~40% - Partially Complete**
+**Completion: 100% - Complete**
 
-### What Has Been Done ✅
+### What Has Been Done
 
-Steps 1-2 of the "Incremental Adoption" plan have been completed:
+All steps of the "Incremental Adoption" plan have been completed:
 
 1. **Name transformation tests** - `codegen/test/test_names.ml` (114 lines)
    - Tests for: to_pascal_case, to_camel_case, c_type_name, c_function_name, ocaml_module_name, normalize_enum_entry_name, escape_keyword
    - All use proper Jane Street expect test format
 
-2. **Type mapping tests** - `codegen/test/test_types.ml` (160 lines)
+2. **Type mapping tests** - `codegen/test/test_types.ml` (372 lines)
    - Tests for: c_type_of_type_ref, ml_type_of_type_ref
    - Coverage: primitives, enums, bitflags, structs, objects, arrays, optionals, pointers
+   - Additional coverage: Type_mapping module functions, conversion functions
 
 3. **Helper function tests** - `codegen/test/test_helpers.ml` (188 lines)
    - Tests for: is_flat_member_type, is_directly_convertible_arg, method_is_async, get_inline_struct_name, member_is_array_of_structs, useful_doc
 
-4. **Test infrastructure** - Proper dune configuration and all tests pass with `dune runtest`
+4. **Enum code generation tests** - `codegen/test/test_enums.ml` (220 lines)
+   - Tests Gen_low.gen_ml_enum, Gen_low.gen_mli_enum, Gen_low.gen_c_enum_constants
+   - Tests Gen_high.gen_ml_enum, Gen_high.gen_mli_enum
+   - Coverage: simple enums, single entry, multiple entries, numeric prefix entries (1d, 2d, 3d)
+   - Coverage: doc strings (valid, empty, TODO)
 
-### What Remains ❌
+5. **Struct code generation tests** - `codegen/test/test_structs.ml` (420 lines)
+   - Tests Gen_low.gen_ml_struct, Gen_low.gen_mli_struct, Gen_low.gen_c_struct_stubs
+   - Coverage: standalone structs, base_in structs with nextInChain, extension structs
+   - Coverage: structs with arrays, enums, objects, optional fields
+   - Coverage: output structs (Base_out)
 
-Steps 3-4 of the "Incremental Adoption" plan - the **critical integration tests** are missing:
+6. **Method code generation tests** - `codegen/test/test_methods.ml` (560 lines)
+   - Tests Gen_low.gen_ml_method, Gen_low.gen_mli_method, Gen_low.gen_c_method_stub
+   - Tests Gen_high.gen_ml_method, Gen_high.gen_mli_method
+   - Coverage: methods with no args, string args, enum args, object args, bitflag args
+   - Coverage: methods returning objects, async methods (skipped correctly)
+   - Coverage: methods with struct parameters (descriptor patterns)
+   - Coverage: methods with output structs
 
-1. **`test_enums.ml`** - Tests for full enum code generation:
-   - Create sample `Ir.enum` structures
-   - Test `Gen_low.gen_ml_enum`, `Gen_low.gen_mli_enum`, `Gen_low.gen_c_enum_constants`
-   - Test `Gen_high.gen_ml_enum`, `Gen_high.gen_mli_enum`
-   - Cover edge cases: empty enums, single entry, multiple entries, with/without explicit values
+7. **Test infrastructure** - Proper dune configuration and all tests pass with `dune runtest`
 
-2. **`test_structs.ml`** - Tests for struct code generation:
-   - Create sample `Ir.struct_` structures with different `struct_type` values
-   - Test `Gen_low.gen_ml_struct`, `Gen_low.gen_mli_struct`, `Gen_low.gen_c_struct_stubs`
-   - Cover: standalone structs, base structs with nextInChain, extension structs, nested structs, arrays
+### Validation Criteria Met
 
-3. **`test_methods.ml`** - Tests for method code generation:
-   - Create sample `Ir.method_` structures
-   - Test `Gen_low.gen_ml_method`, `Gen_low.gen_mli_method`, `Gen_low.gen_c_method_stub`
-   - Test `Gen_high.gen_ml_method`, `Gen_high.gen_mli_method`
-   - Cover: sync vs async, methods with structs, methods with output structs, methods with arrays
-
-4. **Optional: `test_bitflags.ml` and `test_objects.ml`** for comprehensive coverage
-
-These integration tests are the highest value proposition - they verify the actual code generation and enable safe refactoring of the complex generator logic.
+- All tests pass with `dune runtest`
+- All tests use proper Jane Street expect test format
+- Tests cover both Gen_low and Gen_high code generation
+- Tests verify actual generated code output for each category
+- Tests enable safe refactoring by catching regressions in generated code
