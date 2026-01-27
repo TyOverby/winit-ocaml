@@ -122,15 +122,15 @@ let%expect_test "method_is_async - with callback" =
   [%expect {| true |}]
 ;;
 
-let%expect_test "member_is_nested_struct - struct" =
+let%expect_test "get_inline_struct_name - struct" =
   let type_ref = Ir.Struct "extent_3d" in
-  print_s [%sexp (Gen_high.member_is_nested_struct type_ref : string option)];
+  print_s [%sexp (Gen_high.get_inline_struct_name type_ref : string option)];
   [%expect {| (extent_3d) |}]
 ;;
 
-let%expect_test "member_is_nested_struct - not a struct" =
+let%expect_test "get_inline_struct_name - not a struct" =
   let type_ref = Ir.Primitive Uint32 in
-  print_s [%sexp (Gen_high.member_is_nested_struct type_ref : string option)];
+  print_s [%sexp (Gen_high.get_inline_struct_name type_ref : string option)];
   [%expect {| () |}]
 ;;
 

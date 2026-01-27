@@ -1200,7 +1200,6 @@ let gen_c_function_stubs (func : Ir.function_) : string =
 
 (** Generate additional helper functions for sync wrappers *)
 let gen_c_sync_helpers () : string = read_template "low/sync_helpers.c"
-;;
 
 (** Generate all C stubs *)
 let gen_c_stubs (api : Ir.api) : string =
