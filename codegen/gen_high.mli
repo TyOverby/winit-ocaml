@@ -72,6 +72,18 @@ val gen_ml : Ir.api -> string
     in the implementation. *)
 val gen_mli : Ir.api -> string
 
+(** Generate enums module implementation (.ml). *)
+val gen_enums_ml : Ir.api -> string
+
+(** Generate enums module interface (.mli). *)
+val gen_enums_mli : Ir.api -> string
+
+(** Generate bitsets module implementation (.ml). *)
+val gen_bitsets_ml : Ir.api -> string
+
+(** Generate bitsets module interface (.mli). *)
+val gen_bitsets_mli : Ir.api -> string
+
 (** {2 Validation} *)
 
 (** Validate that all non-auto-generated methods are accounted for.

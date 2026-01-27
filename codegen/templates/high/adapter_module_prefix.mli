@@ -30,7 +30,7 @@ module Device : sig
 
   (** Create a texture *)
   val create_texture : t -> ?label:string -> size:(int * int * int) ->
-    format:Texture_format.t -> usage:Texture_usage.t list ->
+    format:Texture_format.t -> usage:Texture_usage.Item.t list ->
     ?dimension:Texture_dimension.t -> ?mip_level_count:int -> ?sample_count:int ->
     unit -> Texture.t
 
@@ -47,7 +47,7 @@ module Device : sig
     ?cull_mode:Cull_mode.t ->
     ?blend:(Blend_factor.t * Blend_factor.t * Blend_operation.t *
             Blend_factor.t * Blend_factor.t * Blend_operation.t) ->
-    ?write_mask:Color_write_mask.t list ->
+    ?write_mask:Color_write_mask.Item.t list ->
     unit -> Render_pipeline.t
 
   (** Create a bind group layout for a single storage buffer *)

@@ -65,9 +65,9 @@ let test_buffer_creation () =
       device
       ~size:256L
       ~usage:
-        [ Wgpu.Buffer_usage.Storage
-        ; Wgpu.Buffer_usage.Copy_dst
-        ; Wgpu.Buffer_usage.Copy_src
+        [ Wgpu.Buffer_usage.Item.Storage
+        ; Wgpu.Buffer_usage.Item.Copy_dst
+        ; Wgpu.Buffer_usage.Item.Copy_src
         ]
       ~mapped_at_creation:false
       ()
@@ -121,9 +121,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       device
       ~size:(Int64.of_int data_size)
       ~usage:
-        [ Wgpu.Buffer_usage.Storage
-        ; Wgpu.Buffer_usage.Copy_dst
-        ; Wgpu.Buffer_usage.Copy_src
+        [ Wgpu.Buffer_usage.Item.Storage
+        ; Wgpu.Buffer_usage.Item.Copy_dst
+        ; Wgpu.Buffer_usage.Item.Copy_src
         ]
       ~mapped_at_creation:false
       ()
@@ -134,7 +134,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     Wgpu.Device.create_buffer
       device
       ~size:(Int64.of_int data_size)
-      ~usage:[ Wgpu.Buffer_usage.Map_read; Wgpu.Buffer_usage.Copy_dst ]
+      ~usage:[ Wgpu.Buffer_usage.Item.Map_read; Wgpu.Buffer_usage.Item.Copy_dst ]
       ~mapped_at_creation:false
       ()
   in
@@ -234,7 +234,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
   (* Map readback buffer and verify results *)
   Wgpu.map_buffer
     readback_buffer
-    ~mode:[ Wgpu.Map_mode.Read ]
+    ~mode:[ Wgpu.Map_mode.Item.Read ]
     ~offset:0L
     ~size:(Int64.of_int data_size);
   Wgpu.Device.poll device ~wait:true ();
@@ -296,7 +296,7 @@ let test_render_clear () =
       ~label:"render_target"
       ~size:(width, height, 1)
       ~format:Wgpu.Texture_format.Rgba8_unorm
-      ~usage:[ Wgpu.Texture_usage.Render_attachment; Wgpu.Texture_usage.Copy_src ]
+      ~usage:[ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]
       ()
   in
   print_endline "Render target texture created.";
@@ -313,7 +313,7 @@ let test_render_clear () =
       device
       ~label:"readback_buffer"
       ~size:(Int64.of_int buffer_size)
-      ~usage:[ Wgpu.Buffer_usage.Map_read; Wgpu.Buffer_usage.Copy_dst ]
+      ~usage:[ Wgpu.Buffer_usage.Item.Map_read; Wgpu.Buffer_usage.Item.Copy_dst ]
       ~mapped_at_creation:false
       ()
   in
@@ -352,7 +352,7 @@ let test_render_clear () =
   (* Map readback buffer and verify *)
   Wgpu.map_buffer
     readback_buffer
-    ~mode:[ Wgpu.Map_mode.Read ]
+    ~mode:[ Wgpu.Map_mode.Item.Read ]
     ~offset:0L
     ~size:(Int64.of_int buffer_size);
   Wgpu.Device.poll device ~wait:true ();
@@ -451,7 +451,7 @@ fn fs_main() -> @location(0) vec4<f32> {
       ~label:"render_target"
       ~size:(width, height, 1)
       ~format:Wgpu.Texture_format.Rgba8_unorm
-      ~usage:[ Wgpu.Texture_usage.Render_attachment; Wgpu.Texture_usage.Copy_src ]
+      ~usage:[ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]
       ()
   in
   print_endline "Render target texture created.";
@@ -478,7 +478,7 @@ fn fs_main() -> @location(0) vec4<f32> {
       device
       ~label:"readback_buffer"
       ~size:(Int64.of_int buffer_size)
-      ~usage:[ Wgpu.Buffer_usage.Map_read; Wgpu.Buffer_usage.Copy_dst ]
+      ~usage:[ Wgpu.Buffer_usage.Item.Map_read; Wgpu.Buffer_usage.Item.Copy_dst ]
       ~mapped_at_creation:false
       ()
   in
@@ -522,7 +522,7 @@ fn fs_main() -> @location(0) vec4<f32> {
   Wgpu.Device.poll device ~wait:true ();
   Wgpu.map_buffer
     readback_buffer
-    ~mode:[ Wgpu.Map_mode.Read ]
+    ~mode:[ Wgpu.Map_mode.Item.Read ]
     ~offset:0L
     ~size:(Int64.of_int buffer_size);
   Wgpu.Device.poll device ~wait:true ();
