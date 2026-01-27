@@ -31,7 +31,7 @@ started" page that might be helpful.
     different kinds of objects)
   - Memory safe (finalizers or explicit destructors shouldn't be able to free
     parent resources before children)
-- Be ergonomic 
+- Be ergonomic, but accurate
   - Break the API up into modules when it makes sense
   - Follow Jane Street API guidelines
     - Types are always named `t` and live inside the modules that contain their
@@ -39,6 +39,7 @@ started" page that might be helpful.
     - Within a module, parameters should be either optional or named, with `t`
       values being the only positional (unnamed) arg 
   - use optional parameters when applicable
+  - The generated APIs should still be 1:1 replicas of the functions found in the C library
 - Be readable
   - Generate a `.mli` file for the high level bindings, not just a `.ml`
     - Include comments in the `.mli` code that are associated with the
