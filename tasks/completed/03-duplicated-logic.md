@@ -116,3 +116,45 @@ The following function pairs in `gen_high.ml` still need to be unified using the
 6. **Check gen_low.ml** for any struct generation pairs that could be unified
 
 The pattern has been successfully established. Apply it to the remaining pairs.
+
+## Implementation Plan (2026-01-27)
+
+### Phase 1: gen_high.ml - Unify remaining function pairs
+
+1. **gen_nested_struct_module** (simplest, will do first)
+   - Unify `gen_nested_struct_module` and `gen_nested_struct_module_mli`
+   - Pattern: Use `output_mode` to switch between `struct`/`sig` and `=`/`:`
+
+2. **gen_array_element_struct_module**
+   - Unify `gen_array_element_struct_module` and `gen_array_element_struct_module_mli`
+   - This will use the unified `gen_nested_struct_module`
+
+3. **gen_method_with_output_struct**
+   - Unify `gen_ml_method_with_output_struct` and `gen_mli_method_with_output_struct`
+   - Interface only needs signature, implementation needs full body
+
+4. **gen_method_with_structs**
+   - Unify `gen_ml_method_with_structs` and `gen_mli_method_with_structs`
+   - Share parameter collection logic, differ in output format
+
+5. **gen_method**
+   - Unify `gen_ml_method` and `gen_mli_method`
+   - Top-level dispatch that calls unified sub-functions
+
+### Phase 2: gen_low.ml - Check for duplication
+
+After examining gen_low.ml:
+- `gen_ml_enum` / `gen_mli_enum` have significant structural duplication
+- `gen_ml_bitflag` / `gen_mli_bitflag` have significant structural duplication
+- `gen_ml_struct` / `gen_mli_struct` have significant structural duplication
+- `gen_ml_object` / `gen_mli_object` series have duplication
+
+These could also be unified using the same pattern.
+
+### Validation Criteria
+
+1. `dune build` succeeds without errors
+2. `dune build @check` produces no warnings
+3. `dune exec test/test_compute.exe` passes all tests
+4. Generated output (wgpu.ml, wgpu.mli) is identical to before the refactor
+5. Code reduction: Each unified function replaces two functions with similar logic

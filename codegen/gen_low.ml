@@ -2,6 +2,11 @@ open! Core
 
 (** Generate low-level C stubs and OCaml external bindings *)
 
+(** Output mode for code generation *)
+type output_mode =
+  | Implementation (** Generate .ml implementation *)
+  | Interface (** Generate .mli interface *)
+
 (** Read a template file from the templates directory *)
 let read_template (path : string) : string =
   let template_path = "../codegen/templates/" ^ path in
@@ -80,8 +85,8 @@ let gen_c_enum_constants (enum : Ir.enum) : string =
 |}
 ;;
 
-(** Generate OCaml code for an enum type *)
-let gen_ml_enum (enum : Ir.enum) : string =
+(** Generate OCaml code for an enum type - unified for ML and MLI *)
+let gen_enum (mode : output_mode) (enum : Ir.enum) : string =
   let module_name = ocaml_module_name enum.name in
   let variants =
     List.map enum.entries ~f:(fun entry ->
@@ -89,30 +94,41 @@ let gen_ml_enum (enum : Ir.enum) : string =
       {%string|  | %{name}|})
     |> String.concat ~sep:"\n"
   in
-  let to_int_cases =
-    List.map enum.entries ~f:(fun entry ->
-      let variant_name = normalize_enum_entry_name entry.name in
-      let enum_lower = String.lowercase enum.name in
-      let entry_lower = String.lowercase entry.name in
-      {%string|    | %{variant_name} -> %{enum_lower}_%{entry_lower} ()|})
-    |> String.concat ~sep:"\n"
-  in
-  let of_int_cases =
-    List.map enum.entries ~f:(fun entry ->
-      let variant_name = normalize_enum_entry_name entry.name in
-      let enum_lower = String.lowercase enum.name in
-      let entry_lower = String.lowercase entry.name in
-      {%string|    | x when x = %{enum_lower}_%{entry_lower} () -> %{variant_name}|})
-    |> String.concat ~sep:"\n"
-  in
-  let externals =
-    List.map enum.entries ~f:(fun entry ->
-      let enum_lower = String.lowercase enum.name in
-      let entry_lower = String.lowercase entry.name in
-      {%string|external %{enum_lower}_%{entry_lower} : unit -> int = "caml_wgpu_%{enum_lower}_%{entry_lower}"|})
-    |> String.concat ~sep:"\n"
-  in
-  {%string|module %{module_name} = struct
+  match mode with
+  | Interface ->
+    {%string|module %{module_name} : sig
+  type t =
+%{variants}
+
+  val to_int : t -> int
+  val of_int : int -> t
+end
+|}
+  | Implementation ->
+    let to_int_cases =
+      List.map enum.entries ~f:(fun entry ->
+        let variant_name = normalize_enum_entry_name entry.name in
+        let enum_lower = String.lowercase enum.name in
+        let entry_lower = String.lowercase entry.name in
+        {%string|    | %{variant_name} -> %{enum_lower}_%{entry_lower} ()|})
+      |> String.concat ~sep:"\n"
+    in
+    let of_int_cases =
+      List.map enum.entries ~f:(fun entry ->
+        let variant_name = normalize_enum_entry_name entry.name in
+        let enum_lower = String.lowercase enum.name in
+        let entry_lower = String.lowercase entry.name in
+        {%string|    | x when x = %{enum_lower}_%{entry_lower} () -> %{variant_name}|})
+      |> String.concat ~sep:"\n"
+    in
+    let externals =
+      List.map enum.entries ~f:(fun entry ->
+        let enum_lower = String.lowercase enum.name in
+        let entry_lower = String.lowercase entry.name in
+        {%string|external %{enum_lower}_%{entry_lower} : unit -> int = "caml_wgpu_%{enum_lower}_%{entry_lower}"|})
+      |> String.concat ~sep:"\n"
+    in
+    {%string|module %{module_name} = struct
   type t =
 %{variants}
 
@@ -128,24 +144,11 @@ end
 |}
 ;;
 
-(** Generate MLI for an enum type *)
-let gen_mli_enum (enum : Ir.enum) : string =
-  let module_name = ocaml_module_name enum.name in
-  let variants =
-    List.map enum.entries ~f:(fun entry ->
-      let name = normalize_enum_entry_name entry.name in
-      {%string|  | %{name}|})
-    |> String.concat ~sep:"\n"
-  in
-  {%string|module %{module_name} : sig
-  type t =
-%{variants}
+(** Generate ML implementation for an enum type - backward compatibility wrapper *)
+let gen_ml_enum (enum : Ir.enum) : string = gen_enum Implementation enum
 
-  val to_int : t -> int
-  val of_int : int -> t
-end
-|}
-;;
+(** Generate MLI for an enum type - backward compatibility wrapper *)
+let gen_mli_enum (enum : Ir.enum) : string = gen_enum Interface enum
 
 (** Generate C code for bitflag constants *)
 let gen_c_bitflag_constants (bitflag : Ir.bitflag) : string =
@@ -166,8 +169,8 @@ let gen_c_bitflag_constants (bitflag : Ir.bitflag) : string =
 |}
 ;;
 
-(** Generate OCaml code for a bitflag type *)
-let gen_ml_bitflag (bitflag : Ir.bitflag) : string =
+(** Generate OCaml code for a bitflag type - unified for ML and MLI *)
+let gen_bitflag (mode : output_mode) (bitflag : Ir.bitflag) : string =
   let module_name = ocaml_module_name bitflag.name in
   let variants =
     List.map bitflag.entries ~f:(fun entry ->
@@ -175,22 +178,33 @@ let gen_ml_bitflag (bitflag : Ir.bitflag) : string =
       {%string|  | %{name}|})
     |> String.concat ~sep:"\n"
   in
-  let to_int_cases =
-    List.map bitflag.entries ~f:(fun entry ->
-      let variant_name = normalize_enum_entry_name entry.name in
-      let bitflag_lower = String.lowercase bitflag.name in
-      let entry_lower = String.lowercase entry.name in
-      {%string|    | %{variant_name} -> %{bitflag_lower}_%{entry_lower} ()|})
-    |> String.concat ~sep:"\n"
-  in
-  let externals =
-    List.map bitflag.entries ~f:(fun entry ->
-      let bitflag_lower = String.lowercase bitflag.name in
-      let entry_lower = String.lowercase entry.name in
-      {%string|external %{bitflag_lower}_%{entry_lower} : unit -> int = "caml_wgpu_%{bitflag_lower}_%{entry_lower}"|})
-    |> String.concat ~sep:"\n"
-  in
-  {%string|module %{module_name} = struct
+  match mode with
+  | Interface ->
+    {%string|module %{module_name} : sig
+  type t =
+%{variants}
+
+  val to_int : t -> int
+  val list_to_int : t list -> int
+end
+|}
+  | Implementation ->
+    let to_int_cases =
+      List.map bitflag.entries ~f:(fun entry ->
+        let variant_name = normalize_enum_entry_name entry.name in
+        let bitflag_lower = String.lowercase bitflag.name in
+        let entry_lower = String.lowercase entry.name in
+        {%string|    | %{variant_name} -> %{bitflag_lower}_%{entry_lower} ()|})
+      |> String.concat ~sep:"\n"
+    in
+    let externals =
+      List.map bitflag.entries ~f:(fun entry ->
+        let bitflag_lower = String.lowercase bitflag.name in
+        let entry_lower = String.lowercase entry.name in
+        {%string|external %{bitflag_lower}_%{entry_lower} : unit -> int = "caml_wgpu_%{bitflag_lower}_%{entry_lower}"|})
+      |> String.concat ~sep:"\n"
+    in
+    {%string|module %{module_name} = struct
   type t =
 %{variants}
 
@@ -205,24 +219,11 @@ end
 |}
 ;;
 
-(** Generate MLI for a bitflag type *)
-let gen_mli_bitflag (bitflag : Ir.bitflag) : string =
-  let module_name = ocaml_module_name bitflag.name in
-  let variants =
-    List.map bitflag.entries ~f:(fun entry ->
-      let name = normalize_enum_entry_name entry.name in
-      {%string|  | %{name}|})
-    |> String.concat ~sep:"\n"
-  in
-  {%string|module %{module_name} : sig
-  type t =
-%{variants}
+(** Generate ML implementation for a bitflag type - backward compatibility wrapper *)
+let gen_ml_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Implementation bitflag
 
-  val to_int : t -> int
-  val list_to_int : t list -> int
-end
-|}
-;;
+(** Generate MLI for a bitflag type - backward compatibility wrapper *)
+let gen_mli_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Interface bitflag
 
 (** Generate C struct allocation/deallocation functions *)
 let gen_c_struct_create_free (struct_ : Ir.struct_) : string =

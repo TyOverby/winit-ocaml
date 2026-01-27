@@ -351,6 +351,16 @@ let high_level_return_type (type_ref : Ir.type_ref) : string =
   Type_mapping.type_string ~context:Ocaml_high_level_return type_ref
 ;;
 
+(** Get high-level OCaml type for a struct member *)
+let high_level_member_type (member : Ir.struct_member) : string =
+  Type_mapping.type_string ~context:Ocaml_high_level_member member.type_
+;;
+
+(** Get high-level OCaml type for a type_ref (for struct members) *)
+let high_level_member_type_of_type (type_ref : Ir.type_ref) : string =
+  Type_mapping.type_string ~context:Ocaml_high_level_member type_ref
+;;
+
 (** Generate code to convert a high-level argument to low-level *)
 let arg_to_low_level (arg_name : string) (type_ref : Ir.type_ref) : string =
   Type_mapping.convert_arg_to_low ~var_name:arg_name type_ref
@@ -754,8 +764,9 @@ let rec generate_struct_sets
   { code_lines = code; structs_to_free = vars }
 ;;
 
-(** Generate ML implementation for a method with one or more struct parameters *)
-let gen_ml_method_with_structs
+(** Generate method with one or more struct parameters - unified for ML and MLI *)
+let gen_method_with_structs
+  (mode : output_mode)
   (structs : Ir.struct_ list)
   (obj : Ir.object_)
   (method_ : Ir.method_)
@@ -777,51 +788,95 @@ let gen_ml_method_with_structs
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       collect_struct_params structs base_prefix struct_ None)
   in
-  let non_struct_params =
-    List.map non_struct_parameters ~f:(fun arg -> escape_keyword arg.name, arg, arg.optional)
-  in
-  (* Build function signature *)
-  let param_list = build_param_list struct_params non_struct_params in
-  (* Generate struct creation for each struct parameter (including nested structs) *)
-  let all_struct_vars, create_structs_lists =
-    List.fold struct_parameters ~init:([], []) ~f:(fun (vars, creates) (arg, struct_) ->
-      let base_prefix = if use_prefix then arg.name ^ "_" else "" in
-      let desc_var = "desc_" ^ arg.name in
-      let result = generate_struct_creates structs base_prefix struct_ desc_var in
-      vars @ result.created_structs, creates @ result.code_lines)
-  in
-  let create_structs = create_structs_lists in
-  (* Generate field setting for each struct (including nested structs) *)
-  let set_fields, array_element_struct_lists =
-    List.fold struct_parameters ~init:([], []) ~f:(fun (fields, entry_lists) (arg, struct_) ->
-      let base_prefix = if use_prefix then arg.name ^ "_" else "" in
-      let desc_var = "desc_" ^ arg.name in
-      let result = generate_struct_sets structs base_prefix struct_ desc_var in
-      fields @ result.code_lines, entry_lists @ result.structs_to_free)
-  in
-  (* Build the call arguments and generate the call with cleanup *)
-  let call_args = gen_method_call_args method_ struct_parameters in
-  let all_frees = gen_cleanup_code all_struct_vars array_element_struct_lists in
-  let result_and_free = gen_result_with_cleanup obj method_ call_args all_frees in
-  (* Put it all together *)
-  let body_lines = create_structs @ set_fields @ [ result_and_free ] in
-  let body = String.concat ~sep:"\n    " body_lines in
-  {%string|  let %{method_name} %{param_list} =
+  match mode with
+  | Interface ->
+    (* Build parameter types for signature *)
+    let struct_param_types =
+      List.map struct_params ~f:(fun p ->
+        let type_str = high_level_member_type p.member in
+        if p.is_optional
+        then {%string|?%{p.param_name}:%{type_str}|}
+        else {%string|%{p.param_name}:%{type_str}|})
+    in
+    let non_struct_param_types =
+      List.map non_struct_parameters ~f:(fun arg ->
+        let param_name = escape_keyword arg.name in
+        let type_str = high_level_arg_type arg.type_ in
+        if arg.optional
+        then {%string|?%{param_name}:%{type_str}|}
+        else {%string|%{param_name}:%{type_str}|})
+    in
+    let return_type =
+      match method_.returns with
+      | None -> "unit"
+      | Some ret -> high_level_return_type ret.type_
+    in
+    let all_params = struct_param_types @ non_struct_param_types in
+    let all_params_str = String.concat ~sep:" -> " all_params in
+    let type_sig = {%string|t -> %{all_params_str} -> unit -> %{return_type}|} in
+    {%string|  val %{method_name} : %{type_sig}
+|}
+  | Implementation ->
+    let non_struct_params =
+      List.map non_struct_parameters ~f:(fun arg ->
+        escape_keyword arg.name, arg, arg.optional)
+    in
+    (* Build function signature *)
+    let param_list = build_param_list struct_params non_struct_params in
+    (* Generate struct creation for each struct parameter (including nested structs) *)
+    let all_struct_vars, create_structs_lists =
+      List.fold struct_parameters ~init:([], []) ~f:(fun (vars, creates) (arg, struct_) ->
+        let base_prefix = if use_prefix then arg.name ^ "_" else "" in
+        let desc_var = "desc_" ^ arg.name in
+        let result = generate_struct_creates structs base_prefix struct_ desc_var in
+        vars @ result.created_structs, creates @ result.code_lines)
+    in
+    let create_structs = create_structs_lists in
+    (* Generate field setting for each struct (including nested structs) *)
+    let set_fields, array_element_struct_lists =
+      List.fold
+        struct_parameters
+        ~init:([], [])
+        ~f:(fun (fields, entry_lists) (arg, struct_) ->
+          let base_prefix = if use_prefix then arg.name ^ "_" else "" in
+          let desc_var = "desc_" ^ arg.name in
+          let result = generate_struct_sets structs base_prefix struct_ desc_var in
+          fields @ result.code_lines, entry_lists @ result.structs_to_free)
+    in
+    (* Build the call arguments and generate the call with cleanup *)
+    let call_args = gen_method_call_args method_ struct_parameters in
+    let all_frees = gen_cleanup_code all_struct_vars array_element_struct_lists in
+    let result_and_free = gen_result_with_cleanup obj method_ call_args all_frees in
+    (* Put it all together *)
+    let body_lines = create_structs @ set_fields @ [ result_and_free ] in
+    let body = String.concat ~sep:"\n    " body_lines in
+    {%string|  let %{method_name} %{param_list} =
     %{body}
 |}
 ;;
 
-(** Generate ML implementation for a method with output struct argument *)
-let gen_ml_method_with_output_struct
+(** Generate ML implementation for a method with one or more struct parameters - backward
+    compatibility wrapper *)
+let gen_ml_method_with_structs
+  (structs : Ir.struct_ list)
+  (obj : Ir.object_)
+  (method_ : Ir.method_)
+  (struct_parameters : (Ir.arg * Ir.struct_) list)
+  : string
+  =
+  gen_method_with_structs Implementation structs obj method_ struct_parameters
+;;
+
+(** Generate method with output struct argument - unified for ML and MLI *)
+let gen_method_with_output_struct
+  (mode : output_mode)
   (obj : Ir.object_)
   (method_ : Ir.method_)
   (struct_ : Ir.struct_)
-  (_arg : Ir.arg)
   : string
   =
   let method_name = escape_keyword method_.name in
   let struct_module = ocaml_module_name struct_.name in
-  let struct_var = "output" in
   (* Get non-struct parameters that are not the output struct *)
   let non_struct_parameters =
     List.filter method_.args ~f:(fun a ->
@@ -830,52 +885,94 @@ let gen_ml_method_with_output_struct
          | Struct _ -> true
          | _ -> false))
   in
-  (* Build parameter list *)
-  let param_list =
-    if List.is_empty non_struct_parameters
-    then "t"
-    else
-      "t "
-      ^ String.concat
-          ~sep:" "
-          (List.map non_struct_parameters ~f:(fun a ->
-             let escaped = escape_keyword a.name in
-             {%string|~%{escaped}|}))
-  in
-  (* Create the output struct *)
-  let create_struct =
-    {%string|let %{struct_var} = Wgpu_low.%{struct_module}.%{struct_.name}_create () in|}
-  in
-  (* Build call args *)
-  let call_args =
-    List.map method_.args ~f:(fun arg ->
-      match arg.type_ with
-      | Struct _ -> struct_var
-      | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
-  in
-  let call_args_str = String.concat ~sep:" " call_args in
-  let call =
-    {%string|let _status = Wgpu_low.%{obj.name}_%{method_.name} t.handle %{call_args_str} in|}
-  in
-  (* Read fields from the struct and build result record *)
-  let read_fields = gen_output_struct_field_reads struct_ struct_var struct_module in
-  let build_record = gen_output_struct_record struct_ in
-  (* Free the struct *)
-  let free_struct = {%string|Wgpu_low.%{struct_module}.%{struct_.name}_free %{struct_var};|} in
-  (* Return result *)
-  let return_result = "result" in
-  (* Combine all lines *)
-  let body_lines =
-    [ create_struct; call ] @ read_fields @ [ build_record; free_struct; return_result ]
-  in
-  let body = String.concat ~sep:"\n    " body_lines in
-  {%string|  let %{method_name} %{param_list} =
+  (* Build record type name from struct name *)
+  let record_type_name = String.lowercase struct_.name in
+  match mode with
+  | Interface ->
+    let non_struct_param_types =
+      List.map non_struct_parameters ~f:(fun arg ->
+        let param_name = escape_keyword arg.name in
+        let type_str = high_level_arg_type arg.type_ in
+        if arg.optional
+        then {%string|?%{param_name}:%{type_str}|}
+        else {%string|%{param_name}:%{type_str}|})
+    in
+    let return_type = record_type_name in
+    let type_sig =
+      if List.is_empty non_struct_param_types
+      then {%string|t -> %{return_type}|}
+      else (
+        let params_str = String.concat ~sep:" -> " non_struct_param_types in
+        {%string|t -> %{params_str} -> %{return_type}|})
+    in
+    {%string|  val %{method_name} : %{type_sig}
+|}
+  | Implementation ->
+    let struct_var = "output" in
+    (* Build parameter list *)
+    let param_list =
+      if List.is_empty non_struct_parameters
+      then "t"
+      else
+        "t "
+        ^ String.concat
+            ~sep:" "
+            (List.map non_struct_parameters ~f:(fun a ->
+               let escaped = escape_keyword a.name in
+               {%string|~%{escaped}|}))
+    in
+    (* Create the output struct *)
+    let create_struct =
+      {%string|let %{struct_var} = Wgpu_low.%{struct_module}.%{struct_.name}_create () in|}
+    in
+    (* Build call args *)
+    let call_args =
+      List.map method_.args ~f:(fun arg ->
+        match arg.type_ with
+        | Struct _ -> struct_var
+        | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
+    in
+    let call_args_str = String.concat ~sep:" " call_args in
+    let call =
+      {%string|let _status = Wgpu_low.%{obj.name}_%{method_.name} t.handle %{call_args_str} in|}
+    in
+    (* Read fields from the struct and build result record *)
+    let read_fields = gen_output_struct_field_reads struct_ struct_var struct_module in
+    let build_record = gen_output_struct_record struct_ in
+    (* Free the struct *)
+    let free_struct =
+      {%string|Wgpu_low.%{struct_module}.%{struct_.name}_free %{struct_var};|}
+    in
+    (* Return result *)
+    let return_result = "result" in
+    (* Combine all lines *)
+    let body_lines =
+      [ create_struct; call ] @ read_fields @ [ build_record; free_struct; return_result ]
+    in
+    let body = String.concat ~sep:"\n    " body_lines in
+    {%string|  let %{method_name} %{param_list} =
     %{body}
 |}
 ;;
 
-(** Generate ML implementation for a method *)
-let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
+(** Generate ML implementation for a method with output struct argument - backward
+    compatibility wrapper *)
+let gen_ml_method_with_output_struct
+  (obj : Ir.object_)
+  (method_ : Ir.method_)
+  (struct_ : Ir.struct_)
+  (_arg : Ir.arg)
+  : string
+  =
+  gen_method_with_output_struct Implementation obj method_ struct_
+;;
+
+(** Generate a method - unified for ML and MLI *)
+let gen_method
+  (mode : output_mode)
+  (structs : Ir.struct_ list)
+  (obj : Ir.object_)
+  (method_ : Ir.method_)
   : string option
   =
   (* Skip methods that are manually implemented *)
@@ -886,50 +983,72 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
   else (
     (* First check for output struct arg *)
     match method_has_output_struct_arg structs method_ with
-    | Some (arg, struct_) ->
-      Some (gen_ml_method_with_output_struct obj method_ struct_ arg)
+    | Some (_arg, struct_) ->
+      Some (gen_method_with_output_struct mode obj method_ struct_)
     | None ->
       (* Check if this method has simple struct arguments *)
       let struct_parameters = get_auto_generable_struct_params structs method_ in
       (match struct_parameters with
        | _ :: _ ->
          (* One or more auto-generable struct parameters *)
-         Some (gen_ml_method_with_structs structs obj method_ struct_parameters)
+         Some (gen_method_with_structs mode structs obj method_ struct_parameters)
        | [] ->
          (* Original simple method generation - no struct parameters *)
          let method_name = escape_keyword method_.name in
-         let low_level_func = {%string|Wgpu_low.%{obj.name}_%{method_.name}|} in
-         let args =
-           List.map method_.args ~f:(fun arg ->
-             let converted = arg_to_low_level arg.name arg.type_ in
-             arg.name, converted)
-         in
-         let arg_names = List.map args ~f:fst in
-         let arg_conversions = List.map args ~f:snd in
-         let param_list =
-           if List.is_empty arg_names
-           then "t"
-           else "t " ^ String.concat ~sep:" " (List.map arg_names ~f:(fun n -> {%string|~%{n}|}))
-         in
-         let call_args = "t.handle" :: arg_conversions in
-         let call_args_str = String.concat ~sep:" " call_args in
-         let call = {%string|%{low_level_func} %{call_args_str}|} in
-         let body =
-           match method_.returns with
-           | None -> call
-           | Some ret -> return_to_high_level call ret.type_
-         in
-         Some {%string|  let %{method_name} %{param_list} = %{body}
-|}))
+         (match mode with
+          | Interface ->
+            let arg_types =
+              List.map method_.args ~f:(fun arg ->
+                let arg_type = high_level_arg_type arg.type_ in
+                {%string|%{arg.name}:%{arg_type}|})
+            in
+            let return_type =
+              match method_.returns with
+              | None -> "unit"
+              | Some ret -> high_level_return_type ret.type_
+            in
+            let type_sig =
+              if List.is_empty arg_types
+              then {%string|t -> %{return_type}|}
+              else (
+                let args_str = String.concat ~sep:" -> " arg_types in
+                {%string|t -> %{args_str} -> %{return_type}|})
+            in
+            Some {%string|  val %{method_name} : %{type_sig}
+|}
+          | Implementation ->
+            let low_level_func = {%string|Wgpu_low.%{obj.name}_%{method_.name}|} in
+            let args =
+              List.map method_.args ~f:(fun arg ->
+                let converted = arg_to_low_level arg.name arg.type_ in
+                arg.name, converted)
+            in
+            let arg_names = List.map args ~f:fst in
+            let arg_conversions = List.map args ~f:snd in
+            let param_list =
+              if List.is_empty arg_names
+              then "t"
+              else
+                "t "
+                ^ String.concat ~sep:" " (List.map arg_names ~f:(fun n -> {%string|~%{n}|}))
+            in
+            let call_args = "t.handle" :: arg_conversions in
+            let call_args_str = String.concat ~sep:" " call_args in
+            let call = {%string|%{low_level_func} %{call_args_str}|} in
+            let body =
+              match method_.returns with
+              | None -> call
+              | Some ret -> return_to_high_level call ret.type_
+            in
+            Some {%string|  let %{method_name} %{param_list} = %{body}
+|})))
 ;;
 
-(** Get high-level OCaml type for a struct member *)
-let high_level_member_type (member : Ir.struct_member) : string =
-  Type_mapping.type_string ~context:Ocaml_high_level_member member.type_
-
-(** Get high-level OCaml type for a type_ref (for struct members) *)
-let high_level_member_type_of_type (type_ref : Ir.type_ref) : string =
-  Type_mapping.type_string ~context:Ocaml_high_level_member type_ref
+(** Generate ML implementation for a method - backward compatibility wrapper *)
+let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
+  : string option
+  =
+  gen_method Implementation structs obj method_
 ;;
 
 (** Generate record type definition for an output struct *)
@@ -970,8 +1089,12 @@ let rec array_element_struct_member_type
   | _ -> high_level_member_type member
 
 (** Generate a record type module for an entry struct (a struct that appears in arrays).
-    Also generates record types for any nested structs. *)
-and gen_array_element_struct_module (structs : Ir.struct_ list) (struct_ : Ir.struct_)
+    Also generates record types for any nested structs. Unified implementation for both
+    ML and MLI. *)
+and gen_array_element_struct_module
+  (mode : output_mode)
+  (structs : Ir.struct_ list)
+  (struct_ : Ir.struct_)
   : string
   =
   let module_name = ocaml_module_name struct_.name in
@@ -981,7 +1104,7 @@ and gen_array_element_struct_module (structs : Ir.struct_ list) (struct_ : Ir.st
       match get_inline_struct_name member.type_ with
       | Some nested_name ->
         List.find structs ~f:(fun s -> String.equal s.name nested_name)
-        |> Option.map ~f:(gen_nested_struct_module structs)
+        |> Option.map ~f:(gen_nested_struct_module mode structs)
       | None -> None)
     |> List.dedup_and_sort ~compare:String.compare
     |> String.concat ~sep:"\n"
@@ -997,18 +1120,32 @@ and gen_array_element_struct_module (structs : Ir.struct_ list) (struct_ : Ir.st
         Some {%string|      %{field_name} : %{field_type}|}))
   in
   let fields_str = String.concat ~sep:";\n" fields in
-  let record_type = {%string|    type t = {
+  let record_type =
+    {%string|    type t = {
 %{fields_str}
-    }|} in
-  let nested_prefix = if String.is_empty nested_modules then "" else nested_modules ^ "\n" in
-  {%string|  module %{module_name} = struct
+    }|}
+  in
+  let nested_prefix =
+    if String.is_empty nested_modules then "" else nested_modules ^ "\n"
+  in
+  let module_keyword =
+    match mode with
+    | Implementation -> "= struct"
+    | Interface -> ": sig"
+  in
+  {%string|  module %{module_name} %{module_keyword}
 %{nested_prefix}%{record_type}
   end
 |}
 
 (** Generate a simple record module for a nested struct (struct that is a member of an
-    entry struct) *)
-and gen_nested_struct_module (_structs : Ir.struct_ list) (struct_ : Ir.struct_) : string =
+    entry struct). Unified implementation for both ML and MLI. *)
+and gen_nested_struct_module
+  (mode : output_mode)
+  (_structs : Ir.struct_ list)
+  (struct_ : Ir.struct_)
+  : string
+  =
   let module_name = ocaml_module_name struct_.name in
   let fields =
     List.filter_map struct_.members ~f:(fun member ->
@@ -1020,7 +1157,12 @@ and gen_nested_struct_module (_structs : Ir.struct_ list) (struct_ : Ir.struct_)
         Some {%string|        %{field_name} : %{field_type}|}))
   in
   let fields_str = String.concat ~sep:";\n" fields in
-  {%string|    module %{module_name} = struct
+  let module_keyword =
+    match mode with
+    | Implementation -> "= struct"
+    | Interface -> ": sig"
+  in
+  {%string|    module %{module_name} %{module_keyword}
       type t = {
 %{fields_str}
       }
@@ -1034,194 +1176,48 @@ let struct_has_array_of_structs (struct_ : Ir.struct_) : bool =
     Option.is_some (member_is_array_of_structs member.type_))
 ;;
 
-(** Generate MLI for a nested struct module *)
-let gen_nested_struct_module_mli (_structs : Ir.struct_ list) (struct_ : Ir.struct_)
+(** Generate MLI for a nested struct module - backward compatibility wrapper *)
+let gen_nested_struct_module_mli (structs : Ir.struct_ list) (struct_ : Ir.struct_)
   : string
   =
-  let module_name = ocaml_module_name struct_.name in
-  let fields =
-    List.filter_map struct_.members ~f:(fun member ->
-      if String.equal member.name "nextInChain"
-      then None
-      else (
-        let field_name = escape_keyword member.name in
-        let field_type = high_level_member_type member in
-        Some {%string|        %{field_name} : %{field_type}|}))
-  in
-  let fields_str = String.concat ~sep:";\n" fields in
-  {%string|    module %{module_name} : sig
-      type t = {
-%{fields_str}
-      }
-    end
-|}
+  gen_nested_struct_module Interface structs struct_
 ;;
 
-(** Generate MLI for an entry struct module *)
+(** Generate MLI for an entry struct module - backward compatibility wrapper *)
 let gen_array_element_struct_module_mli (structs : Ir.struct_ list) (struct_ : Ir.struct_)
   : string
   =
-  let module_name = ocaml_module_name struct_.name in
-  (* First, generate module signatures for any nested structs *)
-  let nested_modules =
-    List.filter_map struct_.members ~f:(fun member ->
-      match get_inline_struct_name member.type_ with
-      | Some nested_name ->
-        List.find structs ~f:(fun s -> String.equal s.name nested_name)
-        |> Option.map ~f:(gen_nested_struct_module_mli structs)
-      | None -> None)
-    |> List.dedup_and_sort ~compare:String.compare
-    |> String.concat ~sep:"\n"
-  in
-  (* Generate the record type for this struct *)
-  let fields =
-    List.filter_map struct_.members ~f:(fun member ->
-      if String.equal member.name "nextInChain"
-      then None
-      else (
-        let field_name = escape_keyword member.name in
-        let field_type = array_element_struct_member_type structs member in
-        Some {%string|      %{field_name} : %{field_type}|}))
-  in
-  let fields_str = String.concat ~sep:";\n" fields in
-  let record_type = {%string|    type t = {
-%{fields_str}
-    }|} in
-  let nested_prefix = if String.is_empty nested_modules then "" else nested_modules ^ "\n" in
-  {%string|  module %{module_name} : sig
-%{nested_prefix}%{record_type}
-  end
-|}
+  gen_array_element_struct_module Interface structs struct_
 ;;
 
-(** Generate MLI signature for a method with one or more struct parameters *)
+(** Generate MLI signature for a method with one or more struct parameters - backward
+    compatibility wrapper *)
 let gen_mli_method_with_structs
   (structs : Ir.struct_ list)
-  (_obj : Ir.object_)
+  (obj : Ir.object_)
   (method_ : Ir.method_)
   (struct_parameters : (Ir.arg * Ir.struct_) list)
   : string
   =
-  let method_name = escape_keyword method_.name in
-  let use_prefix = List.length struct_parameters > 1 in
-  (* Get non-struct parameters *)
-  let non_struct_parameters =
-    List.filter method_.args ~f:(fun arg ->
-      match arg.type_ with
-      | Struct _ -> false
-      | _ -> true)
-  in
-  (* Build parameter types from all struct members + non-struct parameters (including nested) *)
-  let struct_param_types =
-    List.concat_map struct_parameters ~f:(fun (arg, struct_) ->
-      let base_prefix = if use_prefix then arg.name ^ "_" else "" in
-      let params = collect_struct_params structs base_prefix struct_ None in
-      List.map params ~f:(fun p ->
-        let type_str = high_level_member_type p.member in
-        if p.is_optional
-        then {%string|?%{p.param_name}:%{type_str}|}
-        else {%string|%{p.param_name}:%{type_str}|}))
-  in
-  let non_struct_param_types =
-    List.map non_struct_parameters ~f:(fun arg ->
-      let param_name = escape_keyword arg.name in
-      let type_str = high_level_arg_type arg.type_ in
-      if arg.optional
-      then {%string|?%{param_name}:%{type_str}|}
-      else {%string|%{param_name}:%{type_str}|})
-  in
-  let return_type =
-    match method_.returns with
-    | None -> "unit"
-    | Some ret -> high_level_return_type ret.type_
-  in
-  let all_params = struct_param_types @ non_struct_param_types in
-  let all_params_str = String.concat ~sep:" -> " all_params in
-  let type_sig = {%string|t -> %{all_params_str} -> unit -> %{return_type}|} in
-  {%string|  val %{method_name} : %{type_sig}
-|}
+  gen_method_with_structs Interface structs obj method_ struct_parameters
 ;;
 
-(** Generate MLI signature for a method with output struct argument *)
+(** Generate MLI signature for a method with output struct argument - backward
+    compatibility wrapper *)
 let gen_mli_method_with_output_struct
-  (_obj : Ir.object_)
+  (obj : Ir.object_)
   (method_ : Ir.method_)
   (struct_ : Ir.struct_)
   : string
   =
-  let method_name = escape_keyword method_.name in
-  (* Get non-struct parameters that are not the output struct *)
-  let non_struct_parameters =
-    List.filter method_.args ~f:(fun a ->
-      not
-        (match a.type_ with
-         | Struct _ -> true
-         | _ -> false))
-  in
-  let non_struct_param_types =
-    List.map non_struct_parameters ~f:(fun arg ->
-      let param_name = escape_keyword arg.name in
-      let type_str = high_level_arg_type arg.type_ in
-      if arg.optional
-      then {%string|?%{param_name}:%{type_str}|}
-      else {%string|%{param_name}:%{type_str}|})
-  in
-  (* Build record type name from struct name *)
-  let record_type_name = String.lowercase struct_.name in
-  let return_type = record_type_name in
-  let type_sig =
-    if List.is_empty non_struct_param_types
-    then {%string|t -> %{return_type}|}
-    else (
-      let params_str = String.concat ~sep:" -> " non_struct_param_types in
-      {%string|t -> %{params_str} -> %{return_type}|})
-  in
-  {%string|  val %{method_name} : %{type_sig}
-|}
+  gen_method_with_output_struct Interface obj method_ struct_
 ;;
 
-(** Generate MLI signature for a method *)
+(** Generate MLI signature for a method - backward compatibility wrapper *)
 let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
   : string option
   =
-  (* Skip methods that are manually implemented *)
-  if Config.is_manual ~object_name:obj.name ~method_name:method_.name
-  then None
-  else if not (method_is_high_level structs method_)
-  then None
-  else (
-    (* First check for output struct arg *)
-    match method_has_output_struct_arg structs method_ with
-    | Some (_arg, struct_) -> Some (gen_mli_method_with_output_struct obj method_ struct_)
-    | None ->
-      (* Check if this method has auto-generable struct parameters *)
-      let struct_parameters = get_auto_generable_struct_params structs method_ in
-      (match struct_parameters with
-       | _ :: _ ->
-         (* One or more auto-generable struct parameters *)
-         Some (gen_mli_method_with_structs structs obj method_ struct_parameters)
-       | [] ->
-         (* Original simple method generation - no struct parameters *)
-         let method_name = escape_keyword method_.name in
-         let arg_types =
-           List.map method_.args ~f:(fun arg ->
-             let arg_type = high_level_arg_type arg.type_ in
-             {%string|%{arg.name}:%{arg_type}|})
-         in
-         let return_type =
-           match method_.returns with
-           | None -> "unit"
-           | Some ret -> high_level_return_type ret.type_
-         in
-         let type_sig =
-           if List.is_empty arg_types
-           then {%string|t -> %{return_type}|}
-           else (
-             let args_str = String.concat ~sep:" -> " arg_types in
-             {%string|t -> %{args_str} -> %{return_type}|})
-         in
-         Some {%string|  val %{method_name} : %{type_sig}
-|}))
+  gen_method Interface structs obj method_
 ;;
 
 (** Generate high-level OCaml code for an enum type (re-exports low-level) *)
@@ -1544,7 +1540,7 @@ let gen_ml (api : Ir.api) : string =
   let array_element_struct_modules =
     collect_array_element_structs api
     |> List.map ~f:(fun (array_element_struct, _nested) ->
-      gen_array_element_struct_module api.structs array_element_struct)
+      gen_array_element_struct_module Implementation api.structs array_element_struct)
     |> String.concat ~sep:"\n"
   in
   (* Filter out objects we handle specially *)
