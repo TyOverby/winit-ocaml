@@ -2,6 +2,11 @@ open! Core
 
 (** Generate high-level idiomatic OCaml bindings *)
 
+(** Output mode for code generation *)
+type output_mode =
+  | Implementation (** Generate .ml implementation *)
+  | Interface (** Generate .mli interface *)
+
 (** Record types for code generation results *)
 
 (** A parameter collected from a struct for function signature generation *)
@@ -1300,69 +1305,78 @@ let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.
 ;;
 
 (** Generate high-level OCaml code for an enum type (re-exports low-level) *)
-let gen_ml_enum (enum : Ir.enum) : string =
+(** Generate enum module - unified implementation and interface *)
+let gen_enum (mode : output_mode) (enum : Ir.enum) : string =
   let module_name = ocaml_module_name enum.name in
-  sprintf "module %s = Wgpu_low.%s\n" module_name module_name
+  match mode with
+  | Implementation -> sprintf "module %s = Wgpu_low.%s\n" module_name module_name
+  | Interface ->
+    let doc_comment =
+      match useful_doc enum.doc with
+      | None -> ""
+      | Some doc -> sprintf "  (** %s *)\n" doc
+    in
+    let variants =
+      List.map enum.entries ~f:(fun entry ->
+        sprintf "  | %s" (normalize_enum_entry_name entry.name))
+      |> String.concat ~sep:"\n"
+    in
+    sprintf
+      "module %s : sig\n\
+       %s  type t =\n\
+       %s\n\n\
+      \  val to_int : t -> int\n\
+      \  val of_int : int -> t\n\
+       end\n"
+      module_name
+      doc_comment
+      variants
 ;;
 
-(** Generate MLI for an enum type *)
-let gen_mli_enum (enum : Ir.enum) : string =
-  let module_name = ocaml_module_name enum.name in
-  let doc_comment =
-    match useful_doc enum.doc with
-    | None -> ""
-    | Some doc -> sprintf "  (** %s *)\n" doc
-  in
-  let variants =
-    List.map enum.entries ~f:(fun entry ->
-      sprintf "  | %s" (normalize_enum_entry_name entry.name))
-    |> String.concat ~sep:"\n"
-  in
-  sprintf
-    "module %s : sig\n\
-     %s  type t =\n\
-     %s\n\n\
-    \  val to_int : t -> int\n\
-    \  val of_int : int -> t\n\
-     end\n"
-    module_name
-    doc_comment
-    variants
-;;
+(** Generate ML implementation for an enum type *)
+let gen_ml_enum (enum : Ir.enum) : string = gen_enum Implementation enum
 
-(** Generate high-level OCaml code for a bitflag type *)
-let gen_ml_bitflag (bitflag : Ir.bitflag) : string =
+(** Generate MLI interface for an enum type *)
+let gen_mli_enum (enum : Ir.enum) : string = gen_enum Interface enum
+
+(** Generate bitflag module - unified implementation and interface *)
+let gen_bitflag (mode : output_mode) (bitflag : Ir.bitflag) : string =
   let module_name = ocaml_module_name bitflag.name in
-  sprintf "module %s = Wgpu_low.%s\n" module_name module_name
+  match mode with
+  | Implementation -> sprintf "module %s = Wgpu_low.%s\n" module_name module_name
+  | Interface ->
+    let doc_comment =
+      match useful_doc bitflag.doc with
+      | None -> ""
+      | Some doc -> sprintf "  (** %s *)\n" doc
+    in
+    let variants =
+      List.map bitflag.entries ~f:(fun entry ->
+        sprintf "  | %s" (normalize_enum_entry_name entry.name))
+      |> String.concat ~sep:"\n"
+    in
+    sprintf
+      "module %s : sig\n\
+       %s  type t =\n\
+       %s\n\n\
+      \  val to_int : t -> int\n\
+      \  val list_to_int : t list -> int\n\
+       end\n"
+      module_name
+      doc_comment
+      variants
 ;;
 
-(** Generate MLI for a bitflag type *)
-let gen_mli_bitflag (bitflag : Ir.bitflag) : string =
-  let module_name = ocaml_module_name bitflag.name in
-  let doc_comment =
-    match useful_doc bitflag.doc with
-    | None -> ""
-    | Some doc -> sprintf "  (** %s *)\n" doc
-  in
-  let variants =
-    List.map bitflag.entries ~f:(fun entry ->
-      sprintf "  | %s" (normalize_enum_entry_name entry.name))
-    |> String.concat ~sep:"\n"
-  in
-  sprintf
-    "module %s : sig\n\
-     %s  type t =\n\
-     %s\n\n\
-    \  val to_int : t -> int\n\
-    \  val list_to_int : t list -> int\n\
-     end\n"
-    module_name
-    doc_comment
-    variants
-;;
+(** Generate ML implementation for a bitflag type *)
+let gen_ml_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Implementation bitflag
+
+(** Generate MLI interface for a bitflag type *)
+let gen_mli_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Interface bitflag
 
 (** Generate high-level OCaml code for an object type with methods *)
-let gen_ml_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
+(** Generate object module - unified implementation and interface *)
+let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object_) : string
+  =
   let module_name = ocaml_module_name obj.name in
   (* Collect output struct types used by this object's methods *)
   let output_struct_types =
@@ -1373,47 +1387,46 @@ let gen_ml_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
     |> List.dedup_and_sort ~compare:String.compare
     |> String.concat ~sep:"\n"
   in
-  let methods =
-    List.filter_map obj.methods ~f:(gen_ml_method structs obj) |> String.concat ~sep:""
-  in
-  sprintf
-    "module %s = struct\n\
-    \  type t = { handle : Wgpu_low.%s }\n\n\
-     %s  let release t = Wgpu_low.%s_release t.handle\n\
-     %send\n"
-    module_name
-    obj.name
-    (if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n")
-    obj.name
-    methods
+  match mode with
+  | Implementation ->
+    let methods =
+      List.filter_map obj.methods ~f:(gen_ml_method structs obj) |> String.concat ~sep:""
+    in
+    sprintf
+      "module %s = struct\n\
+      \  type t = { handle : Wgpu_low.%s }\n\n\
+       %s  let release t = Wgpu_low.%s_release t.handle\n\
+       %send\n"
+      module_name
+      obj.name
+      (if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n")
+      obj.name
+      methods
+  | Interface ->
+    let doc_comment =
+      match useful_doc obj.doc with
+      | None -> ""
+      | Some doc -> sprintf "  (** %s *)\n\n" doc
+    in
+    let methods =
+      List.filter_map obj.methods ~f:(gen_mli_method structs obj) |> String.concat ~sep:""
+    in
+    sprintf
+      "module %s : sig\n%s  type t\n\n%s  val release : t -> unit\n%send\n"
+      module_name
+      doc_comment
+      (if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n")
+      methods
 ;;
 
-(** Generate MLI for an object type with methods *)
+(** Generate ML implementation for an object type *)
+let gen_ml_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
+  gen_object Implementation structs obj
+;;
+
+(** Generate MLI interface for an object type *)
 let gen_mli_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
-  let module_name = ocaml_module_name obj.name in
-  let doc_comment =
-    match useful_doc obj.doc with
-    | None -> ""
-    | Some doc -> sprintf "  (** %s *)\n\n" doc
-  in
-  (* Collect output struct types used by this object's methods *)
-  let output_struct_types =
-    List.filter_map obj.methods ~f:(fun method_ ->
-      match method_has_output_struct_arg structs method_ with
-      | Some (_arg, struct_) -> Some (gen_output_struct_record_type struct_)
-      | None -> None)
-    |> List.dedup_and_sort ~compare:String.compare
-    |> String.concat ~sep:"\n"
-  in
-  let methods =
-    List.filter_map obj.methods ~f:(gen_mli_method structs obj) |> String.concat ~sep:""
-  in
-  sprintf
-    "module %s : sig\n%s  type t\n\n%s  val release : t -> unit\n%send\n"
-    module_name
-    doc_comment
-    (if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n")
-    methods
+  gen_object Interface structs obj
 ;;
 
 (** Extract object dependencies from a type_ref. Returns object names that must be defined
