@@ -79,3 +79,46 @@ More files, for containing utilities that are used from multiple files may also 
 
 - High value: Dramatically improves navigability
 - High effort: Requires careful refactoring and testing
+
+## Status Update (2026-01-27)
+
+**Completion: ~40% - Partially Complete**
+
+### What Has Been Done ✅
+
+1. **Extracted utility modules:**
+   - `codegen/names.ml` (90 lines) - Name transformations (to_pascal_case, to_camel_case, etc.)
+   - `codegen/type_mapping.ml` (117 lines) - Type mapping with context system
+   - `codegen/config.ml` (174 lines) - Method configuration system
+
+2. **File size reductions:**
+   - `gen_high.ml`: 2295 → 1783 lines (512 lines removed, ~22% reduction)
+   - `gen_low.ml`: 1882 → 1191 lines (691 lines removed, ~37% reduction)
+
+3. **Tests created:**
+   - `codegen/test/test_names.ml` - Tests for name transformations
+   - `codegen/test/test_types.ml` - Tests for type mapping
+
+### What Remains ❌
+
+1. **Directory structure not created:** The proposed `lib/low/` and `lib/high/` subdirectories don't exist yet
+
+2. **Extract from gen_low.ml:**
+   - Predicates (method_is_async, array_elem_c_type, etc.)
+   - Enums module (gen_c_enum_constants, gen_ml_enum, gen_mli_enum)
+   - Bitflags module (gen_c_bitflag_constants, gen_ml_bitflag, gen_mli_bitflag)
+   - Structs module (gen_c_struct_*, gen_ml_struct, gen_mli_struct)
+   - Objects module (gen_c_object_stubs, gen_ml_object, gen_mli_object)
+   - Functions module (gen_c_function_stubs)
+
+3. **Extract from gen_high.ml:**
+   - Predicates (is_flat_member_type, is_auto_generable_struct, etc.)
+   - Type conversion utilities (high_level_arg_type, arg_to_low_level, etc.)
+   - Parameter/struct utilities (build_param_list, gen_cleanup_code, etc.)
+   - High-level generation modules (enums, bitflags, objects, methods)
+
+4. **Remove duplicated code:**
+   - `to_pascal_case` and `to_camel_case` are still duplicated in gen_low.ml (lines 12-28)
+   - These should be removed and use the Names module instead
+
+5. **Update imports and ensure everything builds**
