@@ -869,10 +869,6 @@ let gen_ml_object_methods (obj : Ir.object_) : string =
   release ^ methods
 ;;
 
-let gen_ml_object (obj : Ir.object_) : string =
-  gen_ml_object_type obj ^ "\n" ^ gen_ml_object_methods obj ^ "\n"
-;;
-
 let gen_mli_method (obj : Ir.object_) (method_ : Ir.method_) : string =
   if method_is_async method_ || method_is_manual obj.name method_.name
   then ""
@@ -905,10 +901,6 @@ let gen_mli_object_methods (obj : Ir.object_) : string =
     |> String.concat ~sep:"\n"
   in
   if String.is_empty methods then release else release ^ methods ^ "\n"
-;;
-
-let gen_mli_object (obj : Ir.object_) : string =
-  gen_mli_object_type obj ^ "\n" ^ gen_mli_object_methods obj
 ;;
 
 let gen_c_function_stubs (func : Ir.function_) : string =
@@ -991,3 +983,28 @@ let gen_mli (api : Ir.api) : string =
   String.concat
     [ header; enums; bitflags; structs; object_types; "\n"; object_methods; functions ]
 ;;
+
+module For_testing = struct
+  type output_mode =
+    | Implementation
+    | Interface
+
+  let gen_c_enum_constants = gen_c_enum_constants
+  let gen_c_bitflag_constants = gen_c_bitflag_constants
+  let gen_c_struct_stubs = gen_c_struct_stubs
+  let gen_c_method_stub = gen_c_method_stub
+  let gen_ml_enum = gen_ml_enum
+  let gen_mli_enum = gen_mli_enum
+  let gen_ml_struct = gen_ml_struct
+  let gen_mli_struct = gen_mli_struct
+  let gen_ml_method = gen_ml_method
+  let gen_mli_method = gen_mli_method
+  let c_type_of_type_ref = c_type_of_type_ref
+  let ml_type_of_type_ref = ml_type_of_type_ref
+  let c_type_name = c_type_name
+  let c_function_name = c_function_name
+  let ocaml_module_name = ocaml_module_name
+  let to_pascal_case = to_pascal_case
+  let to_camel_case = to_camel_case
+  let normalize_enum_entry_name = normalize_enum_entry_name
+end

@@ -144,65 +144,66 @@ let queue_object : Ir.object_ =
 
 (* ===== Gen_low method tests ===== *)
 
-let%expect_test "Gen_low.gen_ml_method - no args, returns primitive" =
-  print_endline (Gen_low.gen_ml_method simple_object simple_method_no_args);
+let%expect_test "Gen_low.For_testing.gen_ml_method - no args, returns primitive" =
+  print_endline (Gen_low.For_testing.gen_ml_method simple_object simple_method_no_args);
   [%expect {| external buffer_get_size : buffer -> int64 = "caml_wgpu_buffer_get_size" |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_method - with string arg" =
-  print_endline (Gen_low.gen_ml_method simple_object simple_method_with_args);
+let%expect_test "Gen_low.For_testing.gen_ml_method - with string arg" =
+  print_endline (Gen_low.For_testing.gen_ml_method simple_object simple_method_with_args);
   [%expect
     {| external buffer_set_label : buffer -> string -> unit = "caml_wgpu_buffer_set_label" |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_method - with enum arg" =
-  print_endline (Gen_low.gen_ml_method simple_object method_with_enum_arg);
+let%expect_test "Gen_low.For_testing.gen_ml_method - with enum arg" =
+  print_endline (Gen_low.For_testing.gen_ml_method simple_object method_with_enum_arg);
   [%expect
     {| external buffer_set_format : buffer -> int -> unit = "caml_wgpu_buffer_set_format" |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_method - with object arg" =
-  print_endline (Gen_low.gen_ml_method simple_object method_with_object_arg);
+let%expect_test "Gen_low.For_testing.gen_ml_method - with object arg" =
+  print_endline (Gen_low.For_testing.gen_ml_method simple_object method_with_object_arg);
   [%expect
     {| external buffer_set_bind_group : buffer -> int -> bind_group -> unit = "caml_wgpu_buffer_set_bind_group" |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_method - returns object" =
-  print_endline (Gen_low.gen_ml_method simple_object method_returning_object);
+let%expect_test "Gen_low.For_testing.gen_ml_method - returns object" =
+  print_endline (Gen_low.For_testing.gen_ml_method simple_object method_returning_object);
   [%expect
     {| external buffer_create_view : buffer -> texture_view = "caml_wgpu_buffer_create_view" |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_method - with array arg" =
-  print_endline (Gen_low.gen_ml_method queue_object method_with_array_arg);
+let%expect_test "Gen_low.For_testing.gen_ml_method - with array arg" =
+  print_endline (Gen_low.For_testing.gen_ml_method queue_object method_with_array_arg);
   [%expect
     {| external queue_write_buffer : queue -> buffer -> int array -> unit = "caml_wgpu_queue_write_buffer" |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_method - async method (skipped)" =
-  print_endline (Gen_low.gen_ml_method simple_object async_method);
+let%expect_test "Gen_low.For_testing.gen_ml_method - async method (skipped)" =
+  print_endline (Gen_low.For_testing.gen_ml_method simple_object async_method);
   [%expect {| (* TODO: async method buffer_request_adapter *) |}]
 ;;
 
-let%expect_test "Gen_low.gen_mli_method - no args, returns primitive" =
-  print_endline (Gen_low.gen_mli_method simple_object simple_method_no_args);
+let%expect_test "Gen_low.For_testing.gen_mli_method - no args, returns primitive" =
+  print_endline (Gen_low.For_testing.gen_mli_method simple_object simple_method_no_args);
   [%expect {| val buffer_get_size : buffer -> int64 |}]
 ;;
 
-let%expect_test "Gen_low.gen_mli_method - with object arg" =
-  print_endline (Gen_low.gen_mli_method simple_object method_with_object_arg);
+let%expect_test "Gen_low.For_testing.gen_mli_method - with object arg" =
+  print_endline (Gen_low.For_testing.gen_mli_method simple_object method_with_object_arg);
   [%expect {| val buffer_set_bind_group : buffer -> int -> bind_group -> unit |}]
 ;;
 
-let%expect_test "Gen_low.gen_mli_method - async method (skipped)" =
-  print_endline (Gen_low.gen_mli_method simple_object async_method);
+let%expect_test "Gen_low.For_testing.gen_mli_method - async method (skipped)" =
+  print_endline (Gen_low.For_testing.gen_mli_method simple_object async_method);
   [%expect {| |}]
 ;;
 
 (* ===== Gen_low C method stub tests ===== *)
 
-let%expect_test "Gen_low.gen_c_method_stub - no args, returns primitive" =
-  print_endline (Gen_low.gen_c_method_stub simple_object simple_method_no_args);
+let%expect_test "Gen_low.For_testing.gen_c_method_stub - no args, returns primitive" =
+  print_endline
+    (Gen_low.For_testing.gen_c_method_stub simple_object simple_method_no_args);
   [%expect
     {|
     CAMLprim value caml_wgpu_buffer_get_size(value self) {
@@ -215,8 +216,9 @@ let%expect_test "Gen_low.gen_c_method_stub - no args, returns primitive" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_method_stub - with string arg" =
-  print_endline (Gen_low.gen_c_method_stub simple_object simple_method_with_args);
+let%expect_test "Gen_low.For_testing.gen_c_method_stub - with string arg" =
+  print_endline
+    (Gen_low.For_testing.gen_c_method_stub simple_object simple_method_with_args);
   [%expect
     {|
     CAMLprim value caml_wgpu_buffer_set_label(value self, value label) {
@@ -229,8 +231,8 @@ let%expect_test "Gen_low.gen_c_method_stub - with string arg" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_method_stub - with enum arg" =
-  print_endline (Gen_low.gen_c_method_stub simple_object method_with_enum_arg);
+let%expect_test "Gen_low.For_testing.gen_c_method_stub - with enum arg" =
+  print_endline (Gen_low.For_testing.gen_c_method_stub simple_object method_with_enum_arg);
   [%expect
     {|
     CAMLprim value caml_wgpu_buffer_set_format(value self, value format) {
@@ -243,8 +245,9 @@ let%expect_test "Gen_low.gen_c_method_stub - with enum arg" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_method_stub - with object arg" =
-  print_endline (Gen_low.gen_c_method_stub simple_object method_with_object_arg);
+let%expect_test "Gen_low.For_testing.gen_c_method_stub - with object arg" =
+  print_endline
+    (Gen_low.For_testing.gen_c_method_stub simple_object method_with_object_arg);
   [%expect
     {|
     CAMLprim value caml_wgpu_buffer_set_bind_group(value self, value index, value bind_group) {
@@ -258,8 +261,9 @@ let%expect_test "Gen_low.gen_c_method_stub - with object arg" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_method_stub - returns object" =
-  print_endline (Gen_low.gen_c_method_stub simple_object method_returning_object);
+let%expect_test "Gen_low.For_testing.gen_c_method_stub - returns object" =
+  print_endline
+    (Gen_low.For_testing.gen_c_method_stub simple_object method_returning_object);
   [%expect
     {|
     CAMLprim value caml_wgpu_buffer_create_view(value self) {
@@ -272,8 +276,8 @@ let%expect_test "Gen_low.gen_c_method_stub - returns object" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_method_stub - with array arg" =
-  print_endline (Gen_low.gen_c_method_stub queue_object method_with_array_arg);
+let%expect_test "Gen_low.For_testing.gen_c_method_stub - with array arg" =
+  print_endline (Gen_low.For_testing.gen_c_method_stub queue_object method_with_array_arg);
   [%expect
     {|
     CAMLprim value caml_wgpu_queue_write_buffer(value self, value buffer, value data) {
@@ -291,8 +295,8 @@ let%expect_test "Gen_low.gen_c_method_stub - with array arg" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_method_stub - async method (skipped)" =
-  print_endline (Gen_low.gen_c_method_stub simple_object async_method);
+let%expect_test "Gen_low.For_testing.gen_c_method_stub - async method (skipped)" =
+  print_endline (Gen_low.For_testing.gen_c_method_stub simple_object async_method);
   [%expect {| /* TODO: async method buffer.request_adapter */ |}]
 ;;
 
@@ -301,109 +305,128 @@ let%expect_test "Gen_low.gen_c_method_stub - async method (skipped)" =
 (* Note: Gen_high methods require a structs list for auto-generation checks *)
 let empty_structs : Ir.struct_ list = []
 
-let%expect_test "Gen_high.gen_ml_method - simple method no args" =
-  let result = Gen_high.gen_ml_method empty_structs simple_object simple_method_no_args in
+let%expect_test "Gen_high.For_testing.gen_ml_method - simple method no args" =
+  let result =
+    Gen_high.For_testing.gen_ml_method empty_structs simple_object simple_method_no_args
+  in
   print_endline (Option.value result ~default:"(none)");
   [%expect {| let get_size t = Wgpu_low.buffer_get_size t.handle |}]
 ;;
 
-let%expect_test "Gen_high.gen_ml_method - method with string arg" =
+let%expect_test "Gen_high.For_testing.gen_ml_method - method with string arg" =
   let result =
-    Gen_high.gen_ml_method empty_structs simple_object simple_method_with_args
+    Gen_high.For_testing.gen_ml_method empty_structs simple_object simple_method_with_args
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect {| let set_label t ~label = Wgpu_low.buffer_set_label t.handle label |}]
 ;;
 
-let%expect_test "Gen_high.gen_ml_method - method with enum arg" =
-  let result = Gen_high.gen_ml_method empty_structs simple_object method_with_enum_arg in
+let%expect_test "Gen_high.For_testing.gen_ml_method - method with enum arg" =
+  let result =
+    Gen_high.For_testing.gen_ml_method empty_structs simple_object method_with_enum_arg
+  in
   print_endline (Option.value result ~default:"(none)");
   [%expect
     {| let set_format t ~format = Wgpu_low.buffer_set_format t.handle (Texture_format.to_int format) |}]
 ;;
 
-let%expect_test "Gen_high.gen_ml_method - method with object arg" =
+let%expect_test "Gen_high.For_testing.gen_ml_method - method with object arg" =
   let result =
-    Gen_high.gen_ml_method empty_structs simple_object method_with_object_arg
+    Gen_high.For_testing.gen_ml_method empty_structs simple_object method_with_object_arg
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect
     {| let set_bind_group t ~index ~bind_group = Wgpu_low.buffer_set_bind_group t.handle index bind_group.Bind_group.handle |}]
 ;;
 
-let%expect_test "Gen_high.gen_ml_method - method returning object" =
+let%expect_test "Gen_high.For_testing.gen_ml_method - method returning object" =
   let result =
-    Gen_high.gen_ml_method empty_structs simple_object method_returning_object
+    Gen_high.For_testing.gen_ml_method empty_structs simple_object method_returning_object
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect
     {| let create_view t = ({ Texture_view.handle = Wgpu_low.buffer_create_view t.handle } : Texture_view.t) |}]
 ;;
 
-let%expect_test "Gen_high.gen_ml_method - method with bitflag arg" =
+let%expect_test "Gen_high.For_testing.gen_ml_method - method with bitflag arg" =
   let result =
-    Gen_high.gen_ml_method empty_structs simple_object method_with_bitflag_arg
+    Gen_high.For_testing.gen_ml_method empty_structs simple_object method_with_bitflag_arg
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect
     {| let create_buffer t ~size ~usage = ({ Buffer.handle = Wgpu_low.buffer_create_buffer t.handle size (Buffer_usage.list_to_int usage) } : Buffer.t) |}]
 ;;
 
-let%expect_test "Gen_high.gen_ml_method - async method returns None" =
-  let result = Gen_high.gen_ml_method empty_structs simple_object async_method in
+let%expect_test "Gen_high.For_testing.gen_ml_method - async method returns None" =
+  let result =
+    Gen_high.For_testing.gen_ml_method empty_structs simple_object async_method
+  in
   print_endline (Option.value result ~default:"(none)");
   [%expect {| (none) |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_method - simple method no args" =
+let%expect_test "Gen_high.For_testing.gen_mli_method - simple method no args" =
   let result =
-    Gen_high.gen_mli_method empty_structs simple_object simple_method_no_args
+    Gen_high.For_testing.gen_mli_method empty_structs simple_object simple_method_no_args
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect {| val get_size : t -> int64 |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_method - method with string arg" =
+let%expect_test "Gen_high.For_testing.gen_mli_method - method with string arg" =
   let result =
-    Gen_high.gen_mli_method empty_structs simple_object simple_method_with_args
+    Gen_high.For_testing.gen_mli_method
+      empty_structs
+      simple_object
+      simple_method_with_args
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect {| val set_label : t -> label:string -> unit |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_method - method with enum arg" =
-  let result = Gen_high.gen_mli_method empty_structs simple_object method_with_enum_arg in
+let%expect_test "Gen_high.For_testing.gen_mli_method - method with enum arg" =
+  let result =
+    Gen_high.For_testing.gen_mli_method empty_structs simple_object method_with_enum_arg
+  in
   print_endline (Option.value result ~default:"(none)");
   [%expect {| val set_format : t -> format:Texture_format.t -> unit |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_method - method with object arg" =
+let%expect_test "Gen_high.For_testing.gen_mli_method - method with object arg" =
   let result =
-    Gen_high.gen_mli_method empty_structs simple_object method_with_object_arg
+    Gen_high.For_testing.gen_mli_method empty_structs simple_object method_with_object_arg
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect {| val set_bind_group : t -> index:int -> bind_group:Bind_group.t -> unit |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_method - method returning object" =
+let%expect_test "Gen_high.For_testing.gen_mli_method - method returning object" =
   let result =
-    Gen_high.gen_mli_method empty_structs simple_object method_returning_object
+    Gen_high.For_testing.gen_mli_method
+      empty_structs
+      simple_object
+      method_returning_object
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect {| val create_view : t -> Texture_view.t |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_method - method with bitflag arg" =
+let%expect_test "Gen_high.For_testing.gen_mli_method - method with bitflag arg" =
   let result =
-    Gen_high.gen_mli_method empty_structs simple_object method_with_bitflag_arg
+    Gen_high.For_testing.gen_mli_method
+      empty_structs
+      simple_object
+      method_with_bitflag_arg
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect
-    {| val create_buffer : t -> size:int64 -> usage:Buffer_usage.t list -> Buffer.t |}]
+    {| val create_buffer : t -> size:int64 -> usage:Buffer_usage.Item.t list -> Buffer.t |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_method - async method returns None" =
-  let result = Gen_high.gen_mli_method empty_structs simple_object async_method in
+let%expect_test "Gen_high.For_testing.gen_mli_method - async method returns None" =
+  let result =
+    Gen_high.For_testing.gen_mli_method empty_structs simple_object async_method
+  in
   print_endline (Option.value result ~default:"(none)");
   [%expect {| (none) |}]
 ;;
@@ -457,8 +480,10 @@ let method_with_struct_arg : Ir.method_ =
   }
 ;;
 
-let%expect_test "Gen_high.gen_ml_method - method with struct parameter" =
-  let result = Gen_high.gen_ml_method structs_list device_object method_with_struct_arg in
+let%expect_test "Gen_high.For_testing.gen_ml_method - method with struct parameter" =
+  let result =
+    Gen_high.For_testing.gen_ml_method structs_list device_object method_with_struct_arg
+  in
   print_endline (Option.value result ~default:"(none)");
   [%expect
     {|
@@ -473,15 +498,13 @@ let%expect_test "Gen_high.gen_ml_method - method with struct parameter" =
     |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_method - method with struct parameter" =
+let%expect_test "Gen_high.For_testing.gen_mli_method - method with struct parameter" =
   let result =
-    Gen_high.gen_mli_method structs_list device_object method_with_struct_arg
+    Gen_high.For_testing.gen_mli_method structs_list device_object method_with_struct_arg
   in
   print_endline (Option.value result ~default:"(none)");
   [%expect
-    {|
-    val create_buffer : t -> ?label:string -> size:int64 -> usage:Buffer_usage.t list -> unit -> Buffer.t
-    |}]
+    {| val create_buffer : t -> ?label:string -> size:int64 -> usage:Buffer_usage.Item.t list -> unit -> Buffer.t |}]
 ;;
 
 (* ===== Test output struct methods ===== *)
@@ -530,9 +553,9 @@ let method_with_output_struct : Ir.method_ =
   }
 ;;
 
-let%expect_test "Gen_high.gen_ml_method_with_output_struct" =
+let%expect_test "Gen_high.For_testing.gen_ml_method_with_output_struct" =
   let result =
-    Gen_high.gen_ml_method_with_output_struct
+    Gen_high.For_testing.gen_ml_method_with_output_struct
       adapter_object
       method_with_output_struct
       output_struct
@@ -552,9 +575,9 @@ let%expect_test "Gen_high.gen_ml_method_with_output_struct" =
     |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_method_with_output_struct" =
+let%expect_test "Gen_high.For_testing.gen_mli_method_with_output_struct" =
   let result =
-    Gen_high.gen_mli_method_with_output_struct
+    Gen_high.For_testing.gen_mli_method_with_output_struct
       adapter_object
       method_with_output_struct
       output_struct

@@ -196,8 +196,8 @@ let output_struct : Ir.struct_ =
 
 (* ===== Gen_low struct tests ===== *)
 
-let%expect_test "Gen_low.gen_ml_struct - standalone struct" =
-  print_endline (Gen_low.gen_ml_struct standalone_struct);
+let%expect_test "Gen_low.For_testing.gen_ml_struct - standalone struct" =
+  print_endline (Gen_low.For_testing.gen_ml_struct standalone_struct);
   [%expect
     {|
     module Extent_3d = struct
@@ -218,8 +218,8 @@ let%expect_test "Gen_low.gen_ml_struct - standalone struct" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_mli_struct - standalone struct" =
-  print_endline (Gen_low.gen_mli_struct standalone_struct);
+let%expect_test "Gen_low.For_testing.gen_mli_struct - standalone struct" =
+  print_endline (Gen_low.For_testing.gen_mli_struct standalone_struct);
   [%expect
     {|
     module Extent_3d : sig
@@ -236,8 +236,8 @@ let%expect_test "Gen_low.gen_mli_struct - standalone struct" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_struct - base_in struct with nextInChain" =
-  print_endline (Gen_low.gen_ml_struct base_in_struct);
+let%expect_test "Gen_low.For_testing.gen_ml_struct - base_in struct with nextInChain" =
+  print_endline (Gen_low.For_testing.gen_ml_struct base_in_struct);
   [%expect
     {|
     module Buffer_descriptor = struct
@@ -262,8 +262,8 @@ let%expect_test "Gen_low.gen_ml_struct - base_in struct with nextInChain" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_struct - extension struct" =
-  print_endline (Gen_low.gen_ml_struct extension_struct);
+let%expect_test "Gen_low.For_testing.gen_ml_struct - extension struct" =
+  print_endline (Gen_low.For_testing.gen_ml_struct extension_struct);
   [%expect
     {|
     module Surface_descriptor_from_xcb_window = struct
@@ -286,8 +286,8 @@ let%expect_test "Gen_low.gen_ml_struct - extension struct" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_struct - struct with array" =
-  print_endline (Gen_low.gen_ml_struct struct_with_array);
+let%expect_test "Gen_low.For_testing.gen_ml_struct - struct with array" =
+  print_endline (Gen_low.For_testing.gen_ml_struct struct_with_array);
   [%expect
     {|
     module Bind_group_layout_descriptor = struct
@@ -308,8 +308,8 @@ let%expect_test "Gen_low.gen_ml_struct - struct with array" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_struct - struct with enum" =
-  print_endline (Gen_low.gen_ml_struct struct_with_enum);
+let%expect_test "Gen_low.For_testing.gen_ml_struct - struct with enum" =
+  print_endline (Gen_low.For_testing.gen_ml_struct struct_with_enum);
   [%expect
     {|
     module Texture_descriptor = struct
@@ -332,8 +332,8 @@ let%expect_test "Gen_low.gen_ml_struct - struct with enum" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_struct - struct with object" =
-  print_endline (Gen_low.gen_ml_struct struct_with_object);
+let%expect_test "Gen_low.For_testing.gen_ml_struct - struct with object" =
+  print_endline (Gen_low.For_testing.gen_ml_struct struct_with_object);
   [%expect
     {|
     module Render_pass_color_attachment = struct
@@ -354,8 +354,8 @@ let%expect_test "Gen_low.gen_ml_struct - struct with object" =
 
 (* ===== Gen_low C struct stubs tests ===== *)
 
-let%expect_test "Gen_low.gen_c_struct_stubs - standalone struct" =
-  print_endline (Gen_low.gen_c_struct_stubs standalone_struct);
+let%expect_test "Gen_low.For_testing.gen_c_struct_stubs - standalone struct" =
+  print_endline (Gen_low.For_testing.gen_c_struct_stubs standalone_struct);
   [%expect
     {|
     /* Struct: WGPUExtent3d */
@@ -416,8 +416,9 @@ let%expect_test "Gen_low.gen_c_struct_stubs - standalone struct" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_struct_stubs - base_in struct with nextInChain" =
-  print_endline (Gen_low.gen_c_struct_stubs base_in_struct);
+let%expect_test "Gen_low.For_testing.gen_c_struct_stubs - base_in struct with nextInChain"
+  =
+  print_endline (Gen_low.For_testing.gen_c_struct_stubs base_in_struct);
   [%expect
     {|
     /* Struct: WGPUBufferDescriptor */
@@ -505,8 +506,8 @@ let%expect_test "Gen_low.gen_c_struct_stubs - base_in struct with nextInChain" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_struct_stubs - extension struct" =
-  print_endline (Gen_low.gen_c_struct_stubs extension_struct);
+let%expect_test "Gen_low.For_testing.gen_c_struct_stubs - extension struct" =
+  print_endline (Gen_low.For_testing.gen_c_struct_stubs extension_struct);
   [%expect
     {|
     /* Struct: WGPUSurfaceDescriptorFromXcbWindow */
@@ -568,8 +569,8 @@ let%expect_test "Gen_low.gen_c_struct_stubs - extension struct" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_struct_stubs - struct with array" =
-  print_endline (Gen_low.gen_c_struct_stubs struct_with_array);
+let%expect_test "Gen_low.For_testing.gen_c_struct_stubs - struct with array" =
+  print_endline (Gen_low.For_testing.gen_c_struct_stubs struct_with_array);
   [%expect
     {|
     /* Struct: WGPUBindGroupLayoutDescriptor */

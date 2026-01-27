@@ -21,12 +21,6 @@ type code_with_cleanup =
   ; structs_to_free : (string * Ir.struct_) list
   }
 
-type inline_struct_conversion =
-  { create_code : string list
-  ; set_code : string list
-  ; structs_to_free : (string * Ir.struct_) list
-  }
-
 let read_template = Names.read_template
 let useful_doc = Names.useful_doc
 let ocaml_module_name (name : string) : string = Type_mapping.ocaml_module_name name
@@ -205,21 +199,6 @@ let is_simple_return_type (type_ref : Ir.type_ref) : bool =
   | Object _ -> true
   | Struct _ -> false (* Returning structs is complex *)
   | _ -> false
-;;
-
-let method_is_high_level_simple (method_ : Ir.method_) : bool =
-  if method_is_async method_
-  then false
-  else (
-    let args_ok =
-      List.for_all method_.args ~f:(fun arg -> is_directly_convertible_arg arg.type_)
-    in
-    let return_ok =
-      match method_.returns with
-      | None -> true
-      | Some ret -> is_simple_return_type ret.type_
-    in
-    args_ok && return_ok)
 ;;
 
 let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bool =
@@ -1698,3 +1677,25 @@ end
   in
   header ^ module_type_s ^ bitsets
 ;;
+
+module For_testing = struct
+  type output_mode =
+    | Implementation
+    | Interface
+
+  let gen_ml_enum = gen_ml_enum
+  let gen_mli_enum = gen_mli_enum
+  let gen_ml_bitflag = gen_ml_bitflag
+  let gen_mli_bitflag = gen_mli_bitflag
+  let gen_ml_method = gen_ml_method
+  let gen_mli_method = gen_mli_method
+  let gen_ml_method_with_output_struct = gen_ml_method_with_output_struct
+  let gen_mli_method_with_output_struct = gen_mli_method_with_output_struct
+  let is_flat_member_type = is_flat_member_type
+  let is_directly_convertible_arg = is_directly_convertible_arg
+  let method_is_async = method_is_async
+  let get_inline_struct_name = get_inline_struct_name
+  let member_is_array_of_structs = member_is_array_of_structs
+  let escape_keyword = escape_keyword
+  let useful_doc = useful_doc
+end

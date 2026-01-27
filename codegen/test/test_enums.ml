@@ -44,8 +44,8 @@ let enum_with_numeric_prefix : Ir.enum =
 
 (* ===== Gen_low enum tests ===== *)
 
-let%expect_test "Gen_low.gen_ml_enum - simple enum" =
-  print_endline (Gen_low.gen_ml_enum simple_enum);
+let%expect_test "Gen_low.For_testing.gen_ml_enum - simple enum" =
+  print_endline (Gen_low.For_testing.gen_ml_enum simple_enum);
   [%expect
     {|
     module Texture_format = struct
@@ -56,20 +56,23 @@ let%expect_test "Gen_low.gen_ml_enum - simple enum" =
     external texture_format_rgba8_unorm : unit -> int = "caml_wgpu_texture_format_rgba8_unorm"
     external texture_format_bgra8_unorm : unit -> int = "caml_wgpu_texture_format_bgra8_unorm"
 
+      let rgba8_unorm_int = texture_format_rgba8_unorm ()
+      let bgra8_unorm_int = texture_format_bgra8_unorm ()
+
       let to_int = function
-        | Rgba8_unorm -> texture_format_rgba8_unorm ()
-        | Bgra8_unorm -> texture_format_bgra8_unorm ()
+        | Rgba8_unorm -> rgba8_unorm_int
+        | Bgra8_unorm -> bgra8_unorm_int
 
       let of_int = function
-        | x when x = texture_format_rgba8_unorm () -> Rgba8_unorm
-        | x when x = texture_format_bgra8_unorm () -> Bgra8_unorm
+        | x when x = rgba8_unorm_int -> Rgba8_unorm
+        | x when x = bgra8_unorm_int -> Bgra8_unorm
         | n -> failwith (Printf.sprintf "Texture_format.of_int: unknown value %d" n)
     end
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_mli_enum - simple enum" =
-  print_endline (Gen_low.gen_mli_enum simple_enum);
+let%expect_test "Gen_low.For_testing.gen_mli_enum - simple enum" =
+  print_endline (Gen_low.For_testing.gen_mli_enum simple_enum);
   [%expect
     {|
     module Texture_format : sig
@@ -83,8 +86,8 @@ let%expect_test "Gen_low.gen_mli_enum - simple enum" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_c_enum_constants - simple enum" =
-  print_endline (Gen_low.gen_c_enum_constants simple_enum);
+let%expect_test "Gen_low.For_testing.gen_c_enum_constants - simple enum" =
+  print_endline (Gen_low.For_testing.gen_c_enum_constants simple_enum);
   [%expect
     {|
     /* Enum: WGPUTextureFormat */
@@ -100,8 +103,8 @@ let%expect_test "Gen_low.gen_c_enum_constants - simple enum" =
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_enum - single entry" =
-  print_endline (Gen_low.gen_ml_enum single_entry_enum);
+let%expect_test "Gen_low.For_testing.gen_ml_enum - single entry" =
+  print_endline (Gen_low.For_testing.gen_ml_enum single_entry_enum);
   [%expect
     {|
     module Load_op = struct
@@ -110,18 +113,20 @@ let%expect_test "Gen_low.gen_ml_enum - single entry" =
 
     external load_op_clear : unit -> int = "caml_wgpu_load_op_clear"
 
+      let clear_int = load_op_clear ()
+
       let to_int = function
-        | Clear -> load_op_clear ()
+        | Clear -> clear_int
 
       let of_int = function
-        | x when x = load_op_clear () -> Clear
+        | x when x = clear_int -> Clear
         | n -> failwith (Printf.sprintf "Load_op.of_int: unknown value %d" n)
     end
     |}]
 ;;
 
-let%expect_test "Gen_low.gen_ml_enum - numeric prefix entries" =
-  print_endline (Gen_low.gen_ml_enum enum_with_numeric_prefix);
+let%expect_test "Gen_low.For_testing.gen_ml_enum - numeric prefix entries" =
+  print_endline (Gen_low.For_testing.gen_ml_enum enum_with_numeric_prefix);
   [%expect
     {|
     module Texture_dimension = struct
@@ -134,15 +139,19 @@ let%expect_test "Gen_low.gen_ml_enum - numeric prefix entries" =
     external texture_dimension_2d : unit -> int = "caml_wgpu_texture_dimension_2d"
     external texture_dimension_3d : unit -> int = "caml_wgpu_texture_dimension_3d"
 
+      let n1d_int = texture_dimension_1d ()
+      let n2d_int = texture_dimension_2d ()
+      let n3d_int = texture_dimension_3d ()
+
       let to_int = function
-        | N1d -> texture_dimension_1d ()
-        | N2d -> texture_dimension_2d ()
-        | N3d -> texture_dimension_3d ()
+        | N1d -> n1d_int
+        | N2d -> n2d_int
+        | N3d -> n3d_int
 
       let of_int = function
-        | x when x = texture_dimension_1d () -> N1d
-        | x when x = texture_dimension_2d () -> N2d
-        | x when x = texture_dimension_3d () -> N3d
+        | x when x = n1d_int -> N1d
+        | x when x = n2d_int -> N2d
+        | x when x = n3d_int -> N3d
         | n -> failwith (Printf.sprintf "Texture_dimension.of_int: unknown value %d" n)
     end
     |}]
@@ -150,13 +159,13 @@ let%expect_test "Gen_low.gen_ml_enum - numeric prefix entries" =
 
 (* ===== Gen_high enum tests ===== *)
 
-let%expect_test "Gen_high.gen_ml_enum - simple enum" =
-  print_endline (Gen_high.gen_ml_enum simple_enum);
+let%expect_test "Gen_high.For_testing.gen_ml_enum - simple enum" =
+  print_endline (Gen_high.For_testing.gen_ml_enum simple_enum);
   [%expect {| module Texture_format = Wgpu_low.Texture_format |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_enum - simple enum" =
-  print_endline (Gen_high.gen_mli_enum simple_enum);
+let%expect_test "Gen_high.For_testing.gen_mli_enum - simple enum" =
+  print_endline (Gen_high.For_testing.gen_mli_enum simple_enum);
   [%expect
     {|
     module Texture_format : sig
@@ -171,9 +180,9 @@ let%expect_test "Gen_high.gen_mli_enum - simple enum" =
     |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_enum - enum with empty doc" =
+let%expect_test "Gen_high.For_testing.gen_mli_enum - enum with empty doc" =
   let enum_no_doc = { simple_enum with doc = "" } in
-  print_endline (Gen_high.gen_mli_enum enum_no_doc);
+  print_endline (Gen_high.For_testing.gen_mli_enum enum_no_doc);
   [%expect
     {|
     module Texture_format : sig
@@ -187,9 +196,9 @@ let%expect_test "Gen_high.gen_mli_enum - enum with empty doc" =
     |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_enum - enum with TODO doc" =
+let%expect_test "Gen_high.For_testing.gen_mli_enum - enum with TODO doc" =
   let enum_todo_doc = { simple_enum with doc = "TODO" } in
-  print_endline (Gen_high.gen_mli_enum enum_todo_doc);
+  print_endline (Gen_high.For_testing.gen_mli_enum enum_todo_doc);
   [%expect
     {|
     module Texture_format : sig
@@ -203,8 +212,8 @@ let%expect_test "Gen_high.gen_mli_enum - enum with TODO doc" =
     |}]
 ;;
 
-let%expect_test "Gen_high.gen_mli_enum - enum with numeric prefix entries" =
-  print_endline (Gen_high.gen_mli_enum enum_with_numeric_prefix);
+let%expect_test "Gen_high.For_testing.gen_mli_enum - enum with numeric prefix entries" =
+  print_endline (Gen_high.For_testing.gen_mli_enum enum_with_numeric_prefix);
   [%expect
     {|
     module Texture_dimension : sig
