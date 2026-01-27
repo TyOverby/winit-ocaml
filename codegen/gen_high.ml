@@ -4,37 +4,33 @@ type output_mode =
   | Implementation
   | Interface
 
-type struct_parameter =
-  { param_name : string
-  ; member : Ir.struct_member
-  ; is_optional : bool
-  ; nested_var : string option
-  }
+type struct_parameter = {
+  param_name : string;
+  member : Ir.struct_member;
+  is_optional : bool;
+  nested_var : string option;
+}
 
-type struct_creation_result =
-  { created_structs : (string * Ir.struct_) list
-  ; code_lines : string list
-  }
+type struct_creation_result = {
+  created_structs : (string * Ir.struct_) list;
+  code_lines : string list;
+}
 
-type code_with_cleanup =
-  { code_lines : string list
-  ; structs_to_free : (string * Ir.struct_) list
-  }
+type code_with_cleanup = {
+  code_lines : string list;
+  structs_to_free : (string * Ir.struct_) list;
+}
 
-type inline_struct_conversion =
-  { create_code : string list
-  ; set_code : string list
-  ; structs_to_free : (string * Ir.struct_) list
-  }
+type inline_struct_conversion = {
+  create_code : string list;
+  set_code : string list;
+  structs_to_free : (string * Ir.struct_) list;
+}
 
 let read_template = Names.read_template
 let useful_doc = Names.useful_doc
 let ocaml_module_name (name : string) : string = Type_mapping.ocaml_module_name name
-
-let normalize_enum_entry_name (name : string) : string =
-  Names.normalize_enum_entry_name name
-;;
-
+let normalize_enum_entry_name (name : string) : string = Names.normalize_enum_entry_name name
 let escape_keyword (name : string) : string = Names.escape_keyword name
 let method_is_async = Predicates.method_is_async
 
@@ -124,8 +120,7 @@ let rec is_directly_convertible_arg (type_ref : Ir.type_ref) : bool =
   | Optional inner -> is_directly_convertible_arg inner
   | Struct _ -> false (* Structs handled separately *)
   | Callback _ -> false
-  | Array { elem; _ } ->
-    is_directly_convertible_arg elem (* Arrays of directly convertible types are OK *)
+  | Array { elem; _ } -> is_directly_convertible_arg elem (* Arrays of directly convertible types are OK *)
   | Pointer _ -> false
 ;;
 
@@ -143,9 +138,7 @@ let get_auto_generable_struct_params (structs : Ir.struct_ list) (method_ : Ir.m
     | _ -> None)
 ;;
 
-let method_has_auto_generable_struct_params
-  (structs : Ir.struct_ list)
-  (method_ : Ir.method_)
+let method_has_auto_generable_struct_params (structs : Ir.struct_ list) (method_ : Ir.method_)
   : bool
   =
   let struct_parameters =
@@ -248,8 +241,7 @@ let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bo
             | Struct _ -> true (* will check separately *)
             | _ -> is_directly_convertible_arg arg.type_)
         in
-        if non_struct_parameters_are_directly_convertible
-           && method_has_auto_generable_struct_params structs method_
+        if non_struct_parameters_are_directly_convertible && method_has_auto_generable_struct_params structs method_
         then true
         else (
           (* Check if there's an output struct arg *)
@@ -303,9 +295,9 @@ let build_param_list
   let param_strs =
     List.filter_map struct_params ~f:(fun p ->
       if p.is_optional
-      then (
+      then
         let default_val = default_value_for_type p.member.type_ in
-        Some {%string|?(%{p.param_name} = %{default_val})|})
+        Some {%string|?(%{p.param_name} = %{default_val})|}
       else Some {%string|~%{p.param_name}|})
     @ List.filter_map non_struct_params ~f:(fun (name, _arg, is_opt) ->
       if is_opt then Some {%string|?%{name}|} else Some {%string|~%{name}|})
@@ -323,8 +315,7 @@ let gen_cleanup_code
     List.concat_map array_element_struct_lists ~f:(fun (list_var, array_element_struct) ->
       let array_element_module = ocaml_module_name array_element_struct.name in
       let struct_name = array_element_struct.name in
-      [ {%string|List.iter (fun e -> Wgpu_low.%{array_element_module}.%{struct_name}_free e) %{list_var};|}
-      ])
+      [ {%string|List.iter (fun e -> Wgpu_low.%{array_element_module}.%{struct_name}_free e) %{list_var};|} ])
   in
   (* Free structs in reverse order (parent structs first, then nested) *)
   let free_structs =
@@ -342,8 +333,7 @@ let gen_method_call_args
   : string list
   =
   let struct_parameter_names =
-    List.map struct_parameters ~f:(fun (arg, _) -> arg.name)
-    |> Set.of_list (module String)
+    List.map struct_parameters ~f:(fun (arg, _) -> arg.name) |> Set.of_list (module String)
   in
   List.map method_.args ~f:(fun arg ->
     match arg.type_ with
@@ -382,9 +372,7 @@ let gen_output_struct_field_reads
     then None
     else (
       let field_name = escape_keyword member.name in
-      let getter_name =
-        {%string|Wgpu_low.%{struct_module}.%{struct_.name}_get_%{member.name}|}
-      in
+      let getter_name = {%string|Wgpu_low.%{struct_module}.%{struct_.name}_get_%{member.name}|} in
       let value_expr =
         match member.type_ with
         | Enum name ->
@@ -401,9 +389,7 @@ let gen_output_struct_field_reads
 let gen_output_struct_record (struct_ : Ir.struct_) : string =
   let record_fields =
     List.filter_map struct_.members ~f:(fun member ->
-      if String.equal member.name "nextInChain"
-      then None
-      else Some (escape_keyword member.name))
+      if String.equal member.name "nextInChain" then None else Some (escape_keyword member.name))
   in
   let fields_str = String.concat ~sep:"; " record_fields in
   {%string|let result = { %{fields_str} } in|}
@@ -486,8 +472,11 @@ let rec generate_struct_creates
       | None -> None)
   in
   let all_created_structs, all_code_lines =
-    List.fold nested_results ~init:([], []) ~f:(fun (vars, creates) result ->
-      vars @ result.created_structs, creates @ result.code_lines)
+    List.fold
+      nested_results
+      ~init:([], [])
+      ~f:(fun (vars, creates) result ->
+        vars @ result.created_structs, creates @ result.code_lines)
   in
   { created_structs = (var_name, struct_) :: all_created_structs
   ; code_lines = all_code_lines @ [ create_line ]
@@ -519,8 +508,7 @@ let generate_array_of_structs_conversion
   let array_var = param_name ^ "_array" in
   (* Generate code to convert each entry record to a C struct *)
   let loop_code =
-    [ {%string|let %{entries_var} = List.map (fun (entry : %{array_element_module}.t) ->|}
-    ]
+    [ {%string|let %{entries_var} = List.map (fun (entry : %{array_element_module}.t) ->|} ]
     @ [ {%string|    let e = Wgpu_low.%{array_element_module}.%{array_element_struct.name}_create () in|}
       ]
     @ List.concat_map array_element_struct.members ~f:(fun member ->
@@ -876,9 +864,7 @@ let gen_method
               then "t"
               else
                 "t "
-                ^ String.concat
-                    ~sep:" "
-                    (List.map arg_names ~f:(fun n -> {%string|~%{n}|}))
+                ^ String.concat ~sep:" " (List.map arg_names ~f:(fun n -> {%string|~%{n}|}))
             in
             let call_args = "t.handle" :: arg_conversions in
             let call_args_str = String.concat ~sep:" " call_args in
@@ -961,9 +947,11 @@ and gen_array_element_struct_module
         Some {%string|      %{field_name} : %{field_type}|}))
   in
   let fields_str = String.concat ~sep:";\n" fields in
-  let record_type = {%string|    type t = {
+  let record_type =
+    {%string|    type t = {
 %{fields_str}
-    }|} in
+    }|}
+  in
   let nested_prefix =
     if String.is_empty nested_modules then "" else nested_modules ^ "\n"
   in
@@ -1007,12 +995,15 @@ and gen_nested_struct_module
 |}
 ;;
 
+(** Generate MLI for an entry struct module - backward compatibility wrapper *)
 let gen_array_element_struct_module_mli (structs : Ir.struct_ list) (struct_ : Ir.struct_)
   : string
   =
   gen_array_element_struct_module Interface structs struct_
 ;;
 
+(** Generate MLI signature for a method with output struct argument - backward
+    compatibility wrapper *)
 let gen_mli_method_with_output_struct
   (obj : Ir.object_)
   (method_ : Ir.method_)
@@ -1022,12 +1013,15 @@ let gen_mli_method_with_output_struct
   gen_method_with_output_struct Interface obj method_ struct_
 ;;
 
+(** Generate MLI signature for a method - backward compatibility wrapper *)
 let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
   : string option
   =
   gen_method Interface structs obj method_
 ;;
 
+(** Generate high-level OCaml code for an enum type (re-exports low-level) *)
+(** Generate enum module - unified implementation and interface *)
 let gen_enum (mode : output_mode) (enum : Ir.enum) : string =
   let module_name = ocaml_module_name enum.name in
   match mode with
@@ -1056,9 +1050,13 @@ end
 |}
 ;;
 
+(** Generate ML implementation for an enum type *)
 let gen_ml_enum (enum : Ir.enum) : string = gen_enum Implementation enum
+
+(** Generate MLI interface for an enum type *)
 let gen_mli_enum (enum : Ir.enum) : string = gen_enum Interface enum
 
+(** Generate bitflag module - unified implementation and interface *)
 let gen_bitflag (mode : output_mode) (bitflag : Ir.bitflag) : string =
   let module_name = ocaml_module_name bitflag.name in
   match mode with
@@ -1087,11 +1085,15 @@ end
 |}
 ;;
 
+(** Generate ML implementation for a bitflag type *)
 let gen_ml_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Implementation bitflag
+
+(** Generate MLI interface for a bitflag type *)
 let gen_mli_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Interface bitflag
 
-let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object_)
-  : string
+(** Generate high-level OCaml code for an object type with methods *)
+(** Generate object module - unified implementation and interface *)
+let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object_) : string
   =
   let module_name = ocaml_module_name obj.name in
   (* Collect output struct types used by this object's methods *)
@@ -1109,9 +1111,7 @@ let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object
       List.filter_map obj.methods ~f:(gen_ml_method structs obj) |> String.concat ~sep:""
     in
     let output_types_section =
-      if String.is_empty output_struct_types
-      then ""
-      else "  " ^ output_struct_types ^ "\n"
+      if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n"
     in
     {%string|module %{module_name} = struct
   type t = { handle : Wgpu_low.%{obj.name} }
@@ -1131,9 +1131,7 @@ let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object
       List.filter_map obj.methods ~f:(gen_mli_method structs obj) |> String.concat ~sep:""
     in
     let output_types_section =
-      if String.is_empty output_struct_types
-      then ""
-      else "  " ^ output_struct_types ^ "\n"
+      if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n"
     in
     {%string|module %{module_name} : sig
 %{doc_comment}  type t
@@ -1143,14 +1141,18 @@ let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object
 |}
 ;;
 
+(** Generate ML implementation for an object type *)
 let gen_ml_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
   gen_object Implementation structs obj
 ;;
 
+(** Generate MLI interface for an object type *)
 let gen_mli_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
   gen_object Interface structs obj
 ;;
 
+(** Extract object dependencies from a type_ref. Returns object names that must be defined
+    before this type can be used. *)
 let rec extract_object_deps (type_ref : Ir.type_ref) : string list =
   match type_ref with
   | Object name -> [ name ]
@@ -1160,6 +1162,11 @@ let rec extract_object_deps (type_ref : Ir.type_ref) : string list =
   | Primitive _ | Enum _ | Bitflag _ | Struct _ | Callback _ -> []
 ;;
 
+(** Get all object dependencies for a single object. An object A depends on object B if:
+    1. A method of A returns B (e.g., Texture.create_view returns Texture_view)
+    2. A method of A takes B as a parameter (e.g., Compute_pass_encoder.set_pipeline takes
+       Compute_pipeline)
+    3. A method of A has an output struct with a field of type B *)
 let get_object_dependencies (structs : Ir.struct_ list) (obj : Ir.object_)
   : Set.M(String).t
   =
@@ -1189,6 +1196,7 @@ let get_object_dependencies (structs : Ir.struct_ list) (obj : Ir.object_)
   !deps
 ;;
 
+(** Topologically sort objects so dependencies come first. Uses Kahn's algorithm. *)
 let sort_objects (structs : Ir.struct_ list) (objects : Ir.object_ list) : Ir.object_ list
   =
   (* Build dependency map: object name -> set of objects it depends on *)
@@ -1245,6 +1253,8 @@ let sort_objects (structs : Ir.struct_ list) (objects : Ir.object_ list) : Ir.ob
     Int.compare a_order b_order)
 ;;
 
+(** Collect all entry structs (structs that appear in arrays within other structs).
+    Returns a deduplicated list of (array_element_struct, nested_structs) pairs. *)
 let collect_array_element_structs (api : Ir.api) : (Ir.struct_ * Ir.struct_ list) list =
   let array_element_struct_names =
     List.concat_map api.structs ~f:(fun struct_ ->
@@ -1267,6 +1277,8 @@ let collect_array_element_structs (api : Ir.api) : (Ir.struct_ * Ir.struct_ list
     | None -> None)
 ;;
 
+(** Generate auto-generated ML methods for a special object (one that is partially
+    hand-written). Returns (output_struct_types, methods) as strings. *)
 let gen_special_object_auto_methods (structs : Ir.struct_ list) (obj : Ir.object_)
   : string * string
   =
@@ -1292,6 +1304,8 @@ let gen_special_object_auto_methods (structs : Ir.struct_ list) (obj : Ir.object
   output_struct_types, methods
 ;;
 
+(** Generate auto-generated MLI signatures for a special object. Returns
+    (output_struct_types, methods). *)
 let gen_special_object_auto_methods_mli (structs : Ir.struct_ list) (obj : Ir.object_)
   : string * string
   =
@@ -1317,6 +1331,7 @@ let gen_special_object_auto_methods_mli (structs : Ir.struct_ list) (obj : Ir.ob
   output_struct_types, methods
 ;;
 
+(** Generate all high-level OCaml code *)
 let gen_ml (api : Ir.api) : string =
   let header = "(* Generated by gen_bindings - high-level OCaml bindings *)\n\n" in
   let enums = List.map api.enums ~f:gen_ml_enum |> String.concat ~sep:"\n" in
@@ -1369,6 +1384,7 @@ let gen_ml (api : Ir.api) : string =
     ]
 ;;
 
+(** Generate all high-level OCaml interface *)
 let gen_mli (api : Ir.api) : string =
   let header = "(* Generated by gen_bindings - high-level OCaml interface *)\n\n" in
   let enums = List.map api.enums ~f:gen_mli_enum |> String.concat ~sep:"\n" in
@@ -1421,6 +1437,8 @@ let gen_mli (api : Ir.api) : string =
     ]
 ;;
 
+(** Validate that all non-auto-generated methods are accounted for. Returns a list of
+    error messages for unaccounted methods. *)
 let validate_method_coverage (api : Ir.api) : string list =
   let errors = ref [] in
   List.iter api.objects ~f:(fun obj ->
@@ -1455,18 +1473,15 @@ let validate_method_coverage (api : Ir.api) : string list =
               let non_simple_return =
                 match method_.returns with
                 | None -> []
-                | Some ret ->
-                  if is_simple_return_type ret.type_
-                  then []
-                  else [ "returns: non-simple" ]
+                | Some ret -> if is_simple_return_type ret.type_ then [] else [ "returns: non-simple" ]
               in
               String.concat ~sep:", " (non_simple_args @ non_simple_return))
           in
-          errors
-          := {%string|UNACCOUNTED: %{obj.name}.%{method_.name} (%{reason})|} :: !errors)));
+          errors := {%string|UNACCOUNTED: %{obj.name}.%{method_.name} (%{reason})|} :: !errors)));
   List.rev !errors
 ;;
 
+(** Check method coverage and fail if there are unaccounted methods *)
 let check_method_coverage (api : Ir.api) : unit =
   let errors = validate_method_coverage api in
   if not (List.is_empty errors)
