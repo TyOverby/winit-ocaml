@@ -67,16 +67,17 @@ let gen_c_enum_constants (enum : Ir.enum) : string =
   let entries =
     List.map enum.entries ~f:(fun entry ->
       let c_entry_name = c_type_name enum.name ^ "_" ^ to_pascal_case entry.name in
-      sprintf
-        "CAMLprim value caml_wgpu_%s_%s(value unit) {\n\
-        \  CAMLparam1(unit);\n\
-        \  CAMLreturn(Val_int(%s));\n\
-         }"
-        (String.lowercase enum.name)
-        (String.lowercase entry.name)
-        c_entry_name)
+      let enum_lower = String.lowercase enum.name in
+      let entry_lower = String.lowercase entry.name in
+      {%string|CAMLprim value caml_wgpu_%{enum_lower}_%{entry_lower}(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(%{c_entry_name}));
+}|})
   in
-  sprintf "/* Enum: %s */\n%s\n" c_name (String.concat ~sep:"\n\n" entries)
+  let entries_str = String.concat ~sep:"\n\n" entries in
+  {%string|/* Enum: %{c_name} */
+%{entries_str}
+|}
 ;;
 
 (** Generate OCaml code for an enum type *)
@@ -84,35 +85,31 @@ let gen_ml_enum (enum : Ir.enum) : string =
   let module_name = ocaml_module_name enum.name in
   let variants =
     List.map enum.entries ~f:(fun entry ->
-      sprintf "  | %s" (normalize_enum_entry_name entry.name))
+      let name = normalize_enum_entry_name entry.name in
+      {%string|  | %{name}|})
     |> String.concat ~sep:"\n"
   in
   let to_int_cases =
     List.map enum.entries ~f:(fun entry ->
-      sprintf
-        "    | %s -> %s_%s ()"
-        (normalize_enum_entry_name entry.name)
-        (String.lowercase enum.name)
-        (String.lowercase entry.name))
+      let variant_name = normalize_enum_entry_name entry.name in
+      let enum_lower = String.lowercase enum.name in
+      let entry_lower = String.lowercase entry.name in
+      {%string|    | %{variant_name} -> %{enum_lower}_%{entry_lower} ()|})
     |> String.concat ~sep:"\n"
   in
   let of_int_cases =
     List.map enum.entries ~f:(fun entry ->
-      sprintf
-        "    | x when x = %s_%s () -> %s"
-        (String.lowercase enum.name)
-        (String.lowercase entry.name)
-        (normalize_enum_entry_name entry.name))
+      let variant_name = normalize_enum_entry_name entry.name in
+      let enum_lower = String.lowercase enum.name in
+      let entry_lower = String.lowercase entry.name in
+      {%string|    | x when x = %{enum_lower}_%{entry_lower} () -> %{variant_name}|})
     |> String.concat ~sep:"\n"
   in
   let externals =
     List.map enum.entries ~f:(fun entry ->
-      sprintf
-        "external %s_%s : unit -> int = \"caml_wgpu_%s_%s\""
-        (String.lowercase enum.name)
-        (String.lowercase entry.name)
-        (String.lowercase enum.name)
-        (String.lowercase entry.name))
+      let enum_lower = String.lowercase enum.name in
+      let entry_lower = String.lowercase entry.name in
+      {%string|external %{enum_lower}_%{entry_lower} : unit -> int = "caml_wgpu_%{enum_lower}_%{entry_lower}"|})
     |> String.concat ~sep:"\n"
   in
   {%string|module %{module_name} = struct
@@ -136,7 +133,8 @@ let gen_mli_enum (enum : Ir.enum) : string =
   let module_name = ocaml_module_name enum.name in
   let variants =
     List.map enum.entries ~f:(fun entry ->
-      sprintf "  | %s" (normalize_enum_entry_name entry.name))
+      let name = normalize_enum_entry_name entry.name in
+      {%string|  | %{name}|})
     |> String.concat ~sep:"\n"
   in
   {%string|module %{module_name} : sig
@@ -154,19 +152,18 @@ let gen_c_bitflag_constants (bitflag : Ir.bitflag) : string =
   let entries =
     List.map bitflag.entries ~f:(fun entry ->
       let c_entry_name = c_type_name bitflag.name ^ "_" ^ to_pascal_case entry.name in
-      sprintf
-        "CAMLprim value caml_wgpu_%s_%s(value unit) {\n\
-        \  CAMLparam1(unit);\n\
-        \  CAMLreturn(Val_int(%s));\n\
-         }"
-        (String.lowercase bitflag.name)
-        (String.lowercase entry.name)
-        c_entry_name)
+      let bitflag_lower = String.lowercase bitflag.name in
+      let entry_lower = String.lowercase entry.name in
+      {%string|CAMLprim value caml_wgpu_%{bitflag_lower}_%{entry_lower}(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_int(%{c_entry_name}));
+}|})
   in
-  sprintf
-    "/* Bitflag: %s */\n%s\n"
-    (c_type_name bitflag.name)
-    (String.concat ~sep:"\n\n" entries)
+  let c_name = c_type_name bitflag.name in
+  let entries_str = String.concat ~sep:"\n\n" entries in
+  {%string|/* Bitflag: %{c_name} */
+%{entries_str}
+|}
 ;;
 
 (** Generate OCaml code for a bitflag type *)
@@ -174,26 +171,23 @@ let gen_ml_bitflag (bitflag : Ir.bitflag) : string =
   let module_name = ocaml_module_name bitflag.name in
   let variants =
     List.map bitflag.entries ~f:(fun entry ->
-      sprintf "  | %s" (normalize_enum_entry_name entry.name))
+      let name = normalize_enum_entry_name entry.name in
+      {%string|  | %{name}|})
     |> String.concat ~sep:"\n"
   in
   let to_int_cases =
     List.map bitflag.entries ~f:(fun entry ->
-      sprintf
-        "    | %s -> %s_%s ()"
-        (normalize_enum_entry_name entry.name)
-        (String.lowercase bitflag.name)
-        (String.lowercase entry.name))
+      let variant_name = normalize_enum_entry_name entry.name in
+      let bitflag_lower = String.lowercase bitflag.name in
+      let entry_lower = String.lowercase entry.name in
+      {%string|    | %{variant_name} -> %{bitflag_lower}_%{entry_lower} ()|})
     |> String.concat ~sep:"\n"
   in
   let externals =
     List.map bitflag.entries ~f:(fun entry ->
-      sprintf
-        "external %s_%s : unit -> int = \"caml_wgpu_%s_%s\""
-        (String.lowercase bitflag.name)
-        (String.lowercase entry.name)
-        (String.lowercase bitflag.name)
-        (String.lowercase entry.name))
+      let bitflag_lower = String.lowercase bitflag.name in
+      let entry_lower = String.lowercase entry.name in
+      {%string|external %{bitflag_lower}_%{entry_lower} : unit -> int = "caml_wgpu_%{bitflag_lower}_%{entry_lower}"|})
     |> String.concat ~sep:"\n"
   in
   {%string|module %{module_name} = struct
@@ -216,7 +210,8 @@ let gen_mli_bitflag (bitflag : Ir.bitflag) : string =
   let module_name = ocaml_module_name bitflag.name in
   let variants =
     List.map bitflag.entries ~f:(fun entry ->
-      sprintf "  | %s" (normalize_enum_entry_name entry.name))
+      let name = normalize_enum_entry_name entry.name in
+      {%string|  | %{name}|})
     |> String.concat ~sep:"\n"
   in
   {%string|module %{module_name} : sig
@@ -280,92 +275,75 @@ let array_count_field_name (array_field : string) : string =
 let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : string =
   let c_struct = c_type_name struct_.name in
   let c_field = to_camel_case member.name in
-  let func_name =
-    sprintf
-      "caml_wgpu_%s_set_%s"
-      (String.lowercase struct_.name)
-      (String.lowercase member.name)
-  in
+  let struct_lower = String.lowercase struct_.name in
+  let member_lower = String.lowercase member.name in
+  let func_name = {%string|caml_wgpu_%{struct_lower}_set_%{member_lower}|} in
   let body =
     match member.type_ with
-    | Primitive Bool -> sprintf "  s->%s = Bool_val(val);" c_field
-    | Primitive Uint32 -> sprintf "  s->%s = (uint32_t)Int_val(val);" c_field
-    | Primitive Uint64 -> sprintf "  s->%s = (uint64_t)Int64_val(val);" c_field
-    | Primitive Int32 -> sprintf "  s->%s = (int32_t)Int_val(val);" c_field
-    | Primitive Int64 -> sprintf "  s->%s = (int64_t)Int64_val(val);" c_field
-    | Primitive Float32 -> sprintf "  s->%s = (float)Double_val(val);" c_field
-    | Primitive Float64 -> sprintf "  s->%s = Double_val(val);" c_field
-    | Primitive Usize -> sprintf "  s->%s = (size_t)Int64_val(val);" c_field
+    | Primitive Bool -> {%string|  s->%{c_field} = Bool_val(val);|}
+    | Primitive Uint32 -> {%string|  s->%{c_field} = (uint32_t)Int_val(val);|}
+    | Primitive Uint64 -> {%string|  s->%{c_field} = (uint64_t)Int64_val(val);|}
+    | Primitive Int32 -> {%string|  s->%{c_field} = (int32_t)Int_val(val);|}
+    | Primitive Int64 -> {%string|  s->%{c_field} = (int64_t)Int64_val(val);|}
+    | Primitive Float32 -> {%string|  s->%{c_field} = (float)Double_val(val);|}
+    | Primitive Float64 -> {%string|  s->%{c_field} = Double_val(val);|}
+    | Primitive Usize -> {%string|  s->%{c_field} = (size_t)Int64_val(val);|}
     | Primitive (String | Out_string | String_with_default_empty) ->
-      sprintf
-        "  const char *str = String_val(val);\n\
-        \  s->%s.data = str;\n\
-        \  s->%s.length = strlen(str);"
-        c_field
-        c_field
-    | Primitive C_void -> sprintf "  s->%s = (void*)Nativeint_val(val);" c_field
-    | Enum _ -> sprintf "  s->%s = Int_val(val);" c_field
-    | Bitflag _ -> sprintf "  s->%s = Int_val(val);" c_field
+      {%string|  const char *str = String_val(val);
+  s->%{c_field}.data = str;
+  s->%{c_field}.length = strlen(str);|}
+    | Primitive C_void -> {%string|  s->%{c_field} = (void*)Nativeint_val(val);|}
+    | Enum _ -> {%string|  s->%{c_field} = Int_val(val);|}
+    | Bitflag _ -> {%string|  s->%{c_field} = Int_val(val);|}
     | Struct _ ->
-      sprintf
-        "  s->%s = *(%s*)Nativeint_val(val);"
-        c_field
-        (c_type_of_type_ref member.type_)
+      let c_type = c_type_of_type_ref member.type_ in
+      {%string|  s->%{c_field} = *(%{c_type}*)Nativeint_val(val);|}
     | Object _ ->
-      sprintf
-        "  s->%s = (%s)Nativeint_val(val);"
-        c_field
-        (c_type_of_type_ref member.type_)
-    | Callback _ -> sprintf "  (void)s; /* TODO: callback field %s */" c_field
+      let c_type = c_type_of_type_ref member.type_ in
+      {%string|  s->%{c_field} = (%{c_type})Nativeint_val(val);|}
+    | Callback _ -> {%string|  (void)s; /* TODO: callback field %{c_field} */|}
     | Array { elem; _ } ->
       let elem_c_type = c_type_of_type_ref elem in
       let count_field = array_count_field_name member.name in
       let copy_code =
         match elem with
         | Object _ ->
-          sprintf
-            "  for (size_t i = 0; i < count; i++) {\n\
-            \    arr[i] = (%s)Nativeint_val(Field(val, i));\n\
-            \  }"
-            elem_c_type
+          {%string|  for (size_t i = 0; i < count; i++) {
+    arr[i] = (%{elem_c_type})Nativeint_val(Field(val, i));
+  }|}
         | Struct _ ->
-          sprintf
-            "  for (size_t i = 0; i < count; i++) {\n\
-            \    arr[i] = *(%s*)Nativeint_val(Field(val, i));\n\
-            \  }"
-            elem_c_type
+          {%string|  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(%{elem_c_type}*)Nativeint_val(Field(val, i));
+  }|}
         | Enum _ | Bitflag _ ->
-          "  for (size_t i = 0; i < count; i++) {\n\
-          \    arr[i] = Int_val(Field(val, i));\n\
-          \  }"
+          {%string|  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }|}
         | Primitive Uint32 | Primitive Int32 ->
-          "  for (size_t i = 0; i < count; i++) {\n\
-          \    arr[i] = Int_val(Field(val, i));\n\
-          \  }"
+          {%string|  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }|}
         | _ -> sprintf "  /* TODO: copy %s elements */" elem_c_type
       in
-      sprintf
-        "  size_t count = Wosize_val(val);\n\
-        \  %s* arr = (count > 0) ? malloc(count * sizeof(%s)) : NULL;\n\
-         %s\n\
-        \  s->%s = count;\n\
-        \  s->%s = arr;"
-        elem_c_type
-        elem_c_type
-        copy_code
-        count_field
-        c_field
+      {%string|  size_t count = Wosize_val(val);
+  %{elem_c_type}* arr = (count > 0) ? malloc(count * sizeof(%{elem_c_type})) : NULL;
+%{copy_code}
+  s->%{count_field} = count;
+  s->%{c_field} = arr;|}
     | Optional inner ->
       (match inner with
        | Object _ ->
-         sprintf "  s->%s = (%s)Nativeint_val(val);" c_field (c_type_of_type_ref inner)
+         let c_type = c_type_of_type_ref inner in
+         {%string|  s->%{c_field} = (%{c_type})Nativeint_val(val);|}
        | Struct name ->
-         sprintf "  s->%s = (%s*)Nativeint_val(val);" c_field (c_type_name name)
-       | _ -> sprintf "  (void)s; /* TODO: optional field %s */" c_field)
+         let c_type = c_type_name name in
+         {%string|  s->%{c_field} = (%{c_type}*)Nativeint_val(val);|}
+       | _ -> {%string|  (void)s; /* TODO: optional field %{c_field} */|})
     | Pointer { inner; _ } ->
       (match inner with
        | Struct name ->
-         sprintf "  s->%s = (%s*)Nativeint_val(val);" c_field (c_type_name name)
+         let c_type = c_type_name name in
+         {%string|  s->%{c_field} = (%{c_type}*)Nativeint_val(val);|}
        | Array { elem; _ } ->
          (* Pointer to array - same as array but with pointer indirection *)
          let elem_c_type = c_type_of_type_ref elem in
@@ -373,39 +351,29 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
          let copy_code =
            match elem with
            | Object _ ->
-             sprintf
-               "  for (size_t i = 0; i < count; i++) {\n\
-               \    arr[i] = (%s)Nativeint_val(Field(val, i));\n\
-               \  }"
-               elem_c_type
+             {%string|  for (size_t i = 0; i < count; i++) {
+    arr[i] = (%{elem_c_type})Nativeint_val(Field(val, i));
+  }|}
            | Struct _ ->
-             sprintf
-               "  for (size_t i = 0; i < count; i++) {\n\
-               \    arr[i] = *(%s*)Nativeint_val(Field(val, i));\n\
-               \  }"
-               elem_c_type
+             {%string|  for (size_t i = 0; i < count; i++) {
+    arr[i] = *(%{elem_c_type}*)Nativeint_val(Field(val, i));
+  }|}
            | Enum _ | Bitflag _ ->
-             "  for (size_t i = 0; i < count; i++) {\n\
-             \    arr[i] = Int_val(Field(val, i));\n\
-             \  }"
+             {%string|  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }|}
            | Primitive Uint32 | Primitive Int32 ->
-             "  for (size_t i = 0; i < count; i++) {\n\
-             \    arr[i] = Int_val(Field(val, i));\n\
-             \  }"
-           | _ -> sprintf "  /* TODO: copy %s elements */" elem_c_type
+             {%string|  for (size_t i = 0; i < count; i++) {
+    arr[i] = Int_val(Field(val, i));
+  }|}
+           | _ -> {%string|  /* TODO: copy %{elem_c_type} elements */|}
          in
-         sprintf
-           "  size_t count = Wosize_val(val);\n\
-           \  %s* arr = (count > 0) ? malloc(count * sizeof(%s)) : NULL;\n\
-            %s\n\
-           \  s->%s = count;\n\
-           \  s->%s = arr;"
-           elem_c_type
-           elem_c_type
-           copy_code
-           count_field
-           c_field
-       | _ -> sprintf "  (void)s; /* TODO: pointer field %s */" c_field)
+         {%string|  size_t count = Wosize_val(val);
+  %{elem_c_type}* arr = (count > 0) ? malloc(count * sizeof(%{elem_c_type})) : NULL;
+%{copy_code}
+  s->%{count_field} = count;
+  s->%{c_field} = arr;|}
+       | _ -> {%string|  (void)s; /* TODO: pointer field %{c_field} */|})
   in
   sprintf
     {|CAMLprim value %s(value handle, value val) {
@@ -425,39 +393,32 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
 let gen_c_struct_getter (struct_ : Ir.struct_) (member : Ir.struct_member) : string =
   let c_struct = c_type_name struct_.name in
   let c_field = to_camel_case member.name in
-  let func_name =
-    sprintf
-      "caml_wgpu_%s_get_%s"
-      (String.lowercase struct_.name)
-      (String.lowercase member.name)
-  in
+  let struct_lower = String.lowercase struct_.name in
+  let member_lower = String.lowercase member.name in
+  let func_name = {%string|caml_wgpu_%{struct_lower}_get_%{member_lower}|} in
   let body =
     match member.type_ with
-    | Primitive Bool -> sprintf "  CAMLreturn(Val_bool(s->%s));" c_field
-    | Primitive Uint32 -> sprintf "  CAMLreturn(Val_int(s->%s));" c_field
-    | Primitive Uint64 -> sprintf "  CAMLreturn(caml_copy_int64(s->%s));" c_field
-    | Primitive Int32 -> sprintf "  CAMLreturn(Val_int(s->%s));" c_field
-    | Primitive Int64 -> sprintf "  CAMLreturn(caml_copy_int64(s->%s));" c_field
-    | Primitive Float32 ->
-      sprintf "  CAMLreturn(caml_copy_double((double)s->%s));" c_field
-    | Primitive Float64 -> sprintf "  CAMLreturn(caml_copy_double(s->%s));" c_field
-    | Primitive Usize -> sprintf "  CAMLreturn(caml_copy_int64((int64_t)s->%s));" c_field
+    | Primitive Bool -> {%string|  CAMLreturn(Val_bool(s->%{c_field}));|}
+    | Primitive Uint32 -> {%string|  CAMLreturn(Val_int(s->%{c_field}));|}
+    | Primitive Uint64 -> {%string|  CAMLreturn(caml_copy_int64(s->%{c_field}));|}
+    | Primitive Int32 -> {%string|  CAMLreturn(Val_int(s->%{c_field}));|}
+    | Primitive Int64 -> {%string|  CAMLreturn(caml_copy_int64(s->%{c_field}));|}
+    | Primitive Float32 -> {%string|  CAMLreturn(caml_copy_double((double)s->%{c_field}));|}
+    | Primitive Float64 -> {%string|  CAMLreturn(caml_copy_double(s->%{c_field}));|}
+    | Primitive Usize -> {%string|  CAMLreturn(caml_copy_int64((int64_t)s->%{c_field}));|}
     | Primitive (String | Out_string | String_with_default_empty) ->
-      sprintf
-        "  if (s->%s.data != NULL) {\n\
-        \    CAMLreturn(caml_copy_string(s->%s.data));\n\
-        \  } else {\n\
-        \    CAMLreturn(caml_copy_string(\"\"));\n\
-        \  }"
-        c_field
-        c_field
-    | Primitive C_void ->
-      sprintf "  CAMLreturn(caml_copy_nativeint((intnat)s->%s));" c_field
-    | Enum _ -> sprintf "  CAMLreturn(Val_int(s->%s));" c_field
-    | Bitflag _ -> sprintf "  CAMLreturn(Val_int(s->%s));" c_field
-    | Object _ -> sprintf "  CAMLreturn(caml_copy_nativeint((intnat)s->%s));" c_field
+      {%string|  if (s->%{c_field}.data != NULL) {
+    CAMLreturn(caml_copy_string(s->%{c_field}.data));
+  } else {
+    CAMLreturn(caml_copy_string(""));
+  }|}
+    | Primitive C_void -> {%string|  CAMLreturn(caml_copy_nativeint((intnat)s->%{c_field}));|}
+    | Enum _ -> {%string|  CAMLreturn(Val_int(s->%{c_field}));|}
+    | Bitflag _ -> {%string|  CAMLreturn(Val_int(s->%{c_field}));|}
+    | Object _ -> {%string|  CAMLreturn(caml_copy_nativeint((intnat)s->%{c_field}));|}
     | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
-      sprintf "  (void)s; /* TODO: getter for %s */\n  CAMLreturn(Val_unit);" c_field
+      {%string|  (void)s; /* TODO: getter for %{c_field} */
+  CAMLreturn(Val_unit);|}
   in
   sprintf
     {|CAMLprim value %s(value handle) {
@@ -478,62 +439,44 @@ let gen_c_extension_chain_stubs (struct_ : Ir.struct_) : string =
   | Ir.Extension_in _ | Ir.Extension_out _ ->
     let c_name = c_type_name struct_.name in
     let lower_name = String.lowercase struct_.name in
-    sprintf
-      {|/* Extension chain functions for %s */
-CAMLprim value caml_wgpu_%s_set_chain_stype(value handle, value stype) {
+    {%string|/* Extension chain functions for %{c_name} */
+CAMLprim value caml_wgpu_%{lower_name}_set_chain_stype(value handle, value stype) {
   CAMLparam2(handle, stype);
-  %s *s = (%s*)Nativeint_val(handle);
+  %{c_name} *s = (%{c_name}*)Nativeint_val(handle);
   s->chain.sType = Int_val(stype);
   CAMLreturn(Val_unit);
 }
 
-CAMLprim value caml_wgpu_%s_as_chained(value handle) {
+CAMLprim value caml_wgpu_%{lower_name}_as_chained(value handle) {
   CAMLparam1(handle);
-  %s *s = (%s*)Nativeint_val(handle);
+  %{c_name} *s = (%{c_name}*)Nativeint_val(handle);
   CAMLreturn(caml_copy_nativeint((intnat)&s->chain));
 }
 |}
-      c_name
-      lower_name
-      c_name
-      c_name
-      lower_name
-      c_name
-      c_name
   | Ir.Base_in ->
     (* Base input structs use WGPUChainedStruct *)
     let c_name = c_type_name struct_.name in
     let lower_name = String.lowercase struct_.name in
-    sprintf
-      {|/* nextInChain setter for %s */
-CAMLprim value caml_wgpu_%s_set_next_in_chain(value handle, value chain) {
+    {%string|/* nextInChain setter for %{c_name} */
+CAMLprim value caml_wgpu_%{lower_name}_set_next_in_chain(value handle, value chain) {
   CAMLparam2(handle, chain);
-  %s *s = (%s*)Nativeint_val(handle);
+  %{c_name} *s = (%{c_name}*)Nativeint_val(handle);
   s->nextInChain = (WGPUChainedStruct const *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 |}
-      c_name
-      lower_name
-      c_name
-      c_name
   | Ir.Base_out | Ir.Base_in_out ->
     (* Base output structs use WGPUChainedStructOut *)
     let c_name = c_type_name struct_.name in
     let lower_name = String.lowercase struct_.name in
-    sprintf
-      {|/* nextInChain setter for %s */
-CAMLprim value caml_wgpu_%s_set_next_in_chain(value handle, value chain) {
+    {%string|/* nextInChain setter for %{c_name} */
+CAMLprim value caml_wgpu_%{lower_name}_set_next_in_chain(value handle, value chain) {
   CAMLparam2(handle, chain);
-  %s *s = (%s*)Nativeint_val(handle);
+  %{c_name} *s = (%{c_name}*)Nativeint_val(handle);
   s->nextInChain = (WGPUChainedStructOut *)Nativeint_val(chain);
   CAMLreturn(Val_unit);
 }
 |}
-      c_name
-      lower_name
-      c_name
-      c_name
   | Ir.Standalone -> ""
 ;;
 
@@ -561,12 +504,8 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
       type_name
       (String.lowercase struct_.name)
   in
-  let free_ext =
-    sprintf
-      "external %s_free : nativeint -> unit = \"caml_wgpu_%s_free\""
-      type_name
-      (String.lowercase struct_.name)
-  in
+  let struct_lower = String.lowercase struct_.name in
+  let free_ext = {%string|external %{type_name}_free : nativeint -> unit = "caml_wgpu_%{struct_lower}_free"|} in
   let setter_exts =
     List.map struct_.members ~f:(fun member ->
       let ml_type =
@@ -590,13 +529,9 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
            | _ -> "nativeint array")
         | Object _ | Struct _ | Callback _ | Optional _ | Pointer _ -> "nativeint"
       in
-      sprintf
-        "external %s_set_%s : nativeint -> %s -> unit = \"caml_wgpu_%s_set_%s\""
-        type_name
-        member.name
-        ml_type
-        (String.lowercase struct_.name)
-        (String.lowercase member.name))
+      let struct_lower = String.lowercase struct_.name in
+      let member_lower = String.lowercase member.name in
+      {%string|external %{type_name}_set_%{member.name} : nativeint -> %{ml_type} -> unit = "caml_wgpu_%{struct_lower}_set_%{member_lower}"|})
     |> String.concat ~sep:"\n"
   in
   let getter_exts =
@@ -613,13 +548,9 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
         | Object _ | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
           "nativeint"
       in
-      sprintf
-        "external %s_get_%s : nativeint -> %s = \"caml_wgpu_%s_get_%s\""
-        type_name
-        member.name
-        ml_type
-        (String.lowercase struct_.name)
-        (String.lowercase member.name))
+      let struct_lower = String.lowercase struct_.name in
+      let member_lower = String.lowercase member.name in
+      {%string|external %{type_name}_get_%{member.name} : nativeint -> %{ml_type} = "caml_wgpu_%{struct_lower}_get_%{member_lower}"|})
     |> String.concat ~sep:"\n"
   in
   (* Extension chain functions for extension structs, or nextInChain setter for base structs *)
@@ -627,33 +558,32 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
     match struct_.type_ with
     | Ir.Extension_in _ | Ir.Extension_out _ ->
       let lower_name = String.lowercase struct_.name in
-      sprintf
-        "\n\n\
-        \  external %s_set_chain_stype : nativeint -> int -> unit = \
-         \"caml_wgpu_%s_set_chain_stype\"\n\n\
-        \  external %s_as_chained : nativeint -> nativeint = \"caml_wgpu_%s_as_chained\""
-        type_name
-        lower_name
-        type_name
-        lower_name
+      {%string|
+
+  external %{type_name}_set_chain_stype : nativeint -> int -> unit = "caml_wgpu_%{lower_name}_set_chain_stype"
+
+  external %{type_name}_as_chained : nativeint -> nativeint = "caml_wgpu_%{lower_name}_as_chained"|}
     | Ir.Base_in | Ir.Base_out | Ir.Base_in_out ->
       let lower_name = String.lowercase struct_.name in
-      sprintf
-        "\n\n\
-        \  external %s_set_next_in_chain : nativeint -> nativeint -> unit = \
-         \"caml_wgpu_%s_set_next_in_chain\""
-        type_name
-        lower_name
+      {%string|
+
+  external %{type_name}_set_next_in_chain : nativeint -> nativeint -> unit = "caml_wgpu_%{lower_name}_set_next_in_chain"|}
     | Ir.Standalone -> ""
   in
-  sprintf
-    "module %s = struct\n  type t = nativeint\n\n  %s\n\n  %s\n\n%s\n\n%s%s\nend\n"
-    module_name
-    create_ext
-    free_ext
-    (indent_lines setter_exts)
-    (indent_lines getter_exts)
-    chain_exts
+  let setter_exts_indented = indent_lines setter_exts in
+  let getter_exts_indented = indent_lines getter_exts in
+  {%string|module %{module_name} = struct
+  type t = nativeint
+
+  %{create_ext}
+
+  %{free_ext}
+
+%{setter_exts_indented}
+
+%{getter_exts_indented}%{chain_exts}
+end
+|}
 ;;
 
 (** Generate MLI for struct *)
@@ -684,7 +614,7 @@ let gen_mli_struct (struct_ : Ir.struct_) : string =
            | _ -> "nativeint array")
         | Object _ | Struct _ | Callback _ | Optional _ | Pointer _ -> "nativeint"
       in
-      sprintf "  val %s_set_%s : t -> %s -> unit" type_name member.name ml_type)
+      {%string|  val %{type_name}_set_%{member.name} : t -> %{ml_type} -> unit|})
     |> String.concat ~sep:"\n"
   in
   let getter_sigs =
@@ -701,37 +631,29 @@ let gen_mli_struct (struct_ : Ir.struct_) : string =
         | Object _ | Struct _ | Callback _ | Array _ | Optional _ | Pointer _ ->
           "nativeint"
       in
-      sprintf "  val %s_get_%s : t -> %s" type_name member.name ml_type)
+      {%string|  val %{type_name}_get_%{member.name} : t -> %{ml_type}|})
     |> String.concat ~sep:"\n"
   in
   (* Extension chain function signatures, or nextInChain setter for base structs *)
   let chain_sigs =
     match struct_.type_ with
     | Ir.Extension_in _ | Ir.Extension_out _ ->
-      sprintf
-        "\n\
-        \  val %s_set_chain_stype : t -> int -> unit\n\
-        \  val %s_as_chained : t -> nativeint"
-        type_name
-        type_name
+      {%string|
+  val %{type_name}_set_chain_stype : t -> int -> unit
+  val %{type_name}_as_chained : t -> nativeint|}
     | Ir.Base_in | Ir.Base_out | Ir.Base_in_out ->
-      sprintf "\n  val %s_set_next_in_chain : t -> nativeint -> unit" type_name
+      {%string|
+  val %{type_name}_set_next_in_chain : t -> nativeint -> unit|}
     | Ir.Standalone -> ""
   in
-  sprintf
-    "module %s : sig\n\
-    \  type t = nativeint\n\
-    \  val %s_create : unit -> t\n\
-    \  val %s_free : t -> unit\n\
-     %s\n\
-     %s%s\n\
-     end\n"
-    module_name
-    type_name
-    type_name
-    setter_sigs
-    getter_sigs
-    chain_sigs
+  {%string|module %{module_name} : sig
+  type t = nativeint
+  val %{type_name}_create : unit -> t
+  val %{type_name}_free : t -> unit
+%{setter_sigs}
+%{getter_sigs}%{chain_sigs}
+end
+|}
 ;;
 
 (** Check if a method uses callbacks (async) *)
