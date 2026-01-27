@@ -1522,20 +1522,12 @@ let gen_bitset_with_helpers (mode : output_mode) (bitflag : Ir.bitflag) : string
         {%string|    | %{entry_name}|})
       |> String.concat ~sep:"\n"
     in
-    let item_to_int_cases =
-      List.map bitflag.entries ~f:(fun entry ->
-        let entry_name = normalize_enum_entry_name entry.name in
-        {%string|      | %{entry_name} -> Wgpu_low.%{module_name}.to_int %{entry_name}|})
-      |> String.concat ~sep:"\n"
-    in
     {%string|module %{module_name} = struct
   module Item = struct
-    type t =
+    type t = Wgpu_low.%{module_name}.t =
 %{variants}
 
-    let to_int = function
-%{item_to_int_cases}
-    ;;
+    let to_int = Wgpu_low.%{module_name}.to_int
   end
 
   type t = int

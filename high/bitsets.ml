@@ -14,7 +14,7 @@ end
 
 module Buffer_usage = struct
   module Item = struct
-    type t =
+    type t = Wgpu_low.Buffer_usage.t =
       | None
       | Map_read
       | Map_write
@@ -27,19 +27,7 @@ module Buffer_usage = struct
       | Indirect
       | Query_resolve
 
-    let to_int = function
-      | None -> Wgpu_low.Buffer_usage.to_int None
-      | Map_read -> Wgpu_low.Buffer_usage.to_int Map_read
-      | Map_write -> Wgpu_low.Buffer_usage.to_int Map_write
-      | Copy_src -> Wgpu_low.Buffer_usage.to_int Copy_src
-      | Copy_dst -> Wgpu_low.Buffer_usage.to_int Copy_dst
-      | Index -> Wgpu_low.Buffer_usage.to_int Index
-      | Vertex -> Wgpu_low.Buffer_usage.to_int Vertex
-      | Uniform -> Wgpu_low.Buffer_usage.to_int Uniform
-      | Storage -> Wgpu_low.Buffer_usage.to_int Storage
-      | Indirect -> Wgpu_low.Buffer_usage.to_int Indirect
-      | Query_resolve -> Wgpu_low.Buffer_usage.to_int Query_resolve
-    ;;
+    let to_int = Wgpu_low.Buffer_usage.to_int
   end
 
   type t = int
@@ -54,7 +42,7 @@ end
 
 module Color_write_mask = struct
   module Item = struct
-    type t =
+    type t = Wgpu_low.Color_write_mask.t =
       | None
       | Red
       | Green
@@ -62,14 +50,7 @@ module Color_write_mask = struct
       | Alpha
       | All
 
-    let to_int = function
-      | None -> Wgpu_low.Color_write_mask.to_int None
-      | Red -> Wgpu_low.Color_write_mask.to_int Red
-      | Green -> Wgpu_low.Color_write_mask.to_int Green
-      | Blue -> Wgpu_low.Color_write_mask.to_int Blue
-      | Alpha -> Wgpu_low.Color_write_mask.to_int Alpha
-      | All -> Wgpu_low.Color_write_mask.to_int All
-    ;;
+    let to_int = Wgpu_low.Color_write_mask.to_int
   end
 
   type t = int
@@ -84,16 +65,12 @@ end
 
 module Map_mode = struct
   module Item = struct
-    type t =
+    type t = Wgpu_low.Map_mode.t =
       | None
       | Read
       | Write
 
-    let to_int = function
-      | None -> Wgpu_low.Map_mode.to_int None
-      | Read -> Wgpu_low.Map_mode.to_int Read
-      | Write -> Wgpu_low.Map_mode.to_int Write
-    ;;
+    let to_int = Wgpu_low.Map_mode.to_int
   end
 
   type t = int
@@ -108,18 +85,13 @@ end
 
 module Shader_stage = struct
   module Item = struct
-    type t =
+    type t = Wgpu_low.Shader_stage.t =
       | None
       | Vertex
       | Fragment
       | Compute
 
-    let to_int = function
-      | None -> Wgpu_low.Shader_stage.to_int None
-      | Vertex -> Wgpu_low.Shader_stage.to_int Vertex
-      | Fragment -> Wgpu_low.Shader_stage.to_int Fragment
-      | Compute -> Wgpu_low.Shader_stage.to_int Compute
-    ;;
+    let to_int = Wgpu_low.Shader_stage.to_int
   end
 
   type t = int
@@ -134,7 +106,7 @@ end
 
 module Texture_usage = struct
   module Item = struct
-    type t =
+    type t = Wgpu_low.Texture_usage.t =
       | None
       | Copy_src
       | Copy_dst
@@ -142,14 +114,7 @@ module Texture_usage = struct
       | Storage_binding
       | Render_attachment
 
-    let to_int = function
-      | None -> Wgpu_low.Texture_usage.to_int None
-      | Copy_src -> Wgpu_low.Texture_usage.to_int Copy_src
-      | Copy_dst -> Wgpu_low.Texture_usage.to_int Copy_dst
-      | Texture_binding -> Wgpu_low.Texture_usage.to_int Texture_binding
-      | Storage_binding -> Wgpu_low.Texture_usage.to_int Storage_binding
-      | Render_attachment -> Wgpu_low.Texture_usage.to_int Render_attachment
-    ;;
+    let to_int = Wgpu_low.Texture_usage.to_int
   end
 
   type t = int

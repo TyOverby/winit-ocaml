@@ -69,3 +69,35 @@ The `type t = Wgpu_low.Buffer_usage.t = ...` syntax re-exports the type with its
 1. Run `dune build` to regenerate the high-level bindings
 2. Run `dune build @check` to ensure no warnings
 3. Run existing tests to verify correctness
+
+---
+
+## Implementation Plan
+
+### Approach
+
+Modify the `gen_bitset_with_helpers` function in `codegen/gen_high.ml` to generate the simplified code:
+
+1. For the `Item` module's type definition, use the type equality syntax:
+   `type t = Wgpu_low.Module_name.t = | Variant1 | Variant2 ...`
+
+2. For `Item.to_int`, use direct delegation:
+   `let to_int = Wgpu_low.Module_name.to_int`
+
+### Changes
+
+- Update `gen_bitset_with_helpers` Implementation case:
+  - Change the type definition to use `type t = Wgpu_low.X.t = ...`
+  - Replace the match-based `to_int` function with direct delegation
+
+- The Interface case already looks correct (just declares `type t` with variants)
+
+### Validation Criteria
+
+1. `dune build` succeeds
+2. `dune fmt > /dev/null || true` runs without error
+3. `dune build @check` reports no warnings
+4. `dune exec test/test_compute.exe` passes all tests
+5. Generated `high/bitsets.ml` uses the simplified syntax:
+   - `type t = Wgpu_low.X.t = ...` for Item types
+   - `let to_int = Wgpu_low.X.to_int` for Item.to_int
