@@ -389,7 +389,8 @@ let gen_c_struct_getter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
     | Primitive Uint64 -> {%string|  CAMLreturn(caml_copy_int64(s->%{c_field}));|}
     | Primitive Int32 -> {%string|  CAMLreturn(Val_int(s->%{c_field}));|}
     | Primitive Int64 -> {%string|  CAMLreturn(caml_copy_int64(s->%{c_field}));|}
-    | Primitive Float32 -> {%string|  CAMLreturn(caml_copy_double((double)s->%{c_field}));|}
+    | Primitive Float32 ->
+      {%string|  CAMLreturn(caml_copy_double((double)s->%{c_field}));|}
     | Primitive Float64 -> {%string|  CAMLreturn(caml_copy_double(s->%{c_field}));|}
     | Primitive Usize -> {%string|  CAMLreturn(caml_copy_int64((int64_t)s->%{c_field}));|}
     | Primitive (String | Out_string | String_with_default_empty) ->
@@ -398,7 +399,8 @@ let gen_c_struct_getter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
   } else {
     CAMLreturn(caml_copy_string(""));
   }|}
-    | Primitive C_void -> {%string|  CAMLreturn(caml_copy_nativeint((intnat)s->%{c_field}));|}
+    | Primitive C_void ->
+      {%string|  CAMLreturn(caml_copy_nativeint((intnat)s->%{c_field}));|}
     | Enum _ -> {%string|  CAMLreturn(Val_int(s->%{c_field}));|}
     | Bitflag _ -> {%string|  CAMLreturn(Val_int(s->%{c_field}));|}
     | Object _ -> {%string|  CAMLreturn(caml_copy_nativeint((intnat)s->%{c_field}));|}
@@ -480,8 +482,12 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
   let module_name = ocaml_module_name struct_.name in
   (* External declarations *)
   let struct_lower = String.lowercase struct_.name in
-  let create_ext = {%string|external %{type_name}_create : unit -> nativeint = "caml_wgpu_%{struct_lower}_create"|} in
-  let free_ext = {%string|external %{type_name}_free : nativeint -> unit = "caml_wgpu_%{struct_lower}_free"|} in
+  let create_ext =
+    {%string|external %{type_name}_create : unit -> nativeint = "caml_wgpu_%{struct_lower}_create"|}
+  in
+  let free_ext =
+    {%string|external %{type_name}_free : nativeint -> unit = "caml_wgpu_%{struct_lower}_free"|}
+  in
   let setter_exts =
     List.map struct_.members ~f:(fun member ->
       let ml_type =
@@ -713,9 +719,9 @@ let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
     let num_params = List.length all_params in
     let caml_param =
       if num_params <= 5
-      then
+      then (
         let params_str = String.concat ~sep:", " all_params in
-        {%string|CAMLparam%{num_params#Int}(%{params_str})|}
+        {%string|CAMLparam%{num_params#Int}(%{params_str})|})
       else (
         (* Need multiple CAMLparam calls *)
         let first5 = List.take all_params 5 in
@@ -737,11 +743,13 @@ let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
         match arg.type_ with
         | Primitive Bool -> {%string|  bool c_%{arg.name} = Bool_val(%{arg.name});|}
         | Primitive Uint32 -> {%string|  uint32_t c_%{arg.name} = Int_val(%{arg.name});|}
-        | Primitive Uint64 -> {%string|  uint64_t c_%{arg.name} = Int64_val(%{arg.name});|}
+        | Primitive Uint64 ->
+          {%string|  uint64_t c_%{arg.name} = Int64_val(%{arg.name});|}
         | Primitive Int32 -> {%string|  int32_t c_%{arg.name} = Int_val(%{arg.name});|}
         | Primitive Int64 -> {%string|  int64_t c_%{arg.name} = Int64_val(%{arg.name});|}
         | Primitive Float32 -> {%string|  float c_%{arg.name} = Double_val(%{arg.name});|}
-        | Primitive Float64 -> {%string|  double c_%{arg.name} = Double_val(%{arg.name});|}
+        | Primitive Float64 ->
+          {%string|  double c_%{arg.name} = Double_val(%{arg.name});|}
         | Primitive Usize -> {%string|  size_t c_%{arg.name} = Int64_val(%{arg.name});|}
         | Primitive (String | Out_string | String_with_default_empty) ->
           {%string|  WGPUStringView c_%{arg.name} = { .data = String_val(%{arg.name}), .length = caml_string_length(%{arg.name}) };|}
@@ -805,7 +813,7 @@ let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
     (* Handle bytecode calling convention for many args *)
     let bytecode_decl =
       if num_params > 5
-      then
+      then (
         let argv_args =
           List.mapi all_params ~f:(fun i _ -> {%string|argv[%{i#Int}]|})
           |> String.concat ~sep:", "
@@ -814,7 +822,7 @@ let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
 CAMLprim value %{caml_func}_bytecode(value *argv, int argn) {
   (void)argn;
   return %{caml_func}(%{argv_args});
-}|}
+}|})
       else ""
     in
     let value_params_str = String.concat ~sep:", " value_params in
@@ -880,7 +888,8 @@ let gen_ml_method (obj : Ir.object_) (method_ : Ir.method_) : string =
     let num_args = List.length arg_types in
     let type_sig = String.concat ~sep:" -> " arg_types ^ " -> " ^ ret_type in
     if num_args > 5
-    then {%string|external %{func_name} : %{type_sig} = "%{caml_func}_bytecode" "%{caml_func}"|}
+    then
+      {%string|external %{func_name} : %{type_sig} = "%{caml_func}_bytecode" "%{caml_func}"|}
     else {%string|external %{func_name} : %{type_sig} = "%{caml_func}"|})
 ;;
 

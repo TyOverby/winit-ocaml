@@ -11,8 +11,7 @@ let to_pascal_case (name : string) : string =
 let to_camel_case (name : string) : string =
   match String.split name ~on:'_' with
   | [] -> ""
-  | first :: rest ->
-    first ^ String.concat ~sep:"" (List.map rest ~f:String.capitalize)
+  | first :: rest -> first ^ String.concat ~sep:"" (List.map rest ~f:String.capitalize)
 ;;
 
 (** Convert C name conventions for enum entries (e.g., discrete_GPU -> Discrete_gpu) *)

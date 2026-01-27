@@ -20,9 +20,7 @@ let ocaml_module_name (name : string) : string =
 let c_type_name (name : string) : string =
   (* Convert snake_case to PascalCase *)
   let pascal =
-    String.split name ~on:'_'
-    |> List.map ~f:String.capitalize
-    |> String.concat ~sep:""
+    String.split name ~on:'_' |> List.map ~f:String.capitalize |> String.concat ~sep:""
   in
   "WGPU" ^ pascal
 ;;
@@ -46,7 +44,8 @@ let rec type_string ~context (type_ref : Ir.type_ref) : string =
   | C_code, Primitive Float64 -> "double"
   | _, Primitive (Float32 | Float64) -> "float"
   (* Primitives - Strings *)
-  | C_code, Primitive (String | Out_string | String_with_default_empty) -> "WGPUStringView"
+  | C_code, Primitive (String | Out_string | String_with_default_empty) ->
+    "WGPUStringView"
   | _, Primitive (String | Out_string | String_with_default_empty) -> "string"
   (* Primitives - Void pointer *)
   | C_code, Primitive C_void -> "void*"
@@ -99,7 +98,8 @@ let rec type_string ~context (type_ref : Ir.type_ref) : string =
   | (Ocaml_high_level_arg | Ocaml_high_level_return), Optional inner ->
     type_string ~context inner ^ " option"
   | Ocaml_high_level_member, Optional (Enum name) -> ocaml_module_name name ^ ".t option"
-  | Ocaml_high_level_member, Optional (Object name) -> ocaml_module_name name ^ ".t option"
+  | Ocaml_high_level_member, Optional (Object name) ->
+    ocaml_module_name name ^ ".t option"
   | Ocaml_high_level_member, Optional inner ->
     type_string ~context:Ocaml_high_level_arg inner ^ " option"
   (* Pointers *)

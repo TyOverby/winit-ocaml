@@ -21,7 +21,10 @@ let write_ppm ~filename ~width ~height ~data ~bytes_per_row =
 
 (* Convert PPM to PNG using ImageMagick *)
 let ppm_to_png ~ppm_file ~png_file =
-  let cmd = sprintf "convert %s %s" ppm_file png_file in
+  (* Exclude timestamp chunks to ensure reproducible output *)
+  let cmd =
+    sprintf "convert %s -define png:exclude-chunks=date,time %s" ppm_file png_file
+  in
   match Core_unix.system cmd with
   | Ok () -> true
   | Error _ ->
