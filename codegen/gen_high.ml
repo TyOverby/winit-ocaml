@@ -459,6 +459,90 @@ let default_value_for_type (type_ref : Ir.type_ref) : string =
   | _ -> {|""|}
 ;;
 
+(** Build function parameter list string for a method with struct parameters *)
+let build_param_list
+  (struct_params : struct_parameter list)
+  (non_struct_params : (string * Ir.arg * bool) list)
+  : string
+  =
+  let param_strs =
+    List.filter_map struct_params ~f:(fun p ->
+      if p.is_optional
+      then Some (sprintf "?(%s = %s)" p.param_name (default_value_for_type p.member.type_))
+      else Some (sprintf "~%s" p.param_name))
+    @ List.filter_map non_struct_params ~f:(fun (name, _arg, is_opt) ->
+      if is_opt then Some (sprintf "?%s" name) else Some (sprintf "~%s" name))
+  in
+  "t " ^ String.concat ~sep:" " param_strs ^ " ()"
+;;
+
+(** Generate cleanup code for freeing structs and array element structs *)
+let gen_cleanup_code
+  (struct_vars : (string * Ir.struct_) list)
+  (array_element_struct_lists : (string * Ir.struct_) list)
+  : string list
+  =
+  (* Free array element struct lists *)
+  let free_entry_lists =
+    List.concat_map array_element_struct_lists ~f:(fun (list_var, array_element_struct) ->
+      let array_element_module = ocaml_module_name array_element_struct.name in
+      [ sprintf
+          "List.iter (fun e -> Wgpu_low.%s.%s_free e) %s;"
+          array_element_module
+          array_element_struct.name
+          list_var
+      ])
+  in
+  (* Free structs in reverse order (parent structs first, then nested) *)
+  let free_structs =
+    List.map (List.rev struct_vars) ~f:(fun (var_name, struct_) ->
+      let struct_module = ocaml_module_name struct_.name in
+      sprintf "Wgpu_low.%s.%s_free %s;" struct_module struct_.name var_name)
+  in
+  free_entry_lists @ free_structs
+;;
+
+(** Generate call arguments for a method, mapping struct parameters to their desc variables *)
+let gen_method_call_args
+  (method_ : Ir.method_)
+  (struct_parameters : (Ir.arg * Ir.struct_) list)
+  : string list
+  =
+  let struct_parameter_names =
+    List.map struct_parameters ~f:(fun (arg, _) -> arg.name) |> Set.of_list (module String)
+  in
+  List.map method_.args ~f:(fun arg ->
+    match arg.type_ with
+    | Struct _ when Set.mem struct_parameter_names arg.name -> "desc_" ^ arg.name
+    | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
+;;
+
+(** Generate the complete method call with proper result handling and cleanup *)
+let gen_result_with_cleanup
+  (obj : Ir.object_)
+  (method_ : Ir.method_)
+  (call_args : string list)
+  (cleanup_lines : string list)
+  : string
+  =
+  let call =
+    sprintf
+      "Wgpu_low.%s_%s t.handle %s"
+      obj.name
+      method_.name
+      (String.concat ~sep:" " call_args)
+  in
+  match method_.returns with
+  | None -> String.concat ~sep:"\n    " ([ call ^ ";" ] @ cleanup_lines @ [ "()" ])
+  | Some ret ->
+    let free_lines = String.concat ~sep:"\n    " cleanup_lines in
+    sprintf
+      "let result = %s in\n    %s\n    %s"
+      call
+      free_lines
+      (return_to_high_level "result" ret.type_)
+;;
+
 (** Recursively collect all parameters from a struct, including nested structs. Returns
     (param_name, member, is_optional, nested_var_name option) list. nested_var_name is
     Some if this parameter belongs to a nested struct.
@@ -800,15 +884,7 @@ let gen_ml_method_with_structs
     List.map non_struct_parameters ~f:(fun arg -> escape_keyword arg.name, arg, arg.optional)
   in
   (* Build function signature *)
-  let param_strs =
-    List.filter_map struct_params ~f:(fun p ->
-      if p.is_optional
-      then Some (sprintf "?(%s = %s)" p.param_name (default_value_for_type p.member.type_))
-      else Some (sprintf "~%s" p.param_name))
-    @ List.filter_map non_struct_params ~f:(fun (name, _arg, is_opt) ->
-      if is_opt then Some (sprintf "?%s" name) else Some (sprintf "~%s" name))
-  in
-  let param_list = "t " ^ String.concat ~sep:" " param_strs ^ " ()" in
+  let param_list = build_param_list struct_params non_struct_params in
   (* Generate struct creation for each struct parameter (including nested structs) *)
   let all_struct_vars, create_structs_lists =
     List.fold struct_parameters ~init:([], []) ~f:(fun (vars, creates) (arg, struct_) ->
@@ -826,53 +902,10 @@ let gen_ml_method_with_structs
       let result = generate_struct_sets structs base_prefix struct_ desc_var in
       fields @ result.code_lines, entry_lists @ result.structs_to_free)
   in
-  (* Build the call arguments, mapping each struct parameter to its desc variable *)
-  let struct_parameter_names =
-    List.map struct_parameters ~f:(fun (arg, _) -> arg.name) |> Set.of_list (module String)
-  in
-  let call_args =
-    List.map method_.args ~f:(fun arg ->
-      match arg.type_ with
-      | Struct _ when Set.mem struct_parameter_names arg.name -> "desc_" ^ arg.name
-      | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
-  in
-  let call =
-    sprintf
-      "Wgpu_low.%s_%s t.handle %s"
-      obj.name
-      method_.name
-      (String.concat ~sep:" " call_args)
-  in
-  (* Generate code to free entry struct lists *)
-  let free_entry_lists =
-    List.concat_map array_element_struct_lists ~f:(fun (list_var, array_element_struct) ->
-      let array_element_module = ocaml_module_name array_element_struct.name in
-      [ sprintf
-          "List.iter (fun e -> Wgpu_low.%s.%s_free e) %s;"
-          array_element_module
-          array_element_struct.name
-          list_var
-      ])
-  in
-  (* Generate struct freeing (reverse order: parent structs first, then nested) *)
-  let free_structs =
-    List.map (List.rev all_struct_vars) ~f:(fun (var_name, struct_) ->
-      let struct_module = ocaml_module_name struct_.name in
-      sprintf "Wgpu_low.%s.%s_free %s;" struct_module struct_.name var_name)
-  in
-  (* Generate result handling *)
-  let all_frees = free_entry_lists @ free_structs in
-  let result_and_free =
-    match method_.returns with
-    | None -> String.concat ~sep:"\n    " ([ call ^ ";" ] @ all_frees @ [ "()" ])
-    | Some ret ->
-      let free_lines = String.concat ~sep:"\n    " all_frees in
-      sprintf
-        "let result = %s in\n    %s\n    %s"
-        call
-        free_lines
-        (return_to_high_level "result" ret.type_)
-  in
+  (* Build the call arguments and generate the call with cleanup *)
+  let call_args = gen_method_call_args method_ struct_parameters in
+  let all_frees = gen_cleanup_code all_struct_vars array_element_struct_lists in
+  let result_and_free = gen_result_with_cleanup obj method_ call_args all_frees in
   (* Put it all together *)
   let body_lines = create_structs @ set_fields @ [ result_and_free ] in
   let body = String.concat ~sep:"\n    " body_lines in
