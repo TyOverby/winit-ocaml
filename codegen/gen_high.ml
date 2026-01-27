@@ -1483,10 +1483,17 @@ end
       | Some doc -> {%string|(** %{doc} *)
   |}
     in
+    let variants =
+      List.map enum.entries ~f:(fun entry ->
+        let entry_name = normalize_enum_entry_name entry.name in
+        {%string|    | %{entry_name}|})
+      |> String.concat ~sep:"\n"
+    in
     {%string|module %{module_name} : sig
-  %{doc_comment}include module type of Wgpu_low.%{module_name}
+  %{doc_comment}type t =
+%{variants}
 
-  val to_string : t -> string
+  include S with type t := t
 end
 |}
 ;;

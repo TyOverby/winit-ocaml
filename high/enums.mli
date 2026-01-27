@@ -9,313 +9,694 @@ module type S = sig
 end
 
 module Adapter_type : sig
-  include module type of Wgpu_low.Adapter_type
+  type t =
+    | Discrete_gpu
+    | Integrated_gpu
+    | Cpu
+    | Unknown
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Address_mode : sig
-  include module type of Wgpu_low.Address_mode
+  type t =
+    | Undefined
+    | Clamp_to_edge
+    | Repeat
+    | Mirror_repeat
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Backend_type : sig
-  include module type of Wgpu_low.Backend_type
+  type t =
+    | Undefined
+    | Null
+    | Webgpu
+    | D3d11
+    | D3d12
+    | Metal
+    | Vulkan
+    | Opengl
+    | Opengles
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Blend_factor : sig
-  include module type of Wgpu_low.Blend_factor
+  type t =
+    | Undefined
+    | Zero
+    | One
+    | Src
+    | One_minus_src
+    | Src_alpha
+    | One_minus_src_alpha
+    | Dst
+    | One_minus_dst
+    | Dst_alpha
+    | One_minus_dst_alpha
+    | Src_alpha_saturated
+    | Constant
+    | One_minus_constant
+    | Src1
+    | One_minus_src1
+    | Src1_alpha
+    | One_minus_src1_alpha
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Blend_operation : sig
-  include module type of Wgpu_low.Blend_operation
+  type t =
+    | Undefined
+    | Add
+    | Subtract
+    | Reverse_subtract
+    | Min
+    | Max
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Buffer_binding_type : sig
-  include module type of Wgpu_low.Buffer_binding_type
+  type t =
+    | Binding_not_used
+    | Undefined
+    | Uniform
+    | Storage
+    | Read_only_storage
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Buffer_map_state : sig
-  include module type of Wgpu_low.Buffer_map_state
+  type t =
+    | Unmapped
+    | Pending
+    | Mapped
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Callback_mode : sig
   (** The callback mode controls how a callback for an asynchronous operation may be
       fired. See \@ref Asynchronous-Operations for how these are used. *)
-  include module type of Wgpu_low.Callback_mode
+  type t =
+    | Wait_any_only
+    | Allow_process_events
+    | Allow_spontaneous
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Compare_function : sig
-  include module type of Wgpu_low.Compare_function
+  type t =
+    | Undefined
+    | Never
+    | Less
+    | Equal
+    | Less_equal
+    | Greater
+    | Not_equal
+    | Greater_equal
+    | Always
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Compilation_info_request_status : sig
-  include module type of Wgpu_low.Compilation_info_request_status
+  type t =
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Compilation_message_type : sig
-  include module type of Wgpu_low.Compilation_message_type
+  type t =
+    | Error
+    | Warning
+    | Info
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Composite_alpha_mode : sig
   (** Describes how frames are composited with other contents on the screen when
       `::wgpuSurfacePresent` is called. *)
-  include module type of Wgpu_low.Composite_alpha_mode
+  type t =
+    | Auto
+    | Opaque
+    | Premultiplied
+    | Unpremultiplied
+    | Inherit
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Create_pipeline_async_status : sig
-  include module type of Wgpu_low.Create_pipeline_async_status
+  type t =
+    | Success
+    | Instance_dropped
+    | Validation_error
+    | Internal_error
+    | Unknown
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Cull_mode : sig
-  include module type of Wgpu_low.Cull_mode
+  type t =
+    | Undefined
+    | None
+    | Front
+    | Back
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Device_lost_reason : sig
-  include module type of Wgpu_low.Device_lost_reason
+  type t =
+    | Unknown
+    | Destroyed
+    | Instance_dropped
+    | Failed_creation
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Error_filter : sig
-  include module type of Wgpu_low.Error_filter
+  type t =
+    | Validation
+    | Out_of_memory
+    | Internal
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Error_type : sig
-  include module type of Wgpu_low.Error_type
+  type t =
+    | No_error
+    | Validation
+    | Out_of_memory
+    | Internal
+    | Unknown
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Feature_level : sig
   (** See \@ref WGPURequestAdapterOptions::featureLevel. *)
-  include module type of Wgpu_low.Feature_level
+  type t =
+    | Compatibility
+    | Core
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Feature_name : sig
-  include module type of Wgpu_low.Feature_name
+  type t =
+    | Undefined
+    | Depth_clip_control
+    | Depth32_float_stencil8
+    | Timestamp_query
+    | Texture_compression_bc
+    | Texture_compression_bc_sliced_3d
+    | Texture_compression_etc2
+    | Texture_compression_astc
+    | Texture_compression_astc_sliced_3d
+    | Indirect_first_instance
+    | Shader_f16
+    | Rg11b10_ufloat_renderable
+    | Bgra8_unorm_storage
+    | Float32_filterable
+    | Float32_blendable
+    | Clip_distances
+    | Dual_source_blending
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Filter_mode : sig
-  include module type of Wgpu_low.Filter_mode
+  type t =
+    | Undefined
+    | Nearest
+    | Linear
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Front_face : sig
-  include module type of Wgpu_low.Front_face
+  type t =
+    | Undefined
+    | Ccw
+    | Cw
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Index_format : sig
-  include module type of Wgpu_low.Index_format
+  type t =
+    | Undefined
+    | Uint16
+    | Uint32
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Load_op : sig
-  include module type of Wgpu_low.Load_op
+  type t =
+    | Undefined
+    | Load
+    | Clear
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Map_async_status : sig
-  include module type of Wgpu_low.Map_async_status
+  type t =
+    | Success
+    | Instance_dropped
+    | Error
+    | Aborted
+    | Unknown
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Mipmap_filter_mode : sig
-  include module type of Wgpu_low.Mipmap_filter_mode
+  type t =
+    | Undefined
+    | Nearest
+    | Linear
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Optional_bool : sig
-  include module type of Wgpu_low.Optional_bool
+  type t =
+    | False
+    | True
+    | Undefined
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Pop_error_scope_status : sig
-  include module type of Wgpu_low.Pop_error_scope_status
+  type t =
+    | Success
+    | Instance_dropped
+    | Empty_stack
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Power_preference : sig
-  include module type of Wgpu_low.Power_preference
+  type t =
+    | Undefined
+    | Low_power
+    | High_performance
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Present_mode : sig
   (** Describes when and in which order frames are presented on the screen when
       `::wgpuSurfacePresent` is called. *)
-  include module type of Wgpu_low.Present_mode
+  type t =
+    | Undefined
+    | Fifo
+    | Fifo_relaxed
+    | Immediate
+    | Mailbox
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Primitive_topology : sig
-  include module type of Wgpu_low.Primitive_topology
+  type t =
+    | Undefined
+    | Point_list
+    | Line_list
+    | Line_strip
+    | Triangle_list
+    | Triangle_strip
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Query_type : sig
-  include module type of Wgpu_low.Query_type
+  type t =
+    | Occlusion
+    | Timestamp
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Queue_work_done_status : sig
-  include module type of Wgpu_low.Queue_work_done_status
+  type t =
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Request_adapter_status : sig
-  include module type of Wgpu_low.Request_adapter_status
+  type t =
+    | Success
+    | Instance_dropped
+    | Unavailable
+    | Error
+    | Unknown
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Request_device_status : sig
-  include module type of Wgpu_low.Request_device_status
+  type t =
+    | Success
+    | Instance_dropped
+    | Error
+    | Unknown
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module S_type : sig
-  include module type of Wgpu_low.S_type
+  type t =
+    | Shader_source_spirv
+    | Shader_source_wgsl
+    | Render_pass_max_draw_count
+    | Surface_source_metal_layer
+    | Surface_source_windows_hwnd
+    | Surface_source_xlib_window
+    | Surface_source_wayland_surface
+    | Surface_source_android_native_window
+    | Surface_source_xcb_window
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Sampler_binding_type : sig
-  include module type of Wgpu_low.Sampler_binding_type
+  type t =
+    | Binding_not_used
+    | Undefined
+    | Filtering
+    | Non_filtering
+    | Comparison
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Status : sig
   (** Status code returned (synchronously) from many operations. Generally indicates an
       invalid input like an unknown enum value or \@ref OutStructChainError. Read the
       function's documentation for specific error conditions. *)
-  include module type of Wgpu_low.Status
+  type t =
+    | Success
+    | Error
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Stencil_operation : sig
-  include module type of Wgpu_low.Stencil_operation
+  type t =
+    | Undefined
+    | Keep
+    | Zero
+    | Replace
+    | Invert
+    | Increment_clamp
+    | Decrement_clamp
+    | Increment_wrap
+    | Decrement_wrap
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Storage_texture_access : sig
-  include module type of Wgpu_low.Storage_texture_access
+  type t =
+    | Binding_not_used
+    | Undefined
+    | Write_only
+    | Read_only
+    | Read_write
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Store_op : sig
-  include module type of Wgpu_low.Store_op
+  type t =
+    | Undefined
+    | Store
+    | Discard
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Surface_get_current_texture_status : sig
   (** The status enum for `::wgpuSurfaceGetCurrentTexture`. *)
-  include module type of Wgpu_low.Surface_get_current_texture_status
+  type t =
+    | Success_optimal
+    | Success_suboptimal
+    | Timeout
+    | Outdated
+    | Lost
+    | Out_of_memory
+    | Device_lost
+    | Error
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Texture_aspect : sig
-  include module type of Wgpu_low.Texture_aspect
+  type t =
+    | Undefined
+    | All
+    | Stencil_only
+    | Depth_only
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Texture_dimension : sig
-  include module type of Wgpu_low.Texture_dimension
+  type t =
+    | Undefined
+    | N1d
+    | N2d
+    | N3d
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Texture_format : sig
-  include module type of Wgpu_low.Texture_format
+  type t =
+    | Undefined
+    | R8_unorm
+    | R8_snorm
+    | R8_uint
+    | R8_sint
+    | R16_uint
+    | R16_sint
+    | R16_float
+    | Rg8_unorm
+    | Rg8_snorm
+    | Rg8_uint
+    | Rg8_sint
+    | R32_float
+    | R32_uint
+    | R32_sint
+    | Rg16_uint
+    | Rg16_sint
+    | Rg16_float
+    | Rgba8_unorm
+    | Rgba8_unorm_srgb
+    | Rgba8_snorm
+    | Rgba8_uint
+    | Rgba8_sint
+    | Bgra8_unorm
+    | Bgra8_unorm_srgb
+    | Rgb10_a2_uint
+    | Rgb10_a2_unorm
+    | Rg11_b10_ufloat
+    | Rgb9_e5_ufloat
+    | Rg32_float
+    | Rg32_uint
+    | Rg32_sint
+    | Rgba16_uint
+    | Rgba16_sint
+    | Rgba16_float
+    | Rgba32_float
+    | Rgba32_uint
+    | Rgba32_sint
+    | Stencil8
+    | Depth16_unorm
+    | Depth24_plus
+    | Depth24_plus_stencil8
+    | Depth32_float
+    | Depth32_float_stencil8
+    | Bc1_rgba_unorm
+    | Bc1_rgba_unorm_srgb
+    | Bc2_rgba_unorm
+    | Bc2_rgba_unorm_srgb
+    | Bc3_rgba_unorm
+    | Bc3_rgba_unorm_srgb
+    | Bc4_r_unorm
+    | Bc4_r_snorm
+    | Bc5_rg_unorm
+    | Bc5_rg_snorm
+    | Bc6h_rgb_ufloat
+    | Bc6h_rgb_float
+    | Bc7_rgba_unorm
+    | Bc7_rgba_unorm_srgb
+    | Etc2_rgb8_unorm
+    | Etc2_rgb8_unorm_srgb
+    | Etc2_rgb8a1_unorm
+    | Etc2_rgb8a1_unorm_srgb
+    | Etc2_rgba8_unorm
+    | Etc2_rgba8_unorm_srgb
+    | Eac_r11_unorm
+    | Eac_r11_snorm
+    | Eac_rg11_unorm
+    | Eac_rg11_snorm
+    | Astc_4x4_unorm
+    | Astc_4x4_unorm_srgb
+    | Astc_5x4_unorm
+    | Astc_5x4_unorm_srgb
+    | Astc_5x5_unorm
+    | Astc_5x5_unorm_srgb
+    | Astc_6x5_unorm
+    | Astc_6x5_unorm_srgb
+    | Astc_6x6_unorm
+    | Astc_6x6_unorm_srgb
+    | Astc_8x5_unorm
+    | Astc_8x5_unorm_srgb
+    | Astc_8x6_unorm
+    | Astc_8x6_unorm_srgb
+    | Astc_8x8_unorm
+    | Astc_8x8_unorm_srgb
+    | Astc_10x5_unorm
+    | Astc_10x5_unorm_srgb
+    | Astc_10x6_unorm
+    | Astc_10x6_unorm_srgb
+    | Astc_10x8_unorm
+    | Astc_10x8_unorm_srgb
+    | Astc_10x10_unorm
+    | Astc_10x10_unorm_srgb
+    | Astc_12x10_unorm
+    | Astc_12x10_unorm_srgb
+    | Astc_12x12_unorm
+    | Astc_12x12_unorm_srgb
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Texture_sample_type : sig
-  include module type of Wgpu_low.Texture_sample_type
+  type t =
+    | Binding_not_used
+    | Undefined
+    | Float
+    | Unfilterable_float
+    | Depth
+    | Sint
+    | Uint
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Texture_view_dimension : sig
-  include module type of Wgpu_low.Texture_view_dimension
+  type t =
+    | Undefined
+    | N1d
+    | N2d
+    | N2d_array
+    | Cube
+    | Cube_array
+    | N3d
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Vertex_format : sig
-  include module type of Wgpu_low.Vertex_format
+  type t =
+    | Uint8
+    | Uint8x2
+    | Uint8x4
+    | Sint8
+    | Sint8x2
+    | Sint8x4
+    | Unorm8
+    | Unorm8x2
+    | Unorm8x4
+    | Snorm8
+    | Snorm8x2
+    | Snorm8x4
+    | Uint16
+    | Uint16x2
+    | Uint16x4
+    | Sint16
+    | Sint16x2
+    | Sint16x4
+    | Unorm16
+    | Unorm16x2
+    | Unorm16x4
+    | Snorm16
+    | Snorm16x2
+    | Snorm16x4
+    | Float16
+    | Float16x2
+    | Float16x4
+    | Float32
+    | Float32x2
+    | Float32x3
+    | Float32x4
+    | Uint32
+    | Uint32x2
+    | Uint32x3
+    | Uint32x4
+    | Sint32
+    | Sint32x2
+    | Sint32x3
+    | Sint32x4
+    | Unorm10__10__10__2
+    | Unorm8x4_b_g_r_a
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Vertex_step_mode : sig
-  include module type of Wgpu_low.Vertex_step_mode
+  type t =
+    | Vertex_buffer_not_used
+    | Undefined
+    | Vertex
+    | Instance
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Wait_status : sig
   (** Status returned from a call to ::wgpuInstanceWaitAny. *)
-  include module type of Wgpu_low.Wait_status
+  type t =
+    | Success
+    | Timed_out
+    | Unsupported_timeout
+    | Unsupported_count
+    | Unsupported_mixed_sources
 
-  val to_string : t -> string
+  include S with type t := t
 end
 
 module Wgsl_language_feature_name : sig
-  include module type of Wgpu_low.Wgsl_language_feature_name
+  type t =
+    | Readonly_and_readwrite_storage_textures
+    | Packed4x8_integer_dot_product
+    | Unrestricted_pointer_parameters
+    | Pointer_composite_access
 
-  val to_string : t -> string
+  include S with type t := t
 end
