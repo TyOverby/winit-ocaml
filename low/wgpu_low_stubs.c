@@ -9194,7 +9194,6 @@ CAMLprim value caml_wgpu_create_instance(value unit) {
   CAMLreturn(caml_copy_nativeint((intnat)instance));
 }
 /* TODO: wgpuGetInstanceCapabilities */
-
 /* Synchronous adapter request helper */
 static void handle_request_adapter_sync(WGPURequestAdapterStatus status,
                                         WGPUAdapter adapter,
