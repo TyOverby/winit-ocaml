@@ -1,8 +1,5 @@
 open! Core
 
-(** Centralized type mapping for code generation *)
-
-(** Output context affects how types are rendered *)
 type context =
   | C_code (** C types for FFI *)
   | Ocaml_low_level (** Low-level OCaml bindings - raw FFI types *)
@@ -10,13 +7,10 @@ type context =
   | Ocaml_high_level_return (** High-level return values *)
   | Ocaml_high_level_member (** High-level struct members *)
 
-(** Get the OCaml module name for a type. Lowercases everything then capitalizes only the
-    first letter. e.g., "texture_format" -> "Texture_format", "extent_3D" -> "Extent_3d" *)
 let ocaml_module_name (name : string) : string =
   String.lowercase name |> String.capitalize
 ;;
 
-(** Get the C type name for a WGPU type (e.g., "texture_format" -> "WGPUTextureFormat") *)
 let c_type_name (name : string) : string =
   (* Convert snake_case to PascalCase *)
   let pascal =
@@ -25,7 +19,6 @@ let c_type_name (name : string) : string =
   "WGPU" ^ pascal
 ;;
 
-(** Get the string representation of a type in a given context *)
 let rec type_string ~context (type_ref : Ir.type_ref) : string =
   match context, type_ref with
   (* Primitives - Bool *)
@@ -115,8 +108,6 @@ let rec type_string ~context (type_ref : Ir.type_ref) : string =
   | Ocaml_high_level_member, Pointer _ -> "nativeint"
 ;;
 
-(** Generate code to convert a high-level argument to low-level. [var_name] is the name of
-    the variable holding the high-level value. *)
 let convert_arg_to_low ~(var_name : string) (type_ref : Ir.type_ref) : string =
   match type_ref with
   | Primitive _ -> var_name
@@ -147,8 +138,6 @@ let convert_arg_to_low ~(var_name : string) (type_ref : Ir.type_ref) : string =
   | _ -> var_name
 ;;
 
-(** Generate code to convert a low-level return value to high-level. [expr] is the
-    expression producing the low-level value. *)
 let convert_return_to_high ~(expr : string) (type_ref : Ir.type_ref) : string =
   match type_ref with
   | Primitive _ -> expr
@@ -162,8 +151,6 @@ let convert_return_to_high ~(expr : string) (type_ref : Ir.type_ref) : string =
   | _ -> expr
 ;;
 
-(** Generate code to convert a struct member value to low-level. [var_name] is the name of
-    the variable holding the high-level value. *)
 let convert_member_to_low ~(var_name : string) (type_ref : Ir.type_ref) : string =
   match type_ref with
   | Primitive _ -> var_name

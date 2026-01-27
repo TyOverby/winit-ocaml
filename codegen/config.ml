@@ -1,8 +1,5 @@
 open! Core
 
-(** Configuration for method handling in the high-level bindings generator *)
-
-(** Method key: (object_name, method_name) *)
 module Method_key = struct
   module T = struct
     type t = string * string [@@deriving sexp, compare, equal]
@@ -12,14 +9,12 @@ module Method_key = struct
   include Comparator.Make (T)
 end
 
-(** Method handling categories *)
 type method_handling =
   | Manual of { reason : string } (** Method is implemented by hand in template code *)
   | Skipped of { reason : string } (** Method is intentionally not exposed *)
   | Auto (** Method is auto-generated *)
 [@@deriving sexp_of]
 
-(** Configuration data: which methods need special handling and why *)
 let method_config : (Method_key.t * method_handling) list =
   [ (* Instance methods - some manually implemented in instance_module *)
     ( ("instance", "release")
@@ -101,7 +96,6 @@ let method_config : (Method_key.t * method_handling) list =
   ]
 ;;
 
-(** Build sets for efficient lookup *)
 let manual_implementations =
   List.filter_map method_config ~f:(fun (key, handling) ->
     match handling with
@@ -118,7 +112,6 @@ let intentionally_skipped =
   |> Set.of_list (module Method_key)
 ;;
 
-(** Get handling for a method *)
 let get_handling ~(object_name : string) ~(method_name : string) : method_handling =
   match
     List.Assoc.find method_config ~equal:[%equal: Method_key.t] (object_name, method_name)
@@ -127,7 +120,6 @@ let get_handling ~(object_name : string) ~(method_name : string) : method_handli
   | None -> Auto
 ;;
 
-(** All manually implemented methods *)
 let manual_methods : Method_key.t list =
   List.filter_map method_config ~f:(fun (key, handling) ->
     match handling with
@@ -135,7 +127,6 @@ let manual_methods : Method_key.t list =
     | _ -> None)
 ;;
 
-(** All skipped methods *)
 let skipped_methods : Method_key.t list =
   List.filter_map method_config ~f:(fun (key, handling) ->
     match handling with
@@ -143,24 +134,20 @@ let skipped_methods : Method_key.t list =
     | _ -> None)
 ;;
 
-(** Check if a method is accounted for (not auto-generated) *)
 let is_accounted_for ~(object_name : string) ~(method_name : string) : bool =
   match get_handling ~object_name ~method_name with
   | Auto -> false
   | Manual _ | Skipped _ -> true
 ;;
 
-(** Check if a method is manually implemented *)
 let is_manual ~(object_name : string) ~(method_name : string) : bool =
   Set.mem manual_implementations (object_name, method_name)
 ;;
 
-(** Check if a method is intentionally skipped *)
 let is_skipped ~(object_name : string) ~(method_name : string) : bool =
   Set.mem intentionally_skipped (object_name, method_name)
 ;;
 
-(** Validate that all configured methods exist in the API *)
 let validate_config (api : Ir.api) : unit =
   let all_methods =
     List.concat_map api.objects ~f:(fun obj ->

@@ -1,6 +1,5 @@
 open! Core
 
-(** Primitive types in the webgpu API *)
 type primitive =
   | Bool
   | Uint32
@@ -16,7 +15,6 @@ type primitive =
   | C_void
 [@@deriving sexp_of]
 
-(** Type references in the API *)
 type type_ref =
   | Primitive of primitive
   | Enum of string
@@ -35,7 +33,6 @@ type type_ref =
       }
 [@@deriving sexp_of]
 
-(** A constant value *)
 type constant =
   { name : string
   ; value : string
@@ -43,7 +40,6 @@ type constant =
   }
 [@@deriving sexp_of]
 
-(** An entry in an enum or bitflag *)
 type enum_entry =
   { name : string
   ; doc : string
@@ -51,7 +47,6 @@ type enum_entry =
   }
 [@@deriving sexp_of]
 
-(** An enum type *)
 type enum =
   { name : string
   ; doc : string
@@ -59,7 +54,6 @@ type enum =
   }
 [@@deriving sexp_of]
 
-(** A bitflag type (like enum but values are powers of 2) *)
 type bitflag =
   { name : string
   ; doc : string
@@ -67,7 +61,6 @@ type bitflag =
   }
 [@@deriving sexp_of]
 
-(** A member of a struct *)
 type struct_member =
   { name : string
   ; type_ : type_ref
@@ -77,7 +70,6 @@ type struct_member =
   }
 [@@deriving sexp_of]
 
-(** Struct type classification *)
 type struct_type =
   | Base_in (** Input struct with nextInChain *)
   | Base_out (** Output struct with nextInChain *)
@@ -87,7 +79,6 @@ type struct_type =
   | Extension_out of { extends : string list } (** Extension struct for output *)
 [@@deriving sexp_of]
 
-(** A struct definition *)
 type struct_ =
   { name : string
   ; doc : string
@@ -97,7 +88,6 @@ type struct_ =
   }
 [@@deriving sexp_of]
 
-(** A function/method argument *)
 type arg =
   { name : string
   ; type_ : type_ref
@@ -107,14 +97,12 @@ type arg =
   }
 [@@deriving sexp_of]
 
-(** A return type *)
 type return_type =
   { type_ : type_ref
   ; doc : string
   }
 [@@deriving sexp_of]
 
-(** A callback definition *)
 type callback =
   { name : string
   ; doc : string
@@ -123,7 +111,6 @@ type callback =
   }
 [@@deriving sexp_of]
 
-(** A standalone function *)
 type function_ =
   { name : string
   ; doc : string
@@ -132,7 +119,6 @@ type function_ =
   }
 [@@deriving sexp_of]
 
-(** A method on an object *)
 type method_ =
   { name : string
   ; doc : string
@@ -142,7 +128,6 @@ type method_ =
   }
 [@@deriving sexp_of]
 
-(** An object type (opaque handle with methods) *)
 type object_ =
   { name : string
   ; doc : string
@@ -150,7 +135,6 @@ type object_ =
   }
 [@@deriving sexp_of]
 
-(** The complete API specification *)
 type api =
   { constants : constant list
   ; enums : enum list

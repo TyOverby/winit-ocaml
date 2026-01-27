@@ -1,72 +1,39 @@
 open! Core
 
-(** Generate high-level idiomatic OCaml bindings *)
-
-(** Output mode for code generation *)
 type output_mode =
-  | Implementation (** Generate .ml implementation *)
-  | Interface (** Generate .mli interface *)
+  | Implementation
+  | Interface
 
-(** Record types for code generation results *)
-
-(** A parameter collected from a struct for function signature generation *)
 type struct_parameter = {
   param_name : string;
-  (** The OCaml parameter name *)
   member : Ir.struct_member;
-  (** The struct member definition *)
   is_optional : bool;
-  (** Whether this parameter is optional *)
   nested_var : string option;
-  (** If this comes from a nested struct, the variable name for that nested struct *)
 }
 
-(** Result of generating struct creation code *)
 type struct_creation_result = {
   created_structs : (string * Ir.struct_) list;
-  (** List of (variable_name, struct_definition) pairs for all created structs *)
   code_lines : string list;
-  (** OCaml code lines that create the structs *)
 }
 
-(** Result of code generation that includes resources to free *)
 type code_with_cleanup = {
   code_lines : string list;
-  (** The generated code *)
   structs_to_free : (string * Ir.struct_) list;
-  (** List of (variable_name, struct_def) pairs for structs that need freeing *)
 }
 
-(** Result of inline struct conversion *)
 type inline_struct_conversion = {
   create_code : string list;
-  (** Code to create the C struct *)
   set_code : string list;
-  (** Code to set all fields on the struct *)
   structs_to_free : (string * Ir.struct_) list;
-  (** List of (var_name, struct_def) pairs for later freeing *)
 }
 
-(** Read a template file from the templates directory (uses Names module) *)
 let read_template = Names.read_template
-
-(** Filter out unhelpful doc strings like "TODO" (uses Names module) *)
 let useful_doc = Names.useful_doc
-
-(** Get the OCaml module name for a type. Lowercases everything then capitalizes only the
-    first letter. e.g., "texture_format" -> "Texture_format", "extent_3D" -> "Extent_3d" *)
 let ocaml_module_name (name : string) : string = Type_mapping.ocaml_module_name name
-
-(** Convert C name conventions (e.g., discrete_GPU -> Discrete_gpu) *)
 let normalize_enum_entry_name (name : string) : string = Names.normalize_enum_entry_name name
-
-(** Escape OCaml keywords by adding underscore suffix *)
 let escape_keyword (name : string) : string = Names.escape_keyword name
-
-(** Check if a method uses callbacks (async) (uses Predicates module) *)
 let method_is_async = Predicates.method_is_async
 
-(** Check if a type is flat (primitive, enum, bitflag, or object) - no nested structs *)
 let rec is_flat_member_type (type_ref : Ir.type_ref) : bool =
   match type_ref with
   | Primitive _ -> true
@@ -83,8 +50,6 @@ let rec is_flat_member_type (type_ref : Ir.type_ref) : bool =
   | Pointer _ -> false
 ;;
 
-(** Check if a type is flat, allowing nested structs that are themselves flat. Uses
-    visited set to prevent infinite recursion. *)
 let rec is_flat_member_type_with_nested
   (structs : Ir.struct_ list)
   (visited : Set.M(String).t)
@@ -109,7 +74,6 @@ let rec is_flat_member_type_with_nested
     is_flat_member_type_with_nested structs visited elem
   | Pointer _ -> false
 
-(** Auxiliary function to check if a struct is auto-generable, with visited tracking *)
 and is_auto_generable_struct_aux
   (structs : Ir.struct_ list)
   (visited : Set.M(String).t)
@@ -130,20 +94,16 @@ and is_auto_generable_struct_aux
       is_flat_member_type_with_nested structs visited member.type_)
 ;;
 
-(** Check if a struct has only flat members (allowing nested flat structs) and is an
-    input struct, making it auto-generable *)
 let is_auto_generable_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
   is_auto_generable_struct_aux structs (Set.empty (module String)) struct_name
 ;;
 
-(** Check if a member type contains a nested struct *)
 let get_inline_struct_name (type_ref : Ir.type_ref) : string option =
   match type_ref with
   | Struct name -> Some name
   | _ -> None
 ;;
 
-(** Check if a member type is an array of structs. Returns the struct name if so. *)
 let member_is_array_of_structs (type_ref : Ir.type_ref) : string option =
   match type_ref with
   | Array { elem = Struct name; _ } -> Some name
@@ -151,7 +111,6 @@ let member_is_array_of_structs (type_ref : Ir.type_ref) : string option =
   | _ -> None
 ;;
 
-(** Check if an argument type can be directly converted (without struct handling) *)
 let rec is_directly_convertible_arg (type_ref : Ir.type_ref) : bool =
   match type_ref with
   | Primitive _ -> true
@@ -165,7 +124,6 @@ let rec is_directly_convertible_arg (type_ref : Ir.type_ref) : bool =
   | Pointer _ -> false
 ;;
 
-(** Get all auto-generable struct parameters from a method (input structs only) *)
 let get_auto_generable_struct_params (structs : Ir.struct_ list) (method_ : Ir.method_)
   : (Ir.arg * Ir.struct_) list
   =
@@ -180,8 +138,6 @@ let get_auto_generable_struct_params (structs : Ir.struct_ list) (method_ : Ir.m
     | _ -> None)
 ;;
 
-(** Check if a method has at least one struct parameter and all structs are auto-generable
-    input structs *)
 let method_has_auto_generable_struct_params (structs : Ir.struct_ list) (method_ : Ir.method_)
   : bool
   =
@@ -201,7 +157,6 @@ let method_has_auto_generable_struct_params (structs : Ir.struct_ list) (method_
       | _ -> false)
 ;;
 
-(** Check if a struct can be used for output (has only simple readable members) *)
 let is_simple_output_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
   match List.find structs ~f:(fun s -> String.equal s.name struct_name) with
   | None -> false
@@ -216,7 +171,6 @@ let is_simple_output_struct (structs : Ir.struct_ list) (struct_name : string) :
     && List.for_all struct_.members ~f:(fun member -> is_flat_member_type member.type_)
 ;;
 
-(** Check if a method has exactly one output struct argument (mutable pointer to struct) *)
 let method_has_output_struct_arg (structs : Ir.struct_ list) (method_ : Ir.method_)
   : (Ir.arg * Ir.struct_) option
   =
@@ -236,7 +190,6 @@ let method_has_output_struct_arg (structs : Ir.struct_ list) (method_ : Ir.metho
   | _ -> None
 ;;
 
-(** Check if a return type is "simple" *)
 let is_simple_return_type (type_ref : Ir.type_ref) : bool =
   match type_ref with
   | Primitive _ -> true
@@ -247,7 +200,6 @@ let is_simple_return_type (type_ref : Ir.type_ref) : bool =
   | _ -> false
 ;;
 
-(** Check if a method can be included in the high-level API (simple args only) *)
 let method_is_high_level_simple (method_ : Ir.method_) : bool =
   if method_is_async method_
   then false
@@ -263,8 +215,6 @@ let method_is_high_level_simple (method_ : Ir.method_) : bool =
     args_ok && return_ok)
 ;;
 
-(** Check if a method can be auto-generated (either simple args, simple struct arg, or
-    output struct) *)
 let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bool =
   if method_is_async method_
   then false
@@ -300,37 +250,30 @@ let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bo
           | None -> false))))
 ;;
 
-(** Get high-level OCaml type for a type_ref (for arguments) *)
 let high_level_arg_type (type_ref : Ir.type_ref) : string =
   Type_mapping.type_string ~context:Ocaml_high_level_arg type_ref
 ;;
 
-(** Get high-level OCaml type for return values *)
 let high_level_return_type (type_ref : Ir.type_ref) : string =
   Type_mapping.type_string ~context:Ocaml_high_level_return type_ref
 ;;
 
-(** Get high-level OCaml type for a struct member *)
 let high_level_member_type (member : Ir.struct_member) : string =
   Type_mapping.type_string ~context:Ocaml_high_level_member member.type_
 ;;
 
-(** Generate code to convert a high-level argument to low-level *)
 let arg_to_low_level (arg_name : string) (type_ref : Ir.type_ref) : string =
   Type_mapping.convert_arg_to_low ~var_name:arg_name type_ref
 ;;
 
-(** Generate code to convert a low-level return value to high-level *)
 let return_to_high_level (result_expr : string) (type_ref : Ir.type_ref) : string =
   Type_mapping.convert_return_to_high ~expr:result_expr type_ref
 ;;
 
-(** Generate code to convert a struct member value to low-level *)
 let member_to_low_level (member_name : string) (type_ref : Ir.type_ref) : string =
   Type_mapping.convert_member_to_low ~var_name:member_name type_ref
 ;;
 
-(** Get default value for a type (used for optional struct members) *)
 let default_value_for_type (type_ref : Ir.type_ref) : string =
   match type_ref with
   | Primitive String_with_default_empty -> {|""|}
@@ -344,7 +287,6 @@ let default_value_for_type (type_ref : Ir.type_ref) : string =
   | _ -> {|""|}
 ;;
 
-(** Build function parameter list string for a method with struct parameters *)
 let build_param_list
   (struct_params : struct_parameter list)
   (non_struct_params : (string * Ir.arg * bool) list)
@@ -363,7 +305,6 @@ let build_param_list
   "t " ^ String.concat ~sep:" " param_strs ^ " ()"
 ;;
 
-(** Generate cleanup code for freeing structs and array element structs *)
 let gen_cleanup_code
   (struct_vars : (string * Ir.struct_) list)
   (array_element_struct_lists : (string * Ir.struct_) list)
@@ -386,7 +327,6 @@ let gen_cleanup_code
   free_entry_lists @ free_structs
 ;;
 
-(** Generate call arguments for a method, mapping struct parameters to their desc variables *)
 let gen_method_call_args
   (method_ : Ir.method_)
   (struct_parameters : (Ir.arg * Ir.struct_) list)
@@ -401,7 +341,6 @@ let gen_method_call_args
     | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
 ;;
 
-(** Generate the complete method call with proper result handling and cleanup *)
 let gen_result_with_cleanup
   (obj : Ir.object_)
   (method_ : Ir.method_)
@@ -421,7 +360,6 @@ let gen_result_with_cleanup
     %{result_conversion}|}
 ;;
 
-(** Generate code to read fields from an output struct into local variables *)
 let gen_output_struct_field_reads
   (struct_ : Ir.struct_)
   (struct_var : string)
@@ -448,7 +386,6 @@ let gen_output_struct_field_reads
       Some {%string|let %{field_name} = %{value_expr} in|}))
 ;;
 
-(** Generate code to build a result record from struct field names *)
 let gen_output_struct_record (struct_ : Ir.struct_) : string =
   let record_fields =
     List.filter_map struct_.members ~f:(fun member ->
@@ -458,11 +395,6 @@ let gen_output_struct_record (struct_ : Ir.struct_) : string =
   {%string|let result = { %{fields_str} } in|}
 ;;
 
-(** Recursively collect all parameters from a struct, including nested structs. Returns
-    (param_name, member, is_optional, nested_var_name option) list. nested_var_name is
-    Some if this parameter belongs to a nested struct.
-
-    For array-of-struct members, we don't recurse - the parameter is a list of records. *)
 let rec collect_struct_params
   (structs : Ir.struct_ list)
   (prefix : string)
@@ -515,7 +447,6 @@ let rec collect_struct_params
          [ { param_name; member; is_optional; nested_var } ]))
 ;;
 
-(** Generate code to create a struct and all its nested structs *)
 let rec generate_struct_creates
   (structs : Ir.struct_ list)
   (prefix : string)
@@ -552,7 +483,6 @@ let rec generate_struct_creates
   }
 ;;
 
-(** Convert an entry struct member value to low-level, handling the optional flag *)
 let entry_member_to_low_level (field_access : string) (member : Ir.struct_member) : string
   =
   match member.type_, member.optional with
@@ -563,7 +493,6 @@ let entry_member_to_low_level (field_access : string) (member : Ir.struct_member
   | _ -> member_to_low_level field_access member.type_
 ;;
 
-(** Generate code to convert a list of entry struct records to C structs *)
 let generate_array_of_structs_conversion
   (structs : Ir.struct_ list)
   (param_name : string)
@@ -627,8 +556,6 @@ let generate_array_of_structs_conversion
   { code_lines = loop_code; structs_to_free = [ entries_var, array_element_struct ] }
 ;;
 
-(** Generate code to set fields on a struct, including assigning nested structs. prefix is
-    the parameter prefix for this struct. *)
 let rec generate_struct_sets
   (structs : Ir.struct_ list)
   (prefix : string)
@@ -688,7 +615,6 @@ let rec generate_struct_sets
   { code_lines = code; structs_to_free = vars }
 ;;
 
-(** Generate method with one or more struct parameters - unified for ML and MLI *)
 let gen_method_with_structs
   (mode : output_mode)
   (structs : Ir.struct_ list)
@@ -779,7 +705,6 @@ let gen_method_with_structs
 |}
 ;;
 
-(** Generate method with output struct argument - unified for ML and MLI *)
 let gen_method_with_output_struct
   (mode : output_mode)
   (obj : Ir.object_)
@@ -867,8 +792,6 @@ let gen_method_with_output_struct
 |}
 ;;
 
-(** Generate ML implementation for a method with output struct argument - backward
-    compatibility wrapper *)
 let gen_ml_method_with_output_struct
   (obj : Ir.object_)
   (method_ : Ir.method_)
@@ -879,7 +802,6 @@ let gen_ml_method_with_output_struct
   gen_method_with_output_struct Implementation obj method_ struct_
 ;;
 
-(** Generate a method - unified for ML and MLI *)
 let gen_method
   (mode : output_mode)
   (structs : Ir.struct_ list)
@@ -956,14 +878,12 @@ let gen_method
 |})))
 ;;
 
-(** Generate ML implementation for a method - backward compatibility wrapper *)
 let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
   : string option
   =
   gen_method Implementation structs obj method_
 ;;
 
-(** Generate record type definition for an output struct *)
 let gen_output_struct_record_type (struct_ : Ir.struct_) : string =
   let type_name = String.lowercase struct_.name in
   let fields =
@@ -982,8 +902,6 @@ let gen_output_struct_record_type (struct_ : Ir.struct_) : string =
 |}
 ;;
 
-(** Get high-level type for an entry struct member, including handling nested structs as
-    records and respecting the optional flag *)
 let rec array_element_struct_member_type
   (_structs : Ir.struct_ list)
   (member : Ir.struct_member)
@@ -1000,9 +918,6 @@ let rec array_element_struct_member_type
     {%string|%{module_name}.t option|}
   | _ -> high_level_member_type member
 
-(** Generate a record type module for an entry struct (a struct that appears in arrays).
-    Also generates record types for any nested structs. Unified implementation for both
-    ML and MLI. *)
 and gen_array_element_struct_module
   (mode : output_mode)
   (structs : Ir.struct_ list)
@@ -1050,8 +965,6 @@ and gen_array_element_struct_module
   end
 |}
 
-(** Generate a simple record module for a nested struct (struct that is a member of an
-    entry struct). Unified implementation for both ML and MLI. *)
 and gen_nested_struct_module
   (mode : output_mode)
   (_structs : Ir.struct_ list)

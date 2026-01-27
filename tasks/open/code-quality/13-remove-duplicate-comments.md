@@ -111,3 +111,26 @@ For each file:
 
 - Medium value: Improves maintainability and follows best practices
 - Low effort: Mostly mechanical deletion, low risk
+
+---
+
+## Implementation Plan
+
+After reviewing all .ml and .mli files, I will remove the following duplicate documentation comments from each .ml file:
+
+1. **ir.ml**: Remove `(** ... *)` comments on type definitions (lines 3, 19, 38, 46, 54, 62, 70, 80, 90, 100, 110, 117, 126, 135, 145, 153)
+2. **names.ml**: Remove module-level comment (line 3) and function-level comments (lines 5-7, 19, 26, 34, 95, 100, 105, 111)
+3. **predicates.ml**: Remove module-level comment (line 3) and function-level comment (lines 5-6)
+4. **config.ml**: Remove module-level comment (line 3), Method_key comment (line 5), method_handling comment (line 15), method_config comment (line 22), Build sets comment (line 104), and function-level comments (lines 121, 130, 138, 146, 153, 158, 163)
+5. **parse_yml.ml**: Remove module-level comment (line 3) and function-level comment (line 62, 161)
+6. **type_mapping.ml**: Remove module-level comment (line 3), context comment (line 5), function-level comments (lines 13, 19, 28, 118, 150, 165)
+7. **gen_low.ml**: Remove all `(** ... *)` comments documenting functions (multiple locations throughout)
+8. **gen_high.ml**: Remove module-level comment (line 3), Record types comment (line 10), and all function-level `(** ... *)` comments
+
+### Validation Criteria
+
+1. `dune build` succeeds
+2. `dune fmt > /dev/null || true` does not produce new formatting issues
+3. `dune build @check` succeeds with no warnings
+4. `dune exec test/test_compute.exe` passes all tests
+5. Generated output files are identical to before (since the codegen itself is unchanged)

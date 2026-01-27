@@ -1,7 +1,5 @@
 open! Core
 
-(** Parse webgpu.yml into the IR *)
-
 let get_string_exn (yaml : Yaml.value) key =
   match yaml with
   | `O assoc ->
@@ -59,7 +57,6 @@ let get_obj_opt (yaml : Yaml.value) key =
   | _ -> None
 ;;
 
-(** Parse a type reference string like "uint32", "enum.backend_type", "array<struct.foo>" *)
 let rec parse_type_ref (s : string) : Ir.type_ref =
   match s with
   | "bool" -> Primitive Bool
@@ -158,7 +155,6 @@ let parse_struct_member (yaml : Yaml.value) : Ir.struct_member =
   }
 ;;
 
-(** Get the list of struct names this extension struct extends *)
 let get_extends_list (yaml : Yaml.value) : string list =
   match get_list_exn yaml "extends" with
   | [] -> []

@@ -1,48 +1,27 @@
 open! Core
 
-(** Generate low-level C stubs and OCaml external bindings *)
-
-(** Output mode for code generation *)
 type output_mode =
-  | Implementation (** Generate .ml implementation *)
-  | Interface (** Generate .mli interface *)
+  | Implementation
+  | Interface
 
-(** Read a template file from the templates directory (uses Names module) *)
 let read_template = Names.read_template
-
-(** Convert a snake_case name to PascalCase (uses Names module) *)
 let to_pascal_case = Names.to_pascal_case
-
-(** Convert a snake_case name to camelCase (uses Names module) *)
 let to_camel_case = Names.to_camel_case
-
-(** Get the C type name for a WGPU type *)
 let c_type_name (name : string) : string = Type_mapping.c_type_name name
 
-(** Get the C function name for a method *)
 let c_method_name (obj_name : string) (method_name : string) : string =
   "wgpu" ^ to_pascal_case obj_name ^ to_pascal_case method_name
 ;;
 
-(** Get the C function name for a standalone function *)
 let c_function_name (name : string) : string = "wgpu" ^ to_pascal_case name
-
-(** Get the OCaml module name for a type. Lowercases everything then capitalizes only the
-    first letter. e.g., "texture_format" -> "Texture_format", "extent_3D" -> "Extent_3d" *)
 let ocaml_module_name (name : string) : string = Type_mapping.ocaml_module_name name
-
-(** Convert C name conventions (e.g., discrete_GPU -> Discrete_gpu) (uses Names module) *)
 let normalize_enum_entry_name = Names.normalize_enum_entry_name
-
-(** Helper to indent lines (uses Names module) *)
 let indent_lines = Names.indent_lines
 
-(** Map IR type to C type string *)
 let c_type_of_type_ref (type_ref : Ir.type_ref) : string =
   Type_mapping.type_string ~context:C_code type_ref
 ;;
 
-(** Generate C code for enum constants *)
 let gen_c_enum_constants (enum : Ir.enum) : string =
   let c_name = c_type_name enum.name in
   let entries =
@@ -61,7 +40,6 @@ let gen_c_enum_constants (enum : Ir.enum) : string =
 |}
 ;;
 
-(** Generate OCaml code for an enum type - unified for ML and MLI *)
 let gen_enum (mode : output_mode) (enum : Ir.enum) : string =
   let module_name = ocaml_module_name enum.name in
   let variants =
@@ -120,13 +98,9 @@ end
 |}
 ;;
 
-(** Generate ML implementation for an enum type - backward compatibility wrapper *)
 let gen_ml_enum (enum : Ir.enum) : string = gen_enum Implementation enum
-
-(** Generate MLI for an enum type - backward compatibility wrapper *)
 let gen_mli_enum (enum : Ir.enum) : string = gen_enum Interface enum
 
-(** Generate C code for bitflag constants *)
 let gen_c_bitflag_constants (bitflag : Ir.bitflag) : string =
   let entries =
     List.map bitflag.entries ~f:(fun entry ->
@@ -145,7 +119,6 @@ let gen_c_bitflag_constants (bitflag : Ir.bitflag) : string =
 |}
 ;;
 
-(** Generate OCaml code for a bitflag type - unified for ML and MLI *)
 let gen_bitflag (mode : output_mode) (bitflag : Ir.bitflag) : string =
   let module_name = ocaml_module_name bitflag.name in
   let variants =
@@ -195,13 +168,9 @@ end
 |}
 ;;
 
-(** Generate ML implementation for a bitflag type - backward compatibility wrapper *)
 let gen_ml_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Implementation bitflag
-
-(** Generate MLI for a bitflag type - backward compatibility wrapper *)
 let gen_mli_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Interface bitflag
 
-(** Generate C struct allocation/deallocation functions *)
 let gen_c_struct_create_free (struct_ : Ir.struct_) : string =
   let c_name = c_type_name struct_.name in
   let struct_lower = String.lowercase struct_.name in
@@ -224,8 +193,6 @@ CAMLprim value caml_wgpu_%{struct_lower}_free(value handle) {
 |}
 ;;
 
-(** Compute the count field name for an array field. e.g., "entries" -> "entryCount",
-    "bind_group_layouts" -> "bindGroupLayoutCount" *)
 let array_count_field_name (array_field : string) : string =
   let camel = to_camel_case array_field in
   (* Remove trailing 's' to get singular, then add 'Count' *)
@@ -239,7 +206,6 @@ let array_count_field_name (array_field : string) : string =
   singular ^ "Count"
 ;;
 
-(** Generate C setter for a struct member *)
 let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : string =
   let c_struct = c_type_name struct_.name in
   let c_field = to_camel_case member.name in
@@ -352,7 +318,6 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
 |}
 ;;
 
-(** Generate C getter for a struct member *)
 let gen_c_struct_getter (struct_ : Ir.struct_) (member : Ir.struct_member) : string =
   let c_struct = c_type_name struct_.name in
   let c_field = to_camel_case member.name in
@@ -393,7 +358,6 @@ let gen_c_struct_getter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
 |}
 ;;
 
-(** Generate C code for extension struct chain header functions *)
 let gen_c_extension_chain_stubs (struct_ : Ir.struct_) : string =
   match struct_.type_ with
   | Ir.Extension_in _ | Ir.Extension_out _ ->
@@ -440,7 +404,6 @@ CAMLprim value caml_wgpu_%{lower_name}_set_next_in_chain(value handle, value cha
   | Ir.Standalone -> ""
 ;;
 
-(** Generate all C code for a struct *)
 let gen_c_struct_stubs (struct_ : Ir.struct_) : string =
   let create_free = gen_c_struct_create_free struct_ in
   let setters =
@@ -453,7 +416,6 @@ let gen_c_struct_stubs (struct_ : Ir.struct_) : string =
   String.concat ~sep:"\n" [ create_free; setters; getters; chain_stubs ]
 ;;
 
-(** Generate OCaml external for struct operations *)
 let gen_ml_struct (struct_ : Ir.struct_) : string =
   let type_name = struct_.name in
   let module_name = ocaml_module_name struct_.name in
@@ -545,7 +507,6 @@ end
 |}
 ;;
 
-(** Generate MLI for struct *)
 let gen_mli_struct (struct_ : Ir.struct_) : string =
   let module_name = ocaml_module_name struct_.name in
   let type_name = struct_.name in
@@ -615,10 +576,8 @@ end
 |}
 ;;
 
-(** Check if a method uses callbacks (async) (uses Predicates module) *)
 let method_is_async = Predicates.method_is_async
 
-(** Check if method is manually implemented in sync helpers *)
 let method_is_manual (obj_name : string) (method_name : string) : bool =
   match obj_name, method_name with
   | "adapter", "get_info" -> true
@@ -626,7 +585,6 @@ let method_is_manual (obj_name : string) (method_name : string) : bool =
   | _ -> false
 ;;
 
-(** Generate C code for array argument conversion *)
 let gen_c_array_conversion (arg : Ir.arg) : string =
   match arg.type_ with
   | Array { elem; _ } ->
@@ -669,7 +627,6 @@ let gen_c_array_conversion (arg : Ir.arg) : string =
   | _ -> ""
 ;;
 
-(** Generate C stub for a single method *)
 let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
   (* Skip async methods and manually implemented methods *)
   if method_is_async method_
@@ -805,7 +762,6 @@ CAMLprim value %{caml_func}_bytecode(value *argv, int argn) {
 |})
 ;;
 
-(** Generate C code for object handle types *)
 let gen_c_object_stubs (obj : Ir.object_) : string =
   let c_type = c_type_name obj.name in
   (* Generate release function *)
@@ -831,12 +787,10 @@ let gen_c_object_stubs (obj : Ir.object_) : string =
 %{methods}|}
 ;;
 
-(** Get OCaml type string for a type_ref *)
 let ml_type_of_type_ref (type_ref : Ir.type_ref) : string =
   Type_mapping.type_string ~context:Ocaml_low_level type_ref
 ;;
 
-(** Generate OCaml external declaration for a method *)
 let gen_ml_method (obj : Ir.object_) (method_ : Ir.method_) : string =
   if method_is_async method_
   then {%string|(* TODO: async method %{obj.name}_%{method_.name} *)|}
@@ -863,13 +817,11 @@ let gen_ml_method (obj : Ir.object_) (method_ : Ir.method_) : string =
     else {%string|external %{func_name} : %{type_sig} = "%{caml_func}"|})
 ;;
 
-(** Generate OCaml type declaration for an object *)
 let gen_ml_object_type (obj : Ir.object_) : string =
   {%string|type %{obj.name} = nativeint
 |}
 ;;
 
-(** Generate OCaml method declarations for an object *)
 let gen_ml_object_methods (obj : Ir.object_) : string =
   let obj_lower = String.lowercase obj.name in
   let release =
@@ -885,12 +837,10 @@ let gen_ml_object_methods (obj : Ir.object_) : string =
   release ^ methods
 ;;
 
-(** Generate OCaml code for an object type *)
 let gen_ml_object (obj : Ir.object_) : string =
   gen_ml_object_type obj ^ "\n" ^ gen_ml_object_methods obj ^ "\n"
 ;;
 
-(** Generate MLI declaration for a method *)
 let gen_mli_method (obj : Ir.object_) (method_ : Ir.method_) : string =
   if method_is_async method_ || method_is_manual obj.name method_.name
   then ""
@@ -908,13 +858,11 @@ let gen_mli_method (obj : Ir.object_) (method_ : Ir.method_) : string =
     {%string|val %{func_name} : %{type_sig}|})
 ;;
 
-(** Generate MLI type declaration only for an object *)
 let gen_mli_object_type (obj : Ir.object_) : string =
   {%string|type %{obj.name} = nativeint
 |}
 ;;
 
-(** Generate MLI method declarations for an object *)
 let gen_mli_object_methods (obj : Ir.object_) : string =
   let release = {%string|val %{obj.name}_release : %{obj.name} -> unit
 |} in
@@ -927,13 +875,10 @@ let gen_mli_object_methods (obj : Ir.object_) : string =
   if String.is_empty methods then release else release ^ methods ^ "\n"
 ;;
 
-(** Generate MLI for an object type - deprecated, use gen_mli_object_type +
-    gen_mli_object_methods *)
 let gen_mli_object (obj : Ir.object_) : string =
   gen_mli_object_type obj ^ "\n" ^ gen_mli_object_methods obj
 ;;
 
-(** Generate C stubs for standalone functions *)
 let gen_c_function_stubs (func : Ir.function_) : string =
   let c_name = c_function_name func.name in
   match func.name with
@@ -950,10 +895,8 @@ let gen_c_function_stubs (func : Ir.function_) : string =
 |}
 ;;
 
-(** Generate additional helper functions for sync wrappers *)
 let gen_c_sync_helpers () : string = read_template "low/sync_helpers.c"
 
-(** Generate all C stubs *)
 let gen_c_stubs (api : Ir.api) : string =
   let header = read_template "low/header.c" in
   let enum_stubs =
@@ -983,7 +926,6 @@ let gen_c_stubs (api : Ir.api) : string =
     ]
 ;;
 
-(** Generate all OCaml bindings *)
 let gen_ml (api : Ir.api) : string =
   let header = "(* Generated by gen_bindings - low-level OCaml bindings *)\n\n" in
   let enums = List.map api.enums ~f:gen_ml_enum |> String.concat ~sep:"\n" in
@@ -1001,7 +943,6 @@ let gen_ml (api : Ir.api) : string =
     [ header; enums; bitflags; structs; object_types; "\n"; object_methods; functions ]
 ;;
 
-(** Generate all OCaml interface *)
 let gen_mli (api : Ir.api) : string =
   let header = "(* Generated by gen_bindings - low-level OCaml interface *)\n\n" in
   let enums = List.map api.enums ~f:gen_mli_enum |> String.concat ~sep:"\n" in
