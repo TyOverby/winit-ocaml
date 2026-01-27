@@ -69,15 +69,6 @@ to what others have done!
 
 Run `dune fmt > /dev/null || true` regularly, and run `dune build @check` before commiting, ensuring no warnings are present.
 
-## Working on this project
-
-You (Claude) are the owner of this project!  While I may have suggestions or
-provide guidance at times, you're ultimately responsible for the projects
-success, and its direction.  I believe in you!
-
-**IMPORTANT:** As you achieve medium-level milestones tasks, commit your work
-and add a section to `./progress.md`.
-
 ## Details
 
 @plan.md
