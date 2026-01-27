@@ -101,3 +101,33 @@ let print_all_outputs_for_enum enum =
 - Tests load the real `webgpu.yml` successfully
 - Each test shows the full generated output for the named item
 - Adding a new regression test is straightforward (just specify the name)
+
+## Implementation Plan
+
+### Approach
+
+1. Create a new test file `codegen/test/test_regression.ml` that:
+   - Uses a lazy-loaded API from the real `webgpu.yml` file
+   - Provides lookup functions for enums, structs, objects, and methods
+   - Has print helper functions for each type category
+   - Contains expect tests for representative items
+
+2. Path handling:
+   - Use a relative path from the project root to locate `webgpu.yml`
+   - The test will use `vendor/wgpu-native/ffi/webgpu-headers/webgpu.yml`
+
+3. Test coverage:
+   - Enum: `texture_format` (simple enum with many entries)
+   - Enum: `feature_name` (if it has value overrides) or another suitable enum
+   - Struct: `limits` (base_in_or_out type with many fields)
+   - Struct: `buffer_descriptor` (base_in with chained types)
+   - Struct: `bind_group_layout_descriptor` (with array members)
+   - Method: `buffer.get_size` (simple method with no args, returns primitive)
+   - Method: `device.create_buffer` (method with struct descriptor arg)
+
+### Validation Steps
+
+After implementation:
+1. Run `dune build @check` to ensure no warnings
+2. Run `dune exec test/test_compute.exe` to verify existing tests pass
+3. Verify the regression tests show the generated code for real API items
