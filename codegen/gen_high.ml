@@ -101,26 +101,26 @@ let escape_keyword (name : string) : string =
 (** Check if a method uses callbacks (async) *)
 let method_is_async (method_ : Ir.method_) : bool = Option.is_some method_.callback
 
-(** Check if a type is simple (primitive, enum, bitflag, or object) - no nested structs *)
-let rec is_simple_member_type (type_ref : Ir.type_ref) : bool =
+(** Check if a type is flat (primitive, enum, bitflag, or object) - no nested structs *)
+let rec is_flat_member_type (type_ref : Ir.type_ref) : bool =
   match type_ref with
   | Primitive _ -> true
   | Enum _ -> true
   | Bitflag _ -> true
   | Object _ -> true
-  | Optional inner -> is_simple_member_type inner
+  | Optional inner -> is_flat_member_type inner
   | Struct _ -> false
   | Callback _ -> false
-  | Array { elem; _ } -> is_simple_member_type elem (* Arrays of simple types are OK *)
+  | Array { elem; _ } -> is_flat_member_type elem (* Arrays of flat types are OK *)
   | Pointer { inner = Array { elem; _ }; _ } ->
     (* Pointer to array is just an array passed by reference *)
-    is_simple_member_type elem
+    is_flat_member_type elem
   | Pointer _ -> false
 ;;
 
-(** Check if a type is simple, allowing nested structs that are themselves simple. Uses
+(** Check if a type is flat, allowing nested structs that are themselves flat. Uses
     visited set to prevent infinite recursion. *)
-let rec is_simple_member_type_with_nested
+let rec is_flat_member_type_with_nested
   (structs : Ir.struct_ list)
   (visited : Set.M(String).t)
   (type_ref : Ir.type_ref)
@@ -131,21 +131,21 @@ let rec is_simple_member_type_with_nested
   | Enum _ -> true
   | Bitflag _ -> true
   | Object _ -> true
-  | Optional inner -> is_simple_member_type_with_nested structs visited inner
+  | Optional inner -> is_flat_member_type_with_nested structs visited inner
   | Struct name ->
     (* Check if the nested struct is simple (and not already being visited) *)
     if Set.mem visited name
     then false (* Circular reference *)
-    else is_simple_struct_aux structs (Set.add visited name) name
+    else is_auto_generable_struct_aux structs (Set.add visited name) name
   | Callback _ -> false
-  | Array { elem; _ } -> is_simple_member_type_with_nested structs visited elem
+  | Array { elem; _ } -> is_flat_member_type_with_nested structs visited elem
   | Pointer { inner = Array { elem; _ }; _ } ->
     (* Pointer to array is just an array passed by reference *)
-    is_simple_member_type_with_nested structs visited elem
+    is_flat_member_type_with_nested structs visited elem
   | Pointer _ -> false
 
-(** Auxiliary function to check if a struct is simple, with visited tracking *)
-and is_simple_struct_aux
+(** Auxiliary function to check if a struct is auto-generable, with visited tracking *)
+and is_auto_generable_struct_aux
   (structs : Ir.struct_ list)
   (visited : Set.M(String).t)
   (struct_name : string)
@@ -162,13 +162,13 @@ and is_simple_struct_aux
     in
     is_input_struct
     && List.for_all struct_.members ~f:(fun member ->
-      is_simple_member_type_with_nested structs visited member.type_)
+      is_flat_member_type_with_nested structs visited member.type_)
 ;;
 
-(** Check if a struct has only simple members (allowing nested simple structs) and is an
-    input struct *)
-let is_simple_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
-  is_simple_struct_aux structs (Set.empty (module String)) struct_name
+(** Check if a struct has only flat members (allowing nested flat structs) and is an
+    input struct, making it auto-generable *)
+let is_auto_generable_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
+  is_auto_generable_struct_aux structs (Set.empty (module String)) struct_name
 ;;
 
 (** Check if a member type contains a nested struct *)
@@ -217,28 +217,28 @@ let rec collect_inline_structs_recursive
     | None -> [])
 ;;
 
-(** Check if an argument type is "simple" (can be easily converted) *)
-let rec is_simple_arg_type (type_ref : Ir.type_ref) : bool =
+(** Check if an argument type can be directly converted (without struct handling) *)
+let rec is_directly_convertible_arg (type_ref : Ir.type_ref) : bool =
   match type_ref with
   | Primitive _ -> true
   | Enum _ -> true
   | Bitflag _ -> true
   | Object _ -> true
-  | Optional inner -> is_simple_arg_type inner
+  | Optional inner -> is_directly_convertible_arg inner
   | Struct _ -> false (* Structs handled separately *)
   | Callback _ -> false
-  | Array { elem; _ } -> is_simple_arg_type elem (* Arrays of simple types are OK *)
+  | Array { elem; _ } -> is_directly_convertible_arg elem (* Arrays of directly convertible types are OK *)
   | Pointer _ -> false
 ;;
 
-(** Get all simple struct arguments from a method (input structs only) *)
-let get_simple_struct_args (structs : Ir.struct_ list) (method_ : Ir.method_)
+(** Get all auto-generable struct parameters from a method (input structs only) *)
+let get_auto_generable_struct_params (structs : Ir.struct_ list) (method_ : Ir.method_)
   : (Ir.arg * Ir.struct_) list
   =
   List.filter_map method_.args ~f:(fun arg ->
     match arg.type_, arg.pointer with
     | Struct name, (Some `Immutable | None) ->
-      if is_simple_struct structs name
+      if is_auto_generable_struct structs name
       then
         List.find structs ~f:(fun s -> String.equal s.name name)
         |> Option.map ~f:(fun s -> arg, s)
@@ -246,23 +246,23 @@ let get_simple_struct_args (structs : Ir.struct_ list) (method_ : Ir.method_)
     | _ -> None)
 ;;
 
-(** Check if a method has at least one struct argument and all structs are simple input
-    structs *)
-let method_has_simple_struct_args (structs : Ir.struct_ list) (method_ : Ir.method_)
+(** Check if a method has at least one struct parameter and all structs are auto-generable
+    input structs *)
+let method_has_auto_generable_struct_params (structs : Ir.struct_ list) (method_ : Ir.method_)
   : bool
   =
-  let struct_args =
+  let struct_parameters =
     List.filter method_.args ~f:(fun arg ->
       match arg.type_ with
       | Struct _ -> true
       | _ -> false)
   in
-  if List.is_empty struct_args
+  if List.is_empty struct_parameters
   then false
   else
-    List.for_all struct_args ~f:(fun arg ->
+    List.for_all struct_parameters ~f:(fun arg ->
       match arg.type_, arg.pointer with
-      | Struct name, (Some `Immutable | None) -> is_simple_struct structs name
+      | Struct name, (Some `Immutable | None) -> is_auto_generable_struct structs name
       | Struct _, Some `Mutable -> false (* output struct, handled separately *)
       | _ -> false)
 ;;
@@ -279,14 +279,14 @@ let is_simple_output_struct (structs : Ir.struct_ list) (struct_name : string) :
       | Base_in | Standalone | Extension_in _ -> false
     in
     is_output_struct
-    && List.for_all struct_.members ~f:(fun member -> is_simple_member_type member.type_)
+    && List.for_all struct_.members ~f:(fun member -> is_flat_member_type member.type_)
 ;;
 
 (** Check if a method has exactly one output struct argument (mutable pointer to struct) *)
 let method_has_output_struct_arg (structs : Ir.struct_ list) (method_ : Ir.method_)
   : (Ir.arg * Ir.struct_) option
   =
-  let output_struct_args =
+  let output_struct_parameters =
     List.filter_map method_.args ~f:(fun arg ->
       match arg.type_, arg.pointer with
       | Struct name, Some `Mutable ->
@@ -297,7 +297,7 @@ let method_has_output_struct_arg (structs : Ir.struct_ list) (method_ : Ir.metho
         else None
       | _ -> None)
   in
-  match output_struct_args with
+  match output_struct_parameters with
   | [ pair ] -> Some pair
   | _ -> None
 ;;
@@ -319,7 +319,7 @@ let method_is_high_level_simple (method_ : Ir.method_) : bool =
   then false
   else (
     let args_ok =
-      List.for_all method_.args ~f:(fun arg -> is_simple_arg_type arg.type_)
+      List.for_all method_.args ~f:(fun arg -> is_directly_convertible_arg arg.type_)
     in
     let return_ok =
       match method_.returns with
@@ -345,24 +345,24 @@ let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bo
     else (
       (* Check if all args are simple *)
       let all_simple =
-        List.for_all method_.args ~f:(fun arg -> is_simple_arg_type arg.type_)
+        List.for_all method_.args ~f:(fun arg -> is_directly_convertible_arg arg.type_)
       in
       if all_simple
       then true
       else (
-        (* Check if all struct args are simple input structs, with other args also simple *)
-        let non_struct_args_simple =
+        (* Check if all struct parameters are auto-generable input structs, with other parameters also directly convertible *)
+        let non_struct_parameters_are_directly_convertible =
           List.for_all method_.args ~f:(fun arg ->
             match arg.type_ with
             | Struct _ -> true (* will check separately *)
-            | _ -> is_simple_arg_type arg.type_)
+            | _ -> is_directly_convertible_arg arg.type_)
         in
-        if non_struct_args_simple && method_has_simple_struct_args structs method_
+        if non_struct_parameters_are_directly_convertible && method_has_auto_generable_struct_params structs method_
         then true
         else (
           (* Check if there's an output struct arg *)
           match method_has_output_struct_arg structs method_ with
-          | Some _ -> non_struct_args_simple
+          | Some _ -> non_struct_parameters_are_directly_convertible
           | None -> false))))
 ;;
 
@@ -820,31 +820,31 @@ let rec generate_struct_sets
   code, vars
 ;;
 
-(** Generate ML implementation for a method with one or more struct arguments *)
+(** Generate ML implementation for a method with one or more struct parameters *)
 let gen_ml_method_with_structs
   (structs : Ir.struct_ list)
   (obj : Ir.object_)
   (method_ : Ir.method_)
-  (struct_args : (Ir.arg * Ir.struct_) list)
+  (struct_parameters : (Ir.arg * Ir.struct_) list)
   : string
   =
   let method_name = escape_keyword method_.name in
-  let use_prefix = List.length struct_args > 1 in
-  (* Get non-struct args *)
-  let other_args =
+  let use_prefix = List.length struct_parameters > 1 in
+  (* Get non-struct parameters *)
+  let non_struct_parameters =
     List.filter method_.args ~f:(fun arg ->
       match arg.type_ with
       | Struct _ -> false
       | _ -> true)
   in
-  (* Build parameter list from all struct members + other args (including nested) *)
+  (* Build parameter list from all struct members + non-struct parameters (including nested) *)
   let struct_params =
-    List.concat_map struct_args ~f:(fun (arg, struct_) ->
+    List.concat_map struct_parameters ~f:(fun (arg, struct_) ->
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       collect_struct_params structs base_prefix struct_ None)
   in
-  let other_params =
-    List.map other_args ~f:(fun arg -> escape_keyword arg.name, arg, arg.optional)
+  let non_struct_params =
+    List.map non_struct_parameters ~f:(fun arg -> escape_keyword arg.name, arg, arg.optional)
   in
   (* Build function signature *)
   let param_strs =
@@ -852,13 +852,13 @@ let gen_ml_method_with_structs
       if is_opt
       then Some (sprintf "?(%s = %s)" name (default_value_for_type member.type_))
       else Some (sprintf "~%s" name))
-    @ List.filter_map other_params ~f:(fun (name, _arg, is_opt) ->
+    @ List.filter_map non_struct_params ~f:(fun (name, _arg, is_opt) ->
       if is_opt then Some (sprintf "?%s" name) else Some (sprintf "~%s" name))
   in
   let param_list = "t " ^ String.concat ~sep:" " param_strs ^ " ()" in
-  (* Generate struct creation for each struct arg (including nested structs) *)
+  (* Generate struct creation for each struct parameter (including nested structs) *)
   let all_struct_vars, create_structs_lists =
-    List.fold struct_args ~init:([], []) ~f:(fun (vars, creates) (arg, struct_) ->
+    List.fold struct_parameters ~init:([], []) ~f:(fun (vars, creates) (arg, struct_) ->
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       let desc_var = "desc_" ^ arg.name in
       let new_vars, new_creates =
@@ -869,7 +869,7 @@ let gen_ml_method_with_structs
   let create_structs = create_structs_lists in
   (* Generate field setting for each struct (including nested structs) *)
   let set_fields, array_element_struct_lists =
-    List.fold struct_args ~init:([], []) ~f:(fun (fields, entry_lists) (arg, struct_) ->
+    List.fold struct_parameters ~init:([], []) ~f:(fun (fields, entry_lists) (arg, struct_) ->
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       let desc_var = "desc_" ^ arg.name in
       let field_code, entry_vars =
@@ -877,14 +877,14 @@ let gen_ml_method_with_structs
       in
       fields @ field_code, entry_lists @ entry_vars)
   in
-  (* Build the call args, mapping each struct arg to its desc variable *)
-  let struct_arg_names =
-    List.map struct_args ~f:(fun (arg, _) -> arg.name) |> Set.of_list (module String)
+  (* Build the call arguments, mapping each struct parameter to its desc variable *)
+  let struct_parameter_names =
+    List.map struct_parameters ~f:(fun (arg, _) -> arg.name) |> Set.of_list (module String)
   in
   let call_args =
     List.map method_.args ~f:(fun arg ->
       match arg.type_ with
-      | Struct _ when Set.mem struct_arg_names arg.name -> "desc_" ^ arg.name
+      | Struct _ when Set.mem struct_parameter_names arg.name -> "desc_" ^ arg.name
       | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
   in
   let call =
@@ -941,8 +941,8 @@ let gen_ml_method_with_output_struct
   let method_name = escape_keyword method_.name in
   let struct_module = ocaml_module_name struct_.name in
   let struct_var = "output" in
-  (* Get other args that are not the output struct *)
-  let other_args =
+  (* Get non-struct parameters that are not the output struct *)
+  let non_struct_parameters =
     List.filter method_.args ~f:(fun a ->
       not
         (match a.type_ with
@@ -951,13 +951,13 @@ let gen_ml_method_with_output_struct
   in
   (* Build parameter list *)
   let param_list =
-    if List.is_empty other_args
+    if List.is_empty non_struct_parameters
     then "t"
     else
       "t "
       ^ String.concat
           ~sep:" "
-          (List.map other_args ~f:(fun a -> sprintf "~%s" (escape_keyword a.name)))
+          (List.map non_struct_parameters ~f:(fun a -> sprintf "~%s" (escape_keyword a.name)))
   in
   (* Create the output struct *)
   let create_struct =
@@ -1043,13 +1043,13 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
       Some (gen_ml_method_with_output_struct obj method_ struct_ arg)
     | None ->
       (* Check if this method has simple struct arguments *)
-      let struct_args = get_simple_struct_args structs method_ in
-      (match struct_args with
+      let struct_parameters = get_auto_generable_struct_params structs method_ in
+      (match struct_parameters with
        | _ :: _ ->
-         (* One or more simple struct args *)
-         Some (gen_ml_method_with_structs structs obj method_ struct_args)
+         (* One or more auto-generable struct parameters *)
+         Some (gen_ml_method_with_structs structs obj method_ struct_parameters)
        | [] ->
-         (* Original simple method generation - no struct args *)
+         (* Original simple method generation - no struct parameters *)
          let method_name = escape_keyword method_.name in
          let low_level_func = sprintf "Wgpu_low.%s_%s" obj.name method_.name in
          let args =
@@ -1262,26 +1262,26 @@ let gen_array_element_struct_module_mli (structs : Ir.struct_ list) (struct_ : I
     record_type
 ;;
 
-(** Generate MLI signature for a method with one or more struct arguments *)
+(** Generate MLI signature for a method with one or more struct parameters *)
 let gen_mli_method_with_structs
   (structs : Ir.struct_ list)
   (_obj : Ir.object_)
   (method_ : Ir.method_)
-  (struct_args : (Ir.arg * Ir.struct_) list)
+  (struct_parameters : (Ir.arg * Ir.struct_) list)
   : string
   =
   let method_name = escape_keyword method_.name in
-  let use_prefix = List.length struct_args > 1 in
-  (* Get non-struct args *)
-  let other_args =
+  let use_prefix = List.length struct_parameters > 1 in
+  (* Get non-struct parameters *)
+  let non_struct_parameters =
     List.filter method_.args ~f:(fun arg ->
       match arg.type_ with
       | Struct _ -> false
       | _ -> true)
   in
-  (* Build parameter types from all struct members + other args (including nested) *)
+  (* Build parameter types from all struct members + non-struct parameters (including nested) *)
   let struct_param_types =
-    List.concat_map struct_args ~f:(fun (arg, struct_) ->
+    List.concat_map struct_parameters ~f:(fun (arg, struct_) ->
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       let params = collect_struct_params structs base_prefix struct_ None in
       List.map params ~f:(fun (param_name, member, is_optional, _) ->
@@ -1290,8 +1290,8 @@ let gen_mli_method_with_structs
         then sprintf "?%s:%s" param_name type_str
         else sprintf "%s:%s" param_name type_str))
   in
-  let other_param_types =
-    List.map other_args ~f:(fun arg ->
+  let non_struct_param_types =
+    List.map non_struct_parameters ~f:(fun arg ->
       let param_name = escape_keyword arg.name in
       let type_str = high_level_arg_type arg.type_ in
       if arg.optional
@@ -1303,7 +1303,7 @@ let gen_mli_method_with_structs
     | None -> "unit"
     | Some ret -> high_level_return_type ret.type_
   in
-  let all_params = struct_param_types @ other_param_types in
+  let all_params = struct_param_types @ non_struct_param_types in
   let type_sig =
     sprintf "t -> %s -> unit -> %s" (String.concat ~sep:" -> " all_params) return_type
   in
@@ -1318,16 +1318,16 @@ let gen_mli_method_with_output_struct
   : string
   =
   let method_name = escape_keyword method_.name in
-  (* Get other args that are not the output struct *)
-  let other_args =
+  (* Get non-struct parameters that are not the output struct *)
+  let non_struct_parameters =
     List.filter method_.args ~f:(fun a ->
       not
         (match a.type_ with
          | Struct _ -> true
          | _ -> false))
   in
-  let other_param_types =
-    List.map other_args ~f:(fun arg ->
+  let non_struct_param_types =
+    List.map non_struct_parameters ~f:(fun arg ->
       let param_name = escape_keyword arg.name in
       let type_str = high_level_arg_type arg.type_ in
       if arg.optional
@@ -1338,9 +1338,9 @@ let gen_mli_method_with_output_struct
   let record_type_name = String.lowercase struct_.name in
   let return_type = record_type_name in
   let type_sig =
-    if List.is_empty other_param_types
+    if List.is_empty non_struct_param_types
     then sprintf "t -> %s" return_type
-    else sprintf "t -> %s -> %s" (String.concat ~sep:" -> " other_param_types) return_type
+    else sprintf "t -> %s -> %s" (String.concat ~sep:" -> " non_struct_param_types) return_type
   in
   sprintf "  val %s : %s\n" method_name type_sig
 ;;
@@ -1359,14 +1359,14 @@ let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.
     match method_has_output_struct_arg structs method_ with
     | Some (_arg, struct_) -> Some (gen_mli_method_with_output_struct obj method_ struct_)
     | None ->
-      (* Check if this method has simple struct arguments *)
-      let struct_args = get_simple_struct_args structs method_ in
-      (match struct_args with
+      (* Check if this method has auto-generable struct parameters *)
+      let struct_parameters = get_auto_generable_struct_params structs method_ in
+      (match struct_parameters with
        | _ :: _ ->
-         (* One or more simple struct args *)
-         Some (gen_mli_method_with_structs structs obj method_ struct_args)
+         (* One or more auto-generable struct parameters *)
+         Some (gen_mli_method_with_structs structs obj method_ struct_parameters)
        | [] ->
-         (* Original simple method generation - no struct args *)
+         (* Original simple method generation - no struct parameters *)
          let method_name = escape_keyword method_.name in
          let arg_types =
            List.map method_.args ~f:(fun arg ->
@@ -1808,8 +1808,8 @@ let validate_method_coverage (api : Ir.api) : string list =
                   match arg.type_ with
                   | Struct name ->
                     (* Check if struct is simple *)
-                    not (is_simple_struct api.structs name)
-                  | _ -> not (is_simple_arg_type arg.type_))
+                    not (is_auto_generable_struct api.structs name)
+                  | _ -> not (is_directly_convertible_arg arg.type_))
                 |> List.map ~f:(fun arg ->
                   sprintf
                     "%s: %s"

@@ -2,102 +2,102 @@ open! Core
 
 (** Tests for helper functions *)
 
-let%expect_test "is_simple_member_type - primitive" =
+let%expect_test "is_flat_member_type - primitive" =
   let type_ref = Ir.Primitive Uint32 in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| true |}]
 ;;
 
-let%expect_test "is_simple_member_type - enum" =
+let%expect_test "is_flat_member_type - enum" =
   let type_ref = Ir.Enum "texture_format" in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| true |}]
 ;;
 
-let%expect_test "is_simple_member_type - bitflag" =
+let%expect_test "is_flat_member_type - bitflag" =
   let type_ref = Ir.Bitflag "texture_usage" in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| true |}]
 ;;
 
-let%expect_test "is_simple_member_type - object" =
+let%expect_test "is_flat_member_type - object" =
   let type_ref = Ir.Object "device" in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| true |}]
 ;;
 
-let%expect_test "is_simple_member_type - struct" =
+let%expect_test "is_flat_member_type - struct" =
   let type_ref = Ir.Struct "extent_3d" in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| false |}]
 ;;
 
-let%expect_test "is_simple_member_type - callback" =
+let%expect_test "is_flat_member_type - callback" =
   let type_ref = Ir.Callback "some_callback" in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| false |}]
 ;;
 
-let%expect_test "is_simple_member_type - optional primitive" =
+let%expect_test "is_flat_member_type - optional primitive" =
   let type_ref = Ir.Optional (Primitive Uint32) in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| true |}]
 ;;
 
-let%expect_test "is_simple_member_type - optional struct" =
+let%expect_test "is_flat_member_type - optional struct" =
   let type_ref = Ir.Optional (Struct "extent_3d") in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| false |}]
 ;;
 
-let%expect_test "is_simple_member_type - array of primitives" =
+let%expect_test "is_flat_member_type - array of primitives" =
   let type_ref = Ir.Array { elem = Primitive Uint32; pointer = None } in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| true |}]
 ;;
 
-let%expect_test "is_simple_member_type - array of structs" =
+let%expect_test "is_flat_member_type - array of structs" =
   let type_ref = Ir.Array { elem = Struct "extent_3d"; pointer = None } in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| false |}]
 ;;
 
-let%expect_test "is_simple_member_type - pointer to array of primitives" =
+let%expect_test "is_flat_member_type - pointer to array of primitives" =
   let type_ref =
     Ir.Pointer
       { mutable_ = false; inner = Array { elem = Primitive Uint32; pointer = None } }
   in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| true |}]
 ;;
 
-let%expect_test "is_simple_member_type - pointer" =
+let%expect_test "is_flat_member_type - pointer" =
   let type_ref = Ir.Pointer { mutable_ = false; inner = Primitive Uint32 } in
-  print_s [%sexp (Gen_high.is_simple_member_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_flat_member_type type_ref : bool)];
   [%expect {| false |}]
 ;;
 
-let%expect_test "is_simple_arg_type - primitive" =
+let%expect_test "is_directly_convertible_arg - primitive" =
   let type_ref = Ir.Primitive Uint32 in
-  print_s [%sexp (Gen_high.is_simple_arg_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_directly_convertible_arg type_ref : bool)];
   [%expect {| true |}]
 ;;
 
-let%expect_test "is_simple_arg_type - enum" =
+let%expect_test "is_directly_convertible_arg - enum" =
   let type_ref = Ir.Enum "texture_format" in
-  print_s [%sexp (Gen_high.is_simple_arg_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_directly_convertible_arg type_ref : bool)];
   [%expect {| true |}]
 ;;
 
-let%expect_test "is_simple_arg_type - struct" =
+let%expect_test "is_directly_convertible_arg - struct" =
   let type_ref = Ir.Struct "extent_3d" in
-  print_s [%sexp (Gen_high.is_simple_arg_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_directly_convertible_arg type_ref : bool)];
   [%expect {| false |}]
 ;;
 
-let%expect_test "is_simple_arg_type - callback" =
+let%expect_test "is_directly_convertible_arg - callback" =
   let type_ref = Ir.Callback "some_callback" in
-  print_s [%sexp (Gen_high.is_simple_arg_type type_ref : bool)];
+  print_s [%sexp (Gen_high.is_directly_convertible_arg type_ref : bool)];
   [%expect {| false |}]
 ;;
 
