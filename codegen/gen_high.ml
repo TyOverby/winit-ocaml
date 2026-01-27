@@ -2,6 +2,46 @@ open! Core
 
 (** Generate high-level idiomatic OCaml bindings *)
 
+(** Record types for code generation results *)
+
+(** A parameter collected from a struct for function signature generation *)
+type struct_parameter = {
+  param_name : string;
+  (** The OCaml parameter name *)
+  member : Ir.struct_member;
+  (** The struct member definition *)
+  is_optional : bool;
+  (** Whether this parameter is optional *)
+  nested_var : string option;
+  (** If this comes from a nested struct, the variable name for that nested struct *)
+}
+
+(** Result of generating struct creation code *)
+type struct_creation_result = {
+  created_structs : (string * Ir.struct_) list;
+  (** List of (variable_name, struct_definition) pairs for all created structs *)
+  code_lines : string list;
+  (** OCaml code lines that create the structs *)
+}
+
+(** Result of code generation that includes resources to free *)
+type code_with_cleanup = {
+  code_lines : string list;
+  (** The generated code *)
+  structs_to_free : (string * Ir.struct_) list;
+  (** List of (variable_name, struct_def) pairs for structs that need freeing *)
+}
+
+(** Result of inline struct conversion *)
+type inline_struct_conversion = {
+  create_code : string list;
+  (** Code to create the C struct *)
+  set_code : string list;
+  (** Code to set all fields on the struct *)
+  structs_to_free : (string * Ir.struct_) list;
+  (** List of (var_name, struct_def) pairs for later freeing *)
+}
+
 (** Read a template file from the templates directory *)
 let read_template (path : string) : string =
   let template_path = "../codegen/templates/" ^ path in
@@ -518,7 +558,7 @@ let rec collect_struct_params
   (prefix : string)
   (struct_ : Ir.struct_)
   (nested_var : string option)
-  : (string * Ir.struct_member * bool * string option) list
+  : struct_parameter list
   =
   List.concat_map struct_.members ~f:(fun member ->
     (* First check if this is an array-of-structs - these are NOT flattened *)
@@ -533,7 +573,7 @@ let rec collect_struct_params
         | Array _ | Pointer { inner = Array _; _ } -> true
         | _ -> false
       in
-      [ param_name, member, is_optional, nested_var ]
+      [ { param_name; member; is_optional; nested_var } ]
     | None ->
       (* Check for direct nested struct *)
       (match get_inline_struct_name member.type_ with
@@ -562,17 +602,16 @@ let rec collect_struct_params
            | Pointer { inner = Array _; _ } -> true
            | _ -> false
          in
-         [ param_name, member, is_optional, nested_var ]))
+         [ { param_name; member; is_optional; nested_var } ]))
 ;;
 
-(** Generate code to create a struct and all its nested structs. Returns list of
-    (var_name, struct_) pairs for all created structs (including nested). *)
+(** Generate code to create a struct and all its nested structs *)
 let rec generate_struct_creates
   (structs : Ir.struct_ list)
   (prefix : string)
   (struct_ : Ir.struct_)
   (var_name : string)
-  : (string * Ir.struct_) list * string list
+  : struct_creation_result
   =
   let struct_module = ocaml_module_name struct_.name in
   let create_line =
@@ -591,25 +630,26 @@ let rec generate_struct_creates
            Some (generate_struct_creates structs nested_prefix nested_struct nested_var))
       | None -> None)
   in
-  let nested_vars, nested_creates =
-    List.fold nested_results ~init:([], []) ~f:(fun (vars, creates) (v, c) ->
-      vars @ v, creates @ c)
+  let all_created_structs, all_code_lines =
+    List.fold
+      nested_results
+      ~init:([], [])
+      ~f:(fun (vars, creates) result ->
+        vars @ result.created_structs, creates @ result.code_lines)
   in
-  (var_name, struct_) :: nested_vars, nested_creates @ [ create_line ]
+  { created_structs = (var_name, struct_) :: all_created_structs
+  ; code_lines = all_code_lines @ [ create_line ]
+  }
 ;;
 
-(** Generate code to convert a nested struct record field to a C struct. Returns
-    (create_code, set_code, free_vars) where:
-    - create_code creates the C struct
-    - set_code sets all fields on the struct
-    - free_vars is a list of (var_name, struct_name) pairs for later freeing *)
+(** Generate code to convert a nested struct record field to a C struct *)
 let gen_inline_struct_conversion
   (_structs : Ir.struct_ list)
   (entry_var : string)
   (field_name : string)
   (inline_struct : Ir.struct_)
   (parent_var : string)
-  : string list * string list * (string * Ir.struct_) list
+  : inline_struct_conversion
   =
   let nested_module = ocaml_module_name inline_struct.name in
   let nested_var = parent_var ^ "_" ^ field_name in
@@ -640,7 +680,7 @@ let gen_inline_struct_conversion
              nested_var
              converted)))
   in
-  create_code, set_code, [ nested_var, inline_struct ]
+  { create_code; set_code; structs_to_free = [ nested_var, inline_struct ] }
 ;;
 
 (** Convert an entry struct member value to low-level, handling the optional flag *)
@@ -656,9 +696,7 @@ let entry_member_to_low_level (field_access : string) (member : Ir.struct_member
   | _ -> member_to_low_level field_access member.type_
 ;;
 
-(** Generate code to convert a list of entry struct records to C structs. Returns
-    (code_lines, vars_to_free) where vars_to_free is a list of (var_name, struct) pairs
-    that need to be freed. *)
+(** Generate code to convert a list of entry struct records to C structs *)
 let generate_array_of_structs_conversion
   (structs : Ir.struct_ list)
   (param_name : string)
@@ -666,7 +704,7 @@ let generate_array_of_structs_conversion
   (parent_var : string)
   (parent_struct : Ir.struct_)
   (member_name : string)
-  : string list * (string * Ir.struct_) list
+  : code_with_cleanup
   =
   let array_element_module = ocaml_module_name array_element_struct.name in
   let parent_module = ocaml_module_name parent_struct.name in
@@ -748,17 +786,17 @@ let generate_array_of_structs_conversion
       ]
   in
   (* The entry structs will need to be freed later *)
-  loop_code, [ entries_var, array_element_struct ]
+  { code_lines = loop_code; structs_to_free = [ entries_var, array_element_struct ] }
 ;;
 
 (** Generate code to set fields on a struct, including assigning nested structs. prefix is
-    the parameter prefix for this struct. Returns (set_code, vars_to_free). *)
+    the parameter prefix for this struct. *)
 let rec generate_struct_sets
   (structs : Ir.struct_ list)
   (prefix : string)
   (struct_ : Ir.struct_)
   (var_name : string)
-  : string list * (string * Ir.struct_) list
+  : code_with_cleanup
   =
   let struct_module = ocaml_module_name struct_.name in
   let results =
@@ -776,18 +814,18 @@ let rec generate_struct_sets
              var_name
              struct_
              member.name
-         | None -> [], [])
+         | None -> { code_lines = []; structs_to_free = [] })
       | None ->
         (* Check for direct nested struct *)
         (match get_inline_struct_name member.type_ with
          | Some nested_name ->
            (* First, recursively set fields on the nested struct *)
            (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
-            | None -> [], []
+            | None -> { code_lines = []; structs_to_free = [] }
             | Some nested_struct ->
               let nested_var = prefix ^ member.name ^ "_nested" in
               let nested_prefix = prefix ^ member.name ^ "_" in
-              let nested_sets, nested_vars =
+              let nested_result =
                 generate_struct_sets structs nested_prefix nested_struct nested_var
               in
               (* Then, set the nested struct on the parent *)
@@ -800,24 +838,28 @@ let rec generate_struct_sets
                   var_name
                   nested_var
               in
-              nested_sets @ [ set_nested ], nested_vars)
+              { code_lines = nested_result.code_lines @ [ set_nested ]
+              ; structs_to_free = nested_result.structs_to_free
+              })
          | None ->
            (* Regular member - set the value *)
            let param_name = escape_keyword (prefix ^ member.name) in
            let converted = member_to_low_level param_name member.type_ in
-           ( [ sprintf
-                 "Wgpu_low.%s.%s_set_%s %s %s;"
-                 struct_module
-                 struct_.name
-                 member.name
-                 var_name
-                 converted
-             ]
-           , [] )))
+           { code_lines =
+               [ sprintf
+                   "Wgpu_low.%s.%s_set_%s %s %s;"
+                   struct_module
+                   struct_.name
+                   member.name
+                   var_name
+                   converted
+               ]
+           ; structs_to_free = []
+           }))
   in
-  let code = List.concat_map results ~f:fst in
-  let vars = List.concat_map results ~f:snd in
-  code, vars
+  let code = List.concat_map results ~f:(fun r -> r.code_lines) in
+  let vars = List.concat_map results ~f:(fun r -> r.structs_to_free) in
+  { code_lines = code; structs_to_free = vars }
 ;;
 
 (** Generate ML implementation for a method with one or more struct parameters *)
@@ -848,10 +890,10 @@ let gen_ml_method_with_structs
   in
   (* Build function signature *)
   let param_strs =
-    List.filter_map struct_params ~f:(fun (name, member, is_opt, _) ->
-      if is_opt
-      then Some (sprintf "?(%s = %s)" name (default_value_for_type member.type_))
-      else Some (sprintf "~%s" name))
+    List.filter_map struct_params ~f:(fun p ->
+      if p.is_optional
+      then Some (sprintf "?(%s = %s)" p.param_name (default_value_for_type p.member.type_))
+      else Some (sprintf "~%s" p.param_name))
     @ List.filter_map non_struct_params ~f:(fun (name, _arg, is_opt) ->
       if is_opt then Some (sprintf "?%s" name) else Some (sprintf "~%s" name))
   in
@@ -861,10 +903,8 @@ let gen_ml_method_with_structs
     List.fold struct_parameters ~init:([], []) ~f:(fun (vars, creates) (arg, struct_) ->
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       let desc_var = "desc_" ^ arg.name in
-      let new_vars, new_creates =
-        generate_struct_creates structs base_prefix struct_ desc_var
-      in
-      vars @ new_vars, creates @ new_creates)
+      let result = generate_struct_creates structs base_prefix struct_ desc_var in
+      vars @ result.created_structs, creates @ result.code_lines)
   in
   let create_structs = create_structs_lists in
   (* Generate field setting for each struct (including nested structs) *)
@@ -872,10 +912,8 @@ let gen_ml_method_with_structs
     List.fold struct_parameters ~init:([], []) ~f:(fun (fields, entry_lists) (arg, struct_) ->
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       let desc_var = "desc_" ^ arg.name in
-      let field_code, entry_vars =
-        generate_struct_sets structs base_prefix struct_ desc_var
-      in
-      fields @ field_code, entry_lists @ entry_vars)
+      let result = generate_struct_sets structs base_prefix struct_ desc_var in
+      fields @ result.code_lines, entry_lists @ result.structs_to_free)
   in
   (* Build the call arguments, mapping each struct parameter to its desc variable *)
   let struct_parameter_names =
@@ -1284,11 +1322,11 @@ let gen_mli_method_with_structs
     List.concat_map struct_parameters ~f:(fun (arg, struct_) ->
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
       let params = collect_struct_params structs base_prefix struct_ None in
-      List.map params ~f:(fun (param_name, member, is_optional, _) ->
-        let type_str = high_level_member_type member in
-        if is_optional
-        then sprintf "?%s:%s" param_name type_str
-        else sprintf "%s:%s" param_name type_str))
+      List.map params ~f:(fun p ->
+        let type_str = high_level_member_type p.member in
+        if p.is_optional
+        then sprintf "?%s:%s" p.param_name type_str
+        else sprintf "%s:%s" p.param_name type_str))
   in
   let non_struct_param_types =
     List.map non_struct_parameters ~f:(fun arg ->
