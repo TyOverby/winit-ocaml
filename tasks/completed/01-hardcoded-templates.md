@@ -130,3 +130,22 @@ let adapter_info_template =
    Should be externalized to `codegen/templates/low/convenience_functions.mli`
 
 These templates are hand-written code that doesn't change based on the WebGPU spec, making them perfect candidates for externalization.
+
+## Implementation Plan
+
+1. Create `codegen/templates/low/header.c` with the C header template content
+2. Create `codegen/templates/low/convenience_functions.ml` with the ML convenience functions
+3. Create `codegen/templates/low/convenience_functions.mli` with the MLI convenience functions
+4. Update `gen_low.ml` to use `read_template` for all three templates
+5. Verify the build succeeds with `dune build`
+6. Verify formatting with `dune fmt`
+7. Verify no warnings with `dune build @check`
+8. Run tests with `dune exec test/test_compute.exe`
+
+### Validation Criteria
+
+- All three template files exist in `codegen/templates/low/`
+- `gen_low.ml` no longer contains the hardcoded string literals
+- `dune build` succeeds
+- `dune build @check` shows no warnings
+- Tests pass
