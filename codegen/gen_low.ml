@@ -626,14 +626,6 @@ let method_is_manual (obj_name : string) (method_name : string) : bool =
   | _ -> false
 ;;
 
-(** Get the element type of an array type_ref. (Internal, prefixed with _ to avoid unused
-    warning.) *)
-let _array_elem_c_type (type_ref : Ir.type_ref) : string =
-  match type_ref with
-  | Array { elem; _ } -> c_type_of_type_ref elem
-  | _ -> "void*"
-;;
-
 (** Generate C code for array argument conversion *)
 let gen_c_array_conversion (arg : Ir.arg) : string =
   match arg.type_ with

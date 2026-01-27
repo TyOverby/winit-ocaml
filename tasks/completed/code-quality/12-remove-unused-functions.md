@@ -56,3 +56,40 @@ After removing functions:
 
 - Medium value: Cleans up technical debt
 - Low effort: Mostly mechanical deletion once unused functions are identified
+
+---
+
+## Implementation Plan
+
+### Functions to Remove
+
+After investigation, the following 10 underscore-prefixed functions were identified as unused:
+
+**codegen/names.ml (1 function):**
+1. `_to_pascal_case_simple` - A simpler version of `to_pascal_case` that doesn't handle double underscores
+
+**codegen/gen_low.ml (1 function):**
+1. `_array_elem_c_type` - Gets the element type of an array type_ref
+
+**codegen/gen_high.ml (8 functions):**
+1. `_get_array_element_structs` - Gets all entry structs that appear in arrays within a struct
+2. `_collect_inline_structs_recursive` - Collects all nested struct members recursively
+3. `_high_level_member_type_of_type` - Gets high-level OCaml type for a type_ref
+4. `_gen_inline_struct_conversion` - Generates code to convert a nested struct record field
+5. `_gen_ml_method_with_structs` - Backward compatibility wrapper for method with structs
+6. `_struct_has_array_of_structs` - Checks if a struct contains array-of-struct members
+7. `_gen_nested_struct_module_mli` - Backward compatibility wrapper for nested struct module
+8. `_gen_mli_method_with_structs` - Backward compatibility wrapper for method with structs
+
+### Verification
+
+- None of these functions are exposed in .mli files
+- None are called from anywhere in the codebase (verified with grep)
+
+### Validation Criteria
+
+1. `dune build` succeeds
+2. `dune build @check` succeeds with no warnings
+3. `dune runtest` passes
+4. `dune exec test/test_compute.exe` passes
+5. Generated output files are identical to before the changes

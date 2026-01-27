@@ -151,39 +151,6 @@ let member_is_array_of_structs (type_ref : Ir.type_ref) : string option =
   | _ -> None
 ;;
 
-(** Get all entry structs that appear in arrays within a struct. (Internal,
-    prefixed with _ to avoid unused warning.) *)
-let _get_array_element_structs (structs : Ir.struct_ list) (struct_ : Ir.struct_)
-  : Ir.struct_ list
-  =
-  List.filter_map struct_.members ~f:(fun member ->
-    match member_is_array_of_structs member.type_ with
-    | Some name -> List.find structs ~f:(fun s -> String.equal s.name name)
-    | None -> None)
-;;
-
-(** Collect all nested struct members from a struct, recursively. Returns a list of (path,
-    struct_def) pairs where path is the variable name path. (Internal, prefixed with _ to
-    avoid unused warning.) *)
-let rec _collect_inline_structs_recursive
-  (structs : Ir.struct_ list)
-  (prefix : string)
-  (struct_ : Ir.struct_)
-  : (string * Ir.struct_) list
-  =
-  List.concat_map struct_.members ~f:(fun member ->
-    match get_inline_struct_name member.type_ with
-    | Some nested_name ->
-      (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
-       | None -> []
-       | Some inline_struct ->
-         let nested_var = prefix ^ "_" ^ member.name ^ "_nested" in
-         (* Add this inline struct and any inline structs within it *)
-         (nested_var, inline_struct)
-         :: _collect_inline_structs_recursive structs nested_var inline_struct)
-    | None -> [])
-;;
-
 (** Check if an argument type can be directly converted (without struct handling) *)
 let rec is_directly_convertible_arg (type_ref : Ir.type_ref) : bool =
   match type_ref with
@@ -346,12 +313,6 @@ let high_level_return_type (type_ref : Ir.type_ref) : string =
 (** Get high-level OCaml type for a struct member *)
 let high_level_member_type (member : Ir.struct_member) : string =
   Type_mapping.type_string ~context:Ocaml_high_level_member member.type_
-;;
-
-(** Get high-level OCaml type for a type_ref (for struct members). (Internal,
-    prefixed with _ to avoid unused warning.) *)
-let _high_level_member_type_of_type (type_ref : Ir.type_ref) : string =
-  Type_mapping.type_string ~context:Ocaml_high_level_member type_ref
 ;;
 
 (** Generate code to convert a high-level argument to low-level *)
@@ -591,37 +552,6 @@ let rec generate_struct_creates
   }
 ;;
 
-(** Generate code to convert a nested struct record field to a C struct.
-    (Internal, prefixed with _ to avoid unused warning.) *)
-let _gen_inline_struct_conversion
-  (_structs : Ir.struct_ list)
-  (entry_var : string)
-  (field_name : string)
-  (inline_struct : Ir.struct_)
-  (parent_var : string)
-  : inline_struct_conversion
-  =
-  let nested_module = ocaml_module_name inline_struct.name in
-  let nested_var = parent_var ^ "_" ^ field_name in
-  (* Create the nested struct *)
-  let create_code =
-    [ {%string|let %{nested_var} = Wgpu_low.%{nested_module}.%{inline_struct.name}_create () in|} ]
-  in
-  (* Set fields from the record *)
-  let set_code =
-    List.filter_map inline_struct.members ~f:(fun member ->
-      if String.equal member.name "nextInChain"
-      then None
-      else (
-        let member_field = escape_keyword member.name in
-        let value_expr = {%string|%{entry_var}.%{field_name}.%{member_field}|} in
-        let converted = member_to_low_level value_expr member.type_ in
-        Some
-          {%string|Wgpu_low.%{nested_module}.%{inline_struct.name}_set_%{member.name} %{nested_var} %{converted};|}))
-  in
-  { create_code; set_code; structs_to_free = [ nested_var, inline_struct ] }
-;;
-
 (** Convert an entry struct member value to low-level, handling the optional flag *)
 let entry_member_to_low_level (field_access : string) (member : Ir.struct_member) : string
   =
@@ -847,18 +777,6 @@ let gen_method_with_structs
     {%string|  let %{method_name} %{param_list} =
     %{body}
 |}
-;;
-
-(** Generate ML implementation for a method with one or more struct parameters - backward
-    compatibility wrapper. (Internal, prefixed with _ to avoid unused warning.) *)
-let _gen_ml_method_with_structs
-  (structs : Ir.struct_ list)
-  (obj : Ir.object_)
-  (method_ : Ir.method_)
-  (struct_parameters : (Ir.arg * Ir.struct_) list)
-  : string
-  =
-  gen_method_with_structs Implementation structs obj method_ struct_parameters
 ;;
 
 (** Generate method with output struct argument - unified for ML and MLI *)
@@ -1164,38 +1082,11 @@ and gen_nested_struct_module
 |}
 ;;
 
-(** Check if a struct contains array-of-struct members. (Internal, prefixed
-    with _ to avoid unused warning.) *)
-let _struct_has_array_of_structs (struct_ : Ir.struct_) : bool =
-  List.exists struct_.members ~f:(fun member ->
-    Option.is_some (member_is_array_of_structs member.type_))
-;;
-
-(** Generate MLI for a nested struct module - backward compatibility wrapper.
-    (Internal, prefixed with _ to avoid unused warning.) *)
-let _gen_nested_struct_module_mli (structs : Ir.struct_ list) (struct_ : Ir.struct_)
-  : string
-  =
-  gen_nested_struct_module Interface structs struct_
-;;
-
 (** Generate MLI for an entry struct module - backward compatibility wrapper *)
 let gen_array_element_struct_module_mli (structs : Ir.struct_ list) (struct_ : Ir.struct_)
   : string
   =
   gen_array_element_struct_module Interface structs struct_
-;;
-
-(** Generate MLI signature for a method with one or more struct parameters - backward
-    compatibility wrapper. (Internal, prefixed with _ to avoid unused warning.) *)
-let _gen_mli_method_with_structs
-  (structs : Ir.struct_ list)
-  (obj : Ir.object_)
-  (method_ : Ir.method_)
-  (struct_parameters : (Ir.arg * Ir.struct_) list)
-  : string
-  =
-  gen_method_with_structs Interface structs obj method_ struct_parameters
 ;;
 
 (** Generate MLI signature for a method with output struct argument - backward

@@ -2,12 +2,6 @@ open! Core
 
 (** Name transformation utilities for code generation *)
 
-(** Convert snake_case to PascalCase. Simple version that doesn't handle double
-    underscores. (Internal, prefixed with _ to avoid unused warning.) *)
-let _to_pascal_case_simple (name : string) : string =
-  String.split name ~on:'_' |> List.map ~f:String.capitalize |> String.concat ~sep:""
-;;
-
 (** Convert snake_case to PascalCase, preserving double underscores as single underscores
     in the output. For example: "some__name" -> "Some_Name". This is needed for C names
     where double underscores have special meaning. *)
