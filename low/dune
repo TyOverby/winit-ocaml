@@ -41,7 +41,9 @@
  (action
   (with-stdout-to
    wgpu_low_stubs.c
-   (run ../codegen/gen_bindings.exe Low C)))
+   (pipe-stdout
+    (run ../codegen/gen_bindings.exe Low C)
+    (run clang-format))))
  (mode promote)
  (target wgpu_low_stubs.c))
 
