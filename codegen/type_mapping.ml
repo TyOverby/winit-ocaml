@@ -114,3 +114,100 @@ let rec type_string ~context (type_ref : Ir.type_ref) : string =
     type_string ~context:Ocaml_high_level_member (Array { elem; pointer = None })
   | Ocaml_high_level_member, Pointer _ -> "nativeint"
 ;;
+
+(** Generate code to convert a high-level argument to low-level. [var_name] is the name of
+    the variable holding the high-level value. *)
+let convert_arg_to_low ~(var_name : string) (type_ref : Ir.type_ref) : string =
+  match type_ref with
+  | Primitive _ -> var_name
+  | Enum name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.to_int %{var_name})|}
+  | Bitflag name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.list_to_int %{var_name})|}
+  | Object name ->
+    let module_name = ocaml_module_name name in
+    {%string|%{var_name}.%{module_name}.handle|}
+  | Optional (Object name) ->
+    let module_name = ocaml_module_name name in
+    {%string|(match %{var_name} with Some x -> x.%{module_name}.handle | None -> 0n)|}
+  | Optional _ -> var_name (* shouldn't happen for simple types *)
+  | Array { elem = Object name; _ } ->
+    (* Convert list of objects to array of handles *)
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map (fun x -> x.%{module_name}.handle) %{var_name}))|}
+  | Array { elem = Primitive _; _ } ->
+    (* Convert list of primitives to array *)
+    {%string|(Array.of_list %{var_name})|}
+  | Array { elem = Enum name; _ } ->
+    (* Convert list of enums to array of ints *)
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map %{module_name}.to_int %{var_name}))|}
+  | _ -> var_name
+;;
+
+(** Generate code to convert a low-level return value to high-level. [expr] is the
+    expression producing the low-level value. *)
+let convert_return_to_high ~(expr : string) (type_ref : Ir.type_ref) : string =
+  match type_ref with
+  | Primitive _ -> expr
+  | Enum name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.of_int (%{expr}))|}
+  | Bitflag _ -> expr (* bitflags return as ints - could be combination of flags *)
+  | Object name ->
+    let module_name = ocaml_module_name name in
+    {%string|({ %{module_name}.handle = %{expr} } : %{module_name}.t)|}
+  | _ -> expr
+;;
+
+(** Generate code to convert a struct member value to low-level. [var_name] is the name of
+    the variable holding the high-level value. *)
+let convert_member_to_low ~(var_name : string) (type_ref : Ir.type_ref) : string =
+  match type_ref with
+  | Primitive _ -> var_name
+  | Enum name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.to_int %{var_name})|}
+  | Bitflag name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.list_to_int %{var_name})|}
+  | Object name ->
+    let module_name = ocaml_module_name name in
+    {%string|%{var_name}.%{module_name}.handle|}
+  | Optional (Enum name) ->
+    let module_name = ocaml_module_name name in
+    {%string|(match %{var_name} with Some x -> %{module_name}.to_int x | None -> 0)|}
+  | Optional (Object name) ->
+    let module_name = ocaml_module_name name in
+    {%string|(match %{var_name} with Some x -> x.%{module_name}.handle | None -> 0n)|}
+  | Optional _ -> var_name
+  | Array { elem = Object name; _ } ->
+    (* Convert list of objects to array of handles *)
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map (fun x -> x.%{module_name}.handle) %{var_name}))|}
+  | Array { elem = Primitive _; _ } ->
+    (* Convert list of primitives to array *)
+    {%string|(Array.of_list %{var_name})|}
+  | Array { elem = Enum name; _ } ->
+    (* Convert list of enums to array of ints *)
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map %{module_name}.to_int %{var_name}))|}
+  | Array { elem = Bitflag name; _ } ->
+    (* Convert list of bitflag lists to array of ints *)
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map %{module_name}.list_to_int %{var_name}))|}
+  | Pointer { inner = Array { elem = Object name; _ }; _ } ->
+    (* Pointer to array of objects - same as array of objects *)
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map (fun x -> x.%{module_name}.handle) %{var_name}))|}
+  | Pointer { inner = Array { elem = Primitive _; _ }; _ } ->
+    (* Pointer to array of primitives *)
+    {%string|(Array.of_list %{var_name})|}
+  | Pointer { inner = Array { elem = Enum name; _ }; _ } ->
+    (* Pointer to array of enums *)
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map %{module_name}.to_int %{var_name}))|}
+  | _ -> var_name
+;;

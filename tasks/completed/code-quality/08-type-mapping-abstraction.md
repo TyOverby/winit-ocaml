@@ -162,3 +162,36 @@ val convert_to_high : expr:string -> Ir.type_ref -> string
    - Add tests for conversion functions once centralized
 
 The core type mapping abstraction is complete and working well. The remaining work is about finishing the centralization of conversion logic and adding polish (interface file, direct tests).
+
+## Implementation Plan (Final Phase)
+
+### Step 1: Move conversion functions to Type_mapping
+- Move `arg_to_low_level` from gen_high.ml to Type_mapping as `convert_arg_to_low`
+- Move `return_to_high_level` from gen_high.ml to Type_mapping as `convert_return_to_high`
+- Move `member_to_low_level` from gen_high.ml to Type_mapping as `convert_member_to_low`
+- Update gen_high.ml to call these new functions
+
+### Step 2: Create type_mapping.mli
+- Document the context type and each variant
+- Document type_string function
+- Document utility functions (ocaml_module_name, c_type_name)
+- Document new conversion functions
+
+### Step 3: Update tests
+- Add tests that directly call Type_mapping.type_string
+- Test all context variants
+- Add tests for conversion functions
+
+### Step 4: Verify build
+- Run `dune build`
+- Run `dune fmt > /dev/null || true`
+- Run `dune build @check`
+- Run `dune exec test/test_compute.exe`
+
+### Validation Criteria
+1. All conversion functions are in Type_mapping module
+2. gen_high.ml delegates to Type_mapping for conversions
+3. type_mapping.mli exists with complete documentation
+4. test_types.ml directly tests Type_mapping functions
+5. All builds pass with no warnings
+6. All tests pass
