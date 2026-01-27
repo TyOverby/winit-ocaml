@@ -15,6 +15,12 @@ extend, and onboard new contributors. The main issues are:
 This report contains 10 specific issues with proposed fixes. They are ordered by
 recommended implementation priority, balancing value and effort.
 
+## No output changes!
+It is very important to note that these are all code organization changes, and
+at no point should there ever be a change to generated code!  Minor whitespace 
+diffs are acceptable, but the generator should more or less behave identically
+to before!
+
 ## File Overview
 
 | File | Lines | Purpose |
