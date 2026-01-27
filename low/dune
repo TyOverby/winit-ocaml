@@ -36,6 +36,7 @@
 ; Code generation rules
 
 (rule
+ (deps (source_tree ../codegen/templates))
  (action
   (with-stdout-to
    wgpu_low_stubs.c
