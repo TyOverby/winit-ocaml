@@ -886,7 +886,9 @@ let gen_ml_method_with_structs
   (* Put it all together *)
   let body_lines = create_structs @ set_fields @ [ result_and_free ] in
   let body = String.concat ~sep:"\n    " body_lines in
-  sprintf "  let %s %s =\n    %s\n" method_name param_list body
+  {%string|  let %{method_name} %{param_list} =
+    %{body}
+|}
 ;;
 
 (** Generate ML implementation for a method with output struct argument *)
@@ -976,7 +978,7 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
        | [] ->
          (* Original simple method generation - no struct parameters *)
          let method_name = escape_keyword method_.name in
-         let low_level_func = sprintf "Wgpu_low.%s_%s" obj.name method_.name in
+         let low_level_func = {%string|Wgpu_low.%{obj.name}_%{method_.name}|} in
          let args =
            List.map method_.args ~f:(fun arg ->
              let converted = arg_to_low_level arg.name arg.type_ in
@@ -987,16 +989,18 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
          let param_list =
            if List.is_empty arg_names
            then "t"
-           else "t " ^ String.concat ~sep:" " (List.map arg_names ~f:(sprintf "~%s"))
+           else "t " ^ String.concat ~sep:" " (List.map arg_names ~f:(fun n -> {%string|~%{n}|}))
          in
          let call_args = "t.handle" :: arg_conversions in
-         let call = sprintf "%s %s" low_level_func (String.concat ~sep:" " call_args) in
+         let call_args_str = String.concat ~sep:" " call_args in
+         let call = {%string|%{low_level_func} %{call_args_str}|} in
          let body =
            match method_.returns with
            | None -> call
            | Some ret -> return_to_high_level call ret.type_
          in
-         Some (sprintf "  let %s %s = %s\n" method_name param_list body)))
+         Some {%string|  let %{method_name} %{param_list} = %{body}
+|}))
 ;;
 
 (** Get high-level OCaml type for a struct member *)
@@ -1018,9 +1022,13 @@ let gen_output_struct_record_type (struct_ : Ir.struct_) : string =
       else (
         let field_name = escape_keyword member.name in
         let field_type = high_level_member_type member in
-        Some (sprintf "  %s : %s" field_name field_type)))
+        Some {%string|  %{field_name} : %{field_type}|}))
   in
-  sprintf "type %s = {\n%s\n}\n" type_name (String.concat ~sep:";\n" fields)
+  let fields_str = String.concat ~sep:";\n" fields in
+  {%string|type %{type_name} = {
+%{fields_str}
+}
+|}
 ;;
 
 (** Get high-level type for an entry struct member, including handling nested structs as
@@ -1034,10 +1042,11 @@ let rec array_element_struct_member_type
   | Struct nested_name ->
     (* Nested struct becomes an optional record type *)
     let nested_module = ocaml_module_name nested_name in
-    sprintf "%s.t option" nested_module
+    {%string|%{nested_module}.t option|}
   | Object name when member.optional ->
     (* Optional object becomes an option type *)
-    sprintf "%s.t option" (ocaml_module_name name)
+    let module_name = ocaml_module_name name in
+    {%string|%{module_name}.t option|}
   | _ -> high_level_member_type member
 
 (** Generate a record type module for an entry struct (a struct that appears in arrays).
@@ -1065,16 +1074,17 @@ and gen_array_element_struct_module (structs : Ir.struct_ list) (struct_ : Ir.st
       else (
         let field_name = escape_keyword member.name in
         let field_type = array_element_struct_member_type structs member in
-        Some (sprintf "      %s : %s" field_name field_type)))
+        Some {%string|      %{field_name} : %{field_type}|}))
   in
-  let record_type =
-    sprintf "    type t = {\n%s\n    }" (String.concat ~sep:";\n" fields)
-  in
-  sprintf
-    "  module %s = struct\n%s%s\n  end\n"
-    module_name
-    (if String.is_empty nested_modules then "" else nested_modules ^ "\n")
-    record_type
+  let fields_str = String.concat ~sep:";\n" fields in
+  let record_type = {%string|    type t = {
+%{fields_str}
+    }|} in
+  let nested_prefix = if String.is_empty nested_modules then "" else nested_modules ^ "\n" in
+  {%string|  module %{module_name} = struct
+%{nested_prefix}%{record_type}
+  end
+|}
 
 (** Generate a simple record module for a nested struct (struct that is a member of an
     entry struct) *)
@@ -1087,12 +1097,15 @@ and gen_nested_struct_module (_structs : Ir.struct_ list) (struct_ : Ir.struct_)
       else (
         let field_name = escape_keyword member.name in
         let field_type = high_level_member_type member in
-        Some (sprintf "        %s : %s" field_name field_type)))
+        Some {%string|        %{field_name} : %{field_type}|}))
   in
-  sprintf
-    "    module %s = struct\n      type t = {\n%s\n      }\n    end\n"
-    module_name
-    (String.concat ~sep:";\n" fields)
+  let fields_str = String.concat ~sep:";\n" fields in
+  {%string|    module %{module_name} = struct
+      type t = {
+%{fields_str}
+      }
+    end
+|}
 ;;
 
 (** Check if a struct contains array-of-struct members *)
@@ -1113,12 +1126,15 @@ let gen_nested_struct_module_mli (_structs : Ir.struct_ list) (struct_ : Ir.stru
       else (
         let field_name = escape_keyword member.name in
         let field_type = high_level_member_type member in
-        Some (sprintf "        %s : %s" field_name field_type)))
+        Some {%string|        %{field_name} : %{field_type}|}))
   in
-  sprintf
-    "    module %s : sig\n      type t = {\n%s\n      }\n    end\n"
-    module_name
-    (String.concat ~sep:";\n" fields)
+  let fields_str = String.concat ~sep:";\n" fields in
+  {%string|    module %{module_name} : sig
+      type t = {
+%{fields_str}
+      }
+    end
+|}
 ;;
 
 (** Generate MLI for an entry struct module *)
@@ -1145,16 +1161,17 @@ let gen_array_element_struct_module_mli (structs : Ir.struct_ list) (struct_ : I
       else (
         let field_name = escape_keyword member.name in
         let field_type = array_element_struct_member_type structs member in
-        Some (sprintf "      %s : %s" field_name field_type)))
+        Some {%string|      %{field_name} : %{field_type}|}))
   in
-  let record_type =
-    sprintf "    type t = {\n%s\n    }" (String.concat ~sep:";\n" fields)
-  in
-  sprintf
-    "  module %s : sig\n%s%s\n  end\n"
-    module_name
-    (if String.is_empty nested_modules then "" else nested_modules ^ "\n")
-    record_type
+  let fields_str = String.concat ~sep:";\n" fields in
+  let record_type = {%string|    type t = {
+%{fields_str}
+    }|} in
+  let nested_prefix = if String.is_empty nested_modules then "" else nested_modules ^ "\n" in
+  {%string|  module %{module_name} : sig
+%{nested_prefix}%{record_type}
+  end
+|}
 ;;
 
 (** Generate MLI signature for a method with one or more struct parameters *)
@@ -1182,16 +1199,16 @@ let gen_mli_method_with_structs
       List.map params ~f:(fun p ->
         let type_str = high_level_member_type p.member in
         if p.is_optional
-        then sprintf "?%s:%s" p.param_name type_str
-        else sprintf "%s:%s" p.param_name type_str))
+        then {%string|?%{p.param_name}:%{type_str}|}
+        else {%string|%{p.param_name}:%{type_str}|}))
   in
   let non_struct_param_types =
     List.map non_struct_parameters ~f:(fun arg ->
       let param_name = escape_keyword arg.name in
       let type_str = high_level_arg_type arg.type_ in
       if arg.optional
-      then sprintf "?%s:%s" param_name type_str
-      else sprintf "%s:%s" param_name type_str)
+      then {%string|?%{param_name}:%{type_str}|}
+      else {%string|%{param_name}:%{type_str}|})
   in
   let return_type =
     match method_.returns with
@@ -1199,10 +1216,10 @@ let gen_mli_method_with_structs
     | Some ret -> high_level_return_type ret.type_
   in
   let all_params = struct_param_types @ non_struct_param_types in
-  let type_sig =
-    sprintf "t -> %s -> unit -> %s" (String.concat ~sep:" -> " all_params) return_type
-  in
-  sprintf "  val %s : %s\n" method_name type_sig
+  let all_params_str = String.concat ~sep:" -> " all_params in
+  let type_sig = {%string|t -> %{all_params_str} -> unit -> %{return_type}|} in
+  {%string|  val %{method_name} : %{type_sig}
+|}
 ;;
 
 (** Generate MLI signature for a method with output struct argument *)
@@ -1226,18 +1243,21 @@ let gen_mli_method_with_output_struct
       let param_name = escape_keyword arg.name in
       let type_str = high_level_arg_type arg.type_ in
       if arg.optional
-      then sprintf "?%s:%s" param_name type_str
-      else sprintf "%s:%s" param_name type_str)
+      then {%string|?%{param_name}:%{type_str}|}
+      else {%string|%{param_name}:%{type_str}|})
   in
   (* Build record type name from struct name *)
   let record_type_name = String.lowercase struct_.name in
   let return_type = record_type_name in
   let type_sig =
     if List.is_empty non_struct_param_types
-    then sprintf "t -> %s" return_type
-    else sprintf "t -> %s -> %s" (String.concat ~sep:" -> " non_struct_param_types) return_type
+    then {%string|t -> %{return_type}|}
+    else (
+      let params_str = String.concat ~sep:" -> " non_struct_param_types in
+      {%string|t -> %{params_str} -> %{return_type}|})
   in
-  sprintf "  val %s : %s\n" method_name type_sig
+  {%string|  val %{method_name} : %{type_sig}
+|}
 ;;
 
 (** Generate MLI signature for a method *)
@@ -1265,7 +1285,8 @@ let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.
          let method_name = escape_keyword method_.name in
          let arg_types =
            List.map method_.args ~f:(fun arg ->
-             sprintf "%s:%s" arg.name (high_level_arg_type arg.type_))
+             let arg_type = high_level_arg_type arg.type_ in
+             {%string|%{arg.name}:%{arg_type}|})
          in
          let return_type =
            match method_.returns with
@@ -1274,10 +1295,13 @@ let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.
          in
          let type_sig =
            if List.is_empty arg_types
-           then sprintf "t -> %s" return_type
-           else sprintf "t -> %s -> %s" (String.concat ~sep:" -> " arg_types) return_type
+           then {%string|t -> %{return_type}|}
+           else (
+             let args_str = String.concat ~sep:" -> " arg_types in
+             {%string|t -> %{args_str} -> %{return_type}|})
          in
-         Some (sprintf "  val %s : %s\n" method_name type_sig)))
+         Some {%string|  val %{method_name} : %{type_sig}
+|}))
 ;;
 
 (** Generate high-level OCaml code for an enum type (re-exports low-level) *)
@@ -1285,16 +1309,19 @@ let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.
 let gen_enum (mode : output_mode) (enum : Ir.enum) : string =
   let module_name = ocaml_module_name enum.name in
   match mode with
-  | Implementation -> sprintf "module %s = Wgpu_low.%s\n" module_name module_name
+  | Implementation -> {%string|module %{module_name} = Wgpu_low.%{module_name}
+|}
   | Interface ->
     let doc_comment =
       match useful_doc enum.doc with
       | None -> ""
-      | Some doc -> sprintf "  (** %s *)\n" doc
+      | Some doc -> {%string|  (** %{doc} *)
+|}
     in
     let variants =
       List.map enum.entries ~f:(fun entry ->
-        sprintf "  | %s" (normalize_enum_entry_name entry.name))
+        let entry_name = normalize_enum_entry_name entry.name in
+        {%string|  | %{entry_name}|})
       |> String.concat ~sep:"\n"
     in
     {%string|module %{module_name} : sig
@@ -1317,16 +1344,19 @@ let gen_mli_enum (enum : Ir.enum) : string = gen_enum Interface enum
 let gen_bitflag (mode : output_mode) (bitflag : Ir.bitflag) : string =
   let module_name = ocaml_module_name bitflag.name in
   match mode with
-  | Implementation -> sprintf "module %s = Wgpu_low.%s\n" module_name module_name
+  | Implementation -> {%string|module %{module_name} = Wgpu_low.%{module_name}
+|}
   | Interface ->
     let doc_comment =
       match useful_doc bitflag.doc with
       | None -> ""
-      | Some doc -> sprintf "  (** %s *)\n" doc
+      | Some doc -> {%string|  (** %{doc} *)
+|}
     in
     let variants =
       List.map bitflag.entries ~f:(fun entry ->
-        sprintf "  | %s" (normalize_enum_entry_name entry.name))
+        let entry_name = normalize_enum_entry_name entry.name in
+        {%string|  | %{entry_name}|})
       |> String.concat ~sep:"\n"
     in
     {%string|module %{module_name} : sig
@@ -1377,7 +1407,9 @@ let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object
     let doc_comment =
       match useful_doc obj.doc with
       | None -> ""
-      | Some doc -> sprintf "  (** %s *)\n\n" doc
+      | Some doc -> {%string|  (** %{doc} *)
+
+|}
     in
     let methods =
       List.filter_map obj.methods ~f:(gen_mli_method structs obj) |> String.concat ~sep:""
@@ -1712,28 +1744,24 @@ let validate_method_coverage (api : Ir.api) : string list =
                     not (is_auto_generable_struct api.structs name)
                   | _ -> not (is_directly_convertible_arg arg.type_))
                 |> List.map ~f:(fun arg ->
-                  sprintf
-                    "%s: %s"
-                    arg.name
-                    (match arg.type_ with
-                     | Ir.Struct name -> sprintf "Struct(%s)" name
-                     | Ir.Callback _ -> "Callback"
-                     | Ir.Array _ -> "Array"
-                     | Ir.Pointer _ -> "Pointer"
-                     | _ -> "other"))
+                  let type_desc =
+                    match arg.type_ with
+                    | Ir.Struct name -> {%string|Struct(%{name})|}
+                    | Ir.Callback _ -> "Callback"
+                    | Ir.Array _ -> "Array"
+                    | Ir.Pointer _ -> "Pointer"
+                    | _ -> "other"
+                  in
+                  {%string|%{arg.name}: %{type_desc}|})
               in
               let non_simple_return =
                 match method_.returns with
                 | None -> []
-                | Some ret ->
-                  if is_simple_return_type ret.type_
-                  then []
-                  else [ sprintf "returns: non-simple" ]
+                | Some ret -> if is_simple_return_type ret.type_ then [] else [ "returns: non-simple" ]
               in
               String.concat ~sep:", " (non_simple_args @ non_simple_return))
           in
-          errors
-          := sprintf "UNACCOUNTED: %s.%s (%s)" obj.name method_.name reason :: !errors)));
+          errors := {%string|UNACCOUNTED: %{obj.name}.%{method_.name} (%{reason})|} :: !errors)));
   List.rev !errors
 ;;
 
