@@ -60,9 +60,7 @@ let useful_doc (doc : string) : string option =
 
 (** Get the OCaml module name for a type. Lowercases everything then capitalizes only the
     first letter. e.g., "texture_format" -> "Texture_format", "extent_3D" -> "Extent_3d" *)
-let ocaml_module_name (name : string) : string =
-  String.lowercase name |> String.capitalize
-;;
+let ocaml_module_name (name : string) : string = Type_mapping.ocaml_module_name name
 
 (** Convert C name conventions (e.g., discrete_GPU -> Discrete_gpu) *)
 let normalize_enum_entry_name (name : string) : string =
@@ -407,37 +405,13 @@ let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bo
 ;;
 
 (** Get high-level OCaml type for a type_ref (for arguments) *)
-let rec high_level_arg_type (type_ref : Ir.type_ref) : string =
-  match type_ref with
-  | Primitive Bool -> "bool"
-  | Primitive (Uint32 | Int32) -> "int"
-  | Primitive (Uint64 | Int64 | Usize) -> "int64"
-  | Primitive (Float32 | Float64) -> "float"
-  | Primitive (String | Out_string | String_with_default_empty) -> "string"
-  | Primitive C_void -> "nativeint"
-  | Enum name -> ocaml_module_name name ^ ".t"
-  | Bitflag name -> ocaml_module_name name ^ ".t list"
-  | Object name -> ocaml_module_name name ^ ".t"
-  | Optional inner -> high_level_arg_type inner ^ " option"
-  | Struct _ -> "nativeint" (* fallback *)
-  | Callback _ -> "nativeint"
-  | Array { elem; _ } -> high_level_arg_type elem ^ " list"
-  | Pointer _ -> "nativeint"
+let high_level_arg_type (type_ref : Ir.type_ref) : string =
+  Type_mapping.type_string ~context:Ocaml_high_level_arg type_ref
 ;;
 
 (** Get high-level OCaml type for return values *)
 let high_level_return_type (type_ref : Ir.type_ref) : string =
-  match type_ref with
-  | Primitive Bool -> "bool"
-  | Primitive (Uint32 | Int32) -> "int"
-  | Primitive (Uint64 | Int64 | Usize) -> "int64"
-  | Primitive (Float32 | Float64) -> "float"
-  | Primitive (String | Out_string | String_with_default_empty) -> "string"
-  | Primitive C_void -> "nativeint"
-  | Enum name -> ocaml_module_name name ^ ".t"
-  | Bitflag _ -> "int" (* bitflags return raw int - could be combination of flags *)
-  | Object name -> ocaml_module_name name ^ ".t"
-  | _ -> "nativeint"
+  Type_mapping.type_string ~context:Ocaml_high_level_return type_ref
 ;;
 
 (** Generate code to convert a high-level argument to low-level *)
@@ -1113,42 +1087,12 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
 ;;
 
 (** Get high-level OCaml type for a struct member *)
-let rec high_level_member_type (member : Ir.struct_member) : string =
-  high_level_member_type_of_type member.type_
+let high_level_member_type (member : Ir.struct_member) : string =
+  Type_mapping.type_string ~context:Ocaml_high_level_member member.type_
 
 (** Get high-level OCaml type for a type_ref (for struct members) *)
-and high_level_member_type_of_type (type_ref : Ir.type_ref) : string =
-  match type_ref with
-  | Primitive Bool -> "bool"
-  | Primitive (Uint32 | Int32) -> "int"
-  | Primitive (Uint64 | Int64 | Usize) -> "int64"
-  | Primitive (Float32 | Float64) -> "float"
-  | Primitive (String | Out_string | String_with_default_empty) -> "string"
-  | Primitive C_void -> "nativeint"
-  | Enum name -> ocaml_module_name name ^ ".t"
-  | Bitflag name -> ocaml_module_name name ^ ".t list"
-  | Object name -> ocaml_module_name name ^ ".t"
-  | Optional (Enum name) -> ocaml_module_name name ^ ".t option"
-  | Optional (Object name) -> ocaml_module_name name ^ ".t option"
-  | Optional inner -> high_level_arg_type inner ^ " option"
-  | Array { elem = Object name; _ } -> ocaml_module_name name ^ ".t list"
-  | Array { elem = Struct name; _ } -> ocaml_module_name name ^ ".t list"
-  | Array { elem = Enum name; _ } -> ocaml_module_name name ^ ".t list"
-  | Array { elem = Bitflag name; _ } -> ocaml_module_name name ^ ".t list list"
-  | Array { elem = Primitive Bool; _ } -> "bool list"
-  | Array { elem = Primitive (Uint32 | Int32); _ } -> "int list"
-  | Array { elem = Primitive (Uint64 | Int64 | Usize); _ } -> "int64 list"
-  | Array { elem = Primitive (Float32 | Float64); _ } -> "float list"
-  | Array { elem = Primitive (String | Out_string | String_with_default_empty); _ } ->
-    "string list"
-  | Pointer { inner = Array { elem = Struct name; _ }; _ } ->
-    (* Array of structs passed by pointer *)
-    ocaml_module_name name ^ ".t list"
-  | Pointer { inner = Array { elem; _ }; _ } ->
-    (* Other array types passed by pointer *)
-    high_level_member_type_of_type (Array { elem; pointer = None })
-  | Struct name -> ocaml_module_name name ^ ".t"
-  | _ -> "nativeint"
+let high_level_member_type_of_type (type_ref : Ir.type_ref) : string =
+  Type_mapping.type_string ~context:Ocaml_high_level_member type_ref
 ;;
 
 (** Generate record type definition for an output struct *)

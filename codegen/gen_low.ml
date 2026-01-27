@@ -28,7 +28,7 @@ let to_camel_case (s : string) : string =
 ;;
 
 (** Get the C type name for a WGPU type *)
-let c_type_name (name : string) : string = "WGPU" ^ to_pascal_case name
+let c_type_name (name : string) : string = Type_mapping.c_type_name name
 
 (** Get the C function name for a method *)
 let c_method_name (obj_name : string) (method_name : string) : string =
@@ -40,9 +40,7 @@ let c_function_name (name : string) : string = "wgpu" ^ to_pascal_case name
 
 (** Get the OCaml module name for a type. Lowercases everything then capitalizes only the
     first letter. e.g., "texture_format" -> "Texture_format", "extent_3D" -> "Extent_3d" *)
-let ocaml_module_name (name : string) : string =
-  String.lowercase name |> String.capitalize
-;;
+let ocaml_module_name (name : string) : string = Type_mapping.ocaml_module_name name
 
 (** Convert C name conventions (e.g., discrete_GPU -> Discrete_gpu) *)
 let normalize_enum_entry_name (name : string) : string =
@@ -59,28 +57,8 @@ let indent_lines s =
 ;;
 
 (** Map IR type to C type string *)
-let rec c_type_of_type_ref (type_ref : Ir.type_ref) : string =
-  match type_ref with
-  | Primitive Bool -> "bool"
-  | Primitive Uint32 -> "uint32_t"
-  | Primitive Uint64 -> "uint64_t"
-  | Primitive Int32 -> "int32_t"
-  | Primitive Int64 -> "int64_t"
-  | Primitive Float32 -> "float"
-  | Primitive Float64 -> "double"
-  | Primitive Usize -> "size_t"
-  | Primitive String -> "WGPUStringView"
-  | Primitive Out_string -> "WGPUStringView"
-  | Primitive String_with_default_empty -> "WGPUStringView"
-  | Primitive C_void -> "void*"
-  | Enum name -> c_type_name name
-  | Bitflag name -> c_type_name name
-  | Struct name -> c_type_name name
-  | Object name -> c_type_name name
-  | Callback name -> c_type_name name
-  | Array { elem; _ } -> c_type_of_type_ref elem ^ "*"
-  | Optional inner -> c_type_of_type_ref inner
-  | Pointer { inner; _ } -> c_type_of_type_ref inner ^ "*"
+let c_type_of_type_ref (type_ref : Ir.type_ref) : string =
+  Type_mapping.type_string ~context:C_code type_ref
 ;;
 
 (** Generate C code for enum constants *)
@@ -1054,27 +1032,8 @@ let gen_c_object_stubs (obj : Ir.object_) : string =
 ;;
 
 (** Get OCaml type string for a type_ref *)
-let rec ml_type_of_type_ref (type_ref : Ir.type_ref) : string =
-  match type_ref with
-  | Primitive Bool -> "bool"
-  | Primitive (Uint32 | Int32) -> "int"
-  | Primitive (Uint64 | Int64 | Usize) -> "int64"
-  | Primitive (Float32 | Float64) -> "float"
-  | Primitive (String | Out_string | String_with_default_empty) -> "string"
-  | Primitive C_void -> "nativeint"
-  | Enum _ | Bitflag _ -> "int"
-  | Object name -> name
-  | Struct _ -> "nativeint"
-  | Callback _ -> "nativeint"
-  | Array { elem; _ } ->
-    (* Arrays of objects become object arrays, others become nativeint arrays *)
-    (match elem with
-     | Object name -> name ^ " array"
-     | Enum _ | Bitflag _ -> "int array"
-     | Primitive (Uint32 | Int32) -> "int array"
-     | _ -> "nativeint array")
-  | Optional inner -> ml_type_of_type_ref inner
-  | Pointer _ -> "nativeint"
+let ml_type_of_type_ref (type_ref : Ir.type_ref) : string =
+  Type_mapping.type_string ~context:Ocaml_low_level type_ref
 ;;
 
 (** Generate OCaml external declaration for a method *)
