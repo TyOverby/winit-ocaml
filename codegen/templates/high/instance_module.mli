@@ -58,7 +58,12 @@ val copy_texture_to_buffer
   -> unit
 
 (** Map a buffer for CPU access (synchronous) *)
-val map_buffer : Buffer.t -> mode:Map_mode.Item.t list -> offset:int64 -> size:int64 -> unit
+val map_buffer
+  :  Buffer.t
+  -> mode:Map_mode.Item.t list
+  -> offset:int64
+  -> size:int64
+  -> unit
 
 (** Get mapped buffer data as a bigarray *)
 val get_mapped_range

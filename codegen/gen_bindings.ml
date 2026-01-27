@@ -21,7 +21,9 @@ module Kind = struct
       | "bitsets_ml" -> Bitsets_ml
       | "bitsets_mli" -> Bitsets_mli
       | _ ->
-        failwith "kind must be 'c', 'ml', 'mli', 'enums_ml', 'enums_mli', 'bitsets_ml', or 'bitsets_mli'")
+        failwith
+          "kind must be 'c', 'ml', 'mli', 'enums_ml', 'enums_mli', 'bitsets_ml', or \
+           'bitsets_mli'")
   ;;
 end
 

@@ -72,3 +72,47 @@ let of_int = function
 2. Run `dune build @check` to ensure no warnings
 3. Run existing tests to verify correctness
 4. Optionally: add a micro-benchmark comparing before/after performance
+
+## Implementation Plan
+
+### Approach
+
+Modify the `gen_enum` function in `codegen/gen_low.ml` to generate cached constant bindings:
+
+1. For each enum entry, generate a `let` binding that calls the external function once at module initialization
+2. Update `to_int` to reference the cached constants instead of calling externals
+3. Update `of_int` to compare against cached constants instead of calling externals
+
+Similarly, modify the `gen_bitflag` function:
+
+1. For each bitflag entry, generate a cached constant binding
+2. Update `to_int` to use cached constants
+3. The `list_to_int` function will automatically benefit since it calls `to_int`
+
+### Changes to `gen_enum` (Implementation mode)
+
+Current structure:
+```
+external enum_entry : unit -> int = "..."
+let to_int = function | Entry -> enum_entry ()
+let of_int = function | x when x = enum_entry () -> Entry
+```
+
+New structure:
+```
+external enum_entry : unit -> int = "..."
+let entry_int = enum_entry ()
+let to_int = function | Entry -> entry_int
+let of_int = function | x when x = entry_int -> Entry
+```
+
+### Changes to `gen_bitflag` (Implementation mode)
+
+Same pattern as enums.
+
+### Validation Criteria
+
+1. `dune build` succeeds (code regenerates and compiles)
+2. `dune build @check` shows no warnings
+3. `dune exec test/test_compute.exe` passes all tests
+4. Generated `low/wgpu_low.ml` shows cached constants pattern

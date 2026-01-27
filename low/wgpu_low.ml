@@ -17,18 +17,23 @@ module Adapter_type = struct
   external adapter_type_cpu : unit -> int = "caml_wgpu_adapter_type_cpu"
   external adapter_type_unknown : unit -> int = "caml_wgpu_adapter_type_unknown"
 
+  let discrete_gpu_int = adapter_type_discrete_gpu ()
+  let integrated_gpu_int = adapter_type_integrated_gpu ()
+  let cpu_int = adapter_type_cpu ()
+  let unknown_int = adapter_type_unknown ()
+
   let to_int = function
-    | Discrete_gpu -> adapter_type_discrete_gpu ()
-    | Integrated_gpu -> adapter_type_integrated_gpu ()
-    | Cpu -> adapter_type_cpu ()
-    | Unknown -> adapter_type_unknown ()
+    | Discrete_gpu -> discrete_gpu_int
+    | Integrated_gpu -> integrated_gpu_int
+    | Cpu -> cpu_int
+    | Unknown -> unknown_int
   ;;
 
   let of_int = function
-    | x when x = adapter_type_discrete_gpu () -> Discrete_gpu
-    | x when x = adapter_type_integrated_gpu () -> Integrated_gpu
-    | x when x = adapter_type_cpu () -> Cpu
-    | x when x = adapter_type_unknown () -> Unknown
+    | x when x = discrete_gpu_int -> Discrete_gpu
+    | x when x = integrated_gpu_int -> Integrated_gpu
+    | x when x = cpu_int -> Cpu
+    | x when x = unknown_int -> Unknown
     | n -> failwith (Printf.sprintf "Adapter_type.of_int: unknown value %d" n)
   ;;
 end
@@ -54,18 +59,23 @@ module Address_mode = struct
     -> int
     = "caml_wgpu_address_mode_mirror_repeat"
 
+  let undefined_int = address_mode_undefined ()
+  let clamp_to_edge_int = address_mode_clamp_to_edge ()
+  let repeat_int = address_mode_repeat ()
+  let mirror_repeat_int = address_mode_mirror_repeat ()
+
   let to_int = function
-    | Undefined -> address_mode_undefined ()
-    | Clamp_to_edge -> address_mode_clamp_to_edge ()
-    | Repeat -> address_mode_repeat ()
-    | Mirror_repeat -> address_mode_mirror_repeat ()
+    | Undefined -> undefined_int
+    | Clamp_to_edge -> clamp_to_edge_int
+    | Repeat -> repeat_int
+    | Mirror_repeat -> mirror_repeat_int
   ;;
 
   let of_int = function
-    | x when x = address_mode_undefined () -> Undefined
-    | x when x = address_mode_clamp_to_edge () -> Clamp_to_edge
-    | x when x = address_mode_repeat () -> Repeat
-    | x when x = address_mode_mirror_repeat () -> Mirror_repeat
+    | x when x = undefined_int -> Undefined
+    | x when x = clamp_to_edge_int -> Clamp_to_edge
+    | x when x = repeat_int -> Repeat
+    | x when x = mirror_repeat_int -> Mirror_repeat
     | n -> failwith (Printf.sprintf "Address_mode.of_int: unknown value %d" n)
   ;;
 end
@@ -92,28 +102,38 @@ module Backend_type = struct
   external backend_type_opengl : unit -> int = "caml_wgpu_backend_type_opengl"
   external backend_type_opengles : unit -> int = "caml_wgpu_backend_type_opengles"
 
+  let undefined_int = backend_type_undefined ()
+  let null_int = backend_type_null ()
+  let webgpu_int = backend_type_webgpu ()
+  let d3d11_int = backend_type_d3d11 ()
+  let d3d12_int = backend_type_d3d12 ()
+  let metal_int = backend_type_metal ()
+  let vulkan_int = backend_type_vulkan ()
+  let opengl_int = backend_type_opengl ()
+  let opengles_int = backend_type_opengles ()
+
   let to_int = function
-    | Undefined -> backend_type_undefined ()
-    | Null -> backend_type_null ()
-    | Webgpu -> backend_type_webgpu ()
-    | D3d11 -> backend_type_d3d11 ()
-    | D3d12 -> backend_type_d3d12 ()
-    | Metal -> backend_type_metal ()
-    | Vulkan -> backend_type_vulkan ()
-    | Opengl -> backend_type_opengl ()
-    | Opengles -> backend_type_opengles ()
+    | Undefined -> undefined_int
+    | Null -> null_int
+    | Webgpu -> webgpu_int
+    | D3d11 -> d3d11_int
+    | D3d12 -> d3d12_int
+    | Metal -> metal_int
+    | Vulkan -> vulkan_int
+    | Opengl -> opengl_int
+    | Opengles -> opengles_int
   ;;
 
   let of_int = function
-    | x when x = backend_type_undefined () -> Undefined
-    | x when x = backend_type_null () -> Null
-    | x when x = backend_type_webgpu () -> Webgpu
-    | x when x = backend_type_d3d11 () -> D3d11
-    | x when x = backend_type_d3d12 () -> D3d12
-    | x when x = backend_type_metal () -> Metal
-    | x when x = backend_type_vulkan () -> Vulkan
-    | x when x = backend_type_opengl () -> Opengl
-    | x when x = backend_type_opengles () -> Opengles
+    | x when x = undefined_int -> Undefined
+    | x when x = null_int -> Null
+    | x when x = webgpu_int -> Webgpu
+    | x when x = d3d11_int -> D3d11
+    | x when x = d3d12_int -> D3d12
+    | x when x = metal_int -> Metal
+    | x when x = vulkan_int -> Vulkan
+    | x when x = opengl_int -> Opengl
+    | x when x = opengles_int -> Opengles
     | n -> failwith (Printf.sprintf "Backend_type.of_int: unknown value %d" n)
   ;;
 end
@@ -196,46 +216,65 @@ module Blend_factor = struct
     -> int
     = "caml_wgpu_blend_factor_one_minus_src1_alpha"
 
+  let undefined_int = blend_factor_undefined ()
+  let zero_int = blend_factor_zero ()
+  let one_int = blend_factor_one ()
+  let src_int = blend_factor_src ()
+  let one_minus_src_int = blend_factor_one_minus_src ()
+  let src_alpha_int = blend_factor_src_alpha ()
+  let one_minus_src_alpha_int = blend_factor_one_minus_src_alpha ()
+  let dst_int = blend_factor_dst ()
+  let one_minus_dst_int = blend_factor_one_minus_dst ()
+  let dst_alpha_int = blend_factor_dst_alpha ()
+  let one_minus_dst_alpha_int = blend_factor_one_minus_dst_alpha ()
+  let src_alpha_saturated_int = blend_factor_src_alpha_saturated ()
+  let constant_int = blend_factor_constant ()
+  let one_minus_constant_int = blend_factor_one_minus_constant ()
+  let src1_int = blend_factor_src1 ()
+  let one_minus_src1_int = blend_factor_one_minus_src1 ()
+  let src1_alpha_int = blend_factor_src1_alpha ()
+  let one_minus_src1_alpha_int = blend_factor_one_minus_src1_alpha ()
+
   let to_int = function
-    | Undefined -> blend_factor_undefined ()
-    | Zero -> blend_factor_zero ()
-    | One -> blend_factor_one ()
-    | Src -> blend_factor_src ()
-    | One_minus_src -> blend_factor_one_minus_src ()
-    | Src_alpha -> blend_factor_src_alpha ()
-    | One_minus_src_alpha -> blend_factor_one_minus_src_alpha ()
-    | Dst -> blend_factor_dst ()
-    | One_minus_dst -> blend_factor_one_minus_dst ()
-    | Dst_alpha -> blend_factor_dst_alpha ()
-    | One_minus_dst_alpha -> blend_factor_one_minus_dst_alpha ()
-    | Src_alpha_saturated -> blend_factor_src_alpha_saturated ()
-    | Constant -> blend_factor_constant ()
-    | One_minus_constant -> blend_factor_one_minus_constant ()
-    | Src1 -> blend_factor_src1 ()
-    | One_minus_src1 -> blend_factor_one_minus_src1 ()
-    | Src1_alpha -> blend_factor_src1_alpha ()
-    | One_minus_src1_alpha -> blend_factor_one_minus_src1_alpha ()
+    | Undefined -> undefined_int
+    | Zero -> zero_int
+    | One -> one_int
+    | Src -> src_int
+    | One_minus_src -> one_minus_src_int
+    | Src_alpha -> src_alpha_int
+    | One_minus_src_alpha -> one_minus_src_alpha_int
+    | Dst -> dst_int
+    | One_minus_dst -> one_minus_dst_int
+    | Dst_alpha -> dst_alpha_int
+    | One_minus_dst_alpha -> one_minus_dst_alpha_int
+    | Src_alpha_saturated -> src_alpha_saturated_int
+    | Constant -> constant_int
+    | One_minus_constant -> one_minus_constant_int
+    | Src1 -> src1_int
+    | One_minus_src1 -> one_minus_src1_int
+    | Src1_alpha -> src1_alpha_int
+    | One_minus_src1_alpha -> one_minus_src1_alpha_int
   ;;
 
   let of_int = function
-    | x when x = blend_factor_undefined () -> Undefined
-    | x when x = blend_factor_zero () -> Zero
-    | x when x = blend_factor_one () -> One
-    | x when x = blend_factor_src () -> Src
-    | x when x = blend_factor_one_minus_src () -> One_minus_src
-    | x when x = blend_factor_src_alpha () -> Src_alpha
-    | x when x = blend_factor_one_minus_src_alpha () -> One_minus_src_alpha
-    | x when x = blend_factor_dst () -> Dst
-    | x when x = blend_factor_one_minus_dst () -> One_minus_dst
-    | x when x = blend_factor_dst_alpha () -> Dst_alpha
-    | x when x = blend_factor_one_minus_dst_alpha () -> One_minus_dst_alpha
-    | x when x = blend_factor_src_alpha_saturated () -> Src_alpha_saturated
-    | x when x = blend_factor_constant () -> Constant
-    | x when x = blend_factor_one_minus_constant () -> One_minus_constant
-    | x when x = blend_factor_src1 () -> Src1
-    | x when x = blend_factor_one_minus_src1 () -> One_minus_src1
-    | x when x = blend_factor_src1_alpha () -> Src1_alpha
-    | x when x = blend_factor_one_minus_src1_alpha () -> One_minus_src1_alpha
+    | x when x = undefined_int -> Undefined
+    | x when x = zero_int -> Zero
+    | x when x = one_int -> One
+    | x when x = src_int -> Src
+    | x when x = one_minus_src_int -> One_minus_src
+    | x when x = src_alpha_int -> Src_alpha
+    | x when x = one_minus_src_alpha_int -> One_minus_src_alpha
+    | x when x = dst_int -> Dst
+    | x when x = one_minus_dst_int -> One_minus_dst
+    | x when x = dst_alpha_int -> Dst_alpha
+    | x when x = one_minus_dst_alpha_int -> One_minus_dst_alpha
+    | x when x = src_alpha_saturated_int -> Src_alpha_saturated
+    | x when x = constant_int -> Constant
+    | x when x = one_minus_constant_int -> One_minus_constant
+    | x when x = src1_int -> Src1
+    | x when x = one_minus_src1_int -> One_minus_src1
+    | x when x = src1_alpha_int -> Src1_alpha
+    | x when x = one_minus_src1_alpha_int -> One_minus_src1_alpha
     | n -> failwith (Printf.sprintf "Blend_factor.of_int: unknown value %d" n)
   ;;
 end
@@ -261,22 +300,29 @@ module Blend_operation = struct
   external blend_operation_min : unit -> int = "caml_wgpu_blend_operation_min"
   external blend_operation_max : unit -> int = "caml_wgpu_blend_operation_max"
 
+  let undefined_int = blend_operation_undefined ()
+  let add_int = blend_operation_add ()
+  let subtract_int = blend_operation_subtract ()
+  let reverse_subtract_int = blend_operation_reverse_subtract ()
+  let min_int = blend_operation_min ()
+  let max_int = blend_operation_max ()
+
   let to_int = function
-    | Undefined -> blend_operation_undefined ()
-    | Add -> blend_operation_add ()
-    | Subtract -> blend_operation_subtract ()
-    | Reverse_subtract -> blend_operation_reverse_subtract ()
-    | Min -> blend_operation_min ()
-    | Max -> blend_operation_max ()
+    | Undefined -> undefined_int
+    | Add -> add_int
+    | Subtract -> subtract_int
+    | Reverse_subtract -> reverse_subtract_int
+    | Min -> min_int
+    | Max -> max_int
   ;;
 
   let of_int = function
-    | x when x = blend_operation_undefined () -> Undefined
-    | x when x = blend_operation_add () -> Add
-    | x when x = blend_operation_subtract () -> Subtract
-    | x when x = blend_operation_reverse_subtract () -> Reverse_subtract
-    | x when x = blend_operation_min () -> Min
-    | x when x = blend_operation_max () -> Max
+    | x when x = undefined_int -> Undefined
+    | x when x = add_int -> Add
+    | x when x = subtract_int -> Subtract
+    | x when x = reverse_subtract_int -> Reverse_subtract
+    | x when x = min_int -> Min
+    | x when x = max_int -> Max
     | n -> failwith (Printf.sprintf "Blend_operation.of_int: unknown value %d" n)
   ;;
 end
@@ -314,20 +360,26 @@ module Buffer_binding_type = struct
     -> int
     = "caml_wgpu_buffer_binding_type_read_only_storage"
 
+  let binding_not_used_int = buffer_binding_type_binding_not_used ()
+  let undefined_int = buffer_binding_type_undefined ()
+  let uniform_int = buffer_binding_type_uniform ()
+  let storage_int = buffer_binding_type_storage ()
+  let read_only_storage_int = buffer_binding_type_read_only_storage ()
+
   let to_int = function
-    | Binding_not_used -> buffer_binding_type_binding_not_used ()
-    | Undefined -> buffer_binding_type_undefined ()
-    | Uniform -> buffer_binding_type_uniform ()
-    | Storage -> buffer_binding_type_storage ()
-    | Read_only_storage -> buffer_binding_type_read_only_storage ()
+    | Binding_not_used -> binding_not_used_int
+    | Undefined -> undefined_int
+    | Uniform -> uniform_int
+    | Storage -> storage_int
+    | Read_only_storage -> read_only_storage_int
   ;;
 
   let of_int = function
-    | x when x = buffer_binding_type_binding_not_used () -> Binding_not_used
-    | x when x = buffer_binding_type_undefined () -> Undefined
-    | x when x = buffer_binding_type_uniform () -> Uniform
-    | x when x = buffer_binding_type_storage () -> Storage
-    | x when x = buffer_binding_type_read_only_storage () -> Read_only_storage
+    | x when x = binding_not_used_int -> Binding_not_used
+    | x when x = undefined_int -> Undefined
+    | x when x = uniform_int -> Uniform
+    | x when x = storage_int -> Storage
+    | x when x = read_only_storage_int -> Read_only_storage
     | n -> failwith (Printf.sprintf "Buffer_binding_type.of_int: unknown value %d" n)
   ;;
 end
@@ -342,16 +394,20 @@ module Buffer_map_state = struct
   external buffer_map_state_pending : unit -> int = "caml_wgpu_buffer_map_state_pending"
   external buffer_map_state_mapped : unit -> int = "caml_wgpu_buffer_map_state_mapped"
 
+  let unmapped_int = buffer_map_state_unmapped ()
+  let pending_int = buffer_map_state_pending ()
+  let mapped_int = buffer_map_state_mapped ()
+
   let to_int = function
-    | Unmapped -> buffer_map_state_unmapped ()
-    | Pending -> buffer_map_state_pending ()
-    | Mapped -> buffer_map_state_mapped ()
+    | Unmapped -> unmapped_int
+    | Pending -> pending_int
+    | Mapped -> mapped_int
   ;;
 
   let of_int = function
-    | x when x = buffer_map_state_unmapped () -> Unmapped
-    | x when x = buffer_map_state_pending () -> Pending
-    | x when x = buffer_map_state_mapped () -> Mapped
+    | x when x = unmapped_int -> Unmapped
+    | x when x = pending_int -> Pending
+    | x when x = mapped_int -> Mapped
     | n -> failwith (Printf.sprintf "Buffer_map_state.of_int: unknown value %d" n)
   ;;
 end
@@ -377,16 +433,20 @@ module Callback_mode = struct
     -> int
     = "caml_wgpu_callback_mode_allow_spontaneous"
 
+  let wait_any_only_int = callback_mode_wait_any_only ()
+  let allow_process_events_int = callback_mode_allow_process_events ()
+  let allow_spontaneous_int = callback_mode_allow_spontaneous ()
+
   let to_int = function
-    | Wait_any_only -> callback_mode_wait_any_only ()
-    | Allow_process_events -> callback_mode_allow_process_events ()
-    | Allow_spontaneous -> callback_mode_allow_spontaneous ()
+    | Wait_any_only -> wait_any_only_int
+    | Allow_process_events -> allow_process_events_int
+    | Allow_spontaneous -> allow_spontaneous_int
   ;;
 
   let of_int = function
-    | x when x = callback_mode_wait_any_only () -> Wait_any_only
-    | x when x = callback_mode_allow_process_events () -> Allow_process_events
-    | x when x = callback_mode_allow_spontaneous () -> Allow_spontaneous
+    | x when x = wait_any_only_int -> Wait_any_only
+    | x when x = allow_process_events_int -> Allow_process_events
+    | x when x = allow_spontaneous_int -> Allow_spontaneous
     | n -> failwith (Printf.sprintf "Callback_mode.of_int: unknown value %d" n)
   ;;
 end
@@ -431,28 +491,38 @@ module Compare_function = struct
 
   external compare_function_always : unit -> int = "caml_wgpu_compare_function_always"
 
+  let undefined_int = compare_function_undefined ()
+  let never_int = compare_function_never ()
+  let less_int = compare_function_less ()
+  let equal_int = compare_function_equal ()
+  let less_equal_int = compare_function_less_equal ()
+  let greater_int = compare_function_greater ()
+  let not_equal_int = compare_function_not_equal ()
+  let greater_equal_int = compare_function_greater_equal ()
+  let always_int = compare_function_always ()
+
   let to_int = function
-    | Undefined -> compare_function_undefined ()
-    | Never -> compare_function_never ()
-    | Less -> compare_function_less ()
-    | Equal -> compare_function_equal ()
-    | Less_equal -> compare_function_less_equal ()
-    | Greater -> compare_function_greater ()
-    | Not_equal -> compare_function_not_equal ()
-    | Greater_equal -> compare_function_greater_equal ()
-    | Always -> compare_function_always ()
+    | Undefined -> undefined_int
+    | Never -> never_int
+    | Less -> less_int
+    | Equal -> equal_int
+    | Less_equal -> less_equal_int
+    | Greater -> greater_int
+    | Not_equal -> not_equal_int
+    | Greater_equal -> greater_equal_int
+    | Always -> always_int
   ;;
 
   let of_int = function
-    | x when x = compare_function_undefined () -> Undefined
-    | x when x = compare_function_never () -> Never
-    | x when x = compare_function_less () -> Less
-    | x when x = compare_function_equal () -> Equal
-    | x when x = compare_function_less_equal () -> Less_equal
-    | x when x = compare_function_greater () -> Greater
-    | x when x = compare_function_not_equal () -> Not_equal
-    | x when x = compare_function_greater_equal () -> Greater_equal
-    | x when x = compare_function_always () -> Always
+    | x when x = undefined_int -> Undefined
+    | x when x = never_int -> Never
+    | x when x = less_int -> Less
+    | x when x = equal_int -> Equal
+    | x when x = less_equal_int -> Less_equal
+    | x when x = greater_int -> Greater
+    | x when x = not_equal_int -> Not_equal
+    | x when x = greater_equal_int -> Greater_equal
+    | x when x = always_int -> Always
     | n -> failwith (Printf.sprintf "Compare_function.of_int: unknown value %d" n)
   ;;
 end
@@ -484,18 +554,23 @@ module Compilation_info_request_status = struct
     -> int
     = "caml_wgpu_compilation_info_request_status_unknown"
 
+  let success_int = compilation_info_request_status_success ()
+  let instance_dropped_int = compilation_info_request_status_instance_dropped ()
+  let error_int = compilation_info_request_status_error ()
+  let unknown_int = compilation_info_request_status_unknown ()
+
   let to_int = function
-    | Success -> compilation_info_request_status_success ()
-    | Instance_dropped -> compilation_info_request_status_instance_dropped ()
-    | Error -> compilation_info_request_status_error ()
-    | Unknown -> compilation_info_request_status_unknown ()
+    | Success -> success_int
+    | Instance_dropped -> instance_dropped_int
+    | Error -> error_int
+    | Unknown -> unknown_int
   ;;
 
   let of_int = function
-    | x when x = compilation_info_request_status_success () -> Success
-    | x when x = compilation_info_request_status_instance_dropped () -> Instance_dropped
-    | x when x = compilation_info_request_status_error () -> Error
-    | x when x = compilation_info_request_status_unknown () -> Unknown
+    | x when x = success_int -> Success
+    | x when x = instance_dropped_int -> Instance_dropped
+    | x when x = error_int -> Error
+    | x when x = unknown_int -> Unknown
     | n ->
       failwith
         (Printf.sprintf "Compilation_info_request_status.of_int: unknown value %d" n)
@@ -523,16 +598,20 @@ module Compilation_message_type = struct
     -> int
     = "caml_wgpu_compilation_message_type_info"
 
+  let error_int = compilation_message_type_error ()
+  let warning_int = compilation_message_type_warning ()
+  let info_int = compilation_message_type_info ()
+
   let to_int = function
-    | Error -> compilation_message_type_error ()
-    | Warning -> compilation_message_type_warning ()
-    | Info -> compilation_message_type_info ()
+    | Error -> error_int
+    | Warning -> warning_int
+    | Info -> info_int
   ;;
 
   let of_int = function
-    | x when x = compilation_message_type_error () -> Error
-    | x when x = compilation_message_type_warning () -> Warning
-    | x when x = compilation_message_type_info () -> Info
+    | x when x = error_int -> Error
+    | x when x = warning_int -> Warning
+    | x when x = info_int -> Info
     | n -> failwith (Printf.sprintf "Compilation_message_type.of_int: unknown value %d" n)
   ;;
 end
@@ -567,20 +646,26 @@ module Composite_alpha_mode = struct
     -> int
     = "caml_wgpu_composite_alpha_mode_inherit"
 
+  let auto_int = composite_alpha_mode_auto ()
+  let opaque_int = composite_alpha_mode_opaque ()
+  let premultiplied_int = composite_alpha_mode_premultiplied ()
+  let unpremultiplied_int = composite_alpha_mode_unpremultiplied ()
+  let inherit_int = composite_alpha_mode_inherit ()
+
   let to_int = function
-    | Auto -> composite_alpha_mode_auto ()
-    | Opaque -> composite_alpha_mode_opaque ()
-    | Premultiplied -> composite_alpha_mode_premultiplied ()
-    | Unpremultiplied -> composite_alpha_mode_unpremultiplied ()
-    | Inherit -> composite_alpha_mode_inherit ()
+    | Auto -> auto_int
+    | Opaque -> opaque_int
+    | Premultiplied -> premultiplied_int
+    | Unpremultiplied -> unpremultiplied_int
+    | Inherit -> inherit_int
   ;;
 
   let of_int = function
-    | x when x = composite_alpha_mode_auto () -> Auto
-    | x when x = composite_alpha_mode_opaque () -> Opaque
-    | x when x = composite_alpha_mode_premultiplied () -> Premultiplied
-    | x when x = composite_alpha_mode_unpremultiplied () -> Unpremultiplied
-    | x when x = composite_alpha_mode_inherit () -> Inherit
+    | x when x = auto_int -> Auto
+    | x when x = opaque_int -> Opaque
+    | x when x = premultiplied_int -> Premultiplied
+    | x when x = unpremultiplied_int -> Unpremultiplied
+    | x when x = inherit_int -> Inherit
     | n -> failwith (Printf.sprintf "Composite_alpha_mode.of_int: unknown value %d" n)
   ;;
 end
@@ -618,20 +703,26 @@ module Create_pipeline_async_status = struct
     -> int
     = "caml_wgpu_create_pipeline_async_status_unknown"
 
+  let success_int = create_pipeline_async_status_success ()
+  let instance_dropped_int = create_pipeline_async_status_instance_dropped ()
+  let validation_error_int = create_pipeline_async_status_validation_error ()
+  let internal_error_int = create_pipeline_async_status_internal_error ()
+  let unknown_int = create_pipeline_async_status_unknown ()
+
   let to_int = function
-    | Success -> create_pipeline_async_status_success ()
-    | Instance_dropped -> create_pipeline_async_status_instance_dropped ()
-    | Validation_error -> create_pipeline_async_status_validation_error ()
-    | Internal_error -> create_pipeline_async_status_internal_error ()
-    | Unknown -> create_pipeline_async_status_unknown ()
+    | Success -> success_int
+    | Instance_dropped -> instance_dropped_int
+    | Validation_error -> validation_error_int
+    | Internal_error -> internal_error_int
+    | Unknown -> unknown_int
   ;;
 
   let of_int = function
-    | x when x = create_pipeline_async_status_success () -> Success
-    | x when x = create_pipeline_async_status_instance_dropped () -> Instance_dropped
-    | x when x = create_pipeline_async_status_validation_error () -> Validation_error
-    | x when x = create_pipeline_async_status_internal_error () -> Internal_error
-    | x when x = create_pipeline_async_status_unknown () -> Unknown
+    | x when x = success_int -> Success
+    | x when x = instance_dropped_int -> Instance_dropped
+    | x when x = validation_error_int -> Validation_error
+    | x when x = internal_error_int -> Internal_error
+    | x when x = unknown_int -> Unknown
     | n ->
       failwith (Printf.sprintf "Create_pipeline_async_status.of_int: unknown value %d" n)
   ;;
@@ -649,18 +740,23 @@ module Cull_mode = struct
   external cull_mode_front : unit -> int = "caml_wgpu_cull_mode_front"
   external cull_mode_back : unit -> int = "caml_wgpu_cull_mode_back"
 
+  let undefined_int = cull_mode_undefined ()
+  let none_int = cull_mode_none ()
+  let front_int = cull_mode_front ()
+  let back_int = cull_mode_back ()
+
   let to_int = function
-    | Undefined -> cull_mode_undefined ()
-    | None -> cull_mode_none ()
-    | Front -> cull_mode_front ()
-    | Back -> cull_mode_back ()
+    | Undefined -> undefined_int
+    | None -> none_int
+    | Front -> front_int
+    | Back -> back_int
   ;;
 
   let of_int = function
-    | x when x = cull_mode_undefined () -> Undefined
-    | x when x = cull_mode_none () -> None
-    | x when x = cull_mode_front () -> Front
-    | x when x = cull_mode_back () -> Back
+    | x when x = undefined_int -> Undefined
+    | x when x = none_int -> None
+    | x when x = front_int -> Front
+    | x when x = back_int -> Back
     | n -> failwith (Printf.sprintf "Cull_mode.of_int: unknown value %d" n)
   ;;
 end
@@ -692,18 +788,23 @@ module Device_lost_reason = struct
     -> int
     = "caml_wgpu_device_lost_reason_failed_creation"
 
+  let unknown_int = device_lost_reason_unknown ()
+  let destroyed_int = device_lost_reason_destroyed ()
+  let instance_dropped_int = device_lost_reason_instance_dropped ()
+  let failed_creation_int = device_lost_reason_failed_creation ()
+
   let to_int = function
-    | Unknown -> device_lost_reason_unknown ()
-    | Destroyed -> device_lost_reason_destroyed ()
-    | Instance_dropped -> device_lost_reason_instance_dropped ()
-    | Failed_creation -> device_lost_reason_failed_creation ()
+    | Unknown -> unknown_int
+    | Destroyed -> destroyed_int
+    | Instance_dropped -> instance_dropped_int
+    | Failed_creation -> failed_creation_int
   ;;
 
   let of_int = function
-    | x when x = device_lost_reason_unknown () -> Unknown
-    | x when x = device_lost_reason_destroyed () -> Destroyed
-    | x when x = device_lost_reason_instance_dropped () -> Instance_dropped
-    | x when x = device_lost_reason_failed_creation () -> Failed_creation
+    | x when x = unknown_int -> Unknown
+    | x when x = destroyed_int -> Destroyed
+    | x when x = instance_dropped_int -> Instance_dropped
+    | x when x = failed_creation_int -> Failed_creation
     | n -> failwith (Printf.sprintf "Device_lost_reason.of_int: unknown value %d" n)
   ;;
 end
@@ -723,16 +824,20 @@ module Error_filter = struct
 
   external error_filter_internal : unit -> int = "caml_wgpu_error_filter_internal"
 
+  let validation_int = error_filter_validation ()
+  let out_of_memory_int = error_filter_out_of_memory ()
+  let internal_int = error_filter_internal ()
+
   let to_int = function
-    | Validation -> error_filter_validation ()
-    | Out_of_memory -> error_filter_out_of_memory ()
-    | Internal -> error_filter_internal ()
+    | Validation -> validation_int
+    | Out_of_memory -> out_of_memory_int
+    | Internal -> internal_int
   ;;
 
   let of_int = function
-    | x when x = error_filter_validation () -> Validation
-    | x when x = error_filter_out_of_memory () -> Out_of_memory
-    | x when x = error_filter_internal () -> Internal
+    | x when x = validation_int -> Validation
+    | x when x = out_of_memory_int -> Out_of_memory
+    | x when x = internal_int -> Internal
     | n -> failwith (Printf.sprintf "Error_filter.of_int: unknown value %d" n)
   ;;
 end
@@ -751,20 +856,26 @@ module Error_type = struct
   external error_type_internal : unit -> int = "caml_wgpu_error_type_internal"
   external error_type_unknown : unit -> int = "caml_wgpu_error_type_unknown"
 
+  let no_error_int = error_type_no_error ()
+  let validation_int = error_type_validation ()
+  let out_of_memory_int = error_type_out_of_memory ()
+  let internal_int = error_type_internal ()
+  let unknown_int = error_type_unknown ()
+
   let to_int = function
-    | No_error -> error_type_no_error ()
-    | Validation -> error_type_validation ()
-    | Out_of_memory -> error_type_out_of_memory ()
-    | Internal -> error_type_internal ()
-    | Unknown -> error_type_unknown ()
+    | No_error -> no_error_int
+    | Validation -> validation_int
+    | Out_of_memory -> out_of_memory_int
+    | Internal -> internal_int
+    | Unknown -> unknown_int
   ;;
 
   let of_int = function
-    | x when x = error_type_no_error () -> No_error
-    | x when x = error_type_validation () -> Validation
-    | x when x = error_type_out_of_memory () -> Out_of_memory
-    | x when x = error_type_internal () -> Internal
-    | x when x = error_type_unknown () -> Unknown
+    | x when x = no_error_int -> No_error
+    | x when x = validation_int -> Validation
+    | x when x = out_of_memory_int -> Out_of_memory
+    | x when x = internal_int -> Internal
+    | x when x = unknown_int -> Unknown
     | n -> failwith (Printf.sprintf "Error_type.of_int: unknown value %d" n)
   ;;
 end
@@ -781,14 +892,17 @@ module Feature_level = struct
 
   external feature_level_core : unit -> int = "caml_wgpu_feature_level_core"
 
+  let compatibility_int = feature_level_compatibility ()
+  let core_int = feature_level_core ()
+
   let to_int = function
-    | Compatibility -> feature_level_compatibility ()
-    | Core -> feature_level_core ()
+    | Compatibility -> compatibility_int
+    | Core -> core_int
   ;;
 
   let of_int = function
-    | x when x = feature_level_compatibility () -> Compatibility
-    | x when x = feature_level_core () -> Core
+    | x when x = compatibility_int -> Compatibility
+    | x when x = core_int -> Core
     | n -> failwith (Printf.sprintf "Feature_level.of_int: unknown value %d" n)
   ;;
 end
@@ -892,47 +1006,71 @@ module Feature_name = struct
     -> int
     = "caml_wgpu_feature_name_dual_source_blending"
 
+  let undefined_int = feature_name_undefined ()
+  let depth_clip_control_int = feature_name_depth_clip_control ()
+  let depth32_float_stencil8_int = feature_name_depth32_float_stencil8 ()
+  let timestamp_query_int = feature_name_timestamp_query ()
+  let texture_compression_bc_int = feature_name_texture_compression_bc ()
+
+  let texture_compression_bc_sliced_3d_int =
+    feature_name_texture_compression_bc_sliced_3d ()
+  ;;
+
+  let texture_compression_etc2_int = feature_name_texture_compression_etc2 ()
+  let texture_compression_astc_int = feature_name_texture_compression_astc ()
+
+  let texture_compression_astc_sliced_3d_int =
+    feature_name_texture_compression_astc_sliced_3d ()
+  ;;
+
+  let indirect_first_instance_int = feature_name_indirect_first_instance ()
+  let shader_f16_int = feature_name_shader_f16 ()
+  let rg11b10_ufloat_renderable_int = feature_name_rg11b10_ufloat_renderable ()
+  let bgra8_unorm_storage_int = feature_name_bgra8_unorm_storage ()
+  let float32_filterable_int = feature_name_float32_filterable ()
+  let float32_blendable_int = feature_name_float32_blendable ()
+  let clip_distances_int = feature_name_clip_distances ()
+  let dual_source_blending_int = feature_name_dual_source_blending ()
+
   let to_int = function
-    | Undefined -> feature_name_undefined ()
-    | Depth_clip_control -> feature_name_depth_clip_control ()
-    | Depth32_float_stencil8 -> feature_name_depth32_float_stencil8 ()
-    | Timestamp_query -> feature_name_timestamp_query ()
-    | Texture_compression_bc -> feature_name_texture_compression_bc ()
-    | Texture_compression_bc_sliced_3d -> feature_name_texture_compression_bc_sliced_3d ()
-    | Texture_compression_etc2 -> feature_name_texture_compression_etc2 ()
-    | Texture_compression_astc -> feature_name_texture_compression_astc ()
-    | Texture_compression_astc_sliced_3d ->
-      feature_name_texture_compression_astc_sliced_3d ()
-    | Indirect_first_instance -> feature_name_indirect_first_instance ()
-    | Shader_f16 -> feature_name_shader_f16 ()
-    | Rg11b10_ufloat_renderable -> feature_name_rg11b10_ufloat_renderable ()
-    | Bgra8_unorm_storage -> feature_name_bgra8_unorm_storage ()
-    | Float32_filterable -> feature_name_float32_filterable ()
-    | Float32_blendable -> feature_name_float32_blendable ()
-    | Clip_distances -> feature_name_clip_distances ()
-    | Dual_source_blending -> feature_name_dual_source_blending ()
+    | Undefined -> undefined_int
+    | Depth_clip_control -> depth_clip_control_int
+    | Depth32_float_stencil8 -> depth32_float_stencil8_int
+    | Timestamp_query -> timestamp_query_int
+    | Texture_compression_bc -> texture_compression_bc_int
+    | Texture_compression_bc_sliced_3d -> texture_compression_bc_sliced_3d_int
+    | Texture_compression_etc2 -> texture_compression_etc2_int
+    | Texture_compression_astc -> texture_compression_astc_int
+    | Texture_compression_astc_sliced_3d -> texture_compression_astc_sliced_3d_int
+    | Indirect_first_instance -> indirect_first_instance_int
+    | Shader_f16 -> shader_f16_int
+    | Rg11b10_ufloat_renderable -> rg11b10_ufloat_renderable_int
+    | Bgra8_unorm_storage -> bgra8_unorm_storage_int
+    | Float32_filterable -> float32_filterable_int
+    | Float32_blendable -> float32_blendable_int
+    | Clip_distances -> clip_distances_int
+    | Dual_source_blending -> dual_source_blending_int
   ;;
 
   let of_int = function
-    | x when x = feature_name_undefined () -> Undefined
-    | x when x = feature_name_depth_clip_control () -> Depth_clip_control
-    | x when x = feature_name_depth32_float_stencil8 () -> Depth32_float_stencil8
-    | x when x = feature_name_timestamp_query () -> Timestamp_query
-    | x when x = feature_name_texture_compression_bc () -> Texture_compression_bc
-    | x when x = feature_name_texture_compression_bc_sliced_3d () ->
-      Texture_compression_bc_sliced_3d
-    | x when x = feature_name_texture_compression_etc2 () -> Texture_compression_etc2
-    | x when x = feature_name_texture_compression_astc () -> Texture_compression_astc
-    | x when x = feature_name_texture_compression_astc_sliced_3d () ->
+    | x when x = undefined_int -> Undefined
+    | x when x = depth_clip_control_int -> Depth_clip_control
+    | x when x = depth32_float_stencil8_int -> Depth32_float_stencil8
+    | x when x = timestamp_query_int -> Timestamp_query
+    | x when x = texture_compression_bc_int -> Texture_compression_bc
+    | x when x = texture_compression_bc_sliced_3d_int -> Texture_compression_bc_sliced_3d
+    | x when x = texture_compression_etc2_int -> Texture_compression_etc2
+    | x when x = texture_compression_astc_int -> Texture_compression_astc
+    | x when x = texture_compression_astc_sliced_3d_int ->
       Texture_compression_astc_sliced_3d
-    | x when x = feature_name_indirect_first_instance () -> Indirect_first_instance
-    | x when x = feature_name_shader_f16 () -> Shader_f16
-    | x when x = feature_name_rg11b10_ufloat_renderable () -> Rg11b10_ufloat_renderable
-    | x when x = feature_name_bgra8_unorm_storage () -> Bgra8_unorm_storage
-    | x when x = feature_name_float32_filterable () -> Float32_filterable
-    | x when x = feature_name_float32_blendable () -> Float32_blendable
-    | x when x = feature_name_clip_distances () -> Clip_distances
-    | x when x = feature_name_dual_source_blending () -> Dual_source_blending
+    | x when x = indirect_first_instance_int -> Indirect_first_instance
+    | x when x = shader_f16_int -> Shader_f16
+    | x when x = rg11b10_ufloat_renderable_int -> Rg11b10_ufloat_renderable
+    | x when x = bgra8_unorm_storage_int -> Bgra8_unorm_storage
+    | x when x = float32_filterable_int -> Float32_filterable
+    | x when x = float32_blendable_int -> Float32_blendable
+    | x when x = clip_distances_int -> Clip_distances
+    | x when x = dual_source_blending_int -> Dual_source_blending
     | n -> failwith (Printf.sprintf "Feature_name.of_int: unknown value %d" n)
   ;;
 end
@@ -947,16 +1085,20 @@ module Filter_mode = struct
   external filter_mode_nearest : unit -> int = "caml_wgpu_filter_mode_nearest"
   external filter_mode_linear : unit -> int = "caml_wgpu_filter_mode_linear"
 
+  let undefined_int = filter_mode_undefined ()
+  let nearest_int = filter_mode_nearest ()
+  let linear_int = filter_mode_linear ()
+
   let to_int = function
-    | Undefined -> filter_mode_undefined ()
-    | Nearest -> filter_mode_nearest ()
-    | Linear -> filter_mode_linear ()
+    | Undefined -> undefined_int
+    | Nearest -> nearest_int
+    | Linear -> linear_int
   ;;
 
   let of_int = function
-    | x when x = filter_mode_undefined () -> Undefined
-    | x when x = filter_mode_nearest () -> Nearest
-    | x when x = filter_mode_linear () -> Linear
+    | x when x = undefined_int -> Undefined
+    | x when x = nearest_int -> Nearest
+    | x when x = linear_int -> Linear
     | n -> failwith (Printf.sprintf "Filter_mode.of_int: unknown value %d" n)
   ;;
 end
@@ -971,16 +1113,20 @@ module Front_face = struct
   external front_face_ccw : unit -> int = "caml_wgpu_front_face_ccw"
   external front_face_cw : unit -> int = "caml_wgpu_front_face_cw"
 
+  let undefined_int = front_face_undefined ()
+  let ccw_int = front_face_ccw ()
+  let cw_int = front_face_cw ()
+
   let to_int = function
-    | Undefined -> front_face_undefined ()
-    | Ccw -> front_face_ccw ()
-    | Cw -> front_face_cw ()
+    | Undefined -> undefined_int
+    | Ccw -> ccw_int
+    | Cw -> cw_int
   ;;
 
   let of_int = function
-    | x when x = front_face_undefined () -> Undefined
-    | x when x = front_face_ccw () -> Ccw
-    | x when x = front_face_cw () -> Cw
+    | x when x = undefined_int -> Undefined
+    | x when x = ccw_int -> Ccw
+    | x when x = cw_int -> Cw
     | n -> failwith (Printf.sprintf "Front_face.of_int: unknown value %d" n)
   ;;
 end
@@ -995,16 +1141,20 @@ module Index_format = struct
   external index_format_uint16 : unit -> int = "caml_wgpu_index_format_uint16"
   external index_format_uint32 : unit -> int = "caml_wgpu_index_format_uint32"
 
+  let undefined_int = index_format_undefined ()
+  let uint16_int = index_format_uint16 ()
+  let uint32_int = index_format_uint32 ()
+
   let to_int = function
-    | Undefined -> index_format_undefined ()
-    | Uint16 -> index_format_uint16 ()
-    | Uint32 -> index_format_uint32 ()
+    | Undefined -> undefined_int
+    | Uint16 -> uint16_int
+    | Uint32 -> uint32_int
   ;;
 
   let of_int = function
-    | x when x = index_format_undefined () -> Undefined
-    | x when x = index_format_uint16 () -> Uint16
-    | x when x = index_format_uint32 () -> Uint32
+    | x when x = undefined_int -> Undefined
+    | x when x = uint16_int -> Uint16
+    | x when x = uint32_int -> Uint32
     | n -> failwith (Printf.sprintf "Index_format.of_int: unknown value %d" n)
   ;;
 end
@@ -1019,16 +1169,20 @@ module Load_op = struct
   external load_op_load : unit -> int = "caml_wgpu_load_op_load"
   external load_op_clear : unit -> int = "caml_wgpu_load_op_clear"
 
+  let undefined_int = load_op_undefined ()
+  let load_int = load_op_load ()
+  let clear_int = load_op_clear ()
+
   let to_int = function
-    | Undefined -> load_op_undefined ()
-    | Load -> load_op_load ()
-    | Clear -> load_op_clear ()
+    | Undefined -> undefined_int
+    | Load -> load_int
+    | Clear -> clear_int
   ;;
 
   let of_int = function
-    | x when x = load_op_undefined () -> Undefined
-    | x when x = load_op_load () -> Load
-    | x when x = load_op_clear () -> Clear
+    | x when x = undefined_int -> Undefined
+    | x when x = load_int -> Load
+    | x when x = clear_int -> Clear
     | n -> failwith (Printf.sprintf "Load_op.of_int: unknown value %d" n)
   ;;
 end
@@ -1052,20 +1206,26 @@ module Map_async_status = struct
   external map_async_status_aborted : unit -> int = "caml_wgpu_map_async_status_aborted"
   external map_async_status_unknown : unit -> int = "caml_wgpu_map_async_status_unknown"
 
+  let success_int = map_async_status_success ()
+  let instance_dropped_int = map_async_status_instance_dropped ()
+  let error_int = map_async_status_error ()
+  let aborted_int = map_async_status_aborted ()
+  let unknown_int = map_async_status_unknown ()
+
   let to_int = function
-    | Success -> map_async_status_success ()
-    | Instance_dropped -> map_async_status_instance_dropped ()
-    | Error -> map_async_status_error ()
-    | Aborted -> map_async_status_aborted ()
-    | Unknown -> map_async_status_unknown ()
+    | Success -> success_int
+    | Instance_dropped -> instance_dropped_int
+    | Error -> error_int
+    | Aborted -> aborted_int
+    | Unknown -> unknown_int
   ;;
 
   let of_int = function
-    | x when x = map_async_status_success () -> Success
-    | x when x = map_async_status_instance_dropped () -> Instance_dropped
-    | x when x = map_async_status_error () -> Error
-    | x when x = map_async_status_aborted () -> Aborted
-    | x when x = map_async_status_unknown () -> Unknown
+    | x when x = success_int -> Success
+    | x when x = instance_dropped_int -> Instance_dropped
+    | x when x = error_int -> Error
+    | x when x = aborted_int -> Aborted
+    | x when x = unknown_int -> Unknown
     | n -> failwith (Printf.sprintf "Map_async_status.of_int: unknown value %d" n)
   ;;
 end
@@ -1088,16 +1248,20 @@ module Mipmap_filter_mode = struct
 
   external mipmap_filter_mode_linear : unit -> int = "caml_wgpu_mipmap_filter_mode_linear"
 
+  let undefined_int = mipmap_filter_mode_undefined ()
+  let nearest_int = mipmap_filter_mode_nearest ()
+  let linear_int = mipmap_filter_mode_linear ()
+
   let to_int = function
-    | Undefined -> mipmap_filter_mode_undefined ()
-    | Nearest -> mipmap_filter_mode_nearest ()
-    | Linear -> mipmap_filter_mode_linear ()
+    | Undefined -> undefined_int
+    | Nearest -> nearest_int
+    | Linear -> linear_int
   ;;
 
   let of_int = function
-    | x when x = mipmap_filter_mode_undefined () -> Undefined
-    | x when x = mipmap_filter_mode_nearest () -> Nearest
-    | x when x = mipmap_filter_mode_linear () -> Linear
+    | x when x = undefined_int -> Undefined
+    | x when x = nearest_int -> Nearest
+    | x when x = linear_int -> Linear
     | n -> failwith (Printf.sprintf "Mipmap_filter_mode.of_int: unknown value %d" n)
   ;;
 end
@@ -1112,16 +1276,20 @@ module Optional_bool = struct
   external optional_bool_true : unit -> int = "caml_wgpu_optional_bool_true"
   external optional_bool_undefined : unit -> int = "caml_wgpu_optional_bool_undefined"
 
+  let false_int = optional_bool_false ()
+  let true_int = optional_bool_true ()
+  let undefined_int = optional_bool_undefined ()
+
   let to_int = function
-    | False -> optional_bool_false ()
-    | True -> optional_bool_true ()
-    | Undefined -> optional_bool_undefined ()
+    | False -> false_int
+    | True -> true_int
+    | Undefined -> undefined_int
   ;;
 
   let of_int = function
-    | x when x = optional_bool_false () -> False
-    | x when x = optional_bool_true () -> True
-    | x when x = optional_bool_undefined () -> Undefined
+    | x when x = false_int -> False
+    | x when x = true_int -> True
+    | x when x = undefined_int -> Undefined
     | n -> failwith (Printf.sprintf "Optional_bool.of_int: unknown value %d" n)
   ;;
 end
@@ -1147,16 +1315,20 @@ module Pop_error_scope_status = struct
     -> int
     = "caml_wgpu_pop_error_scope_status_empty_stack"
 
+  let success_int = pop_error_scope_status_success ()
+  let instance_dropped_int = pop_error_scope_status_instance_dropped ()
+  let empty_stack_int = pop_error_scope_status_empty_stack ()
+
   let to_int = function
-    | Success -> pop_error_scope_status_success ()
-    | Instance_dropped -> pop_error_scope_status_instance_dropped ()
-    | Empty_stack -> pop_error_scope_status_empty_stack ()
+    | Success -> success_int
+    | Instance_dropped -> instance_dropped_int
+    | Empty_stack -> empty_stack_int
   ;;
 
   let of_int = function
-    | x when x = pop_error_scope_status_success () -> Success
-    | x when x = pop_error_scope_status_instance_dropped () -> Instance_dropped
-    | x when x = pop_error_scope_status_empty_stack () -> Empty_stack
+    | x when x = success_int -> Success
+    | x when x = instance_dropped_int -> Instance_dropped
+    | x when x = empty_stack_int -> Empty_stack
     | n -> failwith (Printf.sprintf "Pop_error_scope_status.of_int: unknown value %d" n)
   ;;
 end
@@ -1182,16 +1354,20 @@ module Power_preference = struct
     -> int
     = "caml_wgpu_power_preference_high_performance"
 
+  let undefined_int = power_preference_undefined ()
+  let low_power_int = power_preference_low_power ()
+  let high_performance_int = power_preference_high_performance ()
+
   let to_int = function
-    | Undefined -> power_preference_undefined ()
-    | Low_power -> power_preference_low_power ()
-    | High_performance -> power_preference_high_performance ()
+    | Undefined -> undefined_int
+    | Low_power -> low_power_int
+    | High_performance -> high_performance_int
   ;;
 
   let of_int = function
-    | x when x = power_preference_undefined () -> Undefined
-    | x when x = power_preference_low_power () -> Low_power
-    | x when x = power_preference_high_performance () -> High_performance
+    | x when x = undefined_int -> Undefined
+    | x when x = low_power_int -> Low_power
+    | x when x = high_performance_int -> High_performance
     | n -> failwith (Printf.sprintf "Power_preference.of_int: unknown value %d" n)
   ;;
 end
@@ -1210,20 +1386,26 @@ module Present_mode = struct
   external present_mode_immediate : unit -> int = "caml_wgpu_present_mode_immediate"
   external present_mode_mailbox : unit -> int = "caml_wgpu_present_mode_mailbox"
 
+  let undefined_int = present_mode_undefined ()
+  let fifo_int = present_mode_fifo ()
+  let fifo_relaxed_int = present_mode_fifo_relaxed ()
+  let immediate_int = present_mode_immediate ()
+  let mailbox_int = present_mode_mailbox ()
+
   let to_int = function
-    | Undefined -> present_mode_undefined ()
-    | Fifo -> present_mode_fifo ()
-    | Fifo_relaxed -> present_mode_fifo_relaxed ()
-    | Immediate -> present_mode_immediate ()
-    | Mailbox -> present_mode_mailbox ()
+    | Undefined -> undefined_int
+    | Fifo -> fifo_int
+    | Fifo_relaxed -> fifo_relaxed_int
+    | Immediate -> immediate_int
+    | Mailbox -> mailbox_int
   ;;
 
   let of_int = function
-    | x when x = present_mode_undefined () -> Undefined
-    | x when x = present_mode_fifo () -> Fifo
-    | x when x = present_mode_fifo_relaxed () -> Fifo_relaxed
-    | x when x = present_mode_immediate () -> Immediate
-    | x when x = present_mode_mailbox () -> Mailbox
+    | x when x = undefined_int -> Undefined
+    | x when x = fifo_int -> Fifo
+    | x when x = fifo_relaxed_int -> Fifo_relaxed
+    | x when x = immediate_int -> Immediate
+    | x when x = mailbox_int -> Mailbox
     | n -> failwith (Printf.sprintf "Present_mode.of_int: unknown value %d" n)
   ;;
 end
@@ -1267,22 +1449,29 @@ module Primitive_topology = struct
     -> int
     = "caml_wgpu_primitive_topology_triangle_strip"
 
+  let undefined_int = primitive_topology_undefined ()
+  let point_list_int = primitive_topology_point_list ()
+  let line_list_int = primitive_topology_line_list ()
+  let line_strip_int = primitive_topology_line_strip ()
+  let triangle_list_int = primitive_topology_triangle_list ()
+  let triangle_strip_int = primitive_topology_triangle_strip ()
+
   let to_int = function
-    | Undefined -> primitive_topology_undefined ()
-    | Point_list -> primitive_topology_point_list ()
-    | Line_list -> primitive_topology_line_list ()
-    | Line_strip -> primitive_topology_line_strip ()
-    | Triangle_list -> primitive_topology_triangle_list ()
-    | Triangle_strip -> primitive_topology_triangle_strip ()
+    | Undefined -> undefined_int
+    | Point_list -> point_list_int
+    | Line_list -> line_list_int
+    | Line_strip -> line_strip_int
+    | Triangle_list -> triangle_list_int
+    | Triangle_strip -> triangle_strip_int
   ;;
 
   let of_int = function
-    | x when x = primitive_topology_undefined () -> Undefined
-    | x when x = primitive_topology_point_list () -> Point_list
-    | x when x = primitive_topology_line_list () -> Line_list
-    | x when x = primitive_topology_line_strip () -> Line_strip
-    | x when x = primitive_topology_triangle_list () -> Triangle_list
-    | x when x = primitive_topology_triangle_strip () -> Triangle_strip
+    | x when x = undefined_int -> Undefined
+    | x when x = point_list_int -> Point_list
+    | x when x = line_list_int -> Line_list
+    | x when x = line_strip_int -> Line_strip
+    | x when x = triangle_list_int -> Triangle_list
+    | x when x = triangle_strip_int -> Triangle_strip
     | n -> failwith (Printf.sprintf "Primitive_topology.of_int: unknown value %d" n)
   ;;
 end
@@ -1295,14 +1484,17 @@ module Query_type = struct
   external query_type_occlusion : unit -> int = "caml_wgpu_query_type_occlusion"
   external query_type_timestamp : unit -> int = "caml_wgpu_query_type_timestamp"
 
+  let occlusion_int = query_type_occlusion ()
+  let timestamp_int = query_type_timestamp ()
+
   let to_int = function
-    | Occlusion -> query_type_occlusion ()
-    | Timestamp -> query_type_timestamp ()
+    | Occlusion -> occlusion_int
+    | Timestamp -> timestamp_int
   ;;
 
   let of_int = function
-    | x when x = query_type_occlusion () -> Occlusion
-    | x when x = query_type_timestamp () -> Timestamp
+    | x when x = occlusion_int -> Occlusion
+    | x when x = timestamp_int -> Timestamp
     | n -> failwith (Printf.sprintf "Query_type.of_int: unknown value %d" n)
   ;;
 end
@@ -1334,18 +1526,23 @@ module Queue_work_done_status = struct
     -> int
     = "caml_wgpu_queue_work_done_status_unknown"
 
+  let success_int = queue_work_done_status_success ()
+  let instance_dropped_int = queue_work_done_status_instance_dropped ()
+  let error_int = queue_work_done_status_error ()
+  let unknown_int = queue_work_done_status_unknown ()
+
   let to_int = function
-    | Success -> queue_work_done_status_success ()
-    | Instance_dropped -> queue_work_done_status_instance_dropped ()
-    | Error -> queue_work_done_status_error ()
-    | Unknown -> queue_work_done_status_unknown ()
+    | Success -> success_int
+    | Instance_dropped -> instance_dropped_int
+    | Error -> error_int
+    | Unknown -> unknown_int
   ;;
 
   let of_int = function
-    | x when x = queue_work_done_status_success () -> Success
-    | x when x = queue_work_done_status_instance_dropped () -> Instance_dropped
-    | x when x = queue_work_done_status_error () -> Error
-    | x when x = queue_work_done_status_unknown () -> Unknown
+    | x when x = success_int -> Success
+    | x when x = instance_dropped_int -> Instance_dropped
+    | x when x = error_int -> Error
+    | x when x = unknown_int -> Unknown
     | n -> failwith (Printf.sprintf "Queue_work_done_status.of_int: unknown value %d" n)
   ;;
 end
@@ -1383,20 +1580,26 @@ module Request_adapter_status = struct
     -> int
     = "caml_wgpu_request_adapter_status_unknown"
 
+  let success_int = request_adapter_status_success ()
+  let instance_dropped_int = request_adapter_status_instance_dropped ()
+  let unavailable_int = request_adapter_status_unavailable ()
+  let error_int = request_adapter_status_error ()
+  let unknown_int = request_adapter_status_unknown ()
+
   let to_int = function
-    | Success -> request_adapter_status_success ()
-    | Instance_dropped -> request_adapter_status_instance_dropped ()
-    | Unavailable -> request_adapter_status_unavailable ()
-    | Error -> request_adapter_status_error ()
-    | Unknown -> request_adapter_status_unknown ()
+    | Success -> success_int
+    | Instance_dropped -> instance_dropped_int
+    | Unavailable -> unavailable_int
+    | Error -> error_int
+    | Unknown -> unknown_int
   ;;
 
   let of_int = function
-    | x when x = request_adapter_status_success () -> Success
-    | x when x = request_adapter_status_instance_dropped () -> Instance_dropped
-    | x when x = request_adapter_status_unavailable () -> Unavailable
-    | x when x = request_adapter_status_error () -> Error
-    | x when x = request_adapter_status_unknown () -> Unknown
+    | x when x = success_int -> Success
+    | x when x = instance_dropped_int -> Instance_dropped
+    | x when x = unavailable_int -> Unavailable
+    | x when x = error_int -> Error
+    | x when x = unknown_int -> Unknown
     | n -> failwith (Printf.sprintf "Request_adapter_status.of_int: unknown value %d" n)
   ;;
 end
@@ -1428,18 +1631,23 @@ module Request_device_status = struct
     -> int
     = "caml_wgpu_request_device_status_unknown"
 
+  let success_int = request_device_status_success ()
+  let instance_dropped_int = request_device_status_instance_dropped ()
+  let error_int = request_device_status_error ()
+  let unknown_int = request_device_status_unknown ()
+
   let to_int = function
-    | Success -> request_device_status_success ()
-    | Instance_dropped -> request_device_status_instance_dropped ()
-    | Error -> request_device_status_error ()
-    | Unknown -> request_device_status_unknown ()
+    | Success -> success_int
+    | Instance_dropped -> instance_dropped_int
+    | Error -> error_int
+    | Unknown -> unknown_int
   ;;
 
   let of_int = function
-    | x when x = request_device_status_success () -> Success
-    | x when x = request_device_status_instance_dropped () -> Instance_dropped
-    | x when x = request_device_status_error () -> Error
-    | x when x = request_device_status_unknown () -> Unknown
+    | x when x = success_int -> Success
+    | x when x = instance_dropped_int -> Instance_dropped
+    | x when x = error_int -> Error
+    | x when x = unknown_int -> Unknown
     | n -> failwith (Printf.sprintf "Request_device_status.of_int: unknown value %d" n)
   ;;
 end
@@ -1498,31 +1706,43 @@ module S_type = struct
     -> int
     = "caml_wgpu_s_type_surface_source_xcb_window"
 
+  let shader_source_spirv_int = s_type_shader_source_spirv ()
+  let shader_source_wgsl_int = s_type_shader_source_wgsl ()
+  let render_pass_max_draw_count_int = s_type_render_pass_max_draw_count ()
+  let surface_source_metal_layer_int = s_type_surface_source_metal_layer ()
+  let surface_source_windows_hwnd_int = s_type_surface_source_windows_hwnd ()
+  let surface_source_xlib_window_int = s_type_surface_source_xlib_window ()
+  let surface_source_wayland_surface_int = s_type_surface_source_wayland_surface ()
+
+  let surface_source_android_native_window_int =
+    s_type_surface_source_android_native_window ()
+  ;;
+
+  let surface_source_xcb_window_int = s_type_surface_source_xcb_window ()
+
   let to_int = function
-    | Shader_source_spirv -> s_type_shader_source_spirv ()
-    | Shader_source_wgsl -> s_type_shader_source_wgsl ()
-    | Render_pass_max_draw_count -> s_type_render_pass_max_draw_count ()
-    | Surface_source_metal_layer -> s_type_surface_source_metal_layer ()
-    | Surface_source_windows_hwnd -> s_type_surface_source_windows_hwnd ()
-    | Surface_source_xlib_window -> s_type_surface_source_xlib_window ()
-    | Surface_source_wayland_surface -> s_type_surface_source_wayland_surface ()
-    | Surface_source_android_native_window ->
-      s_type_surface_source_android_native_window ()
-    | Surface_source_xcb_window -> s_type_surface_source_xcb_window ()
+    | Shader_source_spirv -> shader_source_spirv_int
+    | Shader_source_wgsl -> shader_source_wgsl_int
+    | Render_pass_max_draw_count -> render_pass_max_draw_count_int
+    | Surface_source_metal_layer -> surface_source_metal_layer_int
+    | Surface_source_windows_hwnd -> surface_source_windows_hwnd_int
+    | Surface_source_xlib_window -> surface_source_xlib_window_int
+    | Surface_source_wayland_surface -> surface_source_wayland_surface_int
+    | Surface_source_android_native_window -> surface_source_android_native_window_int
+    | Surface_source_xcb_window -> surface_source_xcb_window_int
   ;;
 
   let of_int = function
-    | x when x = s_type_shader_source_spirv () -> Shader_source_spirv
-    | x when x = s_type_shader_source_wgsl () -> Shader_source_wgsl
-    | x when x = s_type_render_pass_max_draw_count () -> Render_pass_max_draw_count
-    | x when x = s_type_surface_source_metal_layer () -> Surface_source_metal_layer
-    | x when x = s_type_surface_source_windows_hwnd () -> Surface_source_windows_hwnd
-    | x when x = s_type_surface_source_xlib_window () -> Surface_source_xlib_window
-    | x when x = s_type_surface_source_wayland_surface () ->
-      Surface_source_wayland_surface
-    | x when x = s_type_surface_source_android_native_window () ->
+    | x when x = shader_source_spirv_int -> Shader_source_spirv
+    | x when x = shader_source_wgsl_int -> Shader_source_wgsl
+    | x when x = render_pass_max_draw_count_int -> Render_pass_max_draw_count
+    | x when x = surface_source_metal_layer_int -> Surface_source_metal_layer
+    | x when x = surface_source_windows_hwnd_int -> Surface_source_windows_hwnd
+    | x when x = surface_source_xlib_window_int -> Surface_source_xlib_window
+    | x when x = surface_source_wayland_surface_int -> Surface_source_wayland_surface
+    | x when x = surface_source_android_native_window_int ->
       Surface_source_android_native_window
-    | x when x = s_type_surface_source_xcb_window () -> Surface_source_xcb_window
+    | x when x = surface_source_xcb_window_int -> Surface_source_xcb_window
     | n -> failwith (Printf.sprintf "S_type.of_int: unknown value %d" n)
   ;;
 end
@@ -1560,20 +1780,26 @@ module Sampler_binding_type = struct
     -> int
     = "caml_wgpu_sampler_binding_type_comparison"
 
+  let binding_not_used_int = sampler_binding_type_binding_not_used ()
+  let undefined_int = sampler_binding_type_undefined ()
+  let filtering_int = sampler_binding_type_filtering ()
+  let non_filtering_int = sampler_binding_type_non_filtering ()
+  let comparison_int = sampler_binding_type_comparison ()
+
   let to_int = function
-    | Binding_not_used -> sampler_binding_type_binding_not_used ()
-    | Undefined -> sampler_binding_type_undefined ()
-    | Filtering -> sampler_binding_type_filtering ()
-    | Non_filtering -> sampler_binding_type_non_filtering ()
-    | Comparison -> sampler_binding_type_comparison ()
+    | Binding_not_used -> binding_not_used_int
+    | Undefined -> undefined_int
+    | Filtering -> filtering_int
+    | Non_filtering -> non_filtering_int
+    | Comparison -> comparison_int
   ;;
 
   let of_int = function
-    | x when x = sampler_binding_type_binding_not_used () -> Binding_not_used
-    | x when x = sampler_binding_type_undefined () -> Undefined
-    | x when x = sampler_binding_type_filtering () -> Filtering
-    | x when x = sampler_binding_type_non_filtering () -> Non_filtering
-    | x when x = sampler_binding_type_comparison () -> Comparison
+    | x when x = binding_not_used_int -> Binding_not_used
+    | x when x = undefined_int -> Undefined
+    | x when x = filtering_int -> Filtering
+    | x when x = non_filtering_int -> Non_filtering
+    | x when x = comparison_int -> Comparison
     | n -> failwith (Printf.sprintf "Sampler_binding_type.of_int: unknown value %d" n)
   ;;
 end
@@ -1586,14 +1812,17 @@ module Status = struct
   external status_success : unit -> int = "caml_wgpu_status_success"
   external status_error : unit -> int = "caml_wgpu_status_error"
 
+  let success_int = status_success ()
+  let error_int = status_error ()
+
   let to_int = function
-    | Success -> status_success ()
-    | Error -> status_error ()
+    | Success -> success_int
+    | Error -> error_int
   ;;
 
   let of_int = function
-    | x when x = status_success () -> Success
-    | x when x = status_error () -> Error
+    | x when x = success_int -> Success
+    | x when x = error_int -> Error
     | n -> failwith (Printf.sprintf "Status.of_int: unknown value %d" n)
   ;;
 end
@@ -1640,28 +1869,38 @@ module Stencil_operation = struct
     -> int
     = "caml_wgpu_stencil_operation_decrement_wrap"
 
+  let undefined_int = stencil_operation_undefined ()
+  let keep_int = stencil_operation_keep ()
+  let zero_int = stencil_operation_zero ()
+  let replace_int = stencil_operation_replace ()
+  let invert_int = stencil_operation_invert ()
+  let increment_clamp_int = stencil_operation_increment_clamp ()
+  let decrement_clamp_int = stencil_operation_decrement_clamp ()
+  let increment_wrap_int = stencil_operation_increment_wrap ()
+  let decrement_wrap_int = stencil_operation_decrement_wrap ()
+
   let to_int = function
-    | Undefined -> stencil_operation_undefined ()
-    | Keep -> stencil_operation_keep ()
-    | Zero -> stencil_operation_zero ()
-    | Replace -> stencil_operation_replace ()
-    | Invert -> stencil_operation_invert ()
-    | Increment_clamp -> stencil_operation_increment_clamp ()
-    | Decrement_clamp -> stencil_operation_decrement_clamp ()
-    | Increment_wrap -> stencil_operation_increment_wrap ()
-    | Decrement_wrap -> stencil_operation_decrement_wrap ()
+    | Undefined -> undefined_int
+    | Keep -> keep_int
+    | Zero -> zero_int
+    | Replace -> replace_int
+    | Invert -> invert_int
+    | Increment_clamp -> increment_clamp_int
+    | Decrement_clamp -> decrement_clamp_int
+    | Increment_wrap -> increment_wrap_int
+    | Decrement_wrap -> decrement_wrap_int
   ;;
 
   let of_int = function
-    | x when x = stencil_operation_undefined () -> Undefined
-    | x when x = stencil_operation_keep () -> Keep
-    | x when x = stencil_operation_zero () -> Zero
-    | x when x = stencil_operation_replace () -> Replace
-    | x when x = stencil_operation_invert () -> Invert
-    | x when x = stencil_operation_increment_clamp () -> Increment_clamp
-    | x when x = stencil_operation_decrement_clamp () -> Decrement_clamp
-    | x when x = stencil_operation_increment_wrap () -> Increment_wrap
-    | x when x = stencil_operation_decrement_wrap () -> Decrement_wrap
+    | x when x = undefined_int -> Undefined
+    | x when x = keep_int -> Keep
+    | x when x = zero_int -> Zero
+    | x when x = replace_int -> Replace
+    | x when x = invert_int -> Invert
+    | x when x = increment_clamp_int -> Increment_clamp
+    | x when x = decrement_clamp_int -> Decrement_clamp
+    | x when x = increment_wrap_int -> Increment_wrap
+    | x when x = decrement_wrap_int -> Decrement_wrap
     | n -> failwith (Printf.sprintf "Stencil_operation.of_int: unknown value %d" n)
   ;;
 end
@@ -1699,20 +1938,26 @@ module Storage_texture_access = struct
     -> int
     = "caml_wgpu_storage_texture_access_read_write"
 
+  let binding_not_used_int = storage_texture_access_binding_not_used ()
+  let undefined_int = storage_texture_access_undefined ()
+  let write_only_int = storage_texture_access_write_only ()
+  let read_only_int = storage_texture_access_read_only ()
+  let read_write_int = storage_texture_access_read_write ()
+
   let to_int = function
-    | Binding_not_used -> storage_texture_access_binding_not_used ()
-    | Undefined -> storage_texture_access_undefined ()
-    | Write_only -> storage_texture_access_write_only ()
-    | Read_only -> storage_texture_access_read_only ()
-    | Read_write -> storage_texture_access_read_write ()
+    | Binding_not_used -> binding_not_used_int
+    | Undefined -> undefined_int
+    | Write_only -> write_only_int
+    | Read_only -> read_only_int
+    | Read_write -> read_write_int
   ;;
 
   let of_int = function
-    | x when x = storage_texture_access_binding_not_used () -> Binding_not_used
-    | x when x = storage_texture_access_undefined () -> Undefined
-    | x when x = storage_texture_access_write_only () -> Write_only
-    | x when x = storage_texture_access_read_only () -> Read_only
-    | x when x = storage_texture_access_read_write () -> Read_write
+    | x when x = binding_not_used_int -> Binding_not_used
+    | x when x = undefined_int -> Undefined
+    | x when x = write_only_int -> Write_only
+    | x when x = read_only_int -> Read_only
+    | x when x = read_write_int -> Read_write
     | n -> failwith (Printf.sprintf "Storage_texture_access.of_int: unknown value %d" n)
   ;;
 end
@@ -1727,16 +1972,20 @@ module Store_op = struct
   external store_op_store : unit -> int = "caml_wgpu_store_op_store"
   external store_op_discard : unit -> int = "caml_wgpu_store_op_discard"
 
+  let undefined_int = store_op_undefined ()
+  let store_int = store_op_store ()
+  let discard_int = store_op_discard ()
+
   let to_int = function
-    | Undefined -> store_op_undefined ()
-    | Store -> store_op_store ()
-    | Discard -> store_op_discard ()
+    | Undefined -> undefined_int
+    | Store -> store_int
+    | Discard -> discard_int
   ;;
 
   let of_int = function
-    | x when x = store_op_undefined () -> Undefined
-    | x when x = store_op_store () -> Store
-    | x when x = store_op_discard () -> Discard
+    | x when x = undefined_int -> Undefined
+    | x when x = store_int -> Store
+    | x when x = discard_int -> Discard
     | n -> failwith (Printf.sprintf "Store_op.of_int: unknown value %d" n)
   ;;
 end
@@ -1792,27 +2041,35 @@ module Surface_get_current_texture_status = struct
     -> int
     = "caml_wgpu_surface_get_current_texture_status_error"
 
+  let success_optimal_int = surface_get_current_texture_status_success_optimal ()
+  let success_suboptimal_int = surface_get_current_texture_status_success_suboptimal ()
+  let timeout_int = surface_get_current_texture_status_timeout ()
+  let outdated_int = surface_get_current_texture_status_outdated ()
+  let lost_int = surface_get_current_texture_status_lost ()
+  let out_of_memory_int = surface_get_current_texture_status_out_of_memory ()
+  let device_lost_int = surface_get_current_texture_status_device_lost ()
+  let error_int = surface_get_current_texture_status_error ()
+
   let to_int = function
-    | Success_optimal -> surface_get_current_texture_status_success_optimal ()
-    | Success_suboptimal -> surface_get_current_texture_status_success_suboptimal ()
-    | Timeout -> surface_get_current_texture_status_timeout ()
-    | Outdated -> surface_get_current_texture_status_outdated ()
-    | Lost -> surface_get_current_texture_status_lost ()
-    | Out_of_memory -> surface_get_current_texture_status_out_of_memory ()
-    | Device_lost -> surface_get_current_texture_status_device_lost ()
-    | Error -> surface_get_current_texture_status_error ()
+    | Success_optimal -> success_optimal_int
+    | Success_suboptimal -> success_suboptimal_int
+    | Timeout -> timeout_int
+    | Outdated -> outdated_int
+    | Lost -> lost_int
+    | Out_of_memory -> out_of_memory_int
+    | Device_lost -> device_lost_int
+    | Error -> error_int
   ;;
 
   let of_int = function
-    | x when x = surface_get_current_texture_status_success_optimal () -> Success_optimal
-    | x when x = surface_get_current_texture_status_success_suboptimal () ->
-      Success_suboptimal
-    | x when x = surface_get_current_texture_status_timeout () -> Timeout
-    | x when x = surface_get_current_texture_status_outdated () -> Outdated
-    | x when x = surface_get_current_texture_status_lost () -> Lost
-    | x when x = surface_get_current_texture_status_out_of_memory () -> Out_of_memory
-    | x when x = surface_get_current_texture_status_device_lost () -> Device_lost
-    | x when x = surface_get_current_texture_status_error () -> Error
+    | x when x = success_optimal_int -> Success_optimal
+    | x when x = success_suboptimal_int -> Success_suboptimal
+    | x when x = timeout_int -> Timeout
+    | x when x = outdated_int -> Outdated
+    | x when x = lost_int -> Lost
+    | x when x = out_of_memory_int -> Out_of_memory
+    | x when x = device_lost_int -> Device_lost
+    | x when x = error_int -> Error
     | n ->
       failwith
         (Printf.sprintf "Surface_get_current_texture_status.of_int: unknown value %d" n)
@@ -1836,18 +2093,23 @@ module Texture_aspect = struct
 
   external texture_aspect_depth_only : unit -> int = "caml_wgpu_texture_aspect_depth_only"
 
+  let undefined_int = texture_aspect_undefined ()
+  let all_int = texture_aspect_all ()
+  let stencil_only_int = texture_aspect_stencil_only ()
+  let depth_only_int = texture_aspect_depth_only ()
+
   let to_int = function
-    | Undefined -> texture_aspect_undefined ()
-    | All -> texture_aspect_all ()
-    | Stencil_only -> texture_aspect_stencil_only ()
-    | Depth_only -> texture_aspect_depth_only ()
+    | Undefined -> undefined_int
+    | All -> all_int
+    | Stencil_only -> stencil_only_int
+    | Depth_only -> depth_only_int
   ;;
 
   let of_int = function
-    | x when x = texture_aspect_undefined () -> Undefined
-    | x when x = texture_aspect_all () -> All
-    | x when x = texture_aspect_stencil_only () -> Stencil_only
-    | x when x = texture_aspect_depth_only () -> Depth_only
+    | x when x = undefined_int -> Undefined
+    | x when x = all_int -> All
+    | x when x = stencil_only_int -> Stencil_only
+    | x when x = depth_only_int -> Depth_only
     | n -> failwith (Printf.sprintf "Texture_aspect.of_int: unknown value %d" n)
   ;;
 end
@@ -1868,18 +2130,23 @@ module Texture_dimension = struct
   external texture_dimension_2d : unit -> int = "caml_wgpu_texture_dimension_2d"
   external texture_dimension_3d : unit -> int = "caml_wgpu_texture_dimension_3d"
 
+  let undefined_int = texture_dimension_undefined ()
+  let n1d_int = texture_dimension_1d ()
+  let n2d_int = texture_dimension_2d ()
+  let n3d_int = texture_dimension_3d ()
+
   let to_int = function
-    | Undefined -> texture_dimension_undefined ()
-    | N1d -> texture_dimension_1d ()
-    | N2d -> texture_dimension_2d ()
-    | N3d -> texture_dimension_3d ()
+    | Undefined -> undefined_int
+    | N1d -> n1d_int
+    | N2d -> n2d_int
+    | N3d -> n3d_int
   ;;
 
   let of_int = function
-    | x when x = texture_dimension_undefined () -> Undefined
-    | x when x = texture_dimension_1d () -> N1d
-    | x when x = texture_dimension_2d () -> N2d
-    | x when x = texture_dimension_3d () -> N3d
+    | x when x = undefined_int -> Undefined
+    | x when x = n1d_int -> N1d
+    | x when x = n2d_int -> N2d
+    | x when x = n3d_int -> N3d
     | n -> failwith (Printf.sprintf "Texture_dimension.of_int: unknown value %d" n)
   ;;
 end
@@ -2371,202 +2638,299 @@ module Texture_format = struct
     -> int
     = "caml_wgpu_texture_format_astc_12x12_unorm_srgb"
 
+  let undefined_int = texture_format_undefined ()
+  let r8_unorm_int = texture_format_r8_unorm ()
+  let r8_snorm_int = texture_format_r8_snorm ()
+  let r8_uint_int = texture_format_r8_uint ()
+  let r8_sint_int = texture_format_r8_sint ()
+  let r16_uint_int = texture_format_r16_uint ()
+  let r16_sint_int = texture_format_r16_sint ()
+  let r16_float_int = texture_format_r16_float ()
+  let rg8_unorm_int = texture_format_rg8_unorm ()
+  let rg8_snorm_int = texture_format_rg8_snorm ()
+  let rg8_uint_int = texture_format_rg8_uint ()
+  let rg8_sint_int = texture_format_rg8_sint ()
+  let r32_float_int = texture_format_r32_float ()
+  let r32_uint_int = texture_format_r32_uint ()
+  let r32_sint_int = texture_format_r32_sint ()
+  let rg16_uint_int = texture_format_rg16_uint ()
+  let rg16_sint_int = texture_format_rg16_sint ()
+  let rg16_float_int = texture_format_rg16_float ()
+  let rgba8_unorm_int = texture_format_rgba8_unorm ()
+  let rgba8_unorm_srgb_int = texture_format_rgba8_unorm_srgb ()
+  let rgba8_snorm_int = texture_format_rgba8_snorm ()
+  let rgba8_uint_int = texture_format_rgba8_uint ()
+  let rgba8_sint_int = texture_format_rgba8_sint ()
+  let bgra8_unorm_int = texture_format_bgra8_unorm ()
+  let bgra8_unorm_srgb_int = texture_format_bgra8_unorm_srgb ()
+  let rgb10_a2_uint_int = texture_format_rgb10_a2_uint ()
+  let rgb10_a2_unorm_int = texture_format_rgb10_a2_unorm ()
+  let rg11_b10_ufloat_int = texture_format_rg11_b10_ufloat ()
+  let rgb9_e5_ufloat_int = texture_format_rgb9_e5_ufloat ()
+  let rg32_float_int = texture_format_rg32_float ()
+  let rg32_uint_int = texture_format_rg32_uint ()
+  let rg32_sint_int = texture_format_rg32_sint ()
+  let rgba16_uint_int = texture_format_rgba16_uint ()
+  let rgba16_sint_int = texture_format_rgba16_sint ()
+  let rgba16_float_int = texture_format_rgba16_float ()
+  let rgba32_float_int = texture_format_rgba32_float ()
+  let rgba32_uint_int = texture_format_rgba32_uint ()
+  let rgba32_sint_int = texture_format_rgba32_sint ()
+  let stencil8_int = texture_format_stencil8 ()
+  let depth16_unorm_int = texture_format_depth16_unorm ()
+  let depth24_plus_int = texture_format_depth24_plus ()
+  let depth24_plus_stencil8_int = texture_format_depth24_plus_stencil8 ()
+  let depth32_float_int = texture_format_depth32_float ()
+  let depth32_float_stencil8_int = texture_format_depth32_float_stencil8 ()
+  let bc1_rgba_unorm_int = texture_format_bc1_rgba_unorm ()
+  let bc1_rgba_unorm_srgb_int = texture_format_bc1_rgba_unorm_srgb ()
+  let bc2_rgba_unorm_int = texture_format_bc2_rgba_unorm ()
+  let bc2_rgba_unorm_srgb_int = texture_format_bc2_rgba_unorm_srgb ()
+  let bc3_rgba_unorm_int = texture_format_bc3_rgba_unorm ()
+  let bc3_rgba_unorm_srgb_int = texture_format_bc3_rgba_unorm_srgb ()
+  let bc4_r_unorm_int = texture_format_bc4_r_unorm ()
+  let bc4_r_snorm_int = texture_format_bc4_r_snorm ()
+  let bc5_rg_unorm_int = texture_format_bc5_rg_unorm ()
+  let bc5_rg_snorm_int = texture_format_bc5_rg_snorm ()
+  let bc6h_rgb_ufloat_int = texture_format_bc6h_rgb_ufloat ()
+  let bc6h_rgb_float_int = texture_format_bc6h_rgb_float ()
+  let bc7_rgba_unorm_int = texture_format_bc7_rgba_unorm ()
+  let bc7_rgba_unorm_srgb_int = texture_format_bc7_rgba_unorm_srgb ()
+  let etc2_rgb8_unorm_int = texture_format_etc2_rgb8_unorm ()
+  let etc2_rgb8_unorm_srgb_int = texture_format_etc2_rgb8_unorm_srgb ()
+  let etc2_rgb8a1_unorm_int = texture_format_etc2_rgb8a1_unorm ()
+  let etc2_rgb8a1_unorm_srgb_int = texture_format_etc2_rgb8a1_unorm_srgb ()
+  let etc2_rgba8_unorm_int = texture_format_etc2_rgba8_unorm ()
+  let etc2_rgba8_unorm_srgb_int = texture_format_etc2_rgba8_unorm_srgb ()
+  let eac_r11_unorm_int = texture_format_eac_r11_unorm ()
+  let eac_r11_snorm_int = texture_format_eac_r11_snorm ()
+  let eac_rg11_unorm_int = texture_format_eac_rg11_unorm ()
+  let eac_rg11_snorm_int = texture_format_eac_rg11_snorm ()
+  let astc_4x4_unorm_int = texture_format_astc_4x4_unorm ()
+  let astc_4x4_unorm_srgb_int = texture_format_astc_4x4_unorm_srgb ()
+  let astc_5x4_unorm_int = texture_format_astc_5x4_unorm ()
+  let astc_5x4_unorm_srgb_int = texture_format_astc_5x4_unorm_srgb ()
+  let astc_5x5_unorm_int = texture_format_astc_5x5_unorm ()
+  let astc_5x5_unorm_srgb_int = texture_format_astc_5x5_unorm_srgb ()
+  let astc_6x5_unorm_int = texture_format_astc_6x5_unorm ()
+  let astc_6x5_unorm_srgb_int = texture_format_astc_6x5_unorm_srgb ()
+  let astc_6x6_unorm_int = texture_format_astc_6x6_unorm ()
+  let astc_6x6_unorm_srgb_int = texture_format_astc_6x6_unorm_srgb ()
+  let astc_8x5_unorm_int = texture_format_astc_8x5_unorm ()
+  let astc_8x5_unorm_srgb_int = texture_format_astc_8x5_unorm_srgb ()
+  let astc_8x6_unorm_int = texture_format_astc_8x6_unorm ()
+  let astc_8x6_unorm_srgb_int = texture_format_astc_8x6_unorm_srgb ()
+  let astc_8x8_unorm_int = texture_format_astc_8x8_unorm ()
+  let astc_8x8_unorm_srgb_int = texture_format_astc_8x8_unorm_srgb ()
+  let astc_10x5_unorm_int = texture_format_astc_10x5_unorm ()
+  let astc_10x5_unorm_srgb_int = texture_format_astc_10x5_unorm_srgb ()
+  let astc_10x6_unorm_int = texture_format_astc_10x6_unorm ()
+  let astc_10x6_unorm_srgb_int = texture_format_astc_10x6_unorm_srgb ()
+  let astc_10x8_unorm_int = texture_format_astc_10x8_unorm ()
+  let astc_10x8_unorm_srgb_int = texture_format_astc_10x8_unorm_srgb ()
+  let astc_10x10_unorm_int = texture_format_astc_10x10_unorm ()
+  let astc_10x10_unorm_srgb_int = texture_format_astc_10x10_unorm_srgb ()
+  let astc_12x10_unorm_int = texture_format_astc_12x10_unorm ()
+  let astc_12x10_unorm_srgb_int = texture_format_astc_12x10_unorm_srgb ()
+  let astc_12x12_unorm_int = texture_format_astc_12x12_unorm ()
+  let astc_12x12_unorm_srgb_int = texture_format_astc_12x12_unorm_srgb ()
+
   let to_int = function
-    | Undefined -> texture_format_undefined ()
-    | R8_unorm -> texture_format_r8_unorm ()
-    | R8_snorm -> texture_format_r8_snorm ()
-    | R8_uint -> texture_format_r8_uint ()
-    | R8_sint -> texture_format_r8_sint ()
-    | R16_uint -> texture_format_r16_uint ()
-    | R16_sint -> texture_format_r16_sint ()
-    | R16_float -> texture_format_r16_float ()
-    | Rg8_unorm -> texture_format_rg8_unorm ()
-    | Rg8_snorm -> texture_format_rg8_snorm ()
-    | Rg8_uint -> texture_format_rg8_uint ()
-    | Rg8_sint -> texture_format_rg8_sint ()
-    | R32_float -> texture_format_r32_float ()
-    | R32_uint -> texture_format_r32_uint ()
-    | R32_sint -> texture_format_r32_sint ()
-    | Rg16_uint -> texture_format_rg16_uint ()
-    | Rg16_sint -> texture_format_rg16_sint ()
-    | Rg16_float -> texture_format_rg16_float ()
-    | Rgba8_unorm -> texture_format_rgba8_unorm ()
-    | Rgba8_unorm_srgb -> texture_format_rgba8_unorm_srgb ()
-    | Rgba8_snorm -> texture_format_rgba8_snorm ()
-    | Rgba8_uint -> texture_format_rgba8_uint ()
-    | Rgba8_sint -> texture_format_rgba8_sint ()
-    | Bgra8_unorm -> texture_format_bgra8_unorm ()
-    | Bgra8_unorm_srgb -> texture_format_bgra8_unorm_srgb ()
-    | Rgb10_a2_uint -> texture_format_rgb10_a2_uint ()
-    | Rgb10_a2_unorm -> texture_format_rgb10_a2_unorm ()
-    | Rg11_b10_ufloat -> texture_format_rg11_b10_ufloat ()
-    | Rgb9_e5_ufloat -> texture_format_rgb9_e5_ufloat ()
-    | Rg32_float -> texture_format_rg32_float ()
-    | Rg32_uint -> texture_format_rg32_uint ()
-    | Rg32_sint -> texture_format_rg32_sint ()
-    | Rgba16_uint -> texture_format_rgba16_uint ()
-    | Rgba16_sint -> texture_format_rgba16_sint ()
-    | Rgba16_float -> texture_format_rgba16_float ()
-    | Rgba32_float -> texture_format_rgba32_float ()
-    | Rgba32_uint -> texture_format_rgba32_uint ()
-    | Rgba32_sint -> texture_format_rgba32_sint ()
-    | Stencil8 -> texture_format_stencil8 ()
-    | Depth16_unorm -> texture_format_depth16_unorm ()
-    | Depth24_plus -> texture_format_depth24_plus ()
-    | Depth24_plus_stencil8 -> texture_format_depth24_plus_stencil8 ()
-    | Depth32_float -> texture_format_depth32_float ()
-    | Depth32_float_stencil8 -> texture_format_depth32_float_stencil8 ()
-    | Bc1_rgba_unorm -> texture_format_bc1_rgba_unorm ()
-    | Bc1_rgba_unorm_srgb -> texture_format_bc1_rgba_unorm_srgb ()
-    | Bc2_rgba_unorm -> texture_format_bc2_rgba_unorm ()
-    | Bc2_rgba_unorm_srgb -> texture_format_bc2_rgba_unorm_srgb ()
-    | Bc3_rgba_unorm -> texture_format_bc3_rgba_unorm ()
-    | Bc3_rgba_unorm_srgb -> texture_format_bc3_rgba_unorm_srgb ()
-    | Bc4_r_unorm -> texture_format_bc4_r_unorm ()
-    | Bc4_r_snorm -> texture_format_bc4_r_snorm ()
-    | Bc5_rg_unorm -> texture_format_bc5_rg_unorm ()
-    | Bc5_rg_snorm -> texture_format_bc5_rg_snorm ()
-    | Bc6h_rgb_ufloat -> texture_format_bc6h_rgb_ufloat ()
-    | Bc6h_rgb_float -> texture_format_bc6h_rgb_float ()
-    | Bc7_rgba_unorm -> texture_format_bc7_rgba_unorm ()
-    | Bc7_rgba_unorm_srgb -> texture_format_bc7_rgba_unorm_srgb ()
-    | Etc2_rgb8_unorm -> texture_format_etc2_rgb8_unorm ()
-    | Etc2_rgb8_unorm_srgb -> texture_format_etc2_rgb8_unorm_srgb ()
-    | Etc2_rgb8a1_unorm -> texture_format_etc2_rgb8a1_unorm ()
-    | Etc2_rgb8a1_unorm_srgb -> texture_format_etc2_rgb8a1_unorm_srgb ()
-    | Etc2_rgba8_unorm -> texture_format_etc2_rgba8_unorm ()
-    | Etc2_rgba8_unorm_srgb -> texture_format_etc2_rgba8_unorm_srgb ()
-    | Eac_r11_unorm -> texture_format_eac_r11_unorm ()
-    | Eac_r11_snorm -> texture_format_eac_r11_snorm ()
-    | Eac_rg11_unorm -> texture_format_eac_rg11_unorm ()
-    | Eac_rg11_snorm -> texture_format_eac_rg11_snorm ()
-    | Astc_4x4_unorm -> texture_format_astc_4x4_unorm ()
-    | Astc_4x4_unorm_srgb -> texture_format_astc_4x4_unorm_srgb ()
-    | Astc_5x4_unorm -> texture_format_astc_5x4_unorm ()
-    | Astc_5x4_unorm_srgb -> texture_format_astc_5x4_unorm_srgb ()
-    | Astc_5x5_unorm -> texture_format_astc_5x5_unorm ()
-    | Astc_5x5_unorm_srgb -> texture_format_astc_5x5_unorm_srgb ()
-    | Astc_6x5_unorm -> texture_format_astc_6x5_unorm ()
-    | Astc_6x5_unorm_srgb -> texture_format_astc_6x5_unorm_srgb ()
-    | Astc_6x6_unorm -> texture_format_astc_6x6_unorm ()
-    | Astc_6x6_unorm_srgb -> texture_format_astc_6x6_unorm_srgb ()
-    | Astc_8x5_unorm -> texture_format_astc_8x5_unorm ()
-    | Astc_8x5_unorm_srgb -> texture_format_astc_8x5_unorm_srgb ()
-    | Astc_8x6_unorm -> texture_format_astc_8x6_unorm ()
-    | Astc_8x6_unorm_srgb -> texture_format_astc_8x6_unorm_srgb ()
-    | Astc_8x8_unorm -> texture_format_astc_8x8_unorm ()
-    | Astc_8x8_unorm_srgb -> texture_format_astc_8x8_unorm_srgb ()
-    | Astc_10x5_unorm -> texture_format_astc_10x5_unorm ()
-    | Astc_10x5_unorm_srgb -> texture_format_astc_10x5_unorm_srgb ()
-    | Astc_10x6_unorm -> texture_format_astc_10x6_unorm ()
-    | Astc_10x6_unorm_srgb -> texture_format_astc_10x6_unorm_srgb ()
-    | Astc_10x8_unorm -> texture_format_astc_10x8_unorm ()
-    | Astc_10x8_unorm_srgb -> texture_format_astc_10x8_unorm_srgb ()
-    | Astc_10x10_unorm -> texture_format_astc_10x10_unorm ()
-    | Astc_10x10_unorm_srgb -> texture_format_astc_10x10_unorm_srgb ()
-    | Astc_12x10_unorm -> texture_format_astc_12x10_unorm ()
-    | Astc_12x10_unorm_srgb -> texture_format_astc_12x10_unorm_srgb ()
-    | Astc_12x12_unorm -> texture_format_astc_12x12_unorm ()
-    | Astc_12x12_unorm_srgb -> texture_format_astc_12x12_unorm_srgb ()
+    | Undefined -> undefined_int
+    | R8_unorm -> r8_unorm_int
+    | R8_snorm -> r8_snorm_int
+    | R8_uint -> r8_uint_int
+    | R8_sint -> r8_sint_int
+    | R16_uint -> r16_uint_int
+    | R16_sint -> r16_sint_int
+    | R16_float -> r16_float_int
+    | Rg8_unorm -> rg8_unorm_int
+    | Rg8_snorm -> rg8_snorm_int
+    | Rg8_uint -> rg8_uint_int
+    | Rg8_sint -> rg8_sint_int
+    | R32_float -> r32_float_int
+    | R32_uint -> r32_uint_int
+    | R32_sint -> r32_sint_int
+    | Rg16_uint -> rg16_uint_int
+    | Rg16_sint -> rg16_sint_int
+    | Rg16_float -> rg16_float_int
+    | Rgba8_unorm -> rgba8_unorm_int
+    | Rgba8_unorm_srgb -> rgba8_unorm_srgb_int
+    | Rgba8_snorm -> rgba8_snorm_int
+    | Rgba8_uint -> rgba8_uint_int
+    | Rgba8_sint -> rgba8_sint_int
+    | Bgra8_unorm -> bgra8_unorm_int
+    | Bgra8_unorm_srgb -> bgra8_unorm_srgb_int
+    | Rgb10_a2_uint -> rgb10_a2_uint_int
+    | Rgb10_a2_unorm -> rgb10_a2_unorm_int
+    | Rg11_b10_ufloat -> rg11_b10_ufloat_int
+    | Rgb9_e5_ufloat -> rgb9_e5_ufloat_int
+    | Rg32_float -> rg32_float_int
+    | Rg32_uint -> rg32_uint_int
+    | Rg32_sint -> rg32_sint_int
+    | Rgba16_uint -> rgba16_uint_int
+    | Rgba16_sint -> rgba16_sint_int
+    | Rgba16_float -> rgba16_float_int
+    | Rgba32_float -> rgba32_float_int
+    | Rgba32_uint -> rgba32_uint_int
+    | Rgba32_sint -> rgba32_sint_int
+    | Stencil8 -> stencil8_int
+    | Depth16_unorm -> depth16_unorm_int
+    | Depth24_plus -> depth24_plus_int
+    | Depth24_plus_stencil8 -> depth24_plus_stencil8_int
+    | Depth32_float -> depth32_float_int
+    | Depth32_float_stencil8 -> depth32_float_stencil8_int
+    | Bc1_rgba_unorm -> bc1_rgba_unorm_int
+    | Bc1_rgba_unorm_srgb -> bc1_rgba_unorm_srgb_int
+    | Bc2_rgba_unorm -> bc2_rgba_unorm_int
+    | Bc2_rgba_unorm_srgb -> bc2_rgba_unorm_srgb_int
+    | Bc3_rgba_unorm -> bc3_rgba_unorm_int
+    | Bc3_rgba_unorm_srgb -> bc3_rgba_unorm_srgb_int
+    | Bc4_r_unorm -> bc4_r_unorm_int
+    | Bc4_r_snorm -> bc4_r_snorm_int
+    | Bc5_rg_unorm -> bc5_rg_unorm_int
+    | Bc5_rg_snorm -> bc5_rg_snorm_int
+    | Bc6h_rgb_ufloat -> bc6h_rgb_ufloat_int
+    | Bc6h_rgb_float -> bc6h_rgb_float_int
+    | Bc7_rgba_unorm -> bc7_rgba_unorm_int
+    | Bc7_rgba_unorm_srgb -> bc7_rgba_unorm_srgb_int
+    | Etc2_rgb8_unorm -> etc2_rgb8_unorm_int
+    | Etc2_rgb8_unorm_srgb -> etc2_rgb8_unorm_srgb_int
+    | Etc2_rgb8a1_unorm -> etc2_rgb8a1_unorm_int
+    | Etc2_rgb8a1_unorm_srgb -> etc2_rgb8a1_unorm_srgb_int
+    | Etc2_rgba8_unorm -> etc2_rgba8_unorm_int
+    | Etc2_rgba8_unorm_srgb -> etc2_rgba8_unorm_srgb_int
+    | Eac_r11_unorm -> eac_r11_unorm_int
+    | Eac_r11_snorm -> eac_r11_snorm_int
+    | Eac_rg11_unorm -> eac_rg11_unorm_int
+    | Eac_rg11_snorm -> eac_rg11_snorm_int
+    | Astc_4x4_unorm -> astc_4x4_unorm_int
+    | Astc_4x4_unorm_srgb -> astc_4x4_unorm_srgb_int
+    | Astc_5x4_unorm -> astc_5x4_unorm_int
+    | Astc_5x4_unorm_srgb -> astc_5x4_unorm_srgb_int
+    | Astc_5x5_unorm -> astc_5x5_unorm_int
+    | Astc_5x5_unorm_srgb -> astc_5x5_unorm_srgb_int
+    | Astc_6x5_unorm -> astc_6x5_unorm_int
+    | Astc_6x5_unorm_srgb -> astc_6x5_unorm_srgb_int
+    | Astc_6x6_unorm -> astc_6x6_unorm_int
+    | Astc_6x6_unorm_srgb -> astc_6x6_unorm_srgb_int
+    | Astc_8x5_unorm -> astc_8x5_unorm_int
+    | Astc_8x5_unorm_srgb -> astc_8x5_unorm_srgb_int
+    | Astc_8x6_unorm -> astc_8x6_unorm_int
+    | Astc_8x6_unorm_srgb -> astc_8x6_unorm_srgb_int
+    | Astc_8x8_unorm -> astc_8x8_unorm_int
+    | Astc_8x8_unorm_srgb -> astc_8x8_unorm_srgb_int
+    | Astc_10x5_unorm -> astc_10x5_unorm_int
+    | Astc_10x5_unorm_srgb -> astc_10x5_unorm_srgb_int
+    | Astc_10x6_unorm -> astc_10x6_unorm_int
+    | Astc_10x6_unorm_srgb -> astc_10x6_unorm_srgb_int
+    | Astc_10x8_unorm -> astc_10x8_unorm_int
+    | Astc_10x8_unorm_srgb -> astc_10x8_unorm_srgb_int
+    | Astc_10x10_unorm -> astc_10x10_unorm_int
+    | Astc_10x10_unorm_srgb -> astc_10x10_unorm_srgb_int
+    | Astc_12x10_unorm -> astc_12x10_unorm_int
+    | Astc_12x10_unorm_srgb -> astc_12x10_unorm_srgb_int
+    | Astc_12x12_unorm -> astc_12x12_unorm_int
+    | Astc_12x12_unorm_srgb -> astc_12x12_unorm_srgb_int
   ;;
 
   let of_int = function
-    | x when x = texture_format_undefined () -> Undefined
-    | x when x = texture_format_r8_unorm () -> R8_unorm
-    | x when x = texture_format_r8_snorm () -> R8_snorm
-    | x when x = texture_format_r8_uint () -> R8_uint
-    | x when x = texture_format_r8_sint () -> R8_sint
-    | x when x = texture_format_r16_uint () -> R16_uint
-    | x when x = texture_format_r16_sint () -> R16_sint
-    | x when x = texture_format_r16_float () -> R16_float
-    | x when x = texture_format_rg8_unorm () -> Rg8_unorm
-    | x when x = texture_format_rg8_snorm () -> Rg8_snorm
-    | x when x = texture_format_rg8_uint () -> Rg8_uint
-    | x when x = texture_format_rg8_sint () -> Rg8_sint
-    | x when x = texture_format_r32_float () -> R32_float
-    | x when x = texture_format_r32_uint () -> R32_uint
-    | x when x = texture_format_r32_sint () -> R32_sint
-    | x when x = texture_format_rg16_uint () -> Rg16_uint
-    | x when x = texture_format_rg16_sint () -> Rg16_sint
-    | x when x = texture_format_rg16_float () -> Rg16_float
-    | x when x = texture_format_rgba8_unorm () -> Rgba8_unorm
-    | x when x = texture_format_rgba8_unorm_srgb () -> Rgba8_unorm_srgb
-    | x when x = texture_format_rgba8_snorm () -> Rgba8_snorm
-    | x when x = texture_format_rgba8_uint () -> Rgba8_uint
-    | x when x = texture_format_rgba8_sint () -> Rgba8_sint
-    | x when x = texture_format_bgra8_unorm () -> Bgra8_unorm
-    | x when x = texture_format_bgra8_unorm_srgb () -> Bgra8_unorm_srgb
-    | x when x = texture_format_rgb10_a2_uint () -> Rgb10_a2_uint
-    | x when x = texture_format_rgb10_a2_unorm () -> Rgb10_a2_unorm
-    | x when x = texture_format_rg11_b10_ufloat () -> Rg11_b10_ufloat
-    | x when x = texture_format_rgb9_e5_ufloat () -> Rgb9_e5_ufloat
-    | x when x = texture_format_rg32_float () -> Rg32_float
-    | x when x = texture_format_rg32_uint () -> Rg32_uint
-    | x when x = texture_format_rg32_sint () -> Rg32_sint
-    | x when x = texture_format_rgba16_uint () -> Rgba16_uint
-    | x when x = texture_format_rgba16_sint () -> Rgba16_sint
-    | x when x = texture_format_rgba16_float () -> Rgba16_float
-    | x when x = texture_format_rgba32_float () -> Rgba32_float
-    | x when x = texture_format_rgba32_uint () -> Rgba32_uint
-    | x when x = texture_format_rgba32_sint () -> Rgba32_sint
-    | x when x = texture_format_stencil8 () -> Stencil8
-    | x when x = texture_format_depth16_unorm () -> Depth16_unorm
-    | x when x = texture_format_depth24_plus () -> Depth24_plus
-    | x when x = texture_format_depth24_plus_stencil8 () -> Depth24_plus_stencil8
-    | x when x = texture_format_depth32_float () -> Depth32_float
-    | x when x = texture_format_depth32_float_stencil8 () -> Depth32_float_stencil8
-    | x when x = texture_format_bc1_rgba_unorm () -> Bc1_rgba_unorm
-    | x when x = texture_format_bc1_rgba_unorm_srgb () -> Bc1_rgba_unorm_srgb
-    | x when x = texture_format_bc2_rgba_unorm () -> Bc2_rgba_unorm
-    | x when x = texture_format_bc2_rgba_unorm_srgb () -> Bc2_rgba_unorm_srgb
-    | x when x = texture_format_bc3_rgba_unorm () -> Bc3_rgba_unorm
-    | x when x = texture_format_bc3_rgba_unorm_srgb () -> Bc3_rgba_unorm_srgb
-    | x when x = texture_format_bc4_r_unorm () -> Bc4_r_unorm
-    | x when x = texture_format_bc4_r_snorm () -> Bc4_r_snorm
-    | x when x = texture_format_bc5_rg_unorm () -> Bc5_rg_unorm
-    | x when x = texture_format_bc5_rg_snorm () -> Bc5_rg_snorm
-    | x when x = texture_format_bc6h_rgb_ufloat () -> Bc6h_rgb_ufloat
-    | x when x = texture_format_bc6h_rgb_float () -> Bc6h_rgb_float
-    | x when x = texture_format_bc7_rgba_unorm () -> Bc7_rgba_unorm
-    | x when x = texture_format_bc7_rgba_unorm_srgb () -> Bc7_rgba_unorm_srgb
-    | x when x = texture_format_etc2_rgb8_unorm () -> Etc2_rgb8_unorm
-    | x when x = texture_format_etc2_rgb8_unorm_srgb () -> Etc2_rgb8_unorm_srgb
-    | x when x = texture_format_etc2_rgb8a1_unorm () -> Etc2_rgb8a1_unorm
-    | x when x = texture_format_etc2_rgb8a1_unorm_srgb () -> Etc2_rgb8a1_unorm_srgb
-    | x when x = texture_format_etc2_rgba8_unorm () -> Etc2_rgba8_unorm
-    | x when x = texture_format_etc2_rgba8_unorm_srgb () -> Etc2_rgba8_unorm_srgb
-    | x when x = texture_format_eac_r11_unorm () -> Eac_r11_unorm
-    | x when x = texture_format_eac_r11_snorm () -> Eac_r11_snorm
-    | x when x = texture_format_eac_rg11_unorm () -> Eac_rg11_unorm
-    | x when x = texture_format_eac_rg11_snorm () -> Eac_rg11_snorm
-    | x when x = texture_format_astc_4x4_unorm () -> Astc_4x4_unorm
-    | x when x = texture_format_astc_4x4_unorm_srgb () -> Astc_4x4_unorm_srgb
-    | x when x = texture_format_astc_5x4_unorm () -> Astc_5x4_unorm
-    | x when x = texture_format_astc_5x4_unorm_srgb () -> Astc_5x4_unorm_srgb
-    | x when x = texture_format_astc_5x5_unorm () -> Astc_5x5_unorm
-    | x when x = texture_format_astc_5x5_unorm_srgb () -> Astc_5x5_unorm_srgb
-    | x when x = texture_format_astc_6x5_unorm () -> Astc_6x5_unorm
-    | x when x = texture_format_astc_6x5_unorm_srgb () -> Astc_6x5_unorm_srgb
-    | x when x = texture_format_astc_6x6_unorm () -> Astc_6x6_unorm
-    | x when x = texture_format_astc_6x6_unorm_srgb () -> Astc_6x6_unorm_srgb
-    | x when x = texture_format_astc_8x5_unorm () -> Astc_8x5_unorm
-    | x when x = texture_format_astc_8x5_unorm_srgb () -> Astc_8x5_unorm_srgb
-    | x when x = texture_format_astc_8x6_unorm () -> Astc_8x6_unorm
-    | x when x = texture_format_astc_8x6_unorm_srgb () -> Astc_8x6_unorm_srgb
-    | x when x = texture_format_astc_8x8_unorm () -> Astc_8x8_unorm
-    | x when x = texture_format_astc_8x8_unorm_srgb () -> Astc_8x8_unorm_srgb
-    | x when x = texture_format_astc_10x5_unorm () -> Astc_10x5_unorm
-    | x when x = texture_format_astc_10x5_unorm_srgb () -> Astc_10x5_unorm_srgb
-    | x when x = texture_format_astc_10x6_unorm () -> Astc_10x6_unorm
-    | x when x = texture_format_astc_10x6_unorm_srgb () -> Astc_10x6_unorm_srgb
-    | x when x = texture_format_astc_10x8_unorm () -> Astc_10x8_unorm
-    | x when x = texture_format_astc_10x8_unorm_srgb () -> Astc_10x8_unorm_srgb
-    | x when x = texture_format_astc_10x10_unorm () -> Astc_10x10_unorm
-    | x when x = texture_format_astc_10x10_unorm_srgb () -> Astc_10x10_unorm_srgb
-    | x when x = texture_format_astc_12x10_unorm () -> Astc_12x10_unorm
-    | x when x = texture_format_astc_12x10_unorm_srgb () -> Astc_12x10_unorm_srgb
-    | x when x = texture_format_astc_12x12_unorm () -> Astc_12x12_unorm
-    | x when x = texture_format_astc_12x12_unorm_srgb () -> Astc_12x12_unorm_srgb
+    | x when x = undefined_int -> Undefined
+    | x when x = r8_unorm_int -> R8_unorm
+    | x when x = r8_snorm_int -> R8_snorm
+    | x when x = r8_uint_int -> R8_uint
+    | x when x = r8_sint_int -> R8_sint
+    | x when x = r16_uint_int -> R16_uint
+    | x when x = r16_sint_int -> R16_sint
+    | x when x = r16_float_int -> R16_float
+    | x when x = rg8_unorm_int -> Rg8_unorm
+    | x when x = rg8_snorm_int -> Rg8_snorm
+    | x when x = rg8_uint_int -> Rg8_uint
+    | x when x = rg8_sint_int -> Rg8_sint
+    | x when x = r32_float_int -> R32_float
+    | x when x = r32_uint_int -> R32_uint
+    | x when x = r32_sint_int -> R32_sint
+    | x when x = rg16_uint_int -> Rg16_uint
+    | x when x = rg16_sint_int -> Rg16_sint
+    | x when x = rg16_float_int -> Rg16_float
+    | x when x = rgba8_unorm_int -> Rgba8_unorm
+    | x when x = rgba8_unorm_srgb_int -> Rgba8_unorm_srgb
+    | x when x = rgba8_snorm_int -> Rgba8_snorm
+    | x when x = rgba8_uint_int -> Rgba8_uint
+    | x when x = rgba8_sint_int -> Rgba8_sint
+    | x when x = bgra8_unorm_int -> Bgra8_unorm
+    | x when x = bgra8_unorm_srgb_int -> Bgra8_unorm_srgb
+    | x when x = rgb10_a2_uint_int -> Rgb10_a2_uint
+    | x when x = rgb10_a2_unorm_int -> Rgb10_a2_unorm
+    | x when x = rg11_b10_ufloat_int -> Rg11_b10_ufloat
+    | x when x = rgb9_e5_ufloat_int -> Rgb9_e5_ufloat
+    | x when x = rg32_float_int -> Rg32_float
+    | x when x = rg32_uint_int -> Rg32_uint
+    | x when x = rg32_sint_int -> Rg32_sint
+    | x when x = rgba16_uint_int -> Rgba16_uint
+    | x when x = rgba16_sint_int -> Rgba16_sint
+    | x when x = rgba16_float_int -> Rgba16_float
+    | x when x = rgba32_float_int -> Rgba32_float
+    | x when x = rgba32_uint_int -> Rgba32_uint
+    | x when x = rgba32_sint_int -> Rgba32_sint
+    | x when x = stencil8_int -> Stencil8
+    | x when x = depth16_unorm_int -> Depth16_unorm
+    | x when x = depth24_plus_int -> Depth24_plus
+    | x when x = depth24_plus_stencil8_int -> Depth24_plus_stencil8
+    | x when x = depth32_float_int -> Depth32_float
+    | x when x = depth32_float_stencil8_int -> Depth32_float_stencil8
+    | x when x = bc1_rgba_unorm_int -> Bc1_rgba_unorm
+    | x when x = bc1_rgba_unorm_srgb_int -> Bc1_rgba_unorm_srgb
+    | x when x = bc2_rgba_unorm_int -> Bc2_rgba_unorm
+    | x when x = bc2_rgba_unorm_srgb_int -> Bc2_rgba_unorm_srgb
+    | x when x = bc3_rgba_unorm_int -> Bc3_rgba_unorm
+    | x when x = bc3_rgba_unorm_srgb_int -> Bc3_rgba_unorm_srgb
+    | x when x = bc4_r_unorm_int -> Bc4_r_unorm
+    | x when x = bc4_r_snorm_int -> Bc4_r_snorm
+    | x when x = bc5_rg_unorm_int -> Bc5_rg_unorm
+    | x when x = bc5_rg_snorm_int -> Bc5_rg_snorm
+    | x when x = bc6h_rgb_ufloat_int -> Bc6h_rgb_ufloat
+    | x when x = bc6h_rgb_float_int -> Bc6h_rgb_float
+    | x when x = bc7_rgba_unorm_int -> Bc7_rgba_unorm
+    | x when x = bc7_rgba_unorm_srgb_int -> Bc7_rgba_unorm_srgb
+    | x when x = etc2_rgb8_unorm_int -> Etc2_rgb8_unorm
+    | x when x = etc2_rgb8_unorm_srgb_int -> Etc2_rgb8_unorm_srgb
+    | x when x = etc2_rgb8a1_unorm_int -> Etc2_rgb8a1_unorm
+    | x when x = etc2_rgb8a1_unorm_srgb_int -> Etc2_rgb8a1_unorm_srgb
+    | x when x = etc2_rgba8_unorm_int -> Etc2_rgba8_unorm
+    | x when x = etc2_rgba8_unorm_srgb_int -> Etc2_rgba8_unorm_srgb
+    | x when x = eac_r11_unorm_int -> Eac_r11_unorm
+    | x when x = eac_r11_snorm_int -> Eac_r11_snorm
+    | x when x = eac_rg11_unorm_int -> Eac_rg11_unorm
+    | x when x = eac_rg11_snorm_int -> Eac_rg11_snorm
+    | x when x = astc_4x4_unorm_int -> Astc_4x4_unorm
+    | x when x = astc_4x4_unorm_srgb_int -> Astc_4x4_unorm_srgb
+    | x when x = astc_5x4_unorm_int -> Astc_5x4_unorm
+    | x when x = astc_5x4_unorm_srgb_int -> Astc_5x4_unorm_srgb
+    | x when x = astc_5x5_unorm_int -> Astc_5x5_unorm
+    | x when x = astc_5x5_unorm_srgb_int -> Astc_5x5_unorm_srgb
+    | x when x = astc_6x5_unorm_int -> Astc_6x5_unorm
+    | x when x = astc_6x5_unorm_srgb_int -> Astc_6x5_unorm_srgb
+    | x when x = astc_6x6_unorm_int -> Astc_6x6_unorm
+    | x when x = astc_6x6_unorm_srgb_int -> Astc_6x6_unorm_srgb
+    | x when x = astc_8x5_unorm_int -> Astc_8x5_unorm
+    | x when x = astc_8x5_unorm_srgb_int -> Astc_8x5_unorm_srgb
+    | x when x = astc_8x6_unorm_int -> Astc_8x6_unorm
+    | x when x = astc_8x6_unorm_srgb_int -> Astc_8x6_unorm_srgb
+    | x when x = astc_8x8_unorm_int -> Astc_8x8_unorm
+    | x when x = astc_8x8_unorm_srgb_int -> Astc_8x8_unorm_srgb
+    | x when x = astc_10x5_unorm_int -> Astc_10x5_unorm
+    | x when x = astc_10x5_unorm_srgb_int -> Astc_10x5_unorm_srgb
+    | x when x = astc_10x6_unorm_int -> Astc_10x6_unorm
+    | x when x = astc_10x6_unorm_srgb_int -> Astc_10x6_unorm_srgb
+    | x when x = astc_10x8_unorm_int -> Astc_10x8_unorm
+    | x when x = astc_10x8_unorm_srgb_int -> Astc_10x8_unorm_srgb
+    | x when x = astc_10x10_unorm_int -> Astc_10x10_unorm
+    | x when x = astc_10x10_unorm_srgb_int -> Astc_10x10_unorm_srgb
+    | x when x = astc_12x10_unorm_int -> Astc_12x10_unorm
+    | x when x = astc_12x10_unorm_srgb_int -> Astc_12x10_unorm_srgb
+    | x when x = astc_12x12_unorm_int -> Astc_12x12_unorm
+    | x when x = astc_12x12_unorm_srgb_int -> Astc_12x12_unorm_srgb
     | n -> failwith (Printf.sprintf "Texture_format.of_int: unknown value %d" n)
   ;;
 end
@@ -2602,24 +2966,32 @@ module Texture_sample_type = struct
   external texture_sample_type_sint : unit -> int = "caml_wgpu_texture_sample_type_sint"
   external texture_sample_type_uint : unit -> int = "caml_wgpu_texture_sample_type_uint"
 
+  let binding_not_used_int = texture_sample_type_binding_not_used ()
+  let undefined_int = texture_sample_type_undefined ()
+  let float_int = texture_sample_type_float ()
+  let unfilterable_float_int = texture_sample_type_unfilterable_float ()
+  let depth_int = texture_sample_type_depth ()
+  let sint_int = texture_sample_type_sint ()
+  let uint_int = texture_sample_type_uint ()
+
   let to_int = function
-    | Binding_not_used -> texture_sample_type_binding_not_used ()
-    | Undefined -> texture_sample_type_undefined ()
-    | Float -> texture_sample_type_float ()
-    | Unfilterable_float -> texture_sample_type_unfilterable_float ()
-    | Depth -> texture_sample_type_depth ()
-    | Sint -> texture_sample_type_sint ()
-    | Uint -> texture_sample_type_uint ()
+    | Binding_not_used -> binding_not_used_int
+    | Undefined -> undefined_int
+    | Float -> float_int
+    | Unfilterable_float -> unfilterable_float_int
+    | Depth -> depth_int
+    | Sint -> sint_int
+    | Uint -> uint_int
   ;;
 
   let of_int = function
-    | x when x = texture_sample_type_binding_not_used () -> Binding_not_used
-    | x when x = texture_sample_type_undefined () -> Undefined
-    | x when x = texture_sample_type_float () -> Float
-    | x when x = texture_sample_type_unfilterable_float () -> Unfilterable_float
-    | x when x = texture_sample_type_depth () -> Depth
-    | x when x = texture_sample_type_sint () -> Sint
-    | x when x = texture_sample_type_uint () -> Uint
+    | x when x = binding_not_used_int -> Binding_not_used
+    | x when x = undefined_int -> Undefined
+    | x when x = float_int -> Float
+    | x when x = unfilterable_float_int -> Unfilterable_float
+    | x when x = depth_int -> Depth
+    | x when x = sint_int -> Sint
+    | x when x = uint_int -> Uint
     | n -> failwith (Printf.sprintf "Texture_sample_type.of_int: unknown value %d" n)
   ;;
 end
@@ -2659,24 +3031,32 @@ module Texture_view_dimension = struct
 
   external texture_view_dimension_3d : unit -> int = "caml_wgpu_texture_view_dimension_3d"
 
+  let undefined_int = texture_view_dimension_undefined ()
+  let n1d_int = texture_view_dimension_1d ()
+  let n2d_int = texture_view_dimension_2d ()
+  let n2d_array_int = texture_view_dimension_2d_array ()
+  let cube_int = texture_view_dimension_cube ()
+  let cube_array_int = texture_view_dimension_cube_array ()
+  let n3d_int = texture_view_dimension_3d ()
+
   let to_int = function
-    | Undefined -> texture_view_dimension_undefined ()
-    | N1d -> texture_view_dimension_1d ()
-    | N2d -> texture_view_dimension_2d ()
-    | N2d_array -> texture_view_dimension_2d_array ()
-    | Cube -> texture_view_dimension_cube ()
-    | Cube_array -> texture_view_dimension_cube_array ()
-    | N3d -> texture_view_dimension_3d ()
+    | Undefined -> undefined_int
+    | N1d -> n1d_int
+    | N2d -> n2d_int
+    | N2d_array -> n2d_array_int
+    | Cube -> cube_int
+    | Cube_array -> cube_array_int
+    | N3d -> n3d_int
   ;;
 
   let of_int = function
-    | x when x = texture_view_dimension_undefined () -> Undefined
-    | x when x = texture_view_dimension_1d () -> N1d
-    | x when x = texture_view_dimension_2d () -> N2d
-    | x when x = texture_view_dimension_2d_array () -> N2d_array
-    | x when x = texture_view_dimension_cube () -> Cube
-    | x when x = texture_view_dimension_cube_array () -> Cube_array
-    | x when x = texture_view_dimension_3d () -> N3d
+    | x when x = undefined_int -> Undefined
+    | x when x = n1d_int -> N1d
+    | x when x = n2d_int -> N2d
+    | x when x = n2d_array_int -> N2d_array
+    | x when x = cube_int -> Cube
+    | x when x = cube_array_int -> Cube_array
+    | x when x = n3d_int -> N3d
     | n -> failwith (Printf.sprintf "Texture_view_dimension.of_int: unknown value %d" n)
   ;;
 end
@@ -2775,92 +3155,134 @@ module Vertex_format = struct
     -> int
     = "caml_wgpu_vertex_format_unorm8x4_b_g_r_a"
 
+  let uint8_int = vertex_format_uint8 ()
+  let uint8x2_int = vertex_format_uint8x2 ()
+  let uint8x4_int = vertex_format_uint8x4 ()
+  let sint8_int = vertex_format_sint8 ()
+  let sint8x2_int = vertex_format_sint8x2 ()
+  let sint8x4_int = vertex_format_sint8x4 ()
+  let unorm8_int = vertex_format_unorm8 ()
+  let unorm8x2_int = vertex_format_unorm8x2 ()
+  let unorm8x4_int = vertex_format_unorm8x4 ()
+  let snorm8_int = vertex_format_snorm8 ()
+  let snorm8x2_int = vertex_format_snorm8x2 ()
+  let snorm8x4_int = vertex_format_snorm8x4 ()
+  let uint16_int = vertex_format_uint16 ()
+  let uint16x2_int = vertex_format_uint16x2 ()
+  let uint16x4_int = vertex_format_uint16x4 ()
+  let sint16_int = vertex_format_sint16 ()
+  let sint16x2_int = vertex_format_sint16x2 ()
+  let sint16x4_int = vertex_format_sint16x4 ()
+  let unorm16_int = vertex_format_unorm16 ()
+  let unorm16x2_int = vertex_format_unorm16x2 ()
+  let unorm16x4_int = vertex_format_unorm16x4 ()
+  let snorm16_int = vertex_format_snorm16 ()
+  let snorm16x2_int = vertex_format_snorm16x2 ()
+  let snorm16x4_int = vertex_format_snorm16x4 ()
+  let float16_int = vertex_format_float16 ()
+  let float16x2_int = vertex_format_float16x2 ()
+  let float16x4_int = vertex_format_float16x4 ()
+  let float32_int = vertex_format_float32 ()
+  let float32x2_int = vertex_format_float32x2 ()
+  let float32x3_int = vertex_format_float32x3 ()
+  let float32x4_int = vertex_format_float32x4 ()
+  let uint32_int = vertex_format_uint32 ()
+  let uint32x2_int = vertex_format_uint32x2 ()
+  let uint32x3_int = vertex_format_uint32x3 ()
+  let uint32x4_int = vertex_format_uint32x4 ()
+  let sint32_int = vertex_format_sint32 ()
+  let sint32x2_int = vertex_format_sint32x2 ()
+  let sint32x3_int = vertex_format_sint32x3 ()
+  let sint32x4_int = vertex_format_sint32x4 ()
+  let unorm10__10__10__2_int = vertex_format_unorm10__10__10__2 ()
+  let unorm8x4_b_g_r_a_int = vertex_format_unorm8x4_b_g_r_a ()
+
   let to_int = function
-    | Uint8 -> vertex_format_uint8 ()
-    | Uint8x2 -> vertex_format_uint8x2 ()
-    | Uint8x4 -> vertex_format_uint8x4 ()
-    | Sint8 -> vertex_format_sint8 ()
-    | Sint8x2 -> vertex_format_sint8x2 ()
-    | Sint8x4 -> vertex_format_sint8x4 ()
-    | Unorm8 -> vertex_format_unorm8 ()
-    | Unorm8x2 -> vertex_format_unorm8x2 ()
-    | Unorm8x4 -> vertex_format_unorm8x4 ()
-    | Snorm8 -> vertex_format_snorm8 ()
-    | Snorm8x2 -> vertex_format_snorm8x2 ()
-    | Snorm8x4 -> vertex_format_snorm8x4 ()
-    | Uint16 -> vertex_format_uint16 ()
-    | Uint16x2 -> vertex_format_uint16x2 ()
-    | Uint16x4 -> vertex_format_uint16x4 ()
-    | Sint16 -> vertex_format_sint16 ()
-    | Sint16x2 -> vertex_format_sint16x2 ()
-    | Sint16x4 -> vertex_format_sint16x4 ()
-    | Unorm16 -> vertex_format_unorm16 ()
-    | Unorm16x2 -> vertex_format_unorm16x2 ()
-    | Unorm16x4 -> vertex_format_unorm16x4 ()
-    | Snorm16 -> vertex_format_snorm16 ()
-    | Snorm16x2 -> vertex_format_snorm16x2 ()
-    | Snorm16x4 -> vertex_format_snorm16x4 ()
-    | Float16 -> vertex_format_float16 ()
-    | Float16x2 -> vertex_format_float16x2 ()
-    | Float16x4 -> vertex_format_float16x4 ()
-    | Float32 -> vertex_format_float32 ()
-    | Float32x2 -> vertex_format_float32x2 ()
-    | Float32x3 -> vertex_format_float32x3 ()
-    | Float32x4 -> vertex_format_float32x4 ()
-    | Uint32 -> vertex_format_uint32 ()
-    | Uint32x2 -> vertex_format_uint32x2 ()
-    | Uint32x3 -> vertex_format_uint32x3 ()
-    | Uint32x4 -> vertex_format_uint32x4 ()
-    | Sint32 -> vertex_format_sint32 ()
-    | Sint32x2 -> vertex_format_sint32x2 ()
-    | Sint32x3 -> vertex_format_sint32x3 ()
-    | Sint32x4 -> vertex_format_sint32x4 ()
-    | Unorm10__10__10__2 -> vertex_format_unorm10__10__10__2 ()
-    | Unorm8x4_b_g_r_a -> vertex_format_unorm8x4_b_g_r_a ()
+    | Uint8 -> uint8_int
+    | Uint8x2 -> uint8x2_int
+    | Uint8x4 -> uint8x4_int
+    | Sint8 -> sint8_int
+    | Sint8x2 -> sint8x2_int
+    | Sint8x4 -> sint8x4_int
+    | Unorm8 -> unorm8_int
+    | Unorm8x2 -> unorm8x2_int
+    | Unorm8x4 -> unorm8x4_int
+    | Snorm8 -> snorm8_int
+    | Snorm8x2 -> snorm8x2_int
+    | Snorm8x4 -> snorm8x4_int
+    | Uint16 -> uint16_int
+    | Uint16x2 -> uint16x2_int
+    | Uint16x4 -> uint16x4_int
+    | Sint16 -> sint16_int
+    | Sint16x2 -> sint16x2_int
+    | Sint16x4 -> sint16x4_int
+    | Unorm16 -> unorm16_int
+    | Unorm16x2 -> unorm16x2_int
+    | Unorm16x4 -> unorm16x4_int
+    | Snorm16 -> snorm16_int
+    | Snorm16x2 -> snorm16x2_int
+    | Snorm16x4 -> snorm16x4_int
+    | Float16 -> float16_int
+    | Float16x2 -> float16x2_int
+    | Float16x4 -> float16x4_int
+    | Float32 -> float32_int
+    | Float32x2 -> float32x2_int
+    | Float32x3 -> float32x3_int
+    | Float32x4 -> float32x4_int
+    | Uint32 -> uint32_int
+    | Uint32x2 -> uint32x2_int
+    | Uint32x3 -> uint32x3_int
+    | Uint32x4 -> uint32x4_int
+    | Sint32 -> sint32_int
+    | Sint32x2 -> sint32x2_int
+    | Sint32x3 -> sint32x3_int
+    | Sint32x4 -> sint32x4_int
+    | Unorm10__10__10__2 -> unorm10__10__10__2_int
+    | Unorm8x4_b_g_r_a -> unorm8x4_b_g_r_a_int
   ;;
 
   let of_int = function
-    | x when x = vertex_format_uint8 () -> Uint8
-    | x when x = vertex_format_uint8x2 () -> Uint8x2
-    | x when x = vertex_format_uint8x4 () -> Uint8x4
-    | x when x = vertex_format_sint8 () -> Sint8
-    | x when x = vertex_format_sint8x2 () -> Sint8x2
-    | x when x = vertex_format_sint8x4 () -> Sint8x4
-    | x when x = vertex_format_unorm8 () -> Unorm8
-    | x when x = vertex_format_unorm8x2 () -> Unorm8x2
-    | x when x = vertex_format_unorm8x4 () -> Unorm8x4
-    | x when x = vertex_format_snorm8 () -> Snorm8
-    | x when x = vertex_format_snorm8x2 () -> Snorm8x2
-    | x when x = vertex_format_snorm8x4 () -> Snorm8x4
-    | x when x = vertex_format_uint16 () -> Uint16
-    | x when x = vertex_format_uint16x2 () -> Uint16x2
-    | x when x = vertex_format_uint16x4 () -> Uint16x4
-    | x when x = vertex_format_sint16 () -> Sint16
-    | x when x = vertex_format_sint16x2 () -> Sint16x2
-    | x when x = vertex_format_sint16x4 () -> Sint16x4
-    | x when x = vertex_format_unorm16 () -> Unorm16
-    | x when x = vertex_format_unorm16x2 () -> Unorm16x2
-    | x when x = vertex_format_unorm16x4 () -> Unorm16x4
-    | x when x = vertex_format_snorm16 () -> Snorm16
-    | x when x = vertex_format_snorm16x2 () -> Snorm16x2
-    | x when x = vertex_format_snorm16x4 () -> Snorm16x4
-    | x when x = vertex_format_float16 () -> Float16
-    | x when x = vertex_format_float16x2 () -> Float16x2
-    | x when x = vertex_format_float16x4 () -> Float16x4
-    | x when x = vertex_format_float32 () -> Float32
-    | x when x = vertex_format_float32x2 () -> Float32x2
-    | x when x = vertex_format_float32x3 () -> Float32x3
-    | x when x = vertex_format_float32x4 () -> Float32x4
-    | x when x = vertex_format_uint32 () -> Uint32
-    | x when x = vertex_format_uint32x2 () -> Uint32x2
-    | x when x = vertex_format_uint32x3 () -> Uint32x3
-    | x when x = vertex_format_uint32x4 () -> Uint32x4
-    | x when x = vertex_format_sint32 () -> Sint32
-    | x when x = vertex_format_sint32x2 () -> Sint32x2
-    | x when x = vertex_format_sint32x3 () -> Sint32x3
-    | x when x = vertex_format_sint32x4 () -> Sint32x4
-    | x when x = vertex_format_unorm10__10__10__2 () -> Unorm10__10__10__2
-    | x when x = vertex_format_unorm8x4_b_g_r_a () -> Unorm8x4_b_g_r_a
+    | x when x = uint8_int -> Uint8
+    | x when x = uint8x2_int -> Uint8x2
+    | x when x = uint8x4_int -> Uint8x4
+    | x when x = sint8_int -> Sint8
+    | x when x = sint8x2_int -> Sint8x2
+    | x when x = sint8x4_int -> Sint8x4
+    | x when x = unorm8_int -> Unorm8
+    | x when x = unorm8x2_int -> Unorm8x2
+    | x when x = unorm8x4_int -> Unorm8x4
+    | x when x = snorm8_int -> Snorm8
+    | x when x = snorm8x2_int -> Snorm8x2
+    | x when x = snorm8x4_int -> Snorm8x4
+    | x when x = uint16_int -> Uint16
+    | x when x = uint16x2_int -> Uint16x2
+    | x when x = uint16x4_int -> Uint16x4
+    | x when x = sint16_int -> Sint16
+    | x when x = sint16x2_int -> Sint16x2
+    | x when x = sint16x4_int -> Sint16x4
+    | x when x = unorm16_int -> Unorm16
+    | x when x = unorm16x2_int -> Unorm16x2
+    | x when x = unorm16x4_int -> Unorm16x4
+    | x when x = snorm16_int -> Snorm16
+    | x when x = snorm16x2_int -> Snorm16x2
+    | x when x = snorm16x4_int -> Snorm16x4
+    | x when x = float16_int -> Float16
+    | x when x = float16x2_int -> Float16x2
+    | x when x = float16x4_int -> Float16x4
+    | x when x = float32_int -> Float32
+    | x when x = float32x2_int -> Float32x2
+    | x when x = float32x3_int -> Float32x3
+    | x when x = float32x4_int -> Float32x4
+    | x when x = uint32_int -> Uint32
+    | x when x = uint32x2_int -> Uint32x2
+    | x when x = uint32x3_int -> Uint32x3
+    | x when x = uint32x4_int -> Uint32x4
+    | x when x = sint32_int -> Sint32
+    | x when x = sint32x2_int -> Sint32x2
+    | x when x = sint32x3_int -> Sint32x3
+    | x when x = sint32x4_int -> Sint32x4
+    | x when x = unorm10__10__10__2_int -> Unorm10__10__10__2
+    | x when x = unorm8x4_b_g_r_a_int -> Unorm8x4_b_g_r_a
     | n -> failwith (Printf.sprintf "Vertex_format.of_int: unknown value %d" n)
   ;;
 end
@@ -2885,18 +3307,23 @@ module Vertex_step_mode = struct
   external vertex_step_mode_vertex : unit -> int = "caml_wgpu_vertex_step_mode_vertex"
   external vertex_step_mode_instance : unit -> int = "caml_wgpu_vertex_step_mode_instance"
 
+  let vertex_buffer_not_used_int = vertex_step_mode_vertex_buffer_not_used ()
+  let undefined_int = vertex_step_mode_undefined ()
+  let vertex_int = vertex_step_mode_vertex ()
+  let instance_int = vertex_step_mode_instance ()
+
   let to_int = function
-    | Vertex_buffer_not_used -> vertex_step_mode_vertex_buffer_not_used ()
-    | Undefined -> vertex_step_mode_undefined ()
-    | Vertex -> vertex_step_mode_vertex ()
-    | Instance -> vertex_step_mode_instance ()
+    | Vertex_buffer_not_used -> vertex_buffer_not_used_int
+    | Undefined -> undefined_int
+    | Vertex -> vertex_int
+    | Instance -> instance_int
   ;;
 
   let of_int = function
-    | x when x = vertex_step_mode_vertex_buffer_not_used () -> Vertex_buffer_not_used
-    | x when x = vertex_step_mode_undefined () -> Undefined
-    | x when x = vertex_step_mode_vertex () -> Vertex
-    | x when x = vertex_step_mode_instance () -> Instance
+    | x when x = vertex_buffer_not_used_int -> Vertex_buffer_not_used
+    | x when x = undefined_int -> Undefined
+    | x when x = vertex_int -> Vertex
+    | x when x = instance_int -> Instance
     | n -> failwith (Printf.sprintf "Vertex_step_mode.of_int: unknown value %d" n)
   ;;
 end
@@ -2927,20 +3354,26 @@ module Wait_status = struct
     -> int
     = "caml_wgpu_wait_status_unsupported_mixed_sources"
 
+  let success_int = wait_status_success ()
+  let timed_out_int = wait_status_timed_out ()
+  let unsupported_timeout_int = wait_status_unsupported_timeout ()
+  let unsupported_count_int = wait_status_unsupported_count ()
+  let unsupported_mixed_sources_int = wait_status_unsupported_mixed_sources ()
+
   let to_int = function
-    | Success -> wait_status_success ()
-    | Timed_out -> wait_status_timed_out ()
-    | Unsupported_timeout -> wait_status_unsupported_timeout ()
-    | Unsupported_count -> wait_status_unsupported_count ()
-    | Unsupported_mixed_sources -> wait_status_unsupported_mixed_sources ()
+    | Success -> success_int
+    | Timed_out -> timed_out_int
+    | Unsupported_timeout -> unsupported_timeout_int
+    | Unsupported_count -> unsupported_count_int
+    | Unsupported_mixed_sources -> unsupported_mixed_sources_int
   ;;
 
   let of_int = function
-    | x when x = wait_status_success () -> Success
-    | x when x = wait_status_timed_out () -> Timed_out
-    | x when x = wait_status_unsupported_timeout () -> Unsupported_timeout
-    | x when x = wait_status_unsupported_count () -> Unsupported_count
-    | x when x = wait_status_unsupported_mixed_sources () -> Unsupported_mixed_sources
+    | x when x = success_int -> Success
+    | x when x = timed_out_int -> Timed_out
+    | x when x = unsupported_timeout_int -> Unsupported_timeout
+    | x when x = unsupported_count_int -> Unsupported_count
+    | x when x = unsupported_mixed_sources_int -> Unsupported_mixed_sources
     | n -> failwith (Printf.sprintf "Wait_status.of_int: unknown value %d" n)
   ;;
 end
@@ -2972,25 +3405,36 @@ module Wgsl_language_feature_name = struct
     -> int
     = "caml_wgpu_wgsl_language_feature_name_pointer_composite_access"
 
+  let readonly_and_readwrite_storage_textures_int =
+    wgsl_language_feature_name_readonly_and_readwrite_storage_textures ()
+  ;;
+
+  let packed4x8_integer_dot_product_int =
+    wgsl_language_feature_name_packed4x8_integer_dot_product ()
+  ;;
+
+  let unrestricted_pointer_parameters_int =
+    wgsl_language_feature_name_unrestricted_pointer_parameters ()
+  ;;
+
+  let pointer_composite_access_int =
+    wgsl_language_feature_name_pointer_composite_access ()
+  ;;
+
   let to_int = function
     | Readonly_and_readwrite_storage_textures ->
-      wgsl_language_feature_name_readonly_and_readwrite_storage_textures ()
-    | Packed4x8_integer_dot_product ->
-      wgsl_language_feature_name_packed4x8_integer_dot_product ()
-    | Unrestricted_pointer_parameters ->
-      wgsl_language_feature_name_unrestricted_pointer_parameters ()
-    | Pointer_composite_access -> wgsl_language_feature_name_pointer_composite_access ()
+      readonly_and_readwrite_storage_textures_int
+    | Packed4x8_integer_dot_product -> packed4x8_integer_dot_product_int
+    | Unrestricted_pointer_parameters -> unrestricted_pointer_parameters_int
+    | Pointer_composite_access -> pointer_composite_access_int
   ;;
 
   let of_int = function
-    | x when x = wgsl_language_feature_name_readonly_and_readwrite_storage_textures () ->
+    | x when x = readonly_and_readwrite_storage_textures_int ->
       Readonly_and_readwrite_storage_textures
-    | x when x = wgsl_language_feature_name_packed4x8_integer_dot_product () ->
-      Packed4x8_integer_dot_product
-    | x when x = wgsl_language_feature_name_unrestricted_pointer_parameters () ->
-      Unrestricted_pointer_parameters
-    | x when x = wgsl_language_feature_name_pointer_composite_access () ->
-      Pointer_composite_access
+    | x when x = packed4x8_integer_dot_product_int -> Packed4x8_integer_dot_product
+    | x when x = unrestricted_pointer_parameters_int -> Unrestricted_pointer_parameters
+    | x when x = pointer_composite_access_int -> Pointer_composite_access
     | n ->
       failwith (Printf.sprintf "Wgsl_language_feature_name.of_int: unknown value %d" n)
   ;;
@@ -3026,18 +3470,30 @@ module Buffer_usage = struct
     -> int
     = "caml_wgpu_buffer_usage_query_resolve"
 
+  let none_int = buffer_usage_none ()
+  let map_read_int = buffer_usage_map_read ()
+  let map_write_int = buffer_usage_map_write ()
+  let copy_src_int = buffer_usage_copy_src ()
+  let copy_dst_int = buffer_usage_copy_dst ()
+  let index_int = buffer_usage_index ()
+  let vertex_int = buffer_usage_vertex ()
+  let uniform_int = buffer_usage_uniform ()
+  let storage_int = buffer_usage_storage ()
+  let indirect_int = buffer_usage_indirect ()
+  let query_resolve_int = buffer_usage_query_resolve ()
+
   let to_int = function
-    | None -> buffer_usage_none ()
-    | Map_read -> buffer_usage_map_read ()
-    | Map_write -> buffer_usage_map_write ()
-    | Copy_src -> buffer_usage_copy_src ()
-    | Copy_dst -> buffer_usage_copy_dst ()
-    | Index -> buffer_usage_index ()
-    | Vertex -> buffer_usage_vertex ()
-    | Uniform -> buffer_usage_uniform ()
-    | Storage -> buffer_usage_storage ()
-    | Indirect -> buffer_usage_indirect ()
-    | Query_resolve -> buffer_usage_query_resolve ()
+    | None -> none_int
+    | Map_read -> map_read_int
+    | Map_write -> map_write_int
+    | Copy_src -> copy_src_int
+    | Copy_dst -> copy_dst_int
+    | Index -> index_int
+    | Vertex -> vertex_int
+    | Uniform -> uniform_int
+    | Storage -> storage_int
+    | Indirect -> indirect_int
+    | Query_resolve -> query_resolve_int
   ;;
 
   let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags
@@ -3059,13 +3515,20 @@ module Color_write_mask = struct
   external color_write_mask_alpha : unit -> int = "caml_wgpu_color_write_mask_alpha"
   external color_write_mask_all : unit -> int = "caml_wgpu_color_write_mask_all"
 
+  let none_int = color_write_mask_none ()
+  let red_int = color_write_mask_red ()
+  let green_int = color_write_mask_green ()
+  let blue_int = color_write_mask_blue ()
+  let alpha_int = color_write_mask_alpha ()
+  let all_int = color_write_mask_all ()
+
   let to_int = function
-    | None -> color_write_mask_none ()
-    | Red -> color_write_mask_red ()
-    | Green -> color_write_mask_green ()
-    | Blue -> color_write_mask_blue ()
-    | Alpha -> color_write_mask_alpha ()
-    | All -> color_write_mask_all ()
+    | None -> none_int
+    | Red -> red_int
+    | Green -> green_int
+    | Blue -> blue_int
+    | Alpha -> alpha_int
+    | All -> all_int
   ;;
 
   let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags
@@ -3081,10 +3544,14 @@ module Map_mode = struct
   external map_mode_read : unit -> int = "caml_wgpu_map_mode_read"
   external map_mode_write : unit -> int = "caml_wgpu_map_mode_write"
 
+  let none_int = map_mode_none ()
+  let read_int = map_mode_read ()
+  let write_int = map_mode_write ()
+
   let to_int = function
-    | None -> map_mode_none ()
-    | Read -> map_mode_read ()
-    | Write -> map_mode_write ()
+    | None -> none_int
+    | Read -> read_int
+    | Write -> write_int
   ;;
 
   let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags
@@ -3102,11 +3569,16 @@ module Shader_stage = struct
   external shader_stage_fragment : unit -> int = "caml_wgpu_shader_stage_fragment"
   external shader_stage_compute : unit -> int = "caml_wgpu_shader_stage_compute"
 
+  let none_int = shader_stage_none ()
+  let vertex_int = shader_stage_vertex ()
+  let fragment_int = shader_stage_fragment ()
+  let compute_int = shader_stage_compute ()
+
   let to_int = function
-    | None -> shader_stage_none ()
-    | Vertex -> shader_stage_vertex ()
-    | Fragment -> shader_stage_fragment ()
-    | Compute -> shader_stage_compute ()
+    | None -> none_int
+    | Vertex -> vertex_int
+    | Fragment -> fragment_int
+    | Compute -> compute_int
   ;;
 
   let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags
@@ -3140,13 +3612,20 @@ module Texture_usage = struct
     -> int
     = "caml_wgpu_texture_usage_render_attachment"
 
+  let none_int = texture_usage_none ()
+  let copy_src_int = texture_usage_copy_src ()
+  let copy_dst_int = texture_usage_copy_dst ()
+  let texture_binding_int = texture_usage_texture_binding ()
+  let storage_binding_int = texture_usage_storage_binding ()
+  let render_attachment_int = texture_usage_render_attachment ()
+
   let to_int = function
-    | None -> texture_usage_none ()
-    | Copy_src -> texture_usage_copy_src ()
-    | Copy_dst -> texture_usage_copy_dst ()
-    | Texture_binding -> texture_usage_texture_binding ()
-    | Storage_binding -> texture_usage_storage_binding ()
-    | Render_attachment -> texture_usage_render_attachment ()
+    | None -> none_int
+    | Copy_src -> copy_src_int
+    | Copy_dst -> copy_dst_int
+    | Texture_binding -> texture_binding_int
+    | Storage_binding -> storage_binding_int
+    | Render_attachment -> render_attachment_int
   ;;
 
   let list_to_int flags = List.fold_left (fun acc f -> acc lor to_int f) 0 flags

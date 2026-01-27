@@ -1627,7 +1627,10 @@ end
 
 |}
   in
-  let enums = List.map api.enums ~f:(gen_enum_with_to_string Implementation) |> String.concat ~sep:"\n" in
+  let enums =
+    List.map api.enums ~f:(gen_enum_with_to_string Implementation)
+    |> String.concat ~sep:"\n"
+  in
   header ^ module_type_s ^ enums
 ;;
 
@@ -1644,7 +1647,9 @@ end
 
 |}
   in
-  let enums = List.map api.enums ~f:(gen_enum_with_to_string Interface) |> String.concat ~sep:"\n" in
+  let enums =
+    List.map api.enums ~f:(gen_enum_with_to_string Interface) |> String.concat ~sep:"\n"
+  in
   header ^ module_type_s ^ enums
 ;;
 
@@ -1665,7 +1670,10 @@ end
 
 |}
   in
-  let bitsets = List.map api.bitflags ~f:(gen_bitset_with_helpers Implementation) |> String.concat ~sep:"\n" in
+  let bitsets =
+    List.map api.bitflags ~f:(gen_bitset_with_helpers Implementation)
+    |> String.concat ~sep:"\n"
+  in
   header ^ module_type_s ^ bitsets
 ;;
 
@@ -1686,6 +1694,9 @@ end
 
 |}
   in
-  let bitsets = List.map api.bitflags ~f:(gen_bitset_with_helpers Interface) |> String.concat ~sep:"\n" in
+  let bitsets =
+    List.map api.bitflags ~f:(gen_bitset_with_helpers Interface)
+    |> String.concat ~sep:"\n"
+  in
   header ^ module_type_s ^ bitsets
 ;;

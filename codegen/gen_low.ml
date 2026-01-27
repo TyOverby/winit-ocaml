@@ -59,21 +59,11 @@ let gen_enum (mode : output_mode) (enum : Ir.enum) : string =
 end
 |}
   | Implementation ->
-    let to_int_cases =
-      List.map enum.entries ~f:(fun entry ->
-        let variant_name = normalize_enum_entry_name entry.name in
-        let enum_lower = String.lowercase enum.name in
-        let entry_lower = String.lowercase entry.name in
-        {%string|    | %{variant_name} -> %{enum_lower}_%{entry_lower} ()|})
-      |> String.concat ~sep:"\n"
-    in
-    let of_int_cases =
-      List.map enum.entries ~f:(fun entry ->
-        let variant_name = normalize_enum_entry_name entry.name in
-        let enum_lower = String.lowercase enum.name in
-        let entry_lower = String.lowercase entry.name in
-        {%string|    | x when x = %{enum_lower}_%{entry_lower} () -> %{variant_name}|})
-      |> String.concat ~sep:"\n"
+    (* Helper to make a valid OCaml identifier for cached constant names *)
+    let cached_name entry_lower =
+      if String.length entry_lower > 0 && Char.is_digit (String.get entry_lower 0)
+      then "n" ^ entry_lower ^ "_int"
+      else entry_lower ^ "_int"
     in
     let externals =
       List.map enum.entries ~f:(fun entry ->
@@ -82,11 +72,37 @@ end
         {%string|external %{enum_lower}_%{entry_lower} : unit -> int = "caml_wgpu_%{enum_lower}_%{entry_lower}"|})
       |> String.concat ~sep:"\n"
     in
+    let cached_constants =
+      List.map enum.entries ~f:(fun entry ->
+        let enum_lower = String.lowercase enum.name in
+        let entry_lower = String.lowercase entry.name in
+        let const_name = cached_name entry_lower in
+        {%string|  let %{const_name} = %{enum_lower}_%{entry_lower} ()|})
+      |> String.concat ~sep:"\n"
+    in
+    let to_int_cases =
+      List.map enum.entries ~f:(fun entry ->
+        let variant_name = normalize_enum_entry_name entry.name in
+        let entry_lower = String.lowercase entry.name in
+        let const_name = cached_name entry_lower in
+        {%string|    | %{variant_name} -> %{const_name}|})
+      |> String.concat ~sep:"\n"
+    in
+    let of_int_cases =
+      List.map enum.entries ~f:(fun entry ->
+        let variant_name = normalize_enum_entry_name entry.name in
+        let entry_lower = String.lowercase entry.name in
+        let const_name = cached_name entry_lower in
+        {%string|    | x when x = %{const_name} -> %{variant_name}|})
+      |> String.concat ~sep:"\n"
+    in
     {%string|module %{module_name} = struct
   type t =
 %{variants}
 
 %{externals}
+
+%{cached_constants}
 
   let to_int = function
 %{to_int_cases}
@@ -138,13 +154,11 @@ let gen_bitflag (mode : output_mode) (bitflag : Ir.bitflag) : string =
 end
 |}
   | Implementation ->
-    let to_int_cases =
-      List.map bitflag.entries ~f:(fun entry ->
-        let variant_name = normalize_enum_entry_name entry.name in
-        let bitflag_lower = String.lowercase bitflag.name in
-        let entry_lower = String.lowercase entry.name in
-        {%string|    | %{variant_name} -> %{bitflag_lower}_%{entry_lower} ()|})
-      |> String.concat ~sep:"\n"
+    (* Helper to make a valid OCaml identifier for cached constant names *)
+    let cached_name entry_lower =
+      if String.length entry_lower > 0 && Char.is_digit (String.get entry_lower 0)
+      then "n" ^ entry_lower ^ "_int"
+      else entry_lower ^ "_int"
     in
     let externals =
       List.map bitflag.entries ~f:(fun entry ->
@@ -153,11 +167,29 @@ end
         {%string|external %{bitflag_lower}_%{entry_lower} : unit -> int = "caml_wgpu_%{bitflag_lower}_%{entry_lower}"|})
       |> String.concat ~sep:"\n"
     in
+    let cached_constants =
+      List.map bitflag.entries ~f:(fun entry ->
+        let bitflag_lower = String.lowercase bitflag.name in
+        let entry_lower = String.lowercase entry.name in
+        let const_name = cached_name entry_lower in
+        {%string|  let %{const_name} = %{bitflag_lower}_%{entry_lower} ()|})
+      |> String.concat ~sep:"\n"
+    in
+    let to_int_cases =
+      List.map bitflag.entries ~f:(fun entry ->
+        let variant_name = normalize_enum_entry_name entry.name in
+        let entry_lower = String.lowercase entry.name in
+        let const_name = cached_name entry_lower in
+        {%string|    | %{variant_name} -> %{const_name}|})
+      |> String.concat ~sep:"\n"
+    in
     {%string|module %{module_name} = struct
   type t =
 %{variants}
 
 %{externals}
+
+%{cached_constants}
 
   let to_int = function
 %{to_int_cases}

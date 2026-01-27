@@ -296,7 +296,8 @@ let test_render_clear () =
       ~label:"render_target"
       ~size:(width, height, 1)
       ~format:Wgpu.Texture_format.Rgba8_unorm
-      ~usage:[ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]
+      ~usage:
+        [ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]
       ()
   in
   print_endline "Render target texture created.";
@@ -451,7 +452,8 @@ fn fs_main() -> @location(0) vec4<f32> {
       ~label:"render_target"
       ~size:(width, height, 1)
       ~format:Wgpu.Texture_format.Rgba8_unorm
-      ~usage:[ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]
+      ~usage:
+        [ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]
       ()
   in
   print_endline "Render target texture created.";
