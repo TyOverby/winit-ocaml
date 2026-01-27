@@ -1080,3 +1080,56 @@ Migrated multiple Device methods from hardcoded implementations to auto-generati
 1. Consider migrating more descriptor-based methods
 2. Add chained struct support (nextInChain pattern)
 3. Document the complete high-level API
+
+---
+
+## 2026-01-27: Codegen Code Quality Report Complete
+
+### Accomplished
+- **Comprehensive code quality analysis** of the codegen library
+- Created 10 detailed issue reports with proposed fixes
+- Organized by implementation priority with effort/value assessment
+
+### Report Location
+`tasks/triage/code-quality/report.md` with individual issue files:
+
+| File | Issue |
+|------|-------|
+| `01-hardcoded-templates.md` | Externalize ~500 lines of embedded code to template files |
+| `02-split-large-files.md` | Break 2295+1882 line files into focused modules |
+| `03-duplicated-logic.md` | Reduce ML/MLI generation duplication |
+| `04-add-expect-tests.md` | Add Jane Street-style expect tests |
+| `05-complex-return-types.md` | Replace tuple returns with named records |
+| `06-configuration-extraction.md` | Move method config to dedicated module |
+| `07-improve-naming.md` | Clarify vague names like "entry_struct", "simple" |
+| `08-type-mapping-abstraction.md` | Centralize type mapping logic |
+| `09-code-builder-abstraction.md` | Replace sprintf with structured code builder |
+| `10-separate-concerns-in-method-gen.md` | Decompose 108-line method generation function |
+
+### Recommended Priorities
+
+**Phase 1 (Foundation):**
+1. Add expect tests for utility functions
+2. Extract configuration to dedicated module
+
+**Phase 2 (Quick Wins):**
+3. Externalize hardcoded templates
+4. Improve naming clarity
+5. Simplify complex return types
+
+**Phase 3 (Major Refactoring):**
+6. Create type mapping layer
+7. Reduce ML/MLI duplication
+8. Split large files
+
+### Key Findings
+- gen_high.ml (2295 lines) and gen_low.ml (1882 lines) need splitting
+- ~500 lines of hardcoded OCaml/C code embedded as string literals
+- No automated tests makes refactoring risky
+- Significant duplication between ML and MLI generation
+- Complex function signatures with opaque tuple return types
+
+### Next Steps
+1. Begin with Phase 1 items (tests and config extraction)
+2. Address Phase 2 quick wins for immediate navigability improvement
+3. Plan Phase 3 refactoring with test coverage in place
