@@ -679,80 +679,41 @@ let gen_c_array_conversion (arg : Ir.arg) : string =
   match arg.type_ with
   | Array { elem; _ } ->
     let elem_c_type = c_type_of_type_ref elem in
-    let count_var = sprintf "c_%s_count" arg.name in
-    let array_var = sprintf "c_%s" arg.name in
+    let count_var = {%string|c_%{arg.name}_count|} in
+    let array_var = {%string|c_%{arg.name}|} in
     let copy_code =
       match elem with
       | Object _ ->
-        sprintf
-          "  for (size_t i = 0; i < %s; i++) {\n\
-          \    %s[i] = (%s)Nativeint_val(Field(%s, i));\n\
-          \  }"
-          count_var
-          array_var
-          elem_c_type
-          arg.name
+        {%string|  for (size_t i = 0; i < %{count_var}; i++) {
+    %{array_var}[i] = (%{elem_c_type})Nativeint_val(Field(%{arg.name}, i));
+  }|}
       | Struct name ->
         (* For structs, we need to copy the struct contents, not just pointers *)
-        sprintf
-          "  for (size_t i = 0; i < %s; i++) {\n\
-          \    %s *src = (%s*)Nativeint_val(Field(%s, i));\n\
-          \    %s[i] = *src;\n\
-          \  }"
-          count_var
-          (c_type_name name)
-          (c_type_name name)
-          arg.name
-          array_var
+        let c_type = c_type_name name in
+        {%string|  for (size_t i = 0; i < %{count_var}; i++) {
+    %{c_type} *src = (%{c_type}*)Nativeint_val(Field(%{arg.name}, i));
+    %{array_var}[i] = *src;
+  }|}
       | Enum _ | Bitflag _ ->
-        sprintf
-          "  for (size_t i = 0; i < %s; i++) {\n\
-          \    %s[i] = (%s)Int_val(Field(%s, i));\n\
-          \  }"
-          count_var
-          array_var
-          elem_c_type
-          arg.name
+        {%string|  for (size_t i = 0; i < %{count_var}; i++) {
+    %{array_var}[i] = (%{elem_c_type})Int_val(Field(%{arg.name}, i));
+  }|}
       | Primitive (Uint32 | Int32) ->
-        sprintf
-          "  for (size_t i = 0; i < %s; i++) {\n\
-          \    %s[i] = (%s)Int_val(Field(%s, i));\n\
-          \  }"
-          count_var
-          array_var
-          elem_c_type
-          arg.name
+        {%string|  for (size_t i = 0; i < %{count_var}; i++) {
+    %{array_var}[i] = (%{elem_c_type})Int_val(Field(%{arg.name}, i));
+  }|}
       | Primitive (Uint64 | Int64) ->
-        sprintf
-          "  for (size_t i = 0; i < %s; i++) {\n\
-          \    %s[i] = (%s)Int64_val(Field(%s, i));\n\
-          \  }"
-          count_var
-          array_var
-          elem_c_type
-          arg.name
+        {%string|  for (size_t i = 0; i < %{count_var}; i++) {
+    %{array_var}[i] = (%{elem_c_type})Int64_val(Field(%{arg.name}, i));
+  }|}
       | _ ->
-        sprintf
-          "  for (size_t i = 0; i < %s; i++) {\n\
-          \    %s[i] = (%s)Nativeint_val(Field(%s, i));\n\
-          \  }"
-          count_var
-          array_var
-          elem_c_type
-          arg.name
+        {%string|  for (size_t i = 0; i < %{count_var}; i++) {
+    %{array_var}[i] = (%{elem_c_type})Nativeint_val(Field(%{arg.name}, i));
+  }|}
     in
-    sprintf
-      "  size_t %s = Wosize_val(%s);\n\
-      \  %s* %s = (%s > 0) ? alloca(%s * sizeof(%s)) : NULL;\n\
-       %s"
-      count_var
-      arg.name
-      elem_c_type
-      array_var
-      count_var
-      count_var
-      elem_c_type
-      copy_code
+    {%string|  size_t %{count_var} = Wosize_val(%{arg.name});
+  %{elem_c_type}* %{array_var} = (%{count_var} > 0) ? alloca(%{count_var} * sizeof(%{elem_c_type})) : NULL;
+%{copy_code}|}
   | _ -> ""
 ;;
 
@@ -765,66 +726,60 @@ let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
   then sprintf "/* Manually implemented: %s.%s */\n" obj.name method_.name
   else (
     let c_func = c_method_name obj.name method_.name in
-    let caml_func =
-      sprintf
-        "caml_wgpu_%s_%s"
-        (String.lowercase obj.name)
-        (String.lowercase method_.name)
-    in
+    let obj_lower = String.lowercase obj.name in
+    let method_lower = String.lowercase method_.name in
+    let caml_func = {%string|caml_wgpu_%{obj_lower}_%{method_lower}|} in
     let obj_c_type = c_type_name obj.name in
     (* Build parameter list for CAMLparam *)
     let all_params = "self" :: List.map method_.args ~f:(fun arg -> arg.name) in
     let num_params = List.length all_params in
     let caml_param =
       if num_params <= 5
-      then sprintf "CAMLparam%d(%s)" num_params (String.concat ~sep:", " all_params)
+      then
+        let params_str = String.concat ~sep:", " all_params in
+        {%string|CAMLparam%{num_params#Int}(%{params_str})|}
       else (
         (* Need multiple CAMLparam calls *)
         let first5 = List.take all_params 5 in
         let rest = List.drop all_params 5 in
-        sprintf
-          "CAMLparam5(%s);\n  CAMLxparam%d(%s)"
-          (String.concat ~sep:", " first5)
-          (List.length rest)
-          (String.concat ~sep:", " rest))
+        let first5_str = String.concat ~sep:", " first5 in
+        let rest_len = List.length rest in
+        let rest_str = String.concat ~sep:", " rest in
+        {%string|CAMLparam5(%{first5_str});
+  CAMLxparam%{rest_len#Int}(%{rest_str})|})
     in
     (* Build value parameter declarations *)
     let value_params =
-      "value self" :: List.map method_.args ~f:(fun arg -> sprintf "value %s" arg.name)
+      "value self" :: List.map method_.args ~f:(fun arg -> {%string|value %{arg.name}|})
     in
     (* Build argument conversion *)
     let arg_conversions =
       List.map method_.args ~f:(fun arg ->
         let c_type = c_type_of_type_ref arg.type_ in
         match arg.type_ with
-        | Primitive Bool -> sprintf "  bool c_%s = Bool_val(%s);" arg.name arg.name
-        | Primitive Uint32 -> sprintf "  uint32_t c_%s = Int_val(%s);" arg.name arg.name
-        | Primitive Uint64 -> sprintf "  uint64_t c_%s = Int64_val(%s);" arg.name arg.name
-        | Primitive Int32 -> sprintf "  int32_t c_%s = Int_val(%s);" arg.name arg.name
-        | Primitive Int64 -> sprintf "  int64_t c_%s = Int64_val(%s);" arg.name arg.name
-        | Primitive Float32 -> sprintf "  float c_%s = Double_val(%s);" arg.name arg.name
-        | Primitive Float64 -> sprintf "  double c_%s = Double_val(%s);" arg.name arg.name
-        | Primitive Usize -> sprintf "  size_t c_%s = Int64_val(%s);" arg.name arg.name
+        | Primitive Bool -> {%string|  bool c_%{arg.name} = Bool_val(%{arg.name});|}
+        | Primitive Uint32 -> {%string|  uint32_t c_%{arg.name} = Int_val(%{arg.name});|}
+        | Primitive Uint64 -> {%string|  uint64_t c_%{arg.name} = Int64_val(%{arg.name});|}
+        | Primitive Int32 -> {%string|  int32_t c_%{arg.name} = Int_val(%{arg.name});|}
+        | Primitive Int64 -> {%string|  int64_t c_%{arg.name} = Int64_val(%{arg.name});|}
+        | Primitive Float32 -> {%string|  float c_%{arg.name} = Double_val(%{arg.name});|}
+        | Primitive Float64 -> {%string|  double c_%{arg.name} = Double_val(%{arg.name});|}
+        | Primitive Usize -> {%string|  size_t c_%{arg.name} = Int64_val(%{arg.name});|}
         | Primitive (String | Out_string | String_with_default_empty) ->
-          sprintf
-            "  WGPUStringView c_%s = { .data = String_val(%s), .length = \
-             caml_string_length(%s) };"
-            arg.name
-            arg.name
-            arg.name
+          {%string|  WGPUStringView c_%{arg.name} = { .data = String_val(%{arg.name}), .length = caml_string_length(%{arg.name}) };|}
         | Primitive C_void ->
-          sprintf "  void* c_%s = (void*)Nativeint_val(%s);" arg.name arg.name
+          {%string|  void* c_%{arg.name} = (void*)Nativeint_val(%{arg.name});|}
         | Enum _ | Bitflag _ ->
-          sprintf "  %s c_%s = Int_val(%s);" c_type arg.name arg.name
+          {%string|  %{c_type} c_%{arg.name} = Int_val(%{arg.name});|}
         | Object _ ->
-          sprintf "  %s c_%s = (%s)Nativeint_val(%s);" c_type arg.name c_type arg.name
+          {%string|  %{c_type} c_%{arg.name} = (%{c_type})Nativeint_val(%{arg.name});|}
         | Struct _ ->
           (* For struct pointers, we pass the nativeint as a pointer *)
-          sprintf "  %s* c_%s = (%s*)Nativeint_val(%s);" c_type arg.name c_type arg.name
+          {%string|  %{c_type}* c_%{arg.name} = (%{c_type}*)Nativeint_val(%{arg.name});|}
         | Pointer { inner = Struct _; _ } ->
-          sprintf "  %s c_%s = (%s)Nativeint_val(%s);" c_type arg.name c_type arg.name
+          {%string|  %{c_type} c_%{arg.name} = (%{c_type})Nativeint_val(%{arg.name});|}
         | Array _ -> gen_c_array_conversion arg
-        | _ -> sprintf "  /* TODO: convert %s */" arg.name)
+        | _ -> {%string|  /* TODO: convert %{arg.name} */|})
       |> String.concat ~sep:"\n"
     in
     (* Build C function call arguments - arrays need count + pointer *)
@@ -834,8 +789,8 @@ let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
         match arg.type_ with
         | Array _ ->
           (* Array args become count, pointer pair in C API *)
-          [ sprintf "c_%s_count" arg.name; sprintf "c_%s" arg.name ]
-        | _ -> [ sprintf "c_%s" arg.name ])
+          [ {%string|c_%{arg.name}_count|}; {%string|c_%{arg.name}|} ]
+        | _ -> [ {%string|c_%{arg.name}|} ])
     in
     let c_call_args = String.concat ~sep:", " c_args in
     (* Build return handling *)
