@@ -355,27 +355,30 @@ let high_level_return_type (type_ref : Ir.type_ref) : string =
 let arg_to_low_level (arg_name : string) (type_ref : Ir.type_ref) : string =
   match type_ref with
   | Primitive _ -> arg_name
-  | Enum name -> sprintf "(%s.to_int %s)" (ocaml_module_name name) arg_name
-  | Bitflag name -> sprintf "(%s.list_to_int %s)" (ocaml_module_name name) arg_name
-  | Object name -> sprintf "%s.%s.handle" arg_name (ocaml_module_name name)
+  | Enum name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.to_int %{arg_name})|}
+  | Bitflag name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.list_to_int %{arg_name})|}
+  | Object name ->
+    let module_name = ocaml_module_name name in
+    {%string|%{arg_name}.%{module_name}.handle|}
   | Optional (Object name) ->
-    sprintf
-      "(match %s with Some x -> x.%s.handle | None -> 0n)"
-      arg_name
-      (ocaml_module_name name)
+    let module_name = ocaml_module_name name in
+    {%string|(match %{arg_name} with Some x -> x.%{module_name}.handle | None -> 0n)|}
   | Optional _ -> arg_name (* shouldn't happen for simple types *)
   | Array { elem = Object name; _ } ->
     (* Convert list of objects to array of handles *)
-    sprintf
-      "(Array.of_list (List.map (fun x -> x.%s.handle) %s))"
-      (ocaml_module_name name)
-      arg_name
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map (fun x -> x.%{module_name}.handle) %{arg_name}))|}
   | Array { elem = Primitive _; _ } ->
     (* Convert list of primitives to array *)
-    sprintf "(Array.of_list %s)" arg_name
+    {%string|(Array.of_list %{arg_name})|}
   | Array { elem = Enum name; _ } ->
     (* Convert list of enums to array of ints *)
-    sprintf "(Array.of_list (List.map %s.to_int %s))" (ocaml_module_name name) arg_name
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map %{module_name}.to_int %{arg_name}))|}
   | _ -> arg_name
 ;;
 
@@ -383,14 +386,13 @@ let arg_to_low_level (arg_name : string) (type_ref : Ir.type_ref) : string =
 let return_to_high_level (result_expr : string) (type_ref : Ir.type_ref) : string =
   match type_ref with
   | Primitive _ -> result_expr
-  | Enum name -> sprintf "(%s.of_int (%s))" (ocaml_module_name name) result_expr
+  | Enum name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.of_int (%{result_expr}))|}
   | Bitflag _ -> result_expr (* bitflags return as ints - could be combination of flags *)
   | Object name ->
-    sprintf
-      "({ %s.handle = %s } : %s.t)"
-      (ocaml_module_name name)
-      result_expr
-      (ocaml_module_name name)
+    let module_name = ocaml_module_name name in
+    {%string|({ %{module_name}.handle = %{result_expr} } : %{module_name}.t)|}
   | _ -> result_expr
 ;;
 
@@ -398,50 +400,49 @@ let return_to_high_level (result_expr : string) (type_ref : Ir.type_ref) : strin
 let member_to_low_level (member_name : string) (type_ref : Ir.type_ref) : string =
   match type_ref with
   | Primitive _ -> member_name
-  | Enum name -> sprintf "(%s.to_int %s)" (ocaml_module_name name) member_name
-  | Bitflag name -> sprintf "(%s.list_to_int %s)" (ocaml_module_name name) member_name
-  | Object name -> sprintf "%s.%s.handle" member_name (ocaml_module_name name)
+  | Enum name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.to_int %{member_name})|}
+  | Bitflag name ->
+    let module_name = ocaml_module_name name in
+    {%string|(%{module_name}.list_to_int %{member_name})|}
+  | Object name ->
+    let module_name = ocaml_module_name name in
+    {%string|%{member_name}.%{module_name}.handle|}
   | Optional (Enum name) ->
-    sprintf
-      "(match %s with Some x -> %s.to_int x | None -> 0)"
-      member_name
-      (ocaml_module_name name)
+    let module_name = ocaml_module_name name in
+    {%string|(match %{member_name} with Some x -> %{module_name}.to_int x | None -> 0)|}
   | Optional (Object name) ->
-    sprintf
-      "(match %s with Some x -> x.%s.handle | None -> 0n)"
-      member_name
-      (ocaml_module_name name)
+    let module_name = ocaml_module_name name in
+    {%string|(match %{member_name} with Some x -> x.%{module_name}.handle | None -> 0n)|}
   | Optional _ -> member_name
   | Array { elem = Object name; _ } ->
     (* Convert list of objects to array of handles *)
-    sprintf
-      "(Array.of_list (List.map (fun x -> x.%s.handle) %s))"
-      (ocaml_module_name name)
-      member_name
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map (fun x -> x.%{module_name}.handle) %{member_name}))|}
   | Array { elem = Primitive _; _ } ->
     (* Convert list of primitives to array *)
-    sprintf "(Array.of_list %s)" member_name
+    {%string|(Array.of_list %{member_name})|}
   | Array { elem = Enum name; _ } ->
     (* Convert list of enums to array of ints *)
-    sprintf "(Array.of_list (List.map %s.to_int %s))" (ocaml_module_name name) member_name
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map %{module_name}.to_int %{member_name}))|}
   | Array { elem = Bitflag name; _ } ->
     (* Convert list of bitflag lists to array of ints *)
-    sprintf
-      "(Array.of_list (List.map %s.list_to_int %s))"
-      (ocaml_module_name name)
-      member_name
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map %{module_name}.list_to_int %{member_name}))|}
   | Pointer { inner = Array { elem = Object name; _ }; _ } ->
     (* Pointer to array of objects - same as array of objects *)
-    sprintf
-      "(Array.of_list (List.map (fun x -> x.%s.handle) %s))"
-      (ocaml_module_name name)
-      member_name
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map (fun x -> x.%{module_name}.handle) %{member_name}))|}
   | Pointer { inner = Array { elem = Primitive _; _ }; _ } ->
     (* Pointer to array of primitives *)
-    sprintf "(Array.of_list %s)" member_name
+    {%string|(Array.of_list %{member_name})|}
   | Pointer { inner = Array { elem = Enum name; _ }; _ } ->
     (* Pointer to array of enums *)
-    sprintf "(Array.of_list (List.map %s.to_int %s))" (ocaml_module_name name) member_name
+    let module_name = ocaml_module_name name in
+    {%string|(Array.of_list (List.map %{module_name}.to_int %{member_name}))|}
+
   | _ -> member_name
 ;;
 
@@ -468,10 +469,12 @@ let build_param_list
   let param_strs =
     List.filter_map struct_params ~f:(fun p ->
       if p.is_optional
-      then Some (sprintf "?(%s = %s)" p.param_name (default_value_for_type p.member.type_))
-      else Some (sprintf "~%s" p.param_name))
+      then
+        let default_val = default_value_for_type p.member.type_ in
+        Some {%string|?(%{p.param_name} = %{default_val})|}
+      else Some {%string|~%{p.param_name}|})
     @ List.filter_map non_struct_params ~f:(fun (name, _arg, is_opt) ->
-      if is_opt then Some (sprintf "?%s" name) else Some (sprintf "~%s" name))
+      if is_opt then Some {%string|?%{name}|} else Some {%string|~%{name}|})
   in
   "t " ^ String.concat ~sep:" " param_strs ^ " ()"
 ;;
@@ -486,18 +489,15 @@ let gen_cleanup_code
   let free_entry_lists =
     List.concat_map array_element_struct_lists ~f:(fun (list_var, array_element_struct) ->
       let array_element_module = ocaml_module_name array_element_struct.name in
-      [ sprintf
-          "List.iter (fun e -> Wgpu_low.%s.%s_free e) %s;"
-          array_element_module
-          array_element_struct.name
-          list_var
-      ])
+      let struct_name = array_element_struct.name in
+      [ {%string|List.iter (fun e -> Wgpu_low.%{array_element_module}.%{struct_name}_free e) %{list_var};|} ])
   in
   (* Free structs in reverse order (parent structs first, then nested) *)
   let free_structs =
     List.map (List.rev struct_vars) ~f:(fun (var_name, struct_) ->
       let struct_module = ocaml_module_name struct_.name in
-      sprintf "Wgpu_low.%s.%s_free %s;" struct_module struct_.name var_name)
+      let struct_name = struct_.name in
+      {%string|Wgpu_low.%{struct_module}.%{struct_name}_free %{var_name};|})
   in
   free_entry_lists @ free_structs
 ;;
@@ -525,22 +525,16 @@ let gen_result_with_cleanup
   (cleanup_lines : string list)
   : string
   =
-  let call =
-    sprintf
-      "Wgpu_low.%s_%s t.handle %s"
-      obj.name
-      method_.name
-      (String.concat ~sep:" " call_args)
-  in
+  let call_args_str = String.concat ~sep:" " call_args in
+  let call = {%string|Wgpu_low.%{obj.name}_%{method_.name} t.handle %{call_args_str}|} in
   match method_.returns with
   | None -> String.concat ~sep:"\n    " ([ call ^ ";" ] @ cleanup_lines @ [ "()" ])
   | Some ret ->
     let free_lines = String.concat ~sep:"\n    " cleanup_lines in
-    sprintf
-      "let result = %s in\n    %s\n    %s"
-      call
-      free_lines
-      (return_to_high_level "result" ret.type_)
+    let result_conversion = return_to_high_level "result" ret.type_ in
+    {%string|let result = %{call} in
+    %{free_lines}
+    %{result_conversion}|}
 ;;
 
 (** Generate code to read fields from an output struct into local variables *)
@@ -556,34 +550,28 @@ let gen_output_struct_field_reads
     then None
     else (
       let field_name = escape_keyword member.name in
-      let getter_name =
-        sprintf "Wgpu_low.%s.%s_get_%s" struct_module struct_.name member.name
-      in
+      let getter_name = {%string|Wgpu_low.%{struct_module}.%{struct_.name}_get_%{member.name}|} in
       let value_expr =
         match member.type_ with
         | Enum name ->
-          sprintf "(%s.of_int (%s %s))" (ocaml_module_name name) getter_name struct_var
+          let module_name = ocaml_module_name name in
+          {%string|(%{module_name}.of_int (%{getter_name} %{struct_var}))|}
         | Object name ->
-          sprintf
-            "({ %s.handle = %s %s } : %s.t)"
-            (ocaml_module_name name)
-            getter_name
-            struct_var
-            (ocaml_module_name name)
-        | _ -> sprintf "(%s %s)" getter_name struct_var
+          let module_name = ocaml_module_name name in
+          {%string|({ %{module_name}.handle = %{getter_name} %{struct_var} } : %{module_name}.t)|}
+        | _ -> {%string|(%{getter_name} %{struct_var})|}
       in
-      Some (sprintf "let %s = %s in" field_name value_expr)))
+      Some {%string|let %{field_name} = %{value_expr} in|}))
 ;;
 
 (** Generate code to build a result record from struct field names *)
 let gen_output_struct_record (struct_ : Ir.struct_) : string =
   let record_fields =
     List.filter_map struct_.members ~f:(fun member ->
-      if String.equal member.name "nextInChain"
-      then None
-      else Some (sprintf "%s" (escape_keyword member.name)))
+      if String.equal member.name "nextInChain" then None else Some (escape_keyword member.name))
   in
-  sprintf "let result = { %s } in" (String.concat ~sep:"; " record_fields)
+  let fields_str = String.concat ~sep:"; " record_fields in
+  {%string|let result = { %{fields_str} } in|}
 ;;
 
 (** Recursively collect all parameters from a struct, including nested structs. Returns
@@ -653,7 +641,7 @@ let rec generate_struct_creates
   =
   let struct_module = ocaml_module_name struct_.name in
   let create_line =
-    sprintf "let %s = Wgpu_low.%s.%s_create () in" var_name struct_module struct_.name
+    {%string|let %{var_name} = Wgpu_low.%{struct_module}.%{struct_.name}_create () in|}
   in
   (* Collect nested struct creates *)
   let nested_results =
@@ -693,12 +681,7 @@ let gen_inline_struct_conversion
   let nested_var = parent_var ^ "_" ^ field_name in
   (* Create the nested struct *)
   let create_code =
-    [ sprintf
-        "let %s = Wgpu_low.%s.%s_create () in"
-        nested_var
-        nested_module
-        inline_struct.name
-    ]
+    [ {%string|let %{nested_var} = Wgpu_low.%{nested_module}.%{inline_struct.name}_create () in|} ]
   in
   (* Set fields from the record *)
   let set_code =
@@ -707,16 +690,10 @@ let gen_inline_struct_conversion
       then None
       else (
         let member_field = escape_keyword member.name in
-        let value_expr = sprintf "%s.%s.%s" entry_var field_name member_field in
+        let value_expr = {%string|%{entry_var}.%{field_name}.%{member_field}|} in
         let converted = member_to_low_level value_expr member.type_ in
         Some
-          (sprintf
-             "Wgpu_low.%s.%s_set_%s %s %s;"
-             nested_module
-             inline_struct.name
-             member.name
-             nested_var
-             converted)))
+          {%string|Wgpu_low.%{nested_module}.%{inline_struct.name}_set_%{member.name} %{nested_var} %{converted};|}))
   in
   { create_code; set_code; structs_to_free = [ nested_var, inline_struct ] }
 ;;
@@ -727,10 +704,8 @@ let entry_member_to_low_level (field_access : string) (member : Ir.struct_member
   match member.type_, member.optional with
   | Object name, true ->
     (* Optional object - wrap in match *)
-    sprintf
-      "(match %s with Some x -> x.%s.handle | None -> 0n)"
-      field_access
-      (ocaml_module_name name)
+    let module_name = ocaml_module_name name in
+    {%string|(match %{field_access} with Some x -> x.%{module_name}.handle | None -> 0n)|}
   | _ -> member_to_low_level field_access member.type_
 ;;
 
@@ -750,12 +725,8 @@ let generate_array_of_structs_conversion
   let array_var = param_name ^ "_array" in
   (* Generate code to convert each entry record to a C struct *)
   let loop_code =
-    [ sprintf "let %s = List.map (fun (entry : %s.t) ->" entries_var array_element_module
-    ]
-    @ [ sprintf
-          "    let e = Wgpu_low.%s.%s_create () in"
-          array_element_module
-          array_element_struct.name
+    [ {%string|let %{entries_var} = List.map (fun (entry : %{array_element_module}.t) ->|} ]
+    @ [ {%string|    let e = Wgpu_low.%{array_element_module}.%{array_element_struct.name}_create () in|}
       ]
     @ List.concat_map array_element_struct.members ~f:(fun member ->
       if String.equal member.name "nextInChain"
@@ -769,58 +740,33 @@ let generate_array_of_structs_conversion
            | Some inline_struct ->
              let nested_module = ocaml_module_name inline_struct.name in
              let nested_var = "nested_" ^ member.name in
-             [ sprintf "    (match entry.%s with" (escape_keyword member.name)
-             ; sprintf "     | Some %s_rec ->" member.name
-             ; sprintf
-                 "       let %s = Wgpu_low.%s.%s_create () in"
-                 nested_var
-                 nested_module
-                 inline_struct.name
+             let escaped_member = escape_keyword member.name in
+             [ {%string|    (match entry.%{escaped_member} with|}
+             ; {%string|     | Some %{member.name}_rec ->|}
+             ; {%string|       let %{nested_var} = Wgpu_low.%{nested_module}.%{inline_struct.name}_create () in|}
              ]
              @ List.filter_map inline_struct.members ~f:(fun nm ->
                if String.equal nm.name "nextInChain"
                then None
                else (
-                 let field_access =
-                   sprintf "%s_rec.%s" member.name (escape_keyword nm.name)
-                 in
+                 let nm_escaped = escape_keyword nm.name in
+                 let field_access = {%string|%{member.name}_rec.%{nm_escaped}|} in
                  let converted = member_to_low_level field_access nm.type_ in
                  Some
-                   (sprintf
-                      "       Wgpu_low.%s.%s_set_%s %s %s;"
-                      nested_module
-                      inline_struct.name
-                      nm.name
-                      nested_var
-                      converted)))
-             @ [ sprintf
-                   "       Wgpu_low.%s.%s_set_%s e %s"
-                   array_element_module
-                   array_element_struct.name
-                   member.name
-                   nested_var
+                   {%string|       Wgpu_low.%{nested_module}.%{inline_struct.name}_set_%{nm.name} %{nested_var} %{converted};|}))
+             @ [ {%string|       Wgpu_low.%{array_element_module}.%{array_element_struct.name}_set_%{member.name} e %{nested_var}|}
                ; "     | None -> ());"
                ])
         | None ->
           (* Regular member - use entry_member_to_low_level for proper optional handling *)
-          let field_access = sprintf "entry.%s" (escape_keyword member.name) in
+          let escaped_member = escape_keyword member.name in
+          let field_access = {%string|entry.%{escaped_member}|} in
           let converted = entry_member_to_low_level field_access member in
-          [ sprintf
-              "    Wgpu_low.%s.%s_set_%s e %s;"
-              array_element_module
-              array_element_struct.name
-              member.name
-              converted
+          [ {%string|    Wgpu_low.%{array_element_module}.%{array_element_struct.name}_set_%{member.name} e %{converted};|}
           ]))
     @ [ "    e) " ^ param_name ^ " in" ]
-    @ [ sprintf "let %s = Array.of_list %s in" array_var entries_var ]
-    @ [ sprintf
-          "Wgpu_low.%s.%s_set_%s %s %s;"
-          parent_module
-          parent_struct.name
-          member_name
-          parent_var
-          array_var
+    @ [ {%string|let %{array_var} = Array.of_list %{entries_var} in|} ]
+    @ [ {%string|Wgpu_low.%{parent_module}.%{parent_struct.name}_set_%{member_name} %{parent_var} %{array_var};|}
       ]
   in
   (* The entry structs will need to be freed later *)
@@ -868,13 +814,7 @@ let rec generate_struct_sets
               in
               (* Then, set the nested struct on the parent *)
               let set_nested =
-                sprintf
-                  "Wgpu_low.%s.%s_set_%s %s %s;"
-                  struct_module
-                  struct_.name
-                  member.name
-                  var_name
-                  nested_var
+                {%string|Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} %{nested_var};|}
               in
               { code_lines = nested_result.code_lines @ [ set_nested ]
               ; structs_to_free = nested_result.structs_to_free
@@ -884,13 +824,7 @@ let rec generate_struct_sets
            let param_name = escape_keyword (prefix ^ member.name) in
            let converted = member_to_low_level param_name member.type_ in
            { code_lines =
-               [ sprintf
-                   "Wgpu_low.%s.%s_set_%s %s %s;"
-                   struct_module
-                   struct_.name
-                   member.name
-                   var_name
-                   converted
+               [ {%string|Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} %{converted};|}
                ]
            ; structs_to_free = []
            }))
@@ -982,11 +916,13 @@ let gen_ml_method_with_output_struct
       "t "
       ^ String.concat
           ~sep:" "
-          (List.map non_struct_parameters ~f:(fun a -> sprintf "~%s" (escape_keyword a.name)))
+          (List.map non_struct_parameters ~f:(fun a ->
+             let escaped = escape_keyword a.name in
+             {%string|~%{escaped}|}))
   in
   (* Create the output struct *)
   let create_struct =
-    sprintf "let %s = Wgpu_low.%s.%s_create () in" struct_var struct_module struct_.name
+    {%string|let %{struct_var} = Wgpu_low.%{struct_module}.%{struct_.name}_create () in|}
   in
   (* Build call args *)
   let call_args =
@@ -995,20 +931,15 @@ let gen_ml_method_with_output_struct
       | Struct _ -> struct_var
       | _ -> arg_to_low_level (escape_keyword arg.name) arg.type_)
   in
+  let call_args_str = String.concat ~sep:" " call_args in
   let call =
-    sprintf
-      "let _status = Wgpu_low.%s_%s t.handle %s in"
-      obj.name
-      method_.name
-      (String.concat ~sep:" " call_args)
+    {%string|let _status = Wgpu_low.%{obj.name}_%{method_.name} t.handle %{call_args_str} in|}
   in
   (* Read fields from the struct and build result record *)
   let read_fields = gen_output_struct_field_reads struct_ struct_var struct_module in
   let build_record = gen_output_struct_record struct_ in
   (* Free the struct *)
-  let free_struct =
-    sprintf "Wgpu_low.%s.%s_free %s;" struct_module struct_.name struct_var
-  in
+  let free_struct = {%string|Wgpu_low.%{struct_module}.%{struct_.name}_free %{struct_var};|} in
   (* Return result *)
   let return_result = "result" in
   (* Combine all lines *)
@@ -1016,7 +947,9 @@ let gen_ml_method_with_output_struct
     [ create_struct; call ] @ read_fields @ [ build_record; free_struct; return_result ]
   in
   let body = String.concat ~sep:"\n    " body_lines in
-  sprintf "  let %s %s =\n    %s\n" method_name param_list body
+  {%string|  let %{method_name} %{param_list} =
+    %{body}
+|}
 ;;
 
 (** Generate ML implementation for a method *)
