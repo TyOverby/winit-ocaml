@@ -227,33 +227,24 @@ end
 (** Generate C struct allocation/deallocation functions *)
 let gen_c_struct_create_free (struct_ : Ir.struct_) : string =
   let c_name = c_type_name struct_.name in
-  sprintf
-    {|/* Struct: %s */
-CAMLprim value caml_wgpu_%s_create(value unit) {
+  let struct_lower = String.lowercase struct_.name in
+  {%string|/* Struct: %{c_name} */
+CAMLprim value caml_wgpu_%{struct_lower}_create(value unit) {
   CAMLparam1(unit);
-  %s *s = (%s*)malloc(sizeof(%s));
-  memset(s, 0, sizeof(%s));
+  %{c_name} *s = (%{c_name}*)malloc(sizeof(%{c_name}));
+  memset(s, 0, sizeof(%{c_name}));
   CAMLreturn(caml_copy_nativeint((intnat)s));
 }
 
-CAMLprim value caml_wgpu_%s_free(value handle) {
+CAMLprim value caml_wgpu_%{struct_lower}_free(value handle) {
   CAMLparam1(handle);
-  %s *s = (%s*)Nativeint_val(handle);
+  %{c_name} *s = (%{c_name}*)Nativeint_val(handle);
   if (s != NULL) {
     free(s);
   }
   CAMLreturn(Val_unit);
 }
 |}
-    c_name
-    (String.lowercase struct_.name)
-    c_name
-    c_name
-    c_name
-    c_name
-    (String.lowercase struct_.name)
-    c_name
-    c_name
 ;;
 
 (** Compute the count field name for an array field. e.g., "entries" -> "entryCount",
@@ -323,7 +314,7 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
           {%string|  for (size_t i = 0; i < count; i++) {
     arr[i] = Int_val(Field(val, i));
   }|}
-        | _ -> sprintf "  /* TODO: copy %s elements */" elem_c_type
+        | _ -> {%string|  /* TODO: copy %{elem_c_type} elements */|}
       in
       {%string|  size_t count = Wosize_val(val);
   %{elem_c_type}* arr = (count > 0) ? malloc(count * sizeof(%{elem_c_type})) : NULL;
@@ -375,18 +366,13 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
   s->%{c_field} = arr;|}
        | _ -> {%string|  (void)s; /* TODO: pointer field %{c_field} */|})
   in
-  sprintf
-    {|CAMLprim value %s(value handle, value val) {
+  {%string|CAMLprim value %{func_name}(value handle, value val) {
   CAMLparam2(handle, val);
-  %s *s = (%s*)Nativeint_val(handle);
-%s
+  %{c_struct} *s = (%{c_struct}*)Nativeint_val(handle);
+%{body}
   CAMLreturn(Val_unit);
 }
 |}
-    func_name
-    c_struct
-    c_struct
-    body
 ;;
 
 (** Generate C getter for a struct member *)
@@ -420,17 +406,12 @@ let gen_c_struct_getter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
       {%string|  (void)s; /* TODO: getter for %{c_field} */
   CAMLreturn(Val_unit);|}
   in
-  sprintf
-    {|CAMLprim value %s(value handle) {
+  {%string|CAMLprim value %{func_name}(value handle) {
   CAMLparam1(handle);
-  %s *s = (%s*)Nativeint_val(handle);
-%s
+  %{c_struct} *s = (%{c_struct}*)Nativeint_val(handle);
+%{body}
 }
 |}
-    func_name
-    c_struct
-    c_struct
-    body
 ;;
 
 (** Generate C code for extension struct chain header functions *)
@@ -498,13 +479,8 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
   let type_name = struct_.name in
   let module_name = ocaml_module_name struct_.name in
   (* External declarations *)
-  let create_ext =
-    sprintf
-      "external %s_create : unit -> nativeint = \"caml_wgpu_%s_create\""
-      type_name
-      (String.lowercase struct_.name)
-  in
   let struct_lower = String.lowercase struct_.name in
+  let create_ext = {%string|external %{type_name}_create : unit -> nativeint = "caml_wgpu_%{struct_lower}_create"|} in
   let free_ext = {%string|external %{type_name}_free : nativeint -> unit = "caml_wgpu_%{struct_lower}_free"|} in
   let setter_exts =
     List.map struct_.members ~f:(fun member ->
@@ -721,9 +697,11 @@ let gen_c_array_conversion (arg : Ir.arg) : string =
 let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
   (* Skip async methods and manually implemented methods *)
   if method_is_async method_
-  then sprintf "/* TODO: async method %s.%s */\n" obj.name method_.name
+  then {%string|/* TODO: async method %{obj.name}.%{method_.name} */
+|}
   else if method_is_manual obj.name method_.name
-  then sprintf "/* Manually implemented: %s.%s */\n" obj.name method_.name
+  then {%string|/* Manually implemented: %{obj.name}.%{method_.name} */
+|}
   else (
     let c_func = c_method_name obj.name method_.name in
     let obj_lower = String.lowercase obj.name in
@@ -796,110 +774,83 @@ let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
     (* Build return handling *)
     let return_code =
       match method_.returns with
-      | None -> sprintf "  %s(%s);\n  CAMLreturn(Val_unit);" c_func c_call_args
+      | None -> {%string|  %{c_func}(%{c_call_args});
+  CAMLreturn(Val_unit);|}
       | Some ret ->
         let ret_c_type = c_type_of_type_ref ret.type_ in
         (match ret.type_ with
          | Primitive Bool ->
-           sprintf
-             "  bool result = %s(%s);\n  CAMLreturn(Val_bool(result));"
-             c_func
-             c_call_args
+           {%string|  bool result = %{c_func}(%{c_call_args});
+  CAMLreturn(Val_bool(result));|}
          | Primitive (Uint32 | Int32) ->
-           sprintf
-             "  %s result = %s(%s);\n  CAMLreturn(Val_int(result));"
-             ret_c_type
-             c_func
-             c_call_args
+           {%string|  %{ret_c_type} result = %{c_func}(%{c_call_args});
+  CAMLreturn(Val_int(result));|}
          | Primitive (Uint64 | Int64 | Usize) ->
-           sprintf
-             "  %s result = %s(%s);\n  CAMLreturn(caml_copy_int64(result));"
-             ret_c_type
-             c_func
-             c_call_args
+           {%string|  %{ret_c_type} result = %{c_func}(%{c_call_args});
+  CAMLreturn(caml_copy_int64(result));|}
          | Primitive (Float32 | Float64) ->
-           sprintf
-             "  %s result = %s(%s);\n  CAMLreturn(caml_copy_double(result));"
-             ret_c_type
-             c_func
-             c_call_args
+           {%string|  %{ret_c_type} result = %{c_func}(%{c_call_args});
+  CAMLreturn(caml_copy_double(result));|}
          | Object _ ->
-           sprintf
-             "  %s result = %s(%s);\n  CAMLreturn(caml_copy_nativeint((intnat)result));"
-             ret_c_type
-             c_func
-             c_call_args
+           {%string|  %{ret_c_type} result = %{c_func}(%{c_call_args});
+  CAMLreturn(caml_copy_nativeint((intnat)result));|}
          | Enum _ | Bitflag _ ->
-           sprintf
-             "  %s result = %s(%s);\n  CAMLreturn(Val_int(result));"
-             ret_c_type
-             c_func
-             c_call_args
+           {%string|  %{ret_c_type} result = %{c_func}(%{c_call_args});
+  CAMLreturn(Val_int(result));|}
          | _ ->
-           sprintf
-             "  /* TODO: return type */\n  %s(%s);\n  CAMLreturn(Val_unit);"
-             c_func
-             c_call_args)
+           {%string|  /* TODO: return type */
+  %{c_func}(%{c_call_args});
+  CAMLreturn(Val_unit);|})
     in
     (* Handle bytecode calling convention for many args *)
     let bytecode_decl =
       if num_params > 5
       then
-        sprintf
-          "\n\
-           CAMLprim value %s_bytecode(value *argv, int argn) {\n\
-          \  (void)argn;\n\
-          \  return %s(%s);\n\
-           }"
-          caml_func
-          caml_func
-          (String.concat
-             ~sep:", "
-             (List.mapi all_params ~f:(fun i _ -> sprintf "argv[%d]" i)))
+        let argv_args =
+          List.mapi all_params ~f:(fun i _ -> {%string|argv[%{i#Int}]|})
+          |> String.concat ~sep:", "
+        in
+        {%string|
+CAMLprim value %{caml_func}_bytecode(value *argv, int argn) {
+  (void)argn;
+  return %{caml_func}(%{argv_args});
+}|}
       else ""
     in
-    sprintf
-      {|CAMLprim value %s(%s) {
-  %s;
-  %s c_self = (%s)Nativeint_val(self);
-%s
-%s
-}%s
-|}
-      caml_func
-      (String.concat ~sep:", " value_params)
-      caml_param
-      obj_c_type
-      obj_c_type
-      arg_conversions
-      return_code
-      bytecode_decl)
+    let value_params_str = String.concat ~sep:", " value_params in
+    {%string|CAMLprim value %{caml_func}(%{value_params_str}) {
+  %{caml_param};
+  %{obj_c_type} c_self = (%{obj_c_type})Nativeint_val(self);
+%{arg_conversions}
+%{return_code}
+}%{bytecode_decl}
+|})
 ;;
 
 (** Generate C code for object handle types *)
 let gen_c_object_stubs (obj : Ir.object_) : string =
   let c_type = c_type_name obj.name in
   (* Generate release function *)
+  let obj_lower = String.lowercase obj.name in
+  let c_func_name = c_function_name obj.name in
   let release =
-    sprintf
-      "CAMLprim value caml_wgpu_%s_release(value handle) {\n\
-      \  CAMLparam1(handle);\n\
-      \  %s obj = (%s)Nativeint_val(handle);\n\
-      \  if (obj != NULL) {\n\
-      \    %sRelease(obj);\n\
-      \  }\n\
-      \  CAMLreturn(Val_unit);\n\
-       }"
-      (String.lowercase obj.name)
-      c_type
-      c_type
-      (c_function_name obj.name)
+    {%string|CAMLprim value caml_wgpu_%{obj_lower}_release(value handle) {
+  CAMLparam1(handle);
+  %{c_type} obj = (%{c_type})Nativeint_val(handle);
+  if (obj != NULL) {
+    %{c_func_name}Release(obj);
+  }
+  CAMLreturn(Val_unit);
+}|}
   in
   (* Generate method stubs *)
   let methods =
     List.map obj.methods ~f:(gen_c_method_stub obj) |> String.concat ~sep:"\n"
   in
-  sprintf "/* Object: %s */\n%s\n\n%s" c_type release methods
+  {%string|/* Object: %{c_type} */
+%{release}
+
+%{methods}|}
 ;;
 
 (** Get OCaml type string for a type_ref *)
@@ -910,17 +861,14 @@ let ml_type_of_type_ref (type_ref : Ir.type_ref) : string =
 (** Generate OCaml external declaration for a method *)
 let gen_ml_method (obj : Ir.object_) (method_ : Ir.method_) : string =
   if method_is_async method_
-  then sprintf "(* TODO: async method %s_%s *)" obj.name method_.name
+  then {%string|(* TODO: async method %{obj.name}_%{method_.name} *)|}
   else if method_is_manual obj.name method_.name
   then "" (* Already defined manually *)
   else (
-    let func_name = sprintf "%s_%s" obj.name method_.name in
-    let caml_func =
-      sprintf
-        "caml_wgpu_%s_%s"
-        (String.lowercase obj.name)
-        (String.lowercase method_.name)
-    in
+    let func_name = {%string|%{obj.name}_%{method_.name}|} in
+    let obj_lower = String.lowercase obj.name in
+    let method_lower = String.lowercase method_.name in
+    let caml_func = {%string|caml_wgpu_%{obj_lower}_%{method_lower}|} in
     let arg_types =
       obj.name :: List.map method_.args ~f:(fun arg -> ml_type_of_type_ref arg.type_)
     in
@@ -932,29 +880,22 @@ let gen_ml_method (obj : Ir.object_) (method_ : Ir.method_) : string =
     let num_args = List.length arg_types in
     let type_sig = String.concat ~sep:" -> " arg_types ^ " -> " ^ ret_type in
     if num_args > 5
-    then
-      sprintf
-        "external %s : %s = \"%s_bytecode\" \"%s\""
-        func_name
-        type_sig
-        caml_func
-        caml_func
-    else sprintf "external %s : %s = \"%s\"" func_name type_sig caml_func)
+    then {%string|external %{func_name} : %{type_sig} = "%{caml_func}_bytecode" "%{caml_func}"|}
+    else {%string|external %{func_name} : %{type_sig} = "%{caml_func}"|})
 ;;
 
 (** Generate OCaml type declaration for an object *)
 let gen_ml_object_type (obj : Ir.object_) : string =
-  sprintf "type %s = nativeint\n" obj.name
+  {%string|type %{obj.name} = nativeint
+|}
 ;;
 
 (** Generate OCaml method declarations for an object *)
 let gen_ml_object_methods (obj : Ir.object_) : string =
+  let obj_lower = String.lowercase obj.name in
   let release =
-    sprintf
-      "external %s_release : %s -> unit = \"caml_wgpu_%s_release\"\n"
-      obj.name
-      obj.name
-      (String.lowercase obj.name)
+    {%string|external %{obj.name}_release : %{obj.name} -> unit = "caml_wgpu_%{obj_lower}_release"
+|}
   in
   let methods =
     List.filter_map obj.methods ~f:(fun m ->
@@ -975,7 +916,7 @@ let gen_mli_method (obj : Ir.object_) (method_ : Ir.method_) : string =
   if method_is_async method_ || method_is_manual obj.name method_.name
   then ""
   else (
-    let func_name = sprintf "%s_%s" obj.name method_.name in
+    let func_name = {%string|%{obj.name}_%{method_.name}|} in
     let arg_types =
       obj.name :: List.map method_.args ~f:(fun arg -> ml_type_of_type_ref arg.type_)
     in
@@ -985,17 +926,19 @@ let gen_mli_method (obj : Ir.object_) (method_ : Ir.method_) : string =
       | Some ret -> ml_type_of_type_ref ret.type_
     in
     let type_sig = String.concat ~sep:" -> " arg_types ^ " -> " ^ ret_type in
-    sprintf "val %s : %s" func_name type_sig)
+    {%string|val %{func_name} : %{type_sig}|})
 ;;
 
 (** Generate MLI type declaration only for an object *)
 let gen_mli_object_type (obj : Ir.object_) : string =
-  sprintf "type %s = nativeint\n" obj.name
+  {%string|type %{obj.name} = nativeint
+|}
 ;;
 
 (** Generate MLI method declarations for an object *)
 let gen_mli_object_methods (obj : Ir.object_) : string =
-  let release = sprintf "val %s_release : %s -> unit\n" obj.name obj.name in
+  let release = {%string|val %{obj.name}_release : %{obj.name} -> unit
+|} in
   let methods =
     List.filter_map obj.methods ~f:(fun m ->
       let s = gen_mli_method obj m in
@@ -1016,16 +959,16 @@ let gen_c_function_stubs (func : Ir.function_) : string =
   let c_name = c_function_name func.name in
   match func.name with
   | "create_instance" ->
-    sprintf
-      "CAMLprim value caml_wgpu_create_instance(value unit) {\n\
-      \  CAMLparam1(unit);\n\
-      \  WGPUInstanceDescriptor desc = {\n\
-      \    .nextInChain = NULL,\n\
-      \  };\n\
-      \  WGPUInstance instance = wgpuCreateInstance(&desc);\n\
-      \  CAMLreturn(caml_copy_nativeint((intnat)instance));\n\
-       }"
-  | _ -> sprintf "/* TODO: %s */\n" c_name
+    {|CAMLprim value caml_wgpu_create_instance(value unit) {
+  CAMLparam1(unit);
+  WGPUInstanceDescriptor desc = {
+    .nextInChain = NULL,
+  };
+  WGPUInstance instance = wgpuCreateInstance(&desc);
+  CAMLreturn(caml_copy_nativeint((intnat)instance));
+}|}
+  | _ -> {%string|/* TODO: %{c_name} */
+|}
 ;;
 
 (** Generate additional helper functions for sync wrappers *)
