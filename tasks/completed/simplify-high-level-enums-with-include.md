@@ -79,3 +79,35 @@ This:
 1. Run `dune build` to regenerate the high-level bindings
 2. Run `dune build @check` to ensure no warnings
 3. Run existing tests to verify correctness
+
+## Implementation Plan
+
+1. Modify the `gen_enum_with_to_string` function in `codegen/gen_high.ml`:
+   - For `Implementation` mode: Use `include Wgpu_low.Module_name` and only add `to_string`
+   - For `Interface` mode: Use `include module type of Wgpu_low.Module_name` and add `to_string`
+
+2. The generated output should look like:
+   ```ocaml
+   (* Implementation *)
+   module Adapter_type = struct
+     include Wgpu_low.Adapter_type
+
+     let to_string = function
+       | Discrete_gpu -> "Discrete_gpu"
+       | ...
+   end
+
+   (* Interface *)
+   module Adapter_type : sig
+     include module type of Wgpu_low.Adapter_type
+     val to_string : t -> string
+   end
+   ```
+
+## Validation Criteria
+
+1. `dune build` succeeds without errors
+2. `dune build @check` produces no warnings
+3. `dune exec test/test_compute.exe` passes all tests
+4. The generated `high/enums.ml` uses `include Wgpu_low.X` instead of redefining types
+5. The generated `high/enums.mli` uses `include module type of Wgpu_low.X`

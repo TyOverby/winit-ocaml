@@ -1483,24 +1483,6 @@ let gen_enum_with_to_string (mode : output_mode) (enum : Ir.enum) : string =
   let module_name = ocaml_module_name enum.name in
   match mode with
   | Implementation ->
-    let variants =
-      List.map enum.entries ~f:(fun entry ->
-        let entry_name = normalize_enum_entry_name entry.name in
-        {%string|  | %{entry_name}|})
-      |> String.concat ~sep:"\n"
-    in
-    let to_int_cases =
-      List.map enum.entries ~f:(fun entry ->
-        let entry_name = normalize_enum_entry_name entry.name in
-        {%string|    | %{entry_name} -> Wgpu_low.%{module_name}.to_int %{entry_name}|})
-      |> String.concat ~sep:"\n"
-    in
-    let of_int_cases =
-      List.map enum.entries ~f:(fun entry ->
-        let entry_name = normalize_enum_entry_name entry.name in
-        {%string|    | x when x = Wgpu_low.%{module_name}.to_int %{entry_name} -> %{entry_name}|})
-      |> String.concat ~sep:"\n"
-    in
     let to_string_cases =
       List.map enum.entries ~f:(fun entry ->
         let entry_name = normalize_enum_entry_name entry.name in
@@ -1508,17 +1490,7 @@ let gen_enum_with_to_string (mode : output_mode) (enum : Ir.enum) : string =
       |> String.concat ~sep:"\n"
     in
     {%string|module %{module_name} = struct
-  type t =
-%{variants}
-
-  let to_int = function
-%{to_int_cases}
-  ;;
-
-  let of_int = function
-%{of_int_cases}
-    | n -> failwith ("%{module_name}.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.%{module_name}
 
   let to_string = function
 %{to_string_cases}
@@ -1532,17 +1504,10 @@ end
       | Some doc -> {%string|(** %{doc} *)
   |}
     in
-    let variants =
-      List.map enum.entries ~f:(fun entry ->
-        let entry_name = normalize_enum_entry_name entry.name in
-        {%string|    | %{entry_name}|})
-      |> String.concat ~sep:"\n"
-    in
     {%string|module %{module_name} : sig
-  %{doc_comment}type t =
-%{variants}
+  %{doc_comment}include module type of Wgpu_low.%{module_name}
 
-  include S with type t := t
+  val to_string : t -> string
 end
 |}
 ;;

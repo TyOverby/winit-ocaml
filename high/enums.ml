@@ -9,26 +9,7 @@ module type S = sig
 end
 
 module Adapter_type = struct
-  type t =
-    | Discrete_gpu
-    | Integrated_gpu
-    | Cpu
-    | Unknown
-
-  let to_int = function
-    | Discrete_gpu -> Wgpu_low.Adapter_type.to_int Discrete_gpu
-    | Integrated_gpu -> Wgpu_low.Adapter_type.to_int Integrated_gpu
-    | Cpu -> Wgpu_low.Adapter_type.to_int Cpu
-    | Unknown -> Wgpu_low.Adapter_type.to_int Unknown
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Adapter_type.to_int Discrete_gpu -> Discrete_gpu
-    | x when x = Wgpu_low.Adapter_type.to_int Integrated_gpu -> Integrated_gpu
-    | x when x = Wgpu_low.Adapter_type.to_int Cpu -> Cpu
-    | x when x = Wgpu_low.Adapter_type.to_int Unknown -> Unknown
-    | n -> failwith ("Adapter_type.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Adapter_type
 
   let to_string = function
     | Discrete_gpu -> "Discrete_gpu"
@@ -39,26 +20,7 @@ module Adapter_type = struct
 end
 
 module Address_mode = struct
-  type t =
-    | Undefined
-    | Clamp_to_edge
-    | Repeat
-    | Mirror_repeat
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Address_mode.to_int Undefined
-    | Clamp_to_edge -> Wgpu_low.Address_mode.to_int Clamp_to_edge
-    | Repeat -> Wgpu_low.Address_mode.to_int Repeat
-    | Mirror_repeat -> Wgpu_low.Address_mode.to_int Mirror_repeat
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Address_mode.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Address_mode.to_int Clamp_to_edge -> Clamp_to_edge
-    | x when x = Wgpu_low.Address_mode.to_int Repeat -> Repeat
-    | x when x = Wgpu_low.Address_mode.to_int Mirror_repeat -> Mirror_repeat
-    | n -> failwith ("Address_mode.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Address_mode
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -69,41 +31,7 @@ module Address_mode = struct
 end
 
 module Backend_type = struct
-  type t =
-    | Undefined
-    | Null
-    | Webgpu
-    | D3d11
-    | D3d12
-    | Metal
-    | Vulkan
-    | Opengl
-    | Opengles
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Backend_type.to_int Undefined
-    | Null -> Wgpu_low.Backend_type.to_int Null
-    | Webgpu -> Wgpu_low.Backend_type.to_int Webgpu
-    | D3d11 -> Wgpu_low.Backend_type.to_int D3d11
-    | D3d12 -> Wgpu_low.Backend_type.to_int D3d12
-    | Metal -> Wgpu_low.Backend_type.to_int Metal
-    | Vulkan -> Wgpu_low.Backend_type.to_int Vulkan
-    | Opengl -> Wgpu_low.Backend_type.to_int Opengl
-    | Opengles -> Wgpu_low.Backend_type.to_int Opengles
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Backend_type.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Backend_type.to_int Null -> Null
-    | x when x = Wgpu_low.Backend_type.to_int Webgpu -> Webgpu
-    | x when x = Wgpu_low.Backend_type.to_int D3d11 -> D3d11
-    | x when x = Wgpu_low.Backend_type.to_int D3d12 -> D3d12
-    | x when x = Wgpu_low.Backend_type.to_int Metal -> Metal
-    | x when x = Wgpu_low.Backend_type.to_int Vulkan -> Vulkan
-    | x when x = Wgpu_low.Backend_type.to_int Opengl -> Opengl
-    | x when x = Wgpu_low.Backend_type.to_int Opengles -> Opengles
-    | n -> failwith ("Backend_type.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Backend_type
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -119,68 +47,7 @@ module Backend_type = struct
 end
 
 module Blend_factor = struct
-  type t =
-    | Undefined
-    | Zero
-    | One
-    | Src
-    | One_minus_src
-    | Src_alpha
-    | One_minus_src_alpha
-    | Dst
-    | One_minus_dst
-    | Dst_alpha
-    | One_minus_dst_alpha
-    | Src_alpha_saturated
-    | Constant
-    | One_minus_constant
-    | Src1
-    | One_minus_src1
-    | Src1_alpha
-    | One_minus_src1_alpha
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Blend_factor.to_int Undefined
-    | Zero -> Wgpu_low.Blend_factor.to_int Zero
-    | One -> Wgpu_low.Blend_factor.to_int One
-    | Src -> Wgpu_low.Blend_factor.to_int Src
-    | One_minus_src -> Wgpu_low.Blend_factor.to_int One_minus_src
-    | Src_alpha -> Wgpu_low.Blend_factor.to_int Src_alpha
-    | One_minus_src_alpha -> Wgpu_low.Blend_factor.to_int One_minus_src_alpha
-    | Dst -> Wgpu_low.Blend_factor.to_int Dst
-    | One_minus_dst -> Wgpu_low.Blend_factor.to_int One_minus_dst
-    | Dst_alpha -> Wgpu_low.Blend_factor.to_int Dst_alpha
-    | One_minus_dst_alpha -> Wgpu_low.Blend_factor.to_int One_minus_dst_alpha
-    | Src_alpha_saturated -> Wgpu_low.Blend_factor.to_int Src_alpha_saturated
-    | Constant -> Wgpu_low.Blend_factor.to_int Constant
-    | One_minus_constant -> Wgpu_low.Blend_factor.to_int One_minus_constant
-    | Src1 -> Wgpu_low.Blend_factor.to_int Src1
-    | One_minus_src1 -> Wgpu_low.Blend_factor.to_int One_minus_src1
-    | Src1_alpha -> Wgpu_low.Blend_factor.to_int Src1_alpha
-    | One_minus_src1_alpha -> Wgpu_low.Blend_factor.to_int One_minus_src1_alpha
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Blend_factor.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Blend_factor.to_int Zero -> Zero
-    | x when x = Wgpu_low.Blend_factor.to_int One -> One
-    | x when x = Wgpu_low.Blend_factor.to_int Src -> Src
-    | x when x = Wgpu_low.Blend_factor.to_int One_minus_src -> One_minus_src
-    | x when x = Wgpu_low.Blend_factor.to_int Src_alpha -> Src_alpha
-    | x when x = Wgpu_low.Blend_factor.to_int One_minus_src_alpha -> One_minus_src_alpha
-    | x when x = Wgpu_low.Blend_factor.to_int Dst -> Dst
-    | x when x = Wgpu_low.Blend_factor.to_int One_minus_dst -> One_minus_dst
-    | x when x = Wgpu_low.Blend_factor.to_int Dst_alpha -> Dst_alpha
-    | x when x = Wgpu_low.Blend_factor.to_int One_minus_dst_alpha -> One_minus_dst_alpha
-    | x when x = Wgpu_low.Blend_factor.to_int Src_alpha_saturated -> Src_alpha_saturated
-    | x when x = Wgpu_low.Blend_factor.to_int Constant -> Constant
-    | x when x = Wgpu_low.Blend_factor.to_int One_minus_constant -> One_minus_constant
-    | x when x = Wgpu_low.Blend_factor.to_int Src1 -> Src1
-    | x when x = Wgpu_low.Blend_factor.to_int One_minus_src1 -> One_minus_src1
-    | x when x = Wgpu_low.Blend_factor.to_int Src1_alpha -> Src1_alpha
-    | x when x = Wgpu_low.Blend_factor.to_int One_minus_src1_alpha -> One_minus_src1_alpha
-    | n -> failwith ("Blend_factor.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Blend_factor
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -205,32 +72,7 @@ module Blend_factor = struct
 end
 
 module Blend_operation = struct
-  type t =
-    | Undefined
-    | Add
-    | Subtract
-    | Reverse_subtract
-    | Min
-    | Max
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Blend_operation.to_int Undefined
-    | Add -> Wgpu_low.Blend_operation.to_int Add
-    | Subtract -> Wgpu_low.Blend_operation.to_int Subtract
-    | Reverse_subtract -> Wgpu_low.Blend_operation.to_int Reverse_subtract
-    | Min -> Wgpu_low.Blend_operation.to_int Min
-    | Max -> Wgpu_low.Blend_operation.to_int Max
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Blend_operation.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Blend_operation.to_int Add -> Add
-    | x when x = Wgpu_low.Blend_operation.to_int Subtract -> Subtract
-    | x when x = Wgpu_low.Blend_operation.to_int Reverse_subtract -> Reverse_subtract
-    | x when x = Wgpu_low.Blend_operation.to_int Min -> Min
-    | x when x = Wgpu_low.Blend_operation.to_int Max -> Max
-    | n -> failwith ("Blend_operation.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Blend_operation
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -243,30 +85,7 @@ module Blend_operation = struct
 end
 
 module Buffer_binding_type = struct
-  type t =
-    | Binding_not_used
-    | Undefined
-    | Uniform
-    | Storage
-    | Read_only_storage
-
-  let to_int = function
-    | Binding_not_used -> Wgpu_low.Buffer_binding_type.to_int Binding_not_used
-    | Undefined -> Wgpu_low.Buffer_binding_type.to_int Undefined
-    | Uniform -> Wgpu_low.Buffer_binding_type.to_int Uniform
-    | Storage -> Wgpu_low.Buffer_binding_type.to_int Storage
-    | Read_only_storage -> Wgpu_low.Buffer_binding_type.to_int Read_only_storage
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Buffer_binding_type.to_int Binding_not_used -> Binding_not_used
-    | x when x = Wgpu_low.Buffer_binding_type.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Buffer_binding_type.to_int Uniform -> Uniform
-    | x when x = Wgpu_low.Buffer_binding_type.to_int Storage -> Storage
-    | x when x = Wgpu_low.Buffer_binding_type.to_int Read_only_storage ->
-      Read_only_storage
-    | n -> failwith ("Buffer_binding_type.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Buffer_binding_type
 
   let to_string = function
     | Binding_not_used -> "Binding_not_used"
@@ -278,23 +97,7 @@ module Buffer_binding_type = struct
 end
 
 module Buffer_map_state = struct
-  type t =
-    | Unmapped
-    | Pending
-    | Mapped
-
-  let to_int = function
-    | Unmapped -> Wgpu_low.Buffer_map_state.to_int Unmapped
-    | Pending -> Wgpu_low.Buffer_map_state.to_int Pending
-    | Mapped -> Wgpu_low.Buffer_map_state.to_int Mapped
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Buffer_map_state.to_int Unmapped -> Unmapped
-    | x when x = Wgpu_low.Buffer_map_state.to_int Pending -> Pending
-    | x when x = Wgpu_low.Buffer_map_state.to_int Mapped -> Mapped
-    | n -> failwith ("Buffer_map_state.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Buffer_map_state
 
   let to_string = function
     | Unmapped -> "Unmapped"
@@ -304,24 +107,7 @@ module Buffer_map_state = struct
 end
 
 module Callback_mode = struct
-  type t =
-    | Wait_any_only
-    | Allow_process_events
-    | Allow_spontaneous
-
-  let to_int = function
-    | Wait_any_only -> Wgpu_low.Callback_mode.to_int Wait_any_only
-    | Allow_process_events -> Wgpu_low.Callback_mode.to_int Allow_process_events
-    | Allow_spontaneous -> Wgpu_low.Callback_mode.to_int Allow_spontaneous
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Callback_mode.to_int Wait_any_only -> Wait_any_only
-    | x when x = Wgpu_low.Callback_mode.to_int Allow_process_events ->
-      Allow_process_events
-    | x when x = Wgpu_low.Callback_mode.to_int Allow_spontaneous -> Allow_spontaneous
-    | n -> failwith ("Callback_mode.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Callback_mode
 
   let to_string = function
     | Wait_any_only -> "Wait_any_only"
@@ -331,41 +117,7 @@ module Callback_mode = struct
 end
 
 module Compare_function = struct
-  type t =
-    | Undefined
-    | Never
-    | Less
-    | Equal
-    | Less_equal
-    | Greater
-    | Not_equal
-    | Greater_equal
-    | Always
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Compare_function.to_int Undefined
-    | Never -> Wgpu_low.Compare_function.to_int Never
-    | Less -> Wgpu_low.Compare_function.to_int Less
-    | Equal -> Wgpu_low.Compare_function.to_int Equal
-    | Less_equal -> Wgpu_low.Compare_function.to_int Less_equal
-    | Greater -> Wgpu_low.Compare_function.to_int Greater
-    | Not_equal -> Wgpu_low.Compare_function.to_int Not_equal
-    | Greater_equal -> Wgpu_low.Compare_function.to_int Greater_equal
-    | Always -> Wgpu_low.Compare_function.to_int Always
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Compare_function.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Compare_function.to_int Never -> Never
-    | x when x = Wgpu_low.Compare_function.to_int Less -> Less
-    | x when x = Wgpu_low.Compare_function.to_int Equal -> Equal
-    | x when x = Wgpu_low.Compare_function.to_int Less_equal -> Less_equal
-    | x when x = Wgpu_low.Compare_function.to_int Greater -> Greater
-    | x when x = Wgpu_low.Compare_function.to_int Not_equal -> Not_equal
-    | x when x = Wgpu_low.Compare_function.to_int Greater_equal -> Greater_equal
-    | x when x = Wgpu_low.Compare_function.to_int Always -> Always
-    | n -> failwith ("Compare_function.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Compare_function
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -381,28 +133,7 @@ module Compare_function = struct
 end
 
 module Compilation_info_request_status = struct
-  type t =
-    | Success
-    | Instance_dropped
-    | Error
-    | Unknown
-
-  let to_int = function
-    | Success -> Wgpu_low.Compilation_info_request_status.to_int Success
-    | Instance_dropped -> Wgpu_low.Compilation_info_request_status.to_int Instance_dropped
-    | Error -> Wgpu_low.Compilation_info_request_status.to_int Error
-    | Unknown -> Wgpu_low.Compilation_info_request_status.to_int Unknown
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Compilation_info_request_status.to_int Success -> Success
-    | x when x = Wgpu_low.Compilation_info_request_status.to_int Instance_dropped ->
-      Instance_dropped
-    | x when x = Wgpu_low.Compilation_info_request_status.to_int Error -> Error
-    | x when x = Wgpu_low.Compilation_info_request_status.to_int Unknown -> Unknown
-    | n ->
-      failwith ("Compilation_info_request_status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Compilation_info_request_status
 
   let to_string = function
     | Success -> "Success"
@@ -413,23 +144,7 @@ module Compilation_info_request_status = struct
 end
 
 module Compilation_message_type = struct
-  type t =
-    | Error
-    | Warning
-    | Info
-
-  let to_int = function
-    | Error -> Wgpu_low.Compilation_message_type.to_int Error
-    | Warning -> Wgpu_low.Compilation_message_type.to_int Warning
-    | Info -> Wgpu_low.Compilation_message_type.to_int Info
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Compilation_message_type.to_int Error -> Error
-    | x when x = Wgpu_low.Compilation_message_type.to_int Warning -> Warning
-    | x when x = Wgpu_low.Compilation_message_type.to_int Info -> Info
-    | n -> failwith ("Compilation_message_type.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Compilation_message_type
 
   let to_string = function
     | Error -> "Error"
@@ -439,29 +154,7 @@ module Compilation_message_type = struct
 end
 
 module Composite_alpha_mode = struct
-  type t =
-    | Auto
-    | Opaque
-    | Premultiplied
-    | Unpremultiplied
-    | Inherit
-
-  let to_int = function
-    | Auto -> Wgpu_low.Composite_alpha_mode.to_int Auto
-    | Opaque -> Wgpu_low.Composite_alpha_mode.to_int Opaque
-    | Premultiplied -> Wgpu_low.Composite_alpha_mode.to_int Premultiplied
-    | Unpremultiplied -> Wgpu_low.Composite_alpha_mode.to_int Unpremultiplied
-    | Inherit -> Wgpu_low.Composite_alpha_mode.to_int Inherit
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Composite_alpha_mode.to_int Auto -> Auto
-    | x when x = Wgpu_low.Composite_alpha_mode.to_int Opaque -> Opaque
-    | x when x = Wgpu_low.Composite_alpha_mode.to_int Premultiplied -> Premultiplied
-    | x when x = Wgpu_low.Composite_alpha_mode.to_int Unpremultiplied -> Unpremultiplied
-    | x when x = Wgpu_low.Composite_alpha_mode.to_int Inherit -> Inherit
-    | n -> failwith ("Composite_alpha_mode.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Composite_alpha_mode
 
   let to_string = function
     | Auto -> "Auto"
@@ -473,33 +166,7 @@ module Composite_alpha_mode = struct
 end
 
 module Create_pipeline_async_status = struct
-  type t =
-    | Success
-    | Instance_dropped
-    | Validation_error
-    | Internal_error
-    | Unknown
-
-  let to_int = function
-    | Success -> Wgpu_low.Create_pipeline_async_status.to_int Success
-    | Instance_dropped -> Wgpu_low.Create_pipeline_async_status.to_int Instance_dropped
-    | Validation_error -> Wgpu_low.Create_pipeline_async_status.to_int Validation_error
-    | Internal_error -> Wgpu_low.Create_pipeline_async_status.to_int Internal_error
-    | Unknown -> Wgpu_low.Create_pipeline_async_status.to_int Unknown
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Create_pipeline_async_status.to_int Success -> Success
-    | x when x = Wgpu_low.Create_pipeline_async_status.to_int Instance_dropped ->
-      Instance_dropped
-    | x when x = Wgpu_low.Create_pipeline_async_status.to_int Validation_error ->
-      Validation_error
-    | x when x = Wgpu_low.Create_pipeline_async_status.to_int Internal_error ->
-      Internal_error
-    | x when x = Wgpu_low.Create_pipeline_async_status.to_int Unknown -> Unknown
-    | n ->
-      failwith ("Create_pipeline_async_status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Create_pipeline_async_status
 
   let to_string = function
     | Success -> "Success"
@@ -511,26 +178,7 @@ module Create_pipeline_async_status = struct
 end
 
 module Cull_mode = struct
-  type t =
-    | Undefined
-    | None
-    | Front
-    | Back
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Cull_mode.to_int Undefined
-    | None -> Wgpu_low.Cull_mode.to_int None
-    | Front -> Wgpu_low.Cull_mode.to_int Front
-    | Back -> Wgpu_low.Cull_mode.to_int Back
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Cull_mode.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Cull_mode.to_int None -> None
-    | x when x = Wgpu_low.Cull_mode.to_int Front -> Front
-    | x when x = Wgpu_low.Cull_mode.to_int Back -> Back
-    | n -> failwith ("Cull_mode.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Cull_mode
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -541,26 +189,7 @@ module Cull_mode = struct
 end
 
 module Device_lost_reason = struct
-  type t =
-    | Unknown
-    | Destroyed
-    | Instance_dropped
-    | Failed_creation
-
-  let to_int = function
-    | Unknown -> Wgpu_low.Device_lost_reason.to_int Unknown
-    | Destroyed -> Wgpu_low.Device_lost_reason.to_int Destroyed
-    | Instance_dropped -> Wgpu_low.Device_lost_reason.to_int Instance_dropped
-    | Failed_creation -> Wgpu_low.Device_lost_reason.to_int Failed_creation
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Device_lost_reason.to_int Unknown -> Unknown
-    | x when x = Wgpu_low.Device_lost_reason.to_int Destroyed -> Destroyed
-    | x when x = Wgpu_low.Device_lost_reason.to_int Instance_dropped -> Instance_dropped
-    | x when x = Wgpu_low.Device_lost_reason.to_int Failed_creation -> Failed_creation
-    | n -> failwith ("Device_lost_reason.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Device_lost_reason
 
   let to_string = function
     | Unknown -> "Unknown"
@@ -571,23 +200,7 @@ module Device_lost_reason = struct
 end
 
 module Error_filter = struct
-  type t =
-    | Validation
-    | Out_of_memory
-    | Internal
-
-  let to_int = function
-    | Validation -> Wgpu_low.Error_filter.to_int Validation
-    | Out_of_memory -> Wgpu_low.Error_filter.to_int Out_of_memory
-    | Internal -> Wgpu_low.Error_filter.to_int Internal
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Error_filter.to_int Validation -> Validation
-    | x when x = Wgpu_low.Error_filter.to_int Out_of_memory -> Out_of_memory
-    | x when x = Wgpu_low.Error_filter.to_int Internal -> Internal
-    | n -> failwith ("Error_filter.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Error_filter
 
   let to_string = function
     | Validation -> "Validation"
@@ -597,29 +210,7 @@ module Error_filter = struct
 end
 
 module Error_type = struct
-  type t =
-    | No_error
-    | Validation
-    | Out_of_memory
-    | Internal
-    | Unknown
-
-  let to_int = function
-    | No_error -> Wgpu_low.Error_type.to_int No_error
-    | Validation -> Wgpu_low.Error_type.to_int Validation
-    | Out_of_memory -> Wgpu_low.Error_type.to_int Out_of_memory
-    | Internal -> Wgpu_low.Error_type.to_int Internal
-    | Unknown -> Wgpu_low.Error_type.to_int Unknown
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Error_type.to_int No_error -> No_error
-    | x when x = Wgpu_low.Error_type.to_int Validation -> Validation
-    | x when x = Wgpu_low.Error_type.to_int Out_of_memory -> Out_of_memory
-    | x when x = Wgpu_low.Error_type.to_int Internal -> Internal
-    | x when x = Wgpu_low.Error_type.to_int Unknown -> Unknown
-    | n -> failwith ("Error_type.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Error_type
 
   let to_string = function
     | No_error -> "No_error"
@@ -631,20 +222,7 @@ module Error_type = struct
 end
 
 module Feature_level = struct
-  type t =
-    | Compatibility
-    | Core
-
-  let to_int = function
-    | Compatibility -> Wgpu_low.Feature_level.to_int Compatibility
-    | Core -> Wgpu_low.Feature_level.to_int Core
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Feature_level.to_int Compatibility -> Compatibility
-    | x when x = Wgpu_low.Feature_level.to_int Core -> Core
-    | n -> failwith ("Feature_level.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Feature_level
 
   let to_string = function
     | Compatibility -> "Compatibility"
@@ -653,75 +231,7 @@ module Feature_level = struct
 end
 
 module Feature_name = struct
-  type t =
-    | Undefined
-    | Depth_clip_control
-    | Depth32_float_stencil8
-    | Timestamp_query
-    | Texture_compression_bc
-    | Texture_compression_bc_sliced_3d
-    | Texture_compression_etc2
-    | Texture_compression_astc
-    | Texture_compression_astc_sliced_3d
-    | Indirect_first_instance
-    | Shader_f16
-    | Rg11b10_ufloat_renderable
-    | Bgra8_unorm_storage
-    | Float32_filterable
-    | Float32_blendable
-    | Clip_distances
-    | Dual_source_blending
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Feature_name.to_int Undefined
-    | Depth_clip_control -> Wgpu_low.Feature_name.to_int Depth_clip_control
-    | Depth32_float_stencil8 -> Wgpu_low.Feature_name.to_int Depth32_float_stencil8
-    | Timestamp_query -> Wgpu_low.Feature_name.to_int Timestamp_query
-    | Texture_compression_bc -> Wgpu_low.Feature_name.to_int Texture_compression_bc
-    | Texture_compression_bc_sliced_3d ->
-      Wgpu_low.Feature_name.to_int Texture_compression_bc_sliced_3d
-    | Texture_compression_etc2 -> Wgpu_low.Feature_name.to_int Texture_compression_etc2
-    | Texture_compression_astc -> Wgpu_low.Feature_name.to_int Texture_compression_astc
-    | Texture_compression_astc_sliced_3d ->
-      Wgpu_low.Feature_name.to_int Texture_compression_astc_sliced_3d
-    | Indirect_first_instance -> Wgpu_low.Feature_name.to_int Indirect_first_instance
-    | Shader_f16 -> Wgpu_low.Feature_name.to_int Shader_f16
-    | Rg11b10_ufloat_renderable -> Wgpu_low.Feature_name.to_int Rg11b10_ufloat_renderable
-    | Bgra8_unorm_storage -> Wgpu_low.Feature_name.to_int Bgra8_unorm_storage
-    | Float32_filterable -> Wgpu_low.Feature_name.to_int Float32_filterable
-    | Float32_blendable -> Wgpu_low.Feature_name.to_int Float32_blendable
-    | Clip_distances -> Wgpu_low.Feature_name.to_int Clip_distances
-    | Dual_source_blending -> Wgpu_low.Feature_name.to_int Dual_source_blending
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Feature_name.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Feature_name.to_int Depth_clip_control -> Depth_clip_control
-    | x when x = Wgpu_low.Feature_name.to_int Depth32_float_stencil8 ->
-      Depth32_float_stencil8
-    | x when x = Wgpu_low.Feature_name.to_int Timestamp_query -> Timestamp_query
-    | x when x = Wgpu_low.Feature_name.to_int Texture_compression_bc ->
-      Texture_compression_bc
-    | x when x = Wgpu_low.Feature_name.to_int Texture_compression_bc_sliced_3d ->
-      Texture_compression_bc_sliced_3d
-    | x when x = Wgpu_low.Feature_name.to_int Texture_compression_etc2 ->
-      Texture_compression_etc2
-    | x when x = Wgpu_low.Feature_name.to_int Texture_compression_astc ->
-      Texture_compression_astc
-    | x when x = Wgpu_low.Feature_name.to_int Texture_compression_astc_sliced_3d ->
-      Texture_compression_astc_sliced_3d
-    | x when x = Wgpu_low.Feature_name.to_int Indirect_first_instance ->
-      Indirect_first_instance
-    | x when x = Wgpu_low.Feature_name.to_int Shader_f16 -> Shader_f16
-    | x when x = Wgpu_low.Feature_name.to_int Rg11b10_ufloat_renderable ->
-      Rg11b10_ufloat_renderable
-    | x when x = Wgpu_low.Feature_name.to_int Bgra8_unorm_storage -> Bgra8_unorm_storage
-    | x when x = Wgpu_low.Feature_name.to_int Float32_filterable -> Float32_filterable
-    | x when x = Wgpu_low.Feature_name.to_int Float32_blendable -> Float32_blendable
-    | x when x = Wgpu_low.Feature_name.to_int Clip_distances -> Clip_distances
-    | x when x = Wgpu_low.Feature_name.to_int Dual_source_blending -> Dual_source_blending
-    | n -> failwith ("Feature_name.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Feature_name
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -745,23 +255,7 @@ module Feature_name = struct
 end
 
 module Filter_mode = struct
-  type t =
-    | Undefined
-    | Nearest
-    | Linear
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Filter_mode.to_int Undefined
-    | Nearest -> Wgpu_low.Filter_mode.to_int Nearest
-    | Linear -> Wgpu_low.Filter_mode.to_int Linear
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Filter_mode.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Filter_mode.to_int Nearest -> Nearest
-    | x when x = Wgpu_low.Filter_mode.to_int Linear -> Linear
-    | n -> failwith ("Filter_mode.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Filter_mode
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -771,23 +265,7 @@ module Filter_mode = struct
 end
 
 module Front_face = struct
-  type t =
-    | Undefined
-    | Ccw
-    | Cw
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Front_face.to_int Undefined
-    | Ccw -> Wgpu_low.Front_face.to_int Ccw
-    | Cw -> Wgpu_low.Front_face.to_int Cw
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Front_face.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Front_face.to_int Ccw -> Ccw
-    | x when x = Wgpu_low.Front_face.to_int Cw -> Cw
-    | n -> failwith ("Front_face.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Front_face
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -797,23 +275,7 @@ module Front_face = struct
 end
 
 module Index_format = struct
-  type t =
-    | Undefined
-    | Uint16
-    | Uint32
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Index_format.to_int Undefined
-    | Uint16 -> Wgpu_low.Index_format.to_int Uint16
-    | Uint32 -> Wgpu_low.Index_format.to_int Uint32
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Index_format.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Index_format.to_int Uint16 -> Uint16
-    | x when x = Wgpu_low.Index_format.to_int Uint32 -> Uint32
-    | n -> failwith ("Index_format.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Index_format
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -823,23 +285,7 @@ module Index_format = struct
 end
 
 module Load_op = struct
-  type t =
-    | Undefined
-    | Load
-    | Clear
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Load_op.to_int Undefined
-    | Load -> Wgpu_low.Load_op.to_int Load
-    | Clear -> Wgpu_low.Load_op.to_int Clear
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Load_op.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Load_op.to_int Load -> Load
-    | x when x = Wgpu_low.Load_op.to_int Clear -> Clear
-    | n -> failwith ("Load_op.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Load_op
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -849,29 +295,7 @@ module Load_op = struct
 end
 
 module Map_async_status = struct
-  type t =
-    | Success
-    | Instance_dropped
-    | Error
-    | Aborted
-    | Unknown
-
-  let to_int = function
-    | Success -> Wgpu_low.Map_async_status.to_int Success
-    | Instance_dropped -> Wgpu_low.Map_async_status.to_int Instance_dropped
-    | Error -> Wgpu_low.Map_async_status.to_int Error
-    | Aborted -> Wgpu_low.Map_async_status.to_int Aborted
-    | Unknown -> Wgpu_low.Map_async_status.to_int Unknown
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Map_async_status.to_int Success -> Success
-    | x when x = Wgpu_low.Map_async_status.to_int Instance_dropped -> Instance_dropped
-    | x when x = Wgpu_low.Map_async_status.to_int Error -> Error
-    | x when x = Wgpu_low.Map_async_status.to_int Aborted -> Aborted
-    | x when x = Wgpu_low.Map_async_status.to_int Unknown -> Unknown
-    | n -> failwith ("Map_async_status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Map_async_status
 
   let to_string = function
     | Success -> "Success"
@@ -883,23 +307,7 @@ module Map_async_status = struct
 end
 
 module Mipmap_filter_mode = struct
-  type t =
-    | Undefined
-    | Nearest
-    | Linear
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Mipmap_filter_mode.to_int Undefined
-    | Nearest -> Wgpu_low.Mipmap_filter_mode.to_int Nearest
-    | Linear -> Wgpu_low.Mipmap_filter_mode.to_int Linear
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Mipmap_filter_mode.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Mipmap_filter_mode.to_int Nearest -> Nearest
-    | x when x = Wgpu_low.Mipmap_filter_mode.to_int Linear -> Linear
-    | n -> failwith ("Mipmap_filter_mode.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Mipmap_filter_mode
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -909,23 +317,7 @@ module Mipmap_filter_mode = struct
 end
 
 module Optional_bool = struct
-  type t =
-    | False
-    | True
-    | Undefined
-
-  let to_int = function
-    | False -> Wgpu_low.Optional_bool.to_int False
-    | True -> Wgpu_low.Optional_bool.to_int True
-    | Undefined -> Wgpu_low.Optional_bool.to_int Undefined
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Optional_bool.to_int False -> False
-    | x when x = Wgpu_low.Optional_bool.to_int True -> True
-    | x when x = Wgpu_low.Optional_bool.to_int Undefined -> Undefined
-    | n -> failwith ("Optional_bool.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Optional_bool
 
   let to_string = function
     | False -> "False"
@@ -935,24 +327,7 @@ module Optional_bool = struct
 end
 
 module Pop_error_scope_status = struct
-  type t =
-    | Success
-    | Instance_dropped
-    | Empty_stack
-
-  let to_int = function
-    | Success -> Wgpu_low.Pop_error_scope_status.to_int Success
-    | Instance_dropped -> Wgpu_low.Pop_error_scope_status.to_int Instance_dropped
-    | Empty_stack -> Wgpu_low.Pop_error_scope_status.to_int Empty_stack
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Pop_error_scope_status.to_int Success -> Success
-    | x when x = Wgpu_low.Pop_error_scope_status.to_int Instance_dropped ->
-      Instance_dropped
-    | x when x = Wgpu_low.Pop_error_scope_status.to_int Empty_stack -> Empty_stack
-    | n -> failwith ("Pop_error_scope_status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Pop_error_scope_status
 
   let to_string = function
     | Success -> "Success"
@@ -962,23 +337,7 @@ module Pop_error_scope_status = struct
 end
 
 module Power_preference = struct
-  type t =
-    | Undefined
-    | Low_power
-    | High_performance
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Power_preference.to_int Undefined
-    | Low_power -> Wgpu_low.Power_preference.to_int Low_power
-    | High_performance -> Wgpu_low.Power_preference.to_int High_performance
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Power_preference.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Power_preference.to_int Low_power -> Low_power
-    | x when x = Wgpu_low.Power_preference.to_int High_performance -> High_performance
-    | n -> failwith ("Power_preference.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Power_preference
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -988,29 +347,7 @@ module Power_preference = struct
 end
 
 module Present_mode = struct
-  type t =
-    | Undefined
-    | Fifo
-    | Fifo_relaxed
-    | Immediate
-    | Mailbox
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Present_mode.to_int Undefined
-    | Fifo -> Wgpu_low.Present_mode.to_int Fifo
-    | Fifo_relaxed -> Wgpu_low.Present_mode.to_int Fifo_relaxed
-    | Immediate -> Wgpu_low.Present_mode.to_int Immediate
-    | Mailbox -> Wgpu_low.Present_mode.to_int Mailbox
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Present_mode.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Present_mode.to_int Fifo -> Fifo
-    | x when x = Wgpu_low.Present_mode.to_int Fifo_relaxed -> Fifo_relaxed
-    | x when x = Wgpu_low.Present_mode.to_int Immediate -> Immediate
-    | x when x = Wgpu_low.Present_mode.to_int Mailbox -> Mailbox
-    | n -> failwith ("Present_mode.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Present_mode
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -1022,32 +359,7 @@ module Present_mode = struct
 end
 
 module Primitive_topology = struct
-  type t =
-    | Undefined
-    | Point_list
-    | Line_list
-    | Line_strip
-    | Triangle_list
-    | Triangle_strip
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Primitive_topology.to_int Undefined
-    | Point_list -> Wgpu_low.Primitive_topology.to_int Point_list
-    | Line_list -> Wgpu_low.Primitive_topology.to_int Line_list
-    | Line_strip -> Wgpu_low.Primitive_topology.to_int Line_strip
-    | Triangle_list -> Wgpu_low.Primitive_topology.to_int Triangle_list
-    | Triangle_strip -> Wgpu_low.Primitive_topology.to_int Triangle_strip
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Primitive_topology.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Primitive_topology.to_int Point_list -> Point_list
-    | x when x = Wgpu_low.Primitive_topology.to_int Line_list -> Line_list
-    | x when x = Wgpu_low.Primitive_topology.to_int Line_strip -> Line_strip
-    | x when x = Wgpu_low.Primitive_topology.to_int Triangle_list -> Triangle_list
-    | x when x = Wgpu_low.Primitive_topology.to_int Triangle_strip -> Triangle_strip
-    | n -> failwith ("Primitive_topology.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Primitive_topology
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -1060,20 +372,7 @@ module Primitive_topology = struct
 end
 
 module Query_type = struct
-  type t =
-    | Occlusion
-    | Timestamp
-
-  let to_int = function
-    | Occlusion -> Wgpu_low.Query_type.to_int Occlusion
-    | Timestamp -> Wgpu_low.Query_type.to_int Timestamp
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Query_type.to_int Occlusion -> Occlusion
-    | x when x = Wgpu_low.Query_type.to_int Timestamp -> Timestamp
-    | n -> failwith ("Query_type.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Query_type
 
   let to_string = function
     | Occlusion -> "Occlusion"
@@ -1082,27 +381,7 @@ module Query_type = struct
 end
 
 module Queue_work_done_status = struct
-  type t =
-    | Success
-    | Instance_dropped
-    | Error
-    | Unknown
-
-  let to_int = function
-    | Success -> Wgpu_low.Queue_work_done_status.to_int Success
-    | Instance_dropped -> Wgpu_low.Queue_work_done_status.to_int Instance_dropped
-    | Error -> Wgpu_low.Queue_work_done_status.to_int Error
-    | Unknown -> Wgpu_low.Queue_work_done_status.to_int Unknown
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Queue_work_done_status.to_int Success -> Success
-    | x when x = Wgpu_low.Queue_work_done_status.to_int Instance_dropped ->
-      Instance_dropped
-    | x when x = Wgpu_low.Queue_work_done_status.to_int Error -> Error
-    | x when x = Wgpu_low.Queue_work_done_status.to_int Unknown -> Unknown
-    | n -> failwith ("Queue_work_done_status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Queue_work_done_status
 
   let to_string = function
     | Success -> "Success"
@@ -1113,30 +392,7 @@ module Queue_work_done_status = struct
 end
 
 module Request_adapter_status = struct
-  type t =
-    | Success
-    | Instance_dropped
-    | Unavailable
-    | Error
-    | Unknown
-
-  let to_int = function
-    | Success -> Wgpu_low.Request_adapter_status.to_int Success
-    | Instance_dropped -> Wgpu_low.Request_adapter_status.to_int Instance_dropped
-    | Unavailable -> Wgpu_low.Request_adapter_status.to_int Unavailable
-    | Error -> Wgpu_low.Request_adapter_status.to_int Error
-    | Unknown -> Wgpu_low.Request_adapter_status.to_int Unknown
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Request_adapter_status.to_int Success -> Success
-    | x when x = Wgpu_low.Request_adapter_status.to_int Instance_dropped ->
-      Instance_dropped
-    | x when x = Wgpu_low.Request_adapter_status.to_int Unavailable -> Unavailable
-    | x when x = Wgpu_low.Request_adapter_status.to_int Error -> Error
-    | x when x = Wgpu_low.Request_adapter_status.to_int Unknown -> Unknown
-    | n -> failwith ("Request_adapter_status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Request_adapter_status
 
   let to_string = function
     | Success -> "Success"
@@ -1148,27 +404,7 @@ module Request_adapter_status = struct
 end
 
 module Request_device_status = struct
-  type t =
-    | Success
-    | Instance_dropped
-    | Error
-    | Unknown
-
-  let to_int = function
-    | Success -> Wgpu_low.Request_device_status.to_int Success
-    | Instance_dropped -> Wgpu_low.Request_device_status.to_int Instance_dropped
-    | Error -> Wgpu_low.Request_device_status.to_int Error
-    | Unknown -> Wgpu_low.Request_device_status.to_int Unknown
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Request_device_status.to_int Success -> Success
-    | x when x = Wgpu_low.Request_device_status.to_int Instance_dropped ->
-      Instance_dropped
-    | x when x = Wgpu_low.Request_device_status.to_int Error -> Error
-    | x when x = Wgpu_low.Request_device_status.to_int Unknown -> Unknown
-    | n -> failwith ("Request_device_status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Request_device_status
 
   let to_string = function
     | Success -> "Success"
@@ -1179,50 +415,7 @@ module Request_device_status = struct
 end
 
 module S_type = struct
-  type t =
-    | Shader_source_spirv
-    | Shader_source_wgsl
-    | Render_pass_max_draw_count
-    | Surface_source_metal_layer
-    | Surface_source_windows_hwnd
-    | Surface_source_xlib_window
-    | Surface_source_wayland_surface
-    | Surface_source_android_native_window
-    | Surface_source_xcb_window
-
-  let to_int = function
-    | Shader_source_spirv -> Wgpu_low.S_type.to_int Shader_source_spirv
-    | Shader_source_wgsl -> Wgpu_low.S_type.to_int Shader_source_wgsl
-    | Render_pass_max_draw_count -> Wgpu_low.S_type.to_int Render_pass_max_draw_count
-    | Surface_source_metal_layer -> Wgpu_low.S_type.to_int Surface_source_metal_layer
-    | Surface_source_windows_hwnd -> Wgpu_low.S_type.to_int Surface_source_windows_hwnd
-    | Surface_source_xlib_window -> Wgpu_low.S_type.to_int Surface_source_xlib_window
-    | Surface_source_wayland_surface ->
-      Wgpu_low.S_type.to_int Surface_source_wayland_surface
-    | Surface_source_android_native_window ->
-      Wgpu_low.S_type.to_int Surface_source_android_native_window
-    | Surface_source_xcb_window -> Wgpu_low.S_type.to_int Surface_source_xcb_window
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.S_type.to_int Shader_source_spirv -> Shader_source_spirv
-    | x when x = Wgpu_low.S_type.to_int Shader_source_wgsl -> Shader_source_wgsl
-    | x when x = Wgpu_low.S_type.to_int Render_pass_max_draw_count ->
-      Render_pass_max_draw_count
-    | x when x = Wgpu_low.S_type.to_int Surface_source_metal_layer ->
-      Surface_source_metal_layer
-    | x when x = Wgpu_low.S_type.to_int Surface_source_windows_hwnd ->
-      Surface_source_windows_hwnd
-    | x when x = Wgpu_low.S_type.to_int Surface_source_xlib_window ->
-      Surface_source_xlib_window
-    | x when x = Wgpu_low.S_type.to_int Surface_source_wayland_surface ->
-      Surface_source_wayland_surface
-    | x when x = Wgpu_low.S_type.to_int Surface_source_android_native_window ->
-      Surface_source_android_native_window
-    | x when x = Wgpu_low.S_type.to_int Surface_source_xcb_window ->
-      Surface_source_xcb_window
-    | n -> failwith ("S_type.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.S_type
 
   let to_string = function
     | Shader_source_spirv -> "Shader_source_spirv"
@@ -1238,29 +431,7 @@ module S_type = struct
 end
 
 module Sampler_binding_type = struct
-  type t =
-    | Binding_not_used
-    | Undefined
-    | Filtering
-    | Non_filtering
-    | Comparison
-
-  let to_int = function
-    | Binding_not_used -> Wgpu_low.Sampler_binding_type.to_int Binding_not_used
-    | Undefined -> Wgpu_low.Sampler_binding_type.to_int Undefined
-    | Filtering -> Wgpu_low.Sampler_binding_type.to_int Filtering
-    | Non_filtering -> Wgpu_low.Sampler_binding_type.to_int Non_filtering
-    | Comparison -> Wgpu_low.Sampler_binding_type.to_int Comparison
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Sampler_binding_type.to_int Binding_not_used -> Binding_not_used
-    | x when x = Wgpu_low.Sampler_binding_type.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Sampler_binding_type.to_int Filtering -> Filtering
-    | x when x = Wgpu_low.Sampler_binding_type.to_int Non_filtering -> Non_filtering
-    | x when x = Wgpu_low.Sampler_binding_type.to_int Comparison -> Comparison
-    | n -> failwith ("Sampler_binding_type.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Sampler_binding_type
 
   let to_string = function
     | Binding_not_used -> "Binding_not_used"
@@ -1272,20 +443,7 @@ module Sampler_binding_type = struct
 end
 
 module Status = struct
-  type t =
-    | Success
-    | Error
-
-  let to_int = function
-    | Success -> Wgpu_low.Status.to_int Success
-    | Error -> Wgpu_low.Status.to_int Error
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Status.to_int Success -> Success
-    | x when x = Wgpu_low.Status.to_int Error -> Error
-    | n -> failwith ("Status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Status
 
   let to_string = function
     | Success -> "Success"
@@ -1294,41 +452,7 @@ module Status = struct
 end
 
 module Stencil_operation = struct
-  type t =
-    | Undefined
-    | Keep
-    | Zero
-    | Replace
-    | Invert
-    | Increment_clamp
-    | Decrement_clamp
-    | Increment_wrap
-    | Decrement_wrap
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Stencil_operation.to_int Undefined
-    | Keep -> Wgpu_low.Stencil_operation.to_int Keep
-    | Zero -> Wgpu_low.Stencil_operation.to_int Zero
-    | Replace -> Wgpu_low.Stencil_operation.to_int Replace
-    | Invert -> Wgpu_low.Stencil_operation.to_int Invert
-    | Increment_clamp -> Wgpu_low.Stencil_operation.to_int Increment_clamp
-    | Decrement_clamp -> Wgpu_low.Stencil_operation.to_int Decrement_clamp
-    | Increment_wrap -> Wgpu_low.Stencil_operation.to_int Increment_wrap
-    | Decrement_wrap -> Wgpu_low.Stencil_operation.to_int Decrement_wrap
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Stencil_operation.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Stencil_operation.to_int Keep -> Keep
-    | x when x = Wgpu_low.Stencil_operation.to_int Zero -> Zero
-    | x when x = Wgpu_low.Stencil_operation.to_int Replace -> Replace
-    | x when x = Wgpu_low.Stencil_operation.to_int Invert -> Invert
-    | x when x = Wgpu_low.Stencil_operation.to_int Increment_clamp -> Increment_clamp
-    | x when x = Wgpu_low.Stencil_operation.to_int Decrement_clamp -> Decrement_clamp
-    | x when x = Wgpu_low.Stencil_operation.to_int Increment_wrap -> Increment_wrap
-    | x when x = Wgpu_low.Stencil_operation.to_int Decrement_wrap -> Decrement_wrap
-    | n -> failwith ("Stencil_operation.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Stencil_operation
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -1344,30 +468,7 @@ module Stencil_operation = struct
 end
 
 module Storage_texture_access = struct
-  type t =
-    | Binding_not_used
-    | Undefined
-    | Write_only
-    | Read_only
-    | Read_write
-
-  let to_int = function
-    | Binding_not_used -> Wgpu_low.Storage_texture_access.to_int Binding_not_used
-    | Undefined -> Wgpu_low.Storage_texture_access.to_int Undefined
-    | Write_only -> Wgpu_low.Storage_texture_access.to_int Write_only
-    | Read_only -> Wgpu_low.Storage_texture_access.to_int Read_only
-    | Read_write -> Wgpu_low.Storage_texture_access.to_int Read_write
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Storage_texture_access.to_int Binding_not_used ->
-      Binding_not_used
-    | x when x = Wgpu_low.Storage_texture_access.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Storage_texture_access.to_int Write_only -> Write_only
-    | x when x = Wgpu_low.Storage_texture_access.to_int Read_only -> Read_only
-    | x when x = Wgpu_low.Storage_texture_access.to_int Read_write -> Read_write
-    | n -> failwith ("Storage_texture_access.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Storage_texture_access
 
   let to_string = function
     | Binding_not_used -> "Binding_not_used"
@@ -1379,23 +480,7 @@ module Storage_texture_access = struct
 end
 
 module Store_op = struct
-  type t =
-    | Undefined
-    | Store
-    | Discard
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Store_op.to_int Undefined
-    | Store -> Wgpu_low.Store_op.to_int Store
-    | Discard -> Wgpu_low.Store_op.to_int Discard
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Store_op.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Store_op.to_int Store -> Store
-    | x when x = Wgpu_low.Store_op.to_int Discard -> Discard
-    | n -> failwith ("Store_op.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Store_op
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -1405,46 +490,7 @@ module Store_op = struct
 end
 
 module Surface_get_current_texture_status = struct
-  type t =
-    | Success_optimal
-    | Success_suboptimal
-    | Timeout
-    | Outdated
-    | Lost
-    | Out_of_memory
-    | Device_lost
-    | Error
-
-  let to_int = function
-    | Success_optimal ->
-      Wgpu_low.Surface_get_current_texture_status.to_int Success_optimal
-    | Success_suboptimal ->
-      Wgpu_low.Surface_get_current_texture_status.to_int Success_suboptimal
-    | Timeout -> Wgpu_low.Surface_get_current_texture_status.to_int Timeout
-    | Outdated -> Wgpu_low.Surface_get_current_texture_status.to_int Outdated
-    | Lost -> Wgpu_low.Surface_get_current_texture_status.to_int Lost
-    | Out_of_memory -> Wgpu_low.Surface_get_current_texture_status.to_int Out_of_memory
-    | Device_lost -> Wgpu_low.Surface_get_current_texture_status.to_int Device_lost
-    | Error -> Wgpu_low.Surface_get_current_texture_status.to_int Error
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Surface_get_current_texture_status.to_int Success_optimal ->
-      Success_optimal
-    | x when x = Wgpu_low.Surface_get_current_texture_status.to_int Success_suboptimal ->
-      Success_suboptimal
-    | x when x = Wgpu_low.Surface_get_current_texture_status.to_int Timeout -> Timeout
-    | x when x = Wgpu_low.Surface_get_current_texture_status.to_int Outdated -> Outdated
-    | x when x = Wgpu_low.Surface_get_current_texture_status.to_int Lost -> Lost
-    | x when x = Wgpu_low.Surface_get_current_texture_status.to_int Out_of_memory ->
-      Out_of_memory
-    | x when x = Wgpu_low.Surface_get_current_texture_status.to_int Device_lost ->
-      Device_lost
-    | x when x = Wgpu_low.Surface_get_current_texture_status.to_int Error -> Error
-    | n ->
-      failwith
-        ("Surface_get_current_texture_status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Surface_get_current_texture_status
 
   let to_string = function
     | Success_optimal -> "Success_optimal"
@@ -1459,26 +505,7 @@ module Surface_get_current_texture_status = struct
 end
 
 module Texture_aspect = struct
-  type t =
-    | Undefined
-    | All
-    | Stencil_only
-    | Depth_only
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Texture_aspect.to_int Undefined
-    | All -> Wgpu_low.Texture_aspect.to_int All
-    | Stencil_only -> Wgpu_low.Texture_aspect.to_int Stencil_only
-    | Depth_only -> Wgpu_low.Texture_aspect.to_int Depth_only
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Texture_aspect.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Texture_aspect.to_int All -> All
-    | x when x = Wgpu_low.Texture_aspect.to_int Stencil_only -> Stencil_only
-    | x when x = Wgpu_low.Texture_aspect.to_int Depth_only -> Depth_only
-    | n -> failwith ("Texture_aspect.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Texture_aspect
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -1489,26 +516,7 @@ module Texture_aspect = struct
 end
 
 module Texture_dimension = struct
-  type t =
-    | Undefined
-    | N1d
-    | N2d
-    | N3d
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Texture_dimension.to_int Undefined
-    | N1d -> Wgpu_low.Texture_dimension.to_int N1d
-    | N2d -> Wgpu_low.Texture_dimension.to_int N2d
-    | N3d -> Wgpu_low.Texture_dimension.to_int N3d
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Texture_dimension.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Texture_dimension.to_int N1d -> N1d
-    | x when x = Wgpu_low.Texture_dimension.to_int N2d -> N2d
-    | x when x = Wgpu_low.Texture_dimension.to_int N3d -> N3d
-    | n -> failwith ("Texture_dimension.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Texture_dimension
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -1519,313 +527,7 @@ module Texture_dimension = struct
 end
 
 module Texture_format = struct
-  type t =
-    | Undefined
-    | R8_unorm
-    | R8_snorm
-    | R8_uint
-    | R8_sint
-    | R16_uint
-    | R16_sint
-    | R16_float
-    | Rg8_unorm
-    | Rg8_snorm
-    | Rg8_uint
-    | Rg8_sint
-    | R32_float
-    | R32_uint
-    | R32_sint
-    | Rg16_uint
-    | Rg16_sint
-    | Rg16_float
-    | Rgba8_unorm
-    | Rgba8_unorm_srgb
-    | Rgba8_snorm
-    | Rgba8_uint
-    | Rgba8_sint
-    | Bgra8_unorm
-    | Bgra8_unorm_srgb
-    | Rgb10_a2_uint
-    | Rgb10_a2_unorm
-    | Rg11_b10_ufloat
-    | Rgb9_e5_ufloat
-    | Rg32_float
-    | Rg32_uint
-    | Rg32_sint
-    | Rgba16_uint
-    | Rgba16_sint
-    | Rgba16_float
-    | Rgba32_float
-    | Rgba32_uint
-    | Rgba32_sint
-    | Stencil8
-    | Depth16_unorm
-    | Depth24_plus
-    | Depth24_plus_stencil8
-    | Depth32_float
-    | Depth32_float_stencil8
-    | Bc1_rgba_unorm
-    | Bc1_rgba_unorm_srgb
-    | Bc2_rgba_unorm
-    | Bc2_rgba_unorm_srgb
-    | Bc3_rgba_unorm
-    | Bc3_rgba_unorm_srgb
-    | Bc4_r_unorm
-    | Bc4_r_snorm
-    | Bc5_rg_unorm
-    | Bc5_rg_snorm
-    | Bc6h_rgb_ufloat
-    | Bc6h_rgb_float
-    | Bc7_rgba_unorm
-    | Bc7_rgba_unorm_srgb
-    | Etc2_rgb8_unorm
-    | Etc2_rgb8_unorm_srgb
-    | Etc2_rgb8a1_unorm
-    | Etc2_rgb8a1_unorm_srgb
-    | Etc2_rgba8_unorm
-    | Etc2_rgba8_unorm_srgb
-    | Eac_r11_unorm
-    | Eac_r11_snorm
-    | Eac_rg11_unorm
-    | Eac_rg11_snorm
-    | Astc_4x4_unorm
-    | Astc_4x4_unorm_srgb
-    | Astc_5x4_unorm
-    | Astc_5x4_unorm_srgb
-    | Astc_5x5_unorm
-    | Astc_5x5_unorm_srgb
-    | Astc_6x5_unorm
-    | Astc_6x5_unorm_srgb
-    | Astc_6x6_unorm
-    | Astc_6x6_unorm_srgb
-    | Astc_8x5_unorm
-    | Astc_8x5_unorm_srgb
-    | Astc_8x6_unorm
-    | Astc_8x6_unorm_srgb
-    | Astc_8x8_unorm
-    | Astc_8x8_unorm_srgb
-    | Astc_10x5_unorm
-    | Astc_10x5_unorm_srgb
-    | Astc_10x6_unorm
-    | Astc_10x6_unorm_srgb
-    | Astc_10x8_unorm
-    | Astc_10x8_unorm_srgb
-    | Astc_10x10_unorm
-    | Astc_10x10_unorm_srgb
-    | Astc_12x10_unorm
-    | Astc_12x10_unorm_srgb
-    | Astc_12x12_unorm
-    | Astc_12x12_unorm_srgb
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Texture_format.to_int Undefined
-    | R8_unorm -> Wgpu_low.Texture_format.to_int R8_unorm
-    | R8_snorm -> Wgpu_low.Texture_format.to_int R8_snorm
-    | R8_uint -> Wgpu_low.Texture_format.to_int R8_uint
-    | R8_sint -> Wgpu_low.Texture_format.to_int R8_sint
-    | R16_uint -> Wgpu_low.Texture_format.to_int R16_uint
-    | R16_sint -> Wgpu_low.Texture_format.to_int R16_sint
-    | R16_float -> Wgpu_low.Texture_format.to_int R16_float
-    | Rg8_unorm -> Wgpu_low.Texture_format.to_int Rg8_unorm
-    | Rg8_snorm -> Wgpu_low.Texture_format.to_int Rg8_snorm
-    | Rg8_uint -> Wgpu_low.Texture_format.to_int Rg8_uint
-    | Rg8_sint -> Wgpu_low.Texture_format.to_int Rg8_sint
-    | R32_float -> Wgpu_low.Texture_format.to_int R32_float
-    | R32_uint -> Wgpu_low.Texture_format.to_int R32_uint
-    | R32_sint -> Wgpu_low.Texture_format.to_int R32_sint
-    | Rg16_uint -> Wgpu_low.Texture_format.to_int Rg16_uint
-    | Rg16_sint -> Wgpu_low.Texture_format.to_int Rg16_sint
-    | Rg16_float -> Wgpu_low.Texture_format.to_int Rg16_float
-    | Rgba8_unorm -> Wgpu_low.Texture_format.to_int Rgba8_unorm
-    | Rgba8_unorm_srgb -> Wgpu_low.Texture_format.to_int Rgba8_unorm_srgb
-    | Rgba8_snorm -> Wgpu_low.Texture_format.to_int Rgba8_snorm
-    | Rgba8_uint -> Wgpu_low.Texture_format.to_int Rgba8_uint
-    | Rgba8_sint -> Wgpu_low.Texture_format.to_int Rgba8_sint
-    | Bgra8_unorm -> Wgpu_low.Texture_format.to_int Bgra8_unorm
-    | Bgra8_unorm_srgb -> Wgpu_low.Texture_format.to_int Bgra8_unorm_srgb
-    | Rgb10_a2_uint -> Wgpu_low.Texture_format.to_int Rgb10_a2_uint
-    | Rgb10_a2_unorm -> Wgpu_low.Texture_format.to_int Rgb10_a2_unorm
-    | Rg11_b10_ufloat -> Wgpu_low.Texture_format.to_int Rg11_b10_ufloat
-    | Rgb9_e5_ufloat -> Wgpu_low.Texture_format.to_int Rgb9_e5_ufloat
-    | Rg32_float -> Wgpu_low.Texture_format.to_int Rg32_float
-    | Rg32_uint -> Wgpu_low.Texture_format.to_int Rg32_uint
-    | Rg32_sint -> Wgpu_low.Texture_format.to_int Rg32_sint
-    | Rgba16_uint -> Wgpu_low.Texture_format.to_int Rgba16_uint
-    | Rgba16_sint -> Wgpu_low.Texture_format.to_int Rgba16_sint
-    | Rgba16_float -> Wgpu_low.Texture_format.to_int Rgba16_float
-    | Rgba32_float -> Wgpu_low.Texture_format.to_int Rgba32_float
-    | Rgba32_uint -> Wgpu_low.Texture_format.to_int Rgba32_uint
-    | Rgba32_sint -> Wgpu_low.Texture_format.to_int Rgba32_sint
-    | Stencil8 -> Wgpu_low.Texture_format.to_int Stencil8
-    | Depth16_unorm -> Wgpu_low.Texture_format.to_int Depth16_unorm
-    | Depth24_plus -> Wgpu_low.Texture_format.to_int Depth24_plus
-    | Depth24_plus_stencil8 -> Wgpu_low.Texture_format.to_int Depth24_plus_stencil8
-    | Depth32_float -> Wgpu_low.Texture_format.to_int Depth32_float
-    | Depth32_float_stencil8 -> Wgpu_low.Texture_format.to_int Depth32_float_stencil8
-    | Bc1_rgba_unorm -> Wgpu_low.Texture_format.to_int Bc1_rgba_unorm
-    | Bc1_rgba_unorm_srgb -> Wgpu_low.Texture_format.to_int Bc1_rgba_unorm_srgb
-    | Bc2_rgba_unorm -> Wgpu_low.Texture_format.to_int Bc2_rgba_unorm
-    | Bc2_rgba_unorm_srgb -> Wgpu_low.Texture_format.to_int Bc2_rgba_unorm_srgb
-    | Bc3_rgba_unorm -> Wgpu_low.Texture_format.to_int Bc3_rgba_unorm
-    | Bc3_rgba_unorm_srgb -> Wgpu_low.Texture_format.to_int Bc3_rgba_unorm_srgb
-    | Bc4_r_unorm -> Wgpu_low.Texture_format.to_int Bc4_r_unorm
-    | Bc4_r_snorm -> Wgpu_low.Texture_format.to_int Bc4_r_snorm
-    | Bc5_rg_unorm -> Wgpu_low.Texture_format.to_int Bc5_rg_unorm
-    | Bc5_rg_snorm -> Wgpu_low.Texture_format.to_int Bc5_rg_snorm
-    | Bc6h_rgb_ufloat -> Wgpu_low.Texture_format.to_int Bc6h_rgb_ufloat
-    | Bc6h_rgb_float -> Wgpu_low.Texture_format.to_int Bc6h_rgb_float
-    | Bc7_rgba_unorm -> Wgpu_low.Texture_format.to_int Bc7_rgba_unorm
-    | Bc7_rgba_unorm_srgb -> Wgpu_low.Texture_format.to_int Bc7_rgba_unorm_srgb
-    | Etc2_rgb8_unorm -> Wgpu_low.Texture_format.to_int Etc2_rgb8_unorm
-    | Etc2_rgb8_unorm_srgb -> Wgpu_low.Texture_format.to_int Etc2_rgb8_unorm_srgb
-    | Etc2_rgb8a1_unorm -> Wgpu_low.Texture_format.to_int Etc2_rgb8a1_unorm
-    | Etc2_rgb8a1_unorm_srgb -> Wgpu_low.Texture_format.to_int Etc2_rgb8a1_unorm_srgb
-    | Etc2_rgba8_unorm -> Wgpu_low.Texture_format.to_int Etc2_rgba8_unorm
-    | Etc2_rgba8_unorm_srgb -> Wgpu_low.Texture_format.to_int Etc2_rgba8_unorm_srgb
-    | Eac_r11_unorm -> Wgpu_low.Texture_format.to_int Eac_r11_unorm
-    | Eac_r11_snorm -> Wgpu_low.Texture_format.to_int Eac_r11_snorm
-    | Eac_rg11_unorm -> Wgpu_low.Texture_format.to_int Eac_rg11_unorm
-    | Eac_rg11_snorm -> Wgpu_low.Texture_format.to_int Eac_rg11_snorm
-    | Astc_4x4_unorm -> Wgpu_low.Texture_format.to_int Astc_4x4_unorm
-    | Astc_4x4_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_4x4_unorm_srgb
-    | Astc_5x4_unorm -> Wgpu_low.Texture_format.to_int Astc_5x4_unorm
-    | Astc_5x4_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_5x4_unorm_srgb
-    | Astc_5x5_unorm -> Wgpu_low.Texture_format.to_int Astc_5x5_unorm
-    | Astc_5x5_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_5x5_unorm_srgb
-    | Astc_6x5_unorm -> Wgpu_low.Texture_format.to_int Astc_6x5_unorm
-    | Astc_6x5_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_6x5_unorm_srgb
-    | Astc_6x6_unorm -> Wgpu_low.Texture_format.to_int Astc_6x6_unorm
-    | Astc_6x6_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_6x6_unorm_srgb
-    | Astc_8x5_unorm -> Wgpu_low.Texture_format.to_int Astc_8x5_unorm
-    | Astc_8x5_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_8x5_unorm_srgb
-    | Astc_8x6_unorm -> Wgpu_low.Texture_format.to_int Astc_8x6_unorm
-    | Astc_8x6_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_8x6_unorm_srgb
-    | Astc_8x8_unorm -> Wgpu_low.Texture_format.to_int Astc_8x8_unorm
-    | Astc_8x8_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_8x8_unorm_srgb
-    | Astc_10x5_unorm -> Wgpu_low.Texture_format.to_int Astc_10x5_unorm
-    | Astc_10x5_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_10x5_unorm_srgb
-    | Astc_10x6_unorm -> Wgpu_low.Texture_format.to_int Astc_10x6_unorm
-    | Astc_10x6_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_10x6_unorm_srgb
-    | Astc_10x8_unorm -> Wgpu_low.Texture_format.to_int Astc_10x8_unorm
-    | Astc_10x8_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_10x8_unorm_srgb
-    | Astc_10x10_unorm -> Wgpu_low.Texture_format.to_int Astc_10x10_unorm
-    | Astc_10x10_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_10x10_unorm_srgb
-    | Astc_12x10_unorm -> Wgpu_low.Texture_format.to_int Astc_12x10_unorm
-    | Astc_12x10_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_12x10_unorm_srgb
-    | Astc_12x12_unorm -> Wgpu_low.Texture_format.to_int Astc_12x12_unorm
-    | Astc_12x12_unorm_srgb -> Wgpu_low.Texture_format.to_int Astc_12x12_unorm_srgb
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Texture_format.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Texture_format.to_int R8_unorm -> R8_unorm
-    | x when x = Wgpu_low.Texture_format.to_int R8_snorm -> R8_snorm
-    | x when x = Wgpu_low.Texture_format.to_int R8_uint -> R8_uint
-    | x when x = Wgpu_low.Texture_format.to_int R8_sint -> R8_sint
-    | x when x = Wgpu_low.Texture_format.to_int R16_uint -> R16_uint
-    | x when x = Wgpu_low.Texture_format.to_int R16_sint -> R16_sint
-    | x when x = Wgpu_low.Texture_format.to_int R16_float -> R16_float
-    | x when x = Wgpu_low.Texture_format.to_int Rg8_unorm -> Rg8_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Rg8_snorm -> Rg8_snorm
-    | x when x = Wgpu_low.Texture_format.to_int Rg8_uint -> Rg8_uint
-    | x when x = Wgpu_low.Texture_format.to_int Rg8_sint -> Rg8_sint
-    | x when x = Wgpu_low.Texture_format.to_int R32_float -> R32_float
-    | x when x = Wgpu_low.Texture_format.to_int R32_uint -> R32_uint
-    | x when x = Wgpu_low.Texture_format.to_int R32_sint -> R32_sint
-    | x when x = Wgpu_low.Texture_format.to_int Rg16_uint -> Rg16_uint
-    | x when x = Wgpu_low.Texture_format.to_int Rg16_sint -> Rg16_sint
-    | x when x = Wgpu_low.Texture_format.to_int Rg16_float -> Rg16_float
-    | x when x = Wgpu_low.Texture_format.to_int Rgba8_unorm -> Rgba8_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Rgba8_unorm_srgb -> Rgba8_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Rgba8_snorm -> Rgba8_snorm
-    | x when x = Wgpu_low.Texture_format.to_int Rgba8_uint -> Rgba8_uint
-    | x when x = Wgpu_low.Texture_format.to_int Rgba8_sint -> Rgba8_sint
-    | x when x = Wgpu_low.Texture_format.to_int Bgra8_unorm -> Bgra8_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Bgra8_unorm_srgb -> Bgra8_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Rgb10_a2_uint -> Rgb10_a2_uint
-    | x when x = Wgpu_low.Texture_format.to_int Rgb10_a2_unorm -> Rgb10_a2_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Rg11_b10_ufloat -> Rg11_b10_ufloat
-    | x when x = Wgpu_low.Texture_format.to_int Rgb9_e5_ufloat -> Rgb9_e5_ufloat
-    | x when x = Wgpu_low.Texture_format.to_int Rg32_float -> Rg32_float
-    | x when x = Wgpu_low.Texture_format.to_int Rg32_uint -> Rg32_uint
-    | x when x = Wgpu_low.Texture_format.to_int Rg32_sint -> Rg32_sint
-    | x when x = Wgpu_low.Texture_format.to_int Rgba16_uint -> Rgba16_uint
-    | x when x = Wgpu_low.Texture_format.to_int Rgba16_sint -> Rgba16_sint
-    | x when x = Wgpu_low.Texture_format.to_int Rgba16_float -> Rgba16_float
-    | x when x = Wgpu_low.Texture_format.to_int Rgba32_float -> Rgba32_float
-    | x when x = Wgpu_low.Texture_format.to_int Rgba32_uint -> Rgba32_uint
-    | x when x = Wgpu_low.Texture_format.to_int Rgba32_sint -> Rgba32_sint
-    | x when x = Wgpu_low.Texture_format.to_int Stencil8 -> Stencil8
-    | x when x = Wgpu_low.Texture_format.to_int Depth16_unorm -> Depth16_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Depth24_plus -> Depth24_plus
-    | x when x = Wgpu_low.Texture_format.to_int Depth24_plus_stencil8 ->
-      Depth24_plus_stencil8
-    | x when x = Wgpu_low.Texture_format.to_int Depth32_float -> Depth32_float
-    | x when x = Wgpu_low.Texture_format.to_int Depth32_float_stencil8 ->
-      Depth32_float_stencil8
-    | x when x = Wgpu_low.Texture_format.to_int Bc1_rgba_unorm -> Bc1_rgba_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Bc1_rgba_unorm_srgb -> Bc1_rgba_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Bc2_rgba_unorm -> Bc2_rgba_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Bc2_rgba_unorm_srgb -> Bc2_rgba_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Bc3_rgba_unorm -> Bc3_rgba_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Bc3_rgba_unorm_srgb -> Bc3_rgba_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Bc4_r_unorm -> Bc4_r_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Bc4_r_snorm -> Bc4_r_snorm
-    | x when x = Wgpu_low.Texture_format.to_int Bc5_rg_unorm -> Bc5_rg_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Bc5_rg_snorm -> Bc5_rg_snorm
-    | x when x = Wgpu_low.Texture_format.to_int Bc6h_rgb_ufloat -> Bc6h_rgb_ufloat
-    | x when x = Wgpu_low.Texture_format.to_int Bc6h_rgb_float -> Bc6h_rgb_float
-    | x when x = Wgpu_low.Texture_format.to_int Bc7_rgba_unorm -> Bc7_rgba_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Bc7_rgba_unorm_srgb -> Bc7_rgba_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Etc2_rgb8_unorm -> Etc2_rgb8_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Etc2_rgb8_unorm_srgb ->
-      Etc2_rgb8_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Etc2_rgb8a1_unorm -> Etc2_rgb8a1_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Etc2_rgb8a1_unorm_srgb ->
-      Etc2_rgb8a1_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Etc2_rgba8_unorm -> Etc2_rgba8_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Etc2_rgba8_unorm_srgb ->
-      Etc2_rgba8_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Eac_r11_unorm -> Eac_r11_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Eac_r11_snorm -> Eac_r11_snorm
-    | x when x = Wgpu_low.Texture_format.to_int Eac_rg11_unorm -> Eac_rg11_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Eac_rg11_snorm -> Eac_rg11_snorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_4x4_unorm -> Astc_4x4_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_4x4_unorm_srgb -> Astc_4x4_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_5x4_unorm -> Astc_5x4_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_5x4_unorm_srgb -> Astc_5x4_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_5x5_unorm -> Astc_5x5_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_5x5_unorm_srgb -> Astc_5x5_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_6x5_unorm -> Astc_6x5_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_6x5_unorm_srgb -> Astc_6x5_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_6x6_unorm -> Astc_6x6_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_6x6_unorm_srgb -> Astc_6x6_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_8x5_unorm -> Astc_8x5_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_8x5_unorm_srgb -> Astc_8x5_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_8x6_unorm -> Astc_8x6_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_8x6_unorm_srgb -> Astc_8x6_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_8x8_unorm -> Astc_8x8_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_8x8_unorm_srgb -> Astc_8x8_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_10x5_unorm -> Astc_10x5_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_10x5_unorm_srgb ->
-      Astc_10x5_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_10x6_unorm -> Astc_10x6_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_10x6_unorm_srgb ->
-      Astc_10x6_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_10x8_unorm -> Astc_10x8_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_10x8_unorm_srgb ->
-      Astc_10x8_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_10x10_unorm -> Astc_10x10_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_10x10_unorm_srgb ->
-      Astc_10x10_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_12x10_unorm -> Astc_12x10_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_12x10_unorm_srgb ->
-      Astc_12x10_unorm_srgb
-    | x when x = Wgpu_low.Texture_format.to_int Astc_12x12_unorm -> Astc_12x12_unorm
-    | x when x = Wgpu_low.Texture_format.to_int Astc_12x12_unorm_srgb ->
-      Astc_12x12_unorm_srgb
-    | n -> failwith ("Texture_format.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Texture_format
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -1928,36 +630,7 @@ module Texture_format = struct
 end
 
 module Texture_sample_type = struct
-  type t =
-    | Binding_not_used
-    | Undefined
-    | Float
-    | Unfilterable_float
-    | Depth
-    | Sint
-    | Uint
-
-  let to_int = function
-    | Binding_not_used -> Wgpu_low.Texture_sample_type.to_int Binding_not_used
-    | Undefined -> Wgpu_low.Texture_sample_type.to_int Undefined
-    | Float -> Wgpu_low.Texture_sample_type.to_int Float
-    | Unfilterable_float -> Wgpu_low.Texture_sample_type.to_int Unfilterable_float
-    | Depth -> Wgpu_low.Texture_sample_type.to_int Depth
-    | Sint -> Wgpu_low.Texture_sample_type.to_int Sint
-    | Uint -> Wgpu_low.Texture_sample_type.to_int Uint
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Texture_sample_type.to_int Binding_not_used -> Binding_not_used
-    | x when x = Wgpu_low.Texture_sample_type.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Texture_sample_type.to_int Float -> Float
-    | x when x = Wgpu_low.Texture_sample_type.to_int Unfilterable_float ->
-      Unfilterable_float
-    | x when x = Wgpu_low.Texture_sample_type.to_int Depth -> Depth
-    | x when x = Wgpu_low.Texture_sample_type.to_int Sint -> Sint
-    | x when x = Wgpu_low.Texture_sample_type.to_int Uint -> Uint
-    | n -> failwith ("Texture_sample_type.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Texture_sample_type
 
   let to_string = function
     | Binding_not_used -> "Binding_not_used"
@@ -1971,35 +644,7 @@ module Texture_sample_type = struct
 end
 
 module Texture_view_dimension = struct
-  type t =
-    | Undefined
-    | N1d
-    | N2d
-    | N2d_array
-    | Cube
-    | Cube_array
-    | N3d
-
-  let to_int = function
-    | Undefined -> Wgpu_low.Texture_view_dimension.to_int Undefined
-    | N1d -> Wgpu_low.Texture_view_dimension.to_int N1d
-    | N2d -> Wgpu_low.Texture_view_dimension.to_int N2d
-    | N2d_array -> Wgpu_low.Texture_view_dimension.to_int N2d_array
-    | Cube -> Wgpu_low.Texture_view_dimension.to_int Cube
-    | Cube_array -> Wgpu_low.Texture_view_dimension.to_int Cube_array
-    | N3d -> Wgpu_low.Texture_view_dimension.to_int N3d
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Texture_view_dimension.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Texture_view_dimension.to_int N1d -> N1d
-    | x when x = Wgpu_low.Texture_view_dimension.to_int N2d -> N2d
-    | x when x = Wgpu_low.Texture_view_dimension.to_int N2d_array -> N2d_array
-    | x when x = Wgpu_low.Texture_view_dimension.to_int Cube -> Cube
-    | x when x = Wgpu_low.Texture_view_dimension.to_int Cube_array -> Cube_array
-    | x when x = Wgpu_low.Texture_view_dimension.to_int N3d -> N3d
-    | n -> failwith ("Texture_view_dimension.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Texture_view_dimension
 
   let to_string = function
     | Undefined -> "Undefined"
@@ -2013,137 +658,7 @@ module Texture_view_dimension = struct
 end
 
 module Vertex_format = struct
-  type t =
-    | Uint8
-    | Uint8x2
-    | Uint8x4
-    | Sint8
-    | Sint8x2
-    | Sint8x4
-    | Unorm8
-    | Unorm8x2
-    | Unorm8x4
-    | Snorm8
-    | Snorm8x2
-    | Snorm8x4
-    | Uint16
-    | Uint16x2
-    | Uint16x4
-    | Sint16
-    | Sint16x2
-    | Sint16x4
-    | Unorm16
-    | Unorm16x2
-    | Unorm16x4
-    | Snorm16
-    | Snorm16x2
-    | Snorm16x4
-    | Float16
-    | Float16x2
-    | Float16x4
-    | Float32
-    | Float32x2
-    | Float32x3
-    | Float32x4
-    | Uint32
-    | Uint32x2
-    | Uint32x3
-    | Uint32x4
-    | Sint32
-    | Sint32x2
-    | Sint32x3
-    | Sint32x4
-    | Unorm10__10__10__2
-    | Unorm8x4_b_g_r_a
-
-  let to_int = function
-    | Uint8 -> Wgpu_low.Vertex_format.to_int Uint8
-    | Uint8x2 -> Wgpu_low.Vertex_format.to_int Uint8x2
-    | Uint8x4 -> Wgpu_low.Vertex_format.to_int Uint8x4
-    | Sint8 -> Wgpu_low.Vertex_format.to_int Sint8
-    | Sint8x2 -> Wgpu_low.Vertex_format.to_int Sint8x2
-    | Sint8x4 -> Wgpu_low.Vertex_format.to_int Sint8x4
-    | Unorm8 -> Wgpu_low.Vertex_format.to_int Unorm8
-    | Unorm8x2 -> Wgpu_low.Vertex_format.to_int Unorm8x2
-    | Unorm8x4 -> Wgpu_low.Vertex_format.to_int Unorm8x4
-    | Snorm8 -> Wgpu_low.Vertex_format.to_int Snorm8
-    | Snorm8x2 -> Wgpu_low.Vertex_format.to_int Snorm8x2
-    | Snorm8x4 -> Wgpu_low.Vertex_format.to_int Snorm8x4
-    | Uint16 -> Wgpu_low.Vertex_format.to_int Uint16
-    | Uint16x2 -> Wgpu_low.Vertex_format.to_int Uint16x2
-    | Uint16x4 -> Wgpu_low.Vertex_format.to_int Uint16x4
-    | Sint16 -> Wgpu_low.Vertex_format.to_int Sint16
-    | Sint16x2 -> Wgpu_low.Vertex_format.to_int Sint16x2
-    | Sint16x4 -> Wgpu_low.Vertex_format.to_int Sint16x4
-    | Unorm16 -> Wgpu_low.Vertex_format.to_int Unorm16
-    | Unorm16x2 -> Wgpu_low.Vertex_format.to_int Unorm16x2
-    | Unorm16x4 -> Wgpu_low.Vertex_format.to_int Unorm16x4
-    | Snorm16 -> Wgpu_low.Vertex_format.to_int Snorm16
-    | Snorm16x2 -> Wgpu_low.Vertex_format.to_int Snorm16x2
-    | Snorm16x4 -> Wgpu_low.Vertex_format.to_int Snorm16x4
-    | Float16 -> Wgpu_low.Vertex_format.to_int Float16
-    | Float16x2 -> Wgpu_low.Vertex_format.to_int Float16x2
-    | Float16x4 -> Wgpu_low.Vertex_format.to_int Float16x4
-    | Float32 -> Wgpu_low.Vertex_format.to_int Float32
-    | Float32x2 -> Wgpu_low.Vertex_format.to_int Float32x2
-    | Float32x3 -> Wgpu_low.Vertex_format.to_int Float32x3
-    | Float32x4 -> Wgpu_low.Vertex_format.to_int Float32x4
-    | Uint32 -> Wgpu_low.Vertex_format.to_int Uint32
-    | Uint32x2 -> Wgpu_low.Vertex_format.to_int Uint32x2
-    | Uint32x3 -> Wgpu_low.Vertex_format.to_int Uint32x3
-    | Uint32x4 -> Wgpu_low.Vertex_format.to_int Uint32x4
-    | Sint32 -> Wgpu_low.Vertex_format.to_int Sint32
-    | Sint32x2 -> Wgpu_low.Vertex_format.to_int Sint32x2
-    | Sint32x3 -> Wgpu_low.Vertex_format.to_int Sint32x3
-    | Sint32x4 -> Wgpu_low.Vertex_format.to_int Sint32x4
-    | Unorm10__10__10__2 -> Wgpu_low.Vertex_format.to_int Unorm10__10__10__2
-    | Unorm8x4_b_g_r_a -> Wgpu_low.Vertex_format.to_int Unorm8x4_b_g_r_a
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Vertex_format.to_int Uint8 -> Uint8
-    | x when x = Wgpu_low.Vertex_format.to_int Uint8x2 -> Uint8x2
-    | x when x = Wgpu_low.Vertex_format.to_int Uint8x4 -> Uint8x4
-    | x when x = Wgpu_low.Vertex_format.to_int Sint8 -> Sint8
-    | x when x = Wgpu_low.Vertex_format.to_int Sint8x2 -> Sint8x2
-    | x when x = Wgpu_low.Vertex_format.to_int Sint8x4 -> Sint8x4
-    | x when x = Wgpu_low.Vertex_format.to_int Unorm8 -> Unorm8
-    | x when x = Wgpu_low.Vertex_format.to_int Unorm8x2 -> Unorm8x2
-    | x when x = Wgpu_low.Vertex_format.to_int Unorm8x4 -> Unorm8x4
-    | x when x = Wgpu_low.Vertex_format.to_int Snorm8 -> Snorm8
-    | x when x = Wgpu_low.Vertex_format.to_int Snorm8x2 -> Snorm8x2
-    | x when x = Wgpu_low.Vertex_format.to_int Snorm8x4 -> Snorm8x4
-    | x when x = Wgpu_low.Vertex_format.to_int Uint16 -> Uint16
-    | x when x = Wgpu_low.Vertex_format.to_int Uint16x2 -> Uint16x2
-    | x when x = Wgpu_low.Vertex_format.to_int Uint16x4 -> Uint16x4
-    | x when x = Wgpu_low.Vertex_format.to_int Sint16 -> Sint16
-    | x when x = Wgpu_low.Vertex_format.to_int Sint16x2 -> Sint16x2
-    | x when x = Wgpu_low.Vertex_format.to_int Sint16x4 -> Sint16x4
-    | x when x = Wgpu_low.Vertex_format.to_int Unorm16 -> Unorm16
-    | x when x = Wgpu_low.Vertex_format.to_int Unorm16x2 -> Unorm16x2
-    | x when x = Wgpu_low.Vertex_format.to_int Unorm16x4 -> Unorm16x4
-    | x when x = Wgpu_low.Vertex_format.to_int Snorm16 -> Snorm16
-    | x when x = Wgpu_low.Vertex_format.to_int Snorm16x2 -> Snorm16x2
-    | x when x = Wgpu_low.Vertex_format.to_int Snorm16x4 -> Snorm16x4
-    | x when x = Wgpu_low.Vertex_format.to_int Float16 -> Float16
-    | x when x = Wgpu_low.Vertex_format.to_int Float16x2 -> Float16x2
-    | x when x = Wgpu_low.Vertex_format.to_int Float16x4 -> Float16x4
-    | x when x = Wgpu_low.Vertex_format.to_int Float32 -> Float32
-    | x when x = Wgpu_low.Vertex_format.to_int Float32x2 -> Float32x2
-    | x when x = Wgpu_low.Vertex_format.to_int Float32x3 -> Float32x3
-    | x when x = Wgpu_low.Vertex_format.to_int Float32x4 -> Float32x4
-    | x when x = Wgpu_low.Vertex_format.to_int Uint32 -> Uint32
-    | x when x = Wgpu_low.Vertex_format.to_int Uint32x2 -> Uint32x2
-    | x when x = Wgpu_low.Vertex_format.to_int Uint32x3 -> Uint32x3
-    | x when x = Wgpu_low.Vertex_format.to_int Uint32x4 -> Uint32x4
-    | x when x = Wgpu_low.Vertex_format.to_int Sint32 -> Sint32
-    | x when x = Wgpu_low.Vertex_format.to_int Sint32x2 -> Sint32x2
-    | x when x = Wgpu_low.Vertex_format.to_int Sint32x3 -> Sint32x3
-    | x when x = Wgpu_low.Vertex_format.to_int Sint32x4 -> Sint32x4
-    | x when x = Wgpu_low.Vertex_format.to_int Unorm10__10__10__2 -> Unorm10__10__10__2
-    | x when x = Wgpu_low.Vertex_format.to_int Unorm8x4_b_g_r_a -> Unorm8x4_b_g_r_a
-    | n -> failwith ("Vertex_format.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Vertex_format
 
   let to_string = function
     | Uint8 -> "Uint8"
@@ -2191,27 +706,7 @@ module Vertex_format = struct
 end
 
 module Vertex_step_mode = struct
-  type t =
-    | Vertex_buffer_not_used
-    | Undefined
-    | Vertex
-    | Instance
-
-  let to_int = function
-    | Vertex_buffer_not_used -> Wgpu_low.Vertex_step_mode.to_int Vertex_buffer_not_used
-    | Undefined -> Wgpu_low.Vertex_step_mode.to_int Undefined
-    | Vertex -> Wgpu_low.Vertex_step_mode.to_int Vertex
-    | Instance -> Wgpu_low.Vertex_step_mode.to_int Instance
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Vertex_step_mode.to_int Vertex_buffer_not_used ->
-      Vertex_buffer_not_used
-    | x when x = Wgpu_low.Vertex_step_mode.to_int Undefined -> Undefined
-    | x when x = Wgpu_low.Vertex_step_mode.to_int Vertex -> Vertex
-    | x when x = Wgpu_low.Vertex_step_mode.to_int Instance -> Instance
-    | n -> failwith ("Vertex_step_mode.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Vertex_step_mode
 
   let to_string = function
     | Vertex_buffer_not_used -> "Vertex_buffer_not_used"
@@ -2222,30 +717,7 @@ module Vertex_step_mode = struct
 end
 
 module Wait_status = struct
-  type t =
-    | Success
-    | Timed_out
-    | Unsupported_timeout
-    | Unsupported_count
-    | Unsupported_mixed_sources
-
-  let to_int = function
-    | Success -> Wgpu_low.Wait_status.to_int Success
-    | Timed_out -> Wgpu_low.Wait_status.to_int Timed_out
-    | Unsupported_timeout -> Wgpu_low.Wait_status.to_int Unsupported_timeout
-    | Unsupported_count -> Wgpu_low.Wait_status.to_int Unsupported_count
-    | Unsupported_mixed_sources -> Wgpu_low.Wait_status.to_int Unsupported_mixed_sources
-  ;;
-
-  let of_int = function
-    | x when x = Wgpu_low.Wait_status.to_int Success -> Success
-    | x when x = Wgpu_low.Wait_status.to_int Timed_out -> Timed_out
-    | x when x = Wgpu_low.Wait_status.to_int Unsupported_timeout -> Unsupported_timeout
-    | x when x = Wgpu_low.Wait_status.to_int Unsupported_count -> Unsupported_count
-    | x when x = Wgpu_low.Wait_status.to_int Unsupported_mixed_sources ->
-      Unsupported_mixed_sources
-    | n -> failwith ("Wait_status.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Wait_status
 
   let to_string = function
     | Success -> "Success"
@@ -2257,38 +729,7 @@ module Wait_status = struct
 end
 
 module Wgsl_language_feature_name = struct
-  type t =
-    | Readonly_and_readwrite_storage_textures
-    | Packed4x8_integer_dot_product
-    | Unrestricted_pointer_parameters
-    | Pointer_composite_access
-
-  let to_int = function
-    | Readonly_and_readwrite_storage_textures ->
-      Wgpu_low.Wgsl_language_feature_name.to_int Readonly_and_readwrite_storage_textures
-    | Packed4x8_integer_dot_product ->
-      Wgpu_low.Wgsl_language_feature_name.to_int Packed4x8_integer_dot_product
-    | Unrestricted_pointer_parameters ->
-      Wgpu_low.Wgsl_language_feature_name.to_int Unrestricted_pointer_parameters
-    | Pointer_composite_access ->
-      Wgpu_low.Wgsl_language_feature_name.to_int Pointer_composite_access
-  ;;
-
-  let of_int = function
-    | x
-      when x
-           = Wgpu_low.Wgsl_language_feature_name.to_int
-               Readonly_and_readwrite_storage_textures ->
-      Readonly_and_readwrite_storage_textures
-    | x when x = Wgpu_low.Wgsl_language_feature_name.to_int Packed4x8_integer_dot_product
-      -> Packed4x8_integer_dot_product
-    | x
-      when x = Wgpu_low.Wgsl_language_feature_name.to_int Unrestricted_pointer_parameters
-      -> Unrestricted_pointer_parameters
-    | x when x = Wgpu_low.Wgsl_language_feature_name.to_int Pointer_composite_access ->
-      Pointer_composite_access
-    | n -> failwith ("Wgsl_language_feature_name.of_int: unknown value " ^ Int.to_string n)
-  ;;
+  include Wgpu_low.Wgsl_language_feature_name
 
   let to_string = function
     | Readonly_and_readwrite_storage_textures -> "Readonly_and_readwrite_storage_textures"
