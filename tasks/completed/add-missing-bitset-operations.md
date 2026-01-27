@@ -111,3 +111,29 @@ let to_list t = List.filter (fun item -> is_member t item) Item.all
 2. Run `dune build @check` to ensure no warnings
 3. Add unit tests for the new operations
 4. Run existing tests to verify nothing broke
+
+---
+
+## Implementation Plan
+
+**Goal:** Add missing bitset operations (`empty`, `all`, `union`, `inter`, `diff`, `to_list`, `to_int`) and `Item.all` to all bitset modules.
+
+**Approach:**
+1. Modify the `gen_bitset_with_helpers` function in `codegen/gen_high.ml` to:
+   - Add `all : t list` to the `Item` module (list of all variant constructors)
+   - Add `empty : t` (value 0)
+   - Add `all : t` (combination of all flags using `of_list Item.all`)
+   - Add `union : t -> t -> t` (bitwise OR)
+   - Add `inter : t -> t -> t` (bitwise AND)
+   - Add `diff : t -> t -> t` (a land lnot b)
+   - Add `to_list : t -> Item.t list` (filter all items by membership)
+   - Add `to_int : t -> int` (identity function)
+
+2. Update the module type `S` in both `.ml` and `.mli` generation to include these new operations.
+
+**Validation Criteria:**
+- `dune build` completes successfully
+- `dune build @check` shows no warnings
+- `dune exec test/test_compute.exe` passes
+- Generated `high/bitsets.ml` and `high/bitsets.mli` contain all new operations
+- The module type `S` in both files includes the new signature

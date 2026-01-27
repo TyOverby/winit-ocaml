@@ -1522,12 +1522,19 @@ let gen_bitset_with_helpers (mode : output_mode) (bitflag : Ir.bitflag) : string
         {%string|    | %{entry_name}|})
       |> String.concat ~sep:"\n"
     in
+    let all_items =
+      List.map bitflag.entries ~f:(fun entry ->
+        let entry_name = normalize_enum_entry_name entry.name in
+        entry_name)
+      |> String.concat ~sep:"; "
+    in
     {%string|module %{module_name} = struct
   module Item = struct
     type t = Wgpu_low.%{module_name}.t =
 %{variants}
 
     let to_int = Wgpu_low.%{module_name}.to_int
+    let all = [ %{all_items} ]
   end
 
   type t = int
@@ -1535,6 +1542,13 @@ let gen_bitset_with_helpers (mode : output_mode) (bitflag : Ir.bitflag) : string
   let singleton item = Item.to_int item
   let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
   let is_member t item = t land Item.to_int item <> 0
+  let empty = 0
+  let all = of_list Item.all
+  let union a b = a lor b
+  let inter a b = a land b
+  let diff a b = a land lnot b
+  let to_int t = t
+  let to_list t = List.filter (fun item -> is_member t item) Item.all
 
   (* Backwards compatibility alias *)
   let list_to_int = of_list
@@ -1557,6 +1571,8 @@ end
   %{doc_comment}module Item : sig
     type t =
 %{variants}
+
+    val all : t list
   end
 
   type t = int
@@ -1564,6 +1580,13 @@ end
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 
   (* Backwards compatibility alias *)
   val list_to_int : Item.t list -> t
@@ -1616,6 +1639,8 @@ let gen_bitsets_ml (api : Ir.api) : string =
     {|module type S = sig
   module Item : sig
     type t
+
+    val all : t list
   end
 
   type t
@@ -1623,6 +1648,13 @@ let gen_bitsets_ml (api : Ir.api) : string =
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 end
 
 |}
@@ -1640,6 +1672,8 @@ let gen_bitsets_mli (api : Ir.api) : string =
     {|module type S = sig
   module Item : sig
     type t
+
+    val all : t list
   end
 
   type t
@@ -1647,6 +1681,13 @@ let gen_bitsets_mli (api : Ir.api) : string =
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 end
 
 |}

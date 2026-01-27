@@ -3,6 +3,8 @@
 module type S = sig
   module Item : sig
     type t
+
+    val all : t list
   end
 
   type t
@@ -10,6 +12,13 @@ module type S = sig
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 end
 
 module Buffer_usage : sig
@@ -26,6 +35,8 @@ module Buffer_usage : sig
       | Storage
       | Indirect
       | Query_resolve
+
+    val all : t list
   end
 
   type t = int
@@ -33,6 +44,13 @@ module Buffer_usage : sig
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 
   (* Backwards compatibility alias *)
   val list_to_int : Item.t list -> t
@@ -47,6 +65,8 @@ module Color_write_mask : sig
       | Blue
       | Alpha
       | All
+
+    val all : t list
   end
 
   type t = int
@@ -54,6 +74,13 @@ module Color_write_mask : sig
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 
   (* Backwards compatibility alias *)
   val list_to_int : Item.t list -> t
@@ -65,6 +92,8 @@ module Map_mode : sig
       | None
       | Read
       | Write
+
+    val all : t list
   end
 
   type t = int
@@ -72,6 +101,13 @@ module Map_mode : sig
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 
   (* Backwards compatibility alias *)
   val list_to_int : Item.t list -> t
@@ -84,6 +120,8 @@ module Shader_stage : sig
       | Vertex
       | Fragment
       | Compute
+
+    val all : t list
   end
 
   type t = int
@@ -91,6 +129,13 @@ module Shader_stage : sig
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 
   (* Backwards compatibility alias *)
   val list_to_int : Item.t list -> t
@@ -105,6 +150,8 @@ module Texture_usage : sig
       | Texture_binding
       | Storage_binding
       | Render_attachment
+
+    val all : t list
   end
 
   type t = int
@@ -112,6 +159,13 @@ module Texture_usage : sig
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 
   (* Backwards compatibility alias *)
   val list_to_int : Item.t list -> t

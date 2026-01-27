@@ -3,6 +3,8 @@
 module type S = sig
   module Item : sig
     type t
+
+    val all : t list
   end
 
   type t
@@ -10,6 +12,13 @@ module type S = sig
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
   val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
 end
 
 module Buffer_usage = struct
@@ -28,6 +37,21 @@ module Buffer_usage = struct
       | Query_resolve
 
     let to_int = Wgpu_low.Buffer_usage.to_int
+
+    let all =
+      [ None
+      ; Map_read
+      ; Map_write
+      ; Copy_src
+      ; Copy_dst
+      ; Index
+      ; Vertex
+      ; Uniform
+      ; Storage
+      ; Indirect
+      ; Query_resolve
+      ]
+    ;;
   end
 
   type t = int
@@ -35,6 +59,13 @@ module Buffer_usage = struct
   let singleton item = Item.to_int item
   let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
   let is_member t item = t land Item.to_int item <> 0
+  let empty = 0
+  let all = of_list Item.all
+  let union a b = a lor b
+  let inter a b = a land b
+  let diff a b = a land lnot b
+  let to_int t = t
+  let to_list t = List.filter (fun item -> is_member t item) Item.all
 
   (* Backwards compatibility alias *)
   let list_to_int = of_list
@@ -51,6 +82,7 @@ module Color_write_mask = struct
       | All
 
     let to_int = Wgpu_low.Color_write_mask.to_int
+    let all = [ None; Red; Green; Blue; Alpha; All ]
   end
 
   type t = int
@@ -58,6 +90,13 @@ module Color_write_mask = struct
   let singleton item = Item.to_int item
   let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
   let is_member t item = t land Item.to_int item <> 0
+  let empty = 0
+  let all = of_list Item.all
+  let union a b = a lor b
+  let inter a b = a land b
+  let diff a b = a land lnot b
+  let to_int t = t
+  let to_list t = List.filter (fun item -> is_member t item) Item.all
 
   (* Backwards compatibility alias *)
   let list_to_int = of_list
@@ -71,6 +110,7 @@ module Map_mode = struct
       | Write
 
     let to_int = Wgpu_low.Map_mode.to_int
+    let all = [ None; Read; Write ]
   end
 
   type t = int
@@ -78,6 +118,13 @@ module Map_mode = struct
   let singleton item = Item.to_int item
   let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
   let is_member t item = t land Item.to_int item <> 0
+  let empty = 0
+  let all = of_list Item.all
+  let union a b = a lor b
+  let inter a b = a land b
+  let diff a b = a land lnot b
+  let to_int t = t
+  let to_list t = List.filter (fun item -> is_member t item) Item.all
 
   (* Backwards compatibility alias *)
   let list_to_int = of_list
@@ -92,6 +139,7 @@ module Shader_stage = struct
       | Compute
 
     let to_int = Wgpu_low.Shader_stage.to_int
+    let all = [ None; Vertex; Fragment; Compute ]
   end
 
   type t = int
@@ -99,6 +147,13 @@ module Shader_stage = struct
   let singleton item = Item.to_int item
   let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
   let is_member t item = t land Item.to_int item <> 0
+  let empty = 0
+  let all = of_list Item.all
+  let union a b = a lor b
+  let inter a b = a land b
+  let diff a b = a land lnot b
+  let to_int t = t
+  let to_list t = List.filter (fun item -> is_member t item) Item.all
 
   (* Backwards compatibility alias *)
   let list_to_int = of_list
@@ -115,6 +170,10 @@ module Texture_usage = struct
       | Render_attachment
 
     let to_int = Wgpu_low.Texture_usage.to_int
+
+    let all =
+      [ None; Copy_src; Copy_dst; Texture_binding; Storage_binding; Render_attachment ]
+    ;;
   end
 
   type t = int
@@ -122,6 +181,13 @@ module Texture_usage = struct
   let singleton item = Item.to_int item
   let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
   let is_member t item = t land Item.to_int item <> 0
+  let empty = 0
+  let all = of_list Item.all
+  let union a b = a lor b
+  let inter a b = a land b
+  let diff a b = a land lnot b
+  let to_int t = t
+  let to_list t = List.filter (fun item -> is_member t item) Item.all
 
   (* Backwards compatibility alias *)
   let list_to_int = of_list
