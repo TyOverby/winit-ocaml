@@ -7,30 +7,14 @@ type output_mode =
   | Implementation (** Generate .ml implementation *)
   | Interface (** Generate .mli interface *)
 
-(** Read a template file from the templates directory *)
-let read_template (path : string) : string =
-  let template_path = "../codegen/templates/" ^ path in
-  In_channel.read_all template_path
-;;
+(** Read a template file from the templates directory (uses Names module) *)
+let read_template = Names.read_template
 
-(** Convert a snake_case name to PascalCase *)
-let to_pascal_case (s : string) : string =
-  (* Double underscores become single underscores in C names *)
-  let s = String.substr_replace_all s ~pattern:"__" ~with_:"_UNDERSCORE_" in
-  let parts = String.split s ~on:'_' in
-  let parts =
-    List.map parts ~f:(fun p ->
-      if String.equal p "UNDERSCORE" then "_" else String.capitalize p)
-  in
-  String.concat parts
-;;
+(** Convert a snake_case name to PascalCase (uses Names module) *)
+let to_pascal_case = Names.to_pascal_case
 
-(** Convert a snake_case name to camelCase *)
-let to_camel_case (s : string) : string =
-  match String.split s ~on:'_' with
-  | [] -> ""
-  | first :: rest -> first ^ String.concat (List.map rest ~f:String.capitalize)
-;;
+(** Convert a snake_case name to camelCase (uses Names module) *)
+let to_camel_case = Names.to_camel_case
 
 (** Get the C type name for a WGPU type *)
 let c_type_name (name : string) : string = Type_mapping.c_type_name name
@@ -47,19 +31,11 @@ let c_function_name (name : string) : string = "wgpu" ^ to_pascal_case name
     first letter. e.g., "texture_format" -> "Texture_format", "extent_3D" -> "Extent_3d" *)
 let ocaml_module_name (name : string) : string = Type_mapping.ocaml_module_name name
 
-(** Convert C name conventions (e.g., discrete_GPU -> Discrete_gpu) *)
-let normalize_enum_entry_name (name : string) : string =
-  (* Handle special cases like GPU, CPU, ID *)
-  let s = String.lowercase name in
-  let s = String.capitalize s in
-  (* OCaml identifiers can't start with a digit, prefix with underscore *)
-  if String.length s > 0 && Char.is_digit (String.get s 0) then "N" ^ s else s
-;;
+(** Convert C name conventions (e.g., discrete_GPU -> Discrete_gpu) (uses Names module) *)
+let normalize_enum_entry_name = Names.normalize_enum_entry_name
 
-(** Helper to indent lines *)
-let indent_lines s =
-  String.split_lines s |> List.map ~f:(fun line -> "  " ^ line) |> String.concat ~sep:"\n"
-;;
+(** Helper to indent lines (uses Names module) *)
+let indent_lines = Names.indent_lines
 
 (** Map IR type to C type string *)
 let c_type_of_type_ref (type_ref : Ir.type_ref) : string =
@@ -639,8 +615,8 @@ end
 |}
 ;;
 
-(** Check if a method uses callbacks (async) *)
-let method_is_async (method_ : Ir.method_) : bool = Option.is_some method_.callback
+(** Check if a method uses callbacks (async) (uses Predicates module) *)
+let method_is_async = Predicates.method_is_async
 
 (** Check if method is manually implemented in sync helpers *)
 let method_is_manual (obj_name : string) (method_name : string) : bool =

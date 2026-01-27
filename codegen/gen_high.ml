@@ -47,21 +47,11 @@ type inline_struct_conversion = {
   (** List of (var_name, struct_def) pairs for later freeing *)
 }
 
-(** Read a template file from the templates directory *)
-let read_template (path : string) : string =
-  let template_path = "../codegen/templates/" ^ path in
-  In_channel.read_all template_path
-;;
+(** Read a template file from the templates directory (uses Names module) *)
+let read_template = Names.read_template
 
-(** Filter out unhelpful doc strings like "TODO" *)
-let useful_doc (doc : string) : string option =
-  let doc = String.strip doc in
-  if String.is_empty doc
-     || String.equal doc "TODO"
-     || String.is_prefix doc ~prefix:"TODO\n"
-  then None
-  else Some doc
-;;
+(** Filter out unhelpful doc strings like "TODO" (uses Names module) *)
+let useful_doc = Names.useful_doc
 
 (** Get the OCaml module name for a type. Lowercases everything then capitalizes only the
     first letter. e.g., "texture_format" -> "Texture_format", "extent_3D" -> "Extent_3d" *)
@@ -73,8 +63,8 @@ let normalize_enum_entry_name (name : string) : string = Names.normalize_enum_en
 (** Escape OCaml keywords by adding underscore suffix *)
 let escape_keyword (name : string) : string = Names.escape_keyword name
 
-(** Check if a method uses callbacks (async) *)
-let method_is_async (method_ : Ir.method_) : bool = Option.is_some method_.callback
+(** Check if a method uses callbacks (async) (uses Predicates module) *)
+let method_is_async = Predicates.method_is_async
 
 (** Check if a type is flat (primitive, enum, bitflag, or object) - no nested structs *)
 let rec is_flat_member_type (type_ref : Ir.type_ref) : bool =

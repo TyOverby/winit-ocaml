@@ -122,3 +122,92 @@ More files, for containing utilities that are used from multiple files may also 
    - These should be removed and use the Names module instead
 
 5. **Update imports and ensure everything builds**
+
+## Implementation Plan (2026-01-27)
+
+### Goal
+Complete the extraction of duplicated code and major generator modules from gen_low.ml
+to further improve code organization and eliminate duplication.
+
+### Tasks
+
+1. **Remove duplicated name transformation functions from gen_low.ml**
+   - Remove `to_pascal_case` (lines 16-26) and `to_camel_case` (lines 28-33)
+   - Update all usages to call `Names.to_pascal_case` and `Names.to_camel_case`
+   - Note: The Names.to_pascal_case handles the simple case, but gen_low.ml has special
+     handling for double underscores. Need to handle this appropriately.
+
+2. **Extract helper predicates to a shared module**
+   - `method_is_async` is defined in both gen_low.ml and gen_high.ml
+   - Create `codegen/predicates.ml` for shared predicates
+
+3. **Extract low-level generator modules (optional, if time permits)**
+   - Enums module
+   - Bitflags module
+   - Structs module
+   - Objects module
+
+### Validation Criteria
+
+1. `dune build` succeeds with no errors
+2. `dune fmt > /dev/null || true` produces no new errors
+3. `dune build @check` produces no warnings
+4. `dune exec test/test_compute.exe` passes all tests
+5. No duplicated `to_pascal_case` or `to_camel_case` functions remain in gen_low.ml
+6. The generated output (wgpu_low.ml, wgpu_low.mli, wgpu_low_stubs.c, wgpu.ml, wgpu.mli)
+   should be identical before and after the refactoring
+
+## Completion Status (2026-01-27)
+
+**Status: COMPLETE**
+
+### What Was Done
+
+1. **Removed duplicated name transformation functions from gen_low.ml:**
+   - Updated `Names.to_pascal_case` to handle double underscores (matching gen_low.ml behavior)
+   - Added `Names.to_pascal_case_simple` for cases not needing double underscore handling
+   - Replaced local `to_pascal_case` and `to_camel_case` in gen_low.ml with aliases to Names module
+
+2. **Extracted helper predicates to shared module:**
+   - Created `codegen/predicates.ml` with `method_is_async` predicate
+   - Updated both gen_low.ml and gen_high.ml to use `Predicates.method_is_async`
+
+3. **Extracted additional shared utilities to Names module:**
+   - `normalize_enum_entry_name` - already existed, now used consistently
+   - `indent_lines` - helper for code indentation
+   - `read_template` - template file reading
+   - `useful_doc` - doc string filtering
+
+4. **Updated dune configuration:**
+   - Added `predicates` module to codegen_lib
+
+### Final File Sizes
+
+| File | Original | Previous | Final | Reduction |
+|------|----------|----------|-------|-----------|
+| gen_low.ml | 1882 | 1191 | 1027 | 45% |
+| gen_high.ml | 2295 | 1783 | 1689 | 26% |
+| names.ml | N/A | 90 | 125 | N/A |
+| type_mapping.ml | N/A | 117 | 213 | N/A |
+| config.ml | N/A | 174 | 173 | N/A |
+| predicates.ml | N/A | N/A | 7 | N/A |
+
+### Validation Results
+
+All validation criteria met:
+- `dune build` - SUCCESS
+- `dune build @check` - SUCCESS (no warnings)
+- `dune test` - SUCCESS (all tests pass)
+- `dune exec test/test_compute.exe` - SUCCESS (all runtime tests pass)
+- Generated files unchanged (verified via SHA256 checksums)
+
+### Future Improvements (Not Done)
+
+The following items were considered but not implemented as they would require more
+extensive restructuring without clear immediate benefit:
+
+1. Directory structure (`lib/low/`, `lib/high/`) - not created
+2. Extracting generator modules (Enums, Bitflags, Structs, Objects) - not done
+3. Further extraction of type predicates from gen_high.ml - not done
+
+These could be addressed in a future iteration if the files continue to grow.

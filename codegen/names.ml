@@ -2,9 +2,24 @@ open! Core
 
 (** Name transformation utilities for code generation *)
 
-(** Convert snake_case to PascalCase *)
-let to_pascal_case (name : string) : string =
+(** Convert snake_case to PascalCase. Simple version that doesn't handle double
+    underscores. *)
+let to_pascal_case_simple (name : string) : string =
   String.split name ~on:'_' |> List.map ~f:String.capitalize |> String.concat ~sep:""
+;;
+
+(** Convert snake_case to PascalCase, preserving double underscores as single underscores
+    in the output. For example: "some__name" -> "Some_Name". This is needed for C names
+    where double underscores have special meaning. *)
+let to_pascal_case (name : string) : string =
+  (* Double underscores become single underscores in C names *)
+  let s = String.substr_replace_all name ~pattern:"__" ~with_:"_UNDERSCORE_" in
+  let parts = String.split s ~on:'_' in
+  let parts =
+    List.map parts ~f:(fun p ->
+      if String.equal p "UNDERSCORE" then "_" else String.capitalize p)
+  in
+  String.concat parts
 ;;
 
 (** Convert snake_case to camelCase *)
@@ -86,4 +101,25 @@ let ocaml_keywords =
 (** Escape OCaml keywords by adding underscore suffix *)
 let escape_keyword (name : string) : string =
   if List.mem ocaml_keywords name ~equal:String.equal then name ^ "_" else name
+;;
+
+(** Helper to indent lines by one level (2 spaces) *)
+let indent_lines (s : string) : string =
+  String.split_lines s |> List.map ~f:(fun line -> "  " ^ line) |> String.concat ~sep:"\n"
+;;
+
+(** Read a template file from the templates directory *)
+let read_template (path : string) : string =
+  let template_path = "../codegen/templates/" ^ path in
+  In_channel.read_all template_path
+;;
+
+(** Filter out unhelpful doc strings like "TODO" *)
+let useful_doc (doc : string) : string option =
+  let doc = String.strip doc in
+  if String.is_empty doc
+     || String.equal doc "TODO"
+     || String.is_prefix doc ~prefix:"TODO\n"
+  then None
+  else Some doc
 ;;
