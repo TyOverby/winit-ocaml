@@ -1,53 +1,55 @@
 open! Core
 
-(** Integration tests for enum code generation *)
+(** Integration tests for enum code generation using inline YAML *)
 
-(* Sample enums for testing *)
-let simple_enum : Ir.enum =
-  { name = "texture_format"
-  ; doc = "Texture pixel formats"
-  ; entries =
-      [ { name = "rgba8_unorm"; doc = "RGBA 8-bit unsigned normalized"; value = None }
-      ; { name = "bgra8_unorm"; doc = "BGRA 8-bit unsigned normalized"; value = None }
-      ]
-  }
-;;
-
-let single_entry_enum : Ir.enum =
-  { name = "load_op"
-  ; doc = "Load operation"
-  ; entries = [ { name = "clear"; doc = "Clear to a value"; value = None } ]
-  }
-;;
-
-let enum_with_explicit_values : Ir.enum =
-  { name = "power_preference"
-  ; doc = "Power preference for adapter selection"
-  ; entries =
-      [ { name = "undefined"; doc = "No preference"; value = Some 0 }
-      ; { name = "low_power"; doc = "Prefer low power"; value = Some 1 }
-      ; { name = "high_performance"; doc = "Prefer high performance"; value = Some 2 }
-      ]
-  }
-;;
-
-let enum_with_numeric_prefix : Ir.enum =
-  { name = "texture_dimension"
-  ; doc = "Texture dimensions"
-  ; entries =
-      [ { name = "1d"; doc = "One-dimensional"; value = None }
-      ; { name = "2d"; doc = "Two-dimensional"; value = None }
-      ; { name = "3d"; doc = "Three-dimensional"; value = None }
-      ]
-  }
-;;
-
-(* ===== Gen_low enum tests ===== *)
-
-let%expect_test "Gen_low.For_testing.gen_ml_enum - simple enum" =
-  print_endline (Gen_low.For_testing.gen_ml_enum simple_enum);
+let%expect_test "enum - texture_format (simple enum with two entries)" =
+  let yaml =
+    {|
+name: texture_format
+doc: Texture pixel formats
+entries:
+  - name: rgba8_unorm
+    doc: RGBA 8-bit unsigned normalized
+  - name: bgra8_unorm
+    doc: BGRA 8-bit unsigned normalized
+|}
+  in
+  let enum = Parse_yml.parse_enum (Yaml.of_string_exn yaml) in
+  print_endline "=== Low-level C ===";
+  print_endline (Gen_low.For_testing.gen_c_enum_constants enum);
   [%expect
     {|
+    === Low-level C ===
+    /* Enum: WGPUTextureFormat */
+    CAMLprim value caml_wgpu_texture_format_rgba8_unorm(value unit) {
+      CAMLparam1(unit);
+      CAMLreturn(Val_int(WGPUTextureFormat_Rgba8Unorm));
+    }
+
+    CAMLprim value caml_wgpu_texture_format_bgra8_unorm(value unit) {
+      CAMLparam1(unit);
+      CAMLreturn(Val_int(WGPUTextureFormat_Bgra8Unorm));
+    }
+    |}];
+  print_endline "=== Low-level MLI ===";
+  print_endline (Gen_low.For_testing.gen_mli_enum enum);
+  [%expect
+    {|
+    === Low-level MLI ===
+    module Texture_format : sig
+      type t =
+      | Rgba8_unorm
+      | Bgra8_unorm
+
+      val to_int : t -> int
+      val of_int : int -> t
+    end
+    |}];
+  print_endline "=== Low-level ML ===";
+  print_endline (Gen_low.For_testing.gen_ml_enum enum);
+  [%expect
+    {|
+    === Low-level ML ===
     module Texture_format = struct
       type t =
       | Rgba8_unorm
@@ -68,45 +70,71 @@ let%expect_test "Gen_low.For_testing.gen_ml_enum - simple enum" =
         | x when x = bgra8_unorm_int -> Bgra8_unorm
         | n -> failwith (Printf.sprintf "Texture_format.of_int: unknown value %d" n)
     end
-    |}]
-;;
-
-let%expect_test "Gen_low.For_testing.gen_mli_enum - simple enum" =
-  print_endline (Gen_low.For_testing.gen_mli_enum simple_enum);
+    |}];
+  print_endline "=== High-level MLI ===";
+  print_endline (Gen_high.For_testing.gen_mli_enum enum);
   [%expect
     {|
+    === High-level MLI ===
     module Texture_format : sig
-      type t =
+        (** Texture pixel formats *)
+    type t =
       | Rgba8_unorm
       | Bgra8_unorm
 
       val to_int : t -> int
       val of_int : int -> t
     end
+    |}];
+  print_endline "=== High-level ML ===";
+  print_endline (Gen_high.For_testing.gen_ml_enum enum);
+  [%expect
+    {|
+    === High-level ML ===
+    module Texture_format = Wgpu_low.Texture_format
     |}]
 ;;
 
-let%expect_test "Gen_low.For_testing.gen_c_enum_constants - simple enum" =
-  print_endline (Gen_low.For_testing.gen_c_enum_constants simple_enum);
+let%expect_test "enum - load_op (single entry)" =
+  let yaml =
+    {|
+name: load_op
+doc: Load operation
+entries:
+  - name: clear
+    doc: Clear to a value
+|}
+  in
+  let enum = Parse_yml.parse_enum (Yaml.of_string_exn yaml) in
+  print_endline "=== Low-level C ===";
+  print_endline (Gen_low.For_testing.gen_c_enum_constants enum);
   [%expect
     {|
-    /* Enum: WGPUTextureFormat */
-    CAMLprim value caml_wgpu_texture_format_rgba8_unorm(value unit) {
+    === Low-level C ===
+    /* Enum: WGPULoadOp */
+    CAMLprim value caml_wgpu_load_op_clear(value unit) {
       CAMLparam1(unit);
-      CAMLreturn(Val_int(WGPUTextureFormat_Rgba8Unorm));
+      CAMLreturn(Val_int(WGPULoadOp_Clear));
     }
-
-    CAMLprim value caml_wgpu_texture_format_bgra8_unorm(value unit) {
-      CAMLparam1(unit);
-      CAMLreturn(Val_int(WGPUTextureFormat_Bgra8Unorm));
-    }
-    |}]
-;;
-
-let%expect_test "Gen_low.For_testing.gen_ml_enum - single entry" =
-  print_endline (Gen_low.For_testing.gen_ml_enum single_entry_enum);
+    |}];
+  print_endline "=== Low-level MLI ===";
+  print_endline (Gen_low.For_testing.gen_mli_enum enum);
   [%expect
     {|
+    === Low-level MLI ===
+    module Load_op : sig
+      type t =
+      | Clear
+
+      val to_int : t -> int
+      val of_int : int -> t
+    end
+    |}];
+  print_endline "=== Low-level ML ===";
+  print_endline (Gen_low.For_testing.gen_ml_enum enum);
+  [%expect
+    {|
+    === Low-level ML ===
     module Load_op = struct
       type t =
       | Clear
@@ -122,13 +150,85 @@ let%expect_test "Gen_low.For_testing.gen_ml_enum - single entry" =
         | x when x = clear_int -> Clear
         | n -> failwith (Printf.sprintf "Load_op.of_int: unknown value %d" n)
     end
+    |}];
+  print_endline "=== High-level MLI ===";
+  print_endline (Gen_high.For_testing.gen_mli_enum enum);
+  [%expect
+    {|
+    === High-level MLI ===
+    module Load_op : sig
+        (** Load operation *)
+    type t =
+      | Clear
+
+      val to_int : t -> int
+      val of_int : int -> t
+    end
+    |}];
+  print_endline "=== High-level ML ===";
+  print_endline (Gen_high.For_testing.gen_ml_enum enum);
+  [%expect {|
+    === High-level ML ===
+    module Load_op = Wgpu_low.Load_op
     |}]
 ;;
 
-let%expect_test "Gen_low.For_testing.gen_ml_enum - numeric prefix entries" =
-  print_endline (Gen_low.For_testing.gen_ml_enum enum_with_numeric_prefix);
+let%expect_test "enum - texture_dimension (numeric prefix entries)" =
+  let yaml =
+    {|
+name: texture_dimension
+doc: Texture dimensions
+entries:
+  - name: 1d
+    doc: One-dimensional
+  - name: 2d
+    doc: Two-dimensional
+  - name: 3d
+    doc: Three-dimensional
+|}
+  in
+  let enum = Parse_yml.parse_enum (Yaml.of_string_exn yaml) in
+  print_endline "=== Low-level C ===";
+  print_endline (Gen_low.For_testing.gen_c_enum_constants enum);
   [%expect
     {|
+    === Low-level C ===
+    /* Enum: WGPUTextureDimension */
+    CAMLprim value caml_wgpu_texture_dimension_1d(value unit) {
+      CAMLparam1(unit);
+      CAMLreturn(Val_int(WGPUTextureDimension_1d));
+    }
+
+    CAMLprim value caml_wgpu_texture_dimension_2d(value unit) {
+      CAMLparam1(unit);
+      CAMLreturn(Val_int(WGPUTextureDimension_2d));
+    }
+
+    CAMLprim value caml_wgpu_texture_dimension_3d(value unit) {
+      CAMLparam1(unit);
+      CAMLreturn(Val_int(WGPUTextureDimension_3d));
+    }
+    |}];
+  print_endline "=== Low-level MLI ===";
+  print_endline (Gen_low.For_testing.gen_mli_enum enum);
+  [%expect
+    {|
+    === Low-level MLI ===
+    module Texture_dimension : sig
+      type t =
+      | N1d
+      | N2d
+      | N3d
+
+      val to_int : t -> int
+      val of_int : int -> t
+    end
+    |}];
+  print_endline "=== Low-level ML ===";
+  print_endline (Gen_low.For_testing.gen_ml_enum enum);
+  [%expect
+    {|
+    === Low-level ML ===
     module Texture_dimension = struct
       type t =
       | N1d
@@ -154,74 +254,79 @@ let%expect_test "Gen_low.For_testing.gen_ml_enum - numeric prefix entries" =
         | x when x = n3d_int -> N3d
         | n -> failwith (Printf.sprintf "Texture_dimension.of_int: unknown value %d" n)
     end
-    |}]
-;;
-
-(* ===== Gen_high enum tests ===== *)
-
-let%expect_test "Gen_high.For_testing.gen_ml_enum - simple enum" =
-  print_endline (Gen_high.For_testing.gen_ml_enum simple_enum);
-  [%expect {| module Texture_format = Wgpu_low.Texture_format |}]
-;;
-
-let%expect_test "Gen_high.For_testing.gen_mli_enum - simple enum" =
-  print_endline (Gen_high.For_testing.gen_mli_enum simple_enum);
+    |}];
+  print_endline "=== High-level MLI ===";
+  print_endline (Gen_high.For_testing.gen_mli_enum enum);
   [%expect
     {|
-    module Texture_format : sig
-        (** Texture pixel formats *)
-    type t =
-      | Rgba8_unorm
-      | Bgra8_unorm
-
-      val to_int : t -> int
-      val of_int : int -> t
-    end
-    |}]
-;;
-
-let%expect_test "Gen_high.For_testing.gen_mli_enum - enum with empty doc" =
-  let enum_no_doc = { simple_enum with doc = "" } in
-  print_endline (Gen_high.For_testing.gen_mli_enum enum_no_doc);
-  [%expect
-    {|
-    module Texture_format : sig
-      type t =
-      | Rgba8_unorm
-      | Bgra8_unorm
-
-      val to_int : t -> int
-      val of_int : int -> t
-    end
-    |}]
-;;
-
-let%expect_test "Gen_high.For_testing.gen_mli_enum - enum with TODO doc" =
-  let enum_todo_doc = { simple_enum with doc = "TODO" } in
-  print_endline (Gen_high.For_testing.gen_mli_enum enum_todo_doc);
-  [%expect
-    {|
-    module Texture_format : sig
-      type t =
-      | Rgba8_unorm
-      | Bgra8_unorm
-
-      val to_int : t -> int
-      val of_int : int -> t
-    end
-    |}]
-;;
-
-let%expect_test "Gen_high.For_testing.gen_mli_enum - enum with numeric prefix entries" =
-  print_endline (Gen_high.For_testing.gen_mli_enum enum_with_numeric_prefix);
-  [%expect
-    {|
+    === High-level MLI ===
     module Texture_dimension : sig
         (** Texture dimensions *)
     type t =
       | N1d
       | N2d
       | N3d
+
+      val to_int : t -> int
+      val of_int : int -> t
+    end
+    |}];
+  print_endline "=== High-level ML ===";
+  print_endline (Gen_high.For_testing.gen_ml_enum enum);
+  [%expect
+    {|
+    === High-level ML ===
+    module Texture_dimension = Wgpu_low.Texture_dimension
+    |}]
+;;
+
+let%expect_test "enum - high-level MLI with empty doc" =
+  let yaml =
+    {|
+name: texture_format
+doc: ""
+entries:
+  - name: rgba8_unorm
+    doc: RGBA 8-bit unsigned normalized
+  - name: bgra8_unorm
+    doc: BGRA 8-bit unsigned normalized
+|}
+  in
+  let enum = Parse_yml.parse_enum (Yaml.of_string_exn yaml) in
+  print_endline (Gen_high.For_testing.gen_mli_enum enum);
+  [%expect
+    {|
+    module Texture_format : sig
+      type t =
+      | Rgba8_unorm
+      | Bgra8_unorm
+
+      val to_int : t -> int
+      val of_int : int -> t
+    end
+    |}]
+;;
+
+let%expect_test "enum - high-level MLI with TODO doc" =
+  let yaml =
+    {|
+name: texture_format
+doc: TODO
+entries:
+  - name: rgba8_unorm
+    doc: RGBA 8-bit unsigned normalized
+  - name: bgra8_unorm
+    doc: BGRA 8-bit unsigned normalized
+|}
+  in
+  let enum = Parse_yml.parse_enum (Yaml.of_string_exn yaml) in
+  print_endline (Gen_high.For_testing.gen_mli_enum enum);
+  [%expect
+    {|
+    module Texture_format : sig
+      type t =
+      | Rgba8_unorm
+      | Bgra8_unorm
 
       val to_int : t -> int
       val of_int : int -> t

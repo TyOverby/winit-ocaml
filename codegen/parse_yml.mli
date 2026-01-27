@@ -11,3 +11,20 @@
 
     Raises if the file cannot be read or contains invalid YAML/structure. *)
 val load_file : string -> Ir.api
+
+(** {2 Individual Parsers (for testing)} *)
+
+(** Parse an enum from a YAML value. *)
+val parse_enum : Yaml.value -> Ir.enum
+
+(** Parse a struct from a YAML value. *)
+val parse_struct : Yaml.value -> Ir.struct_
+
+(** Parse an object from a YAML value. *)
+val parse_object : Yaml.value -> Ir.object_
+
+(** Parse a method from a YAML value. *)
+val parse_method : Yaml.value -> Ir.method_
+
+(** Parse a bitflag from a YAML value. *)
+val parse_bitflag : Yaml.value -> Ir.bitflag

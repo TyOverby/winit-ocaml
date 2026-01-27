@@ -120,3 +120,35 @@ entries:
   - Assert low-level ML output
   - Assert high-level MLI output
   - Assert high-level ML output
+
+---
+
+## Implementation Plan
+
+### Overview
+Refactor the integration tests to use inline YAML strings instead of hand-crafted OCaml IR records. This provides end-to-end testing from YAML parsing through code generation.
+
+### Steps
+
+1. **Update `codegen/test/dune`** - Add `yaml` as a library dependency (Parse_yml is already exposed via codegen_lib with wrapped=false)
+
+2. **Refactor `test_enums.ml`**:
+   - Group related tests by input YAML (simple_enum, single_entry_enum, enum_with_numeric_prefix)
+   - Each test: YAML string -> parse -> assert all 5 outputs (C, low ML, low MLI, high ML, high MLI)
+   - Keep special tests for edge cases (empty doc, TODO doc) as variations
+
+3. **Refactor `test_structs.ml`**:
+   - Group by struct type (standalone, base_in, extension, with_array, with_enum, with_object, output)
+   - Same pattern: YAML -> parse -> assert 5 outputs
+
+4. **Refactor `test_methods.ml`**:
+   - Methods require parent object context
+   - Use object YAML with embedded method definitions
+   - Parse entire object, extract method for testing
+
+5. **Keep unchanged**: test_types.ml, test_helpers.ml, test_names.ml (pure function tests)
+
+### Validation
+- `dune runtest codegen` to update expect tests
+- `dune build @check` for warnings
+- `dune exec test/test_compute.exe` to verify no regressions
