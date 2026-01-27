@@ -115,23 +115,20 @@ let gen_ml_enum (enum : Ir.enum) : string =
         (String.lowercase entry.name))
     |> String.concat ~sep:"\n"
   in
-  sprintf
-    "module %s = struct\n\
-    \  type t =\n\
-     %s\n\n\
-     %s\n\n\
-    \  let to_int = function\n\
-     %s\n\n\
-    \  let of_int = function\n\
-     %s\n\
-    \    | n -> failwith (Printf.sprintf \"%s.of_int: unknown value %%d\" n)\n\
-     end\n"
-    module_name
-    variants
-    externals
-    to_int_cases
-    of_int_cases
-    module_name
+  {%string|module %{module_name} = struct
+  type t =
+%{variants}
+
+%{externals}
+
+  let to_int = function
+%{to_int_cases}
+
+  let of_int = function
+%{of_int_cases}
+    | n -> failwith (Printf.sprintf "%{module_name}.of_int: unknown value %d" n)
+end
+|}
 ;;
 
 (** Generate MLI for an enum type *)
@@ -142,15 +139,14 @@ let gen_mli_enum (enum : Ir.enum) : string =
       sprintf "  | %s" (normalize_enum_entry_name entry.name))
     |> String.concat ~sep:"\n"
   in
-  sprintf
-    "module %s : sig\n\
-    \  type t =\n\
-     %s\n\n\
-    \  val to_int : t -> int\n\
-    \  val of_int : int -> t\n\
-     end\n"
-    module_name
-    variants
+  {%string|module %{module_name} : sig
+  type t =
+%{variants}
+
+  val to_int : t -> int
+  val of_int : int -> t
+end
+|}
 ;;
 
 (** Generate C code for bitflag constants *)
@@ -200,20 +196,19 @@ let gen_ml_bitflag (bitflag : Ir.bitflag) : string =
         (String.lowercase entry.name))
     |> String.concat ~sep:"\n"
   in
-  sprintf
-    "module %s = struct\n\
-    \  type t =\n\
-     %s\n\n\
-     %s\n\n\
-    \  let to_int = function\n\
-     %s\n\n\
-    \  let list_to_int flags =\n\
-    \    List.fold_left (fun acc f -> acc lor to_int f) 0 flags\n\
-     end\n"
-    module_name
-    variants
-    externals
-    to_int_cases
+  {%string|module %{module_name} = struct
+  type t =
+%{variants}
+
+%{externals}
+
+  let to_int = function
+%{to_int_cases}
+
+  let list_to_int flags =
+    List.fold_left (fun acc f -> acc lor to_int f) 0 flags
+end
+|}
 ;;
 
 (** Generate MLI for a bitflag type *)
@@ -224,15 +219,14 @@ let gen_mli_bitflag (bitflag : Ir.bitflag) : string =
       sprintf "  | %s" (normalize_enum_entry_name entry.name))
     |> String.concat ~sep:"\n"
   in
-  sprintf
-    "module %s : sig\n\
-    \  type t =\n\
-     %s\n\n\
-    \  val to_int : t -> int\n\
-    \  val list_to_int : t list -> int\n\
-     end\n"
-    module_name
-    variants
+  {%string|module %{module_name} : sig
+  type t =
+%{variants}
+
+  val to_int : t -> int
+  val list_to_int : t list -> int
+end
+|}
 ;;
 
 (** Generate C struct allocation/deallocation functions *)

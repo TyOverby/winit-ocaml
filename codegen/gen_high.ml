@@ -1364,16 +1364,14 @@ let gen_enum (mode : output_mode) (enum : Ir.enum) : string =
         sprintf "  | %s" (normalize_enum_entry_name entry.name))
       |> String.concat ~sep:"\n"
     in
-    sprintf
-      "module %s : sig\n\
-       %s  type t =\n\
-       %s\n\n\
-      \  val to_int : t -> int\n\
-      \  val of_int : int -> t\n\
-       end\n"
-      module_name
-      doc_comment
-      variants
+    {%string|module %{module_name} : sig
+  %{doc_comment}type t =
+%{variants}
+
+  val to_int : t -> int
+  val of_int : int -> t
+end
+|}
 ;;
 
 (** Generate ML implementation for an enum type *)
@@ -1398,16 +1396,14 @@ let gen_bitflag (mode : output_mode) (bitflag : Ir.bitflag) : string =
         sprintf "  | %s" (normalize_enum_entry_name entry.name))
       |> String.concat ~sep:"\n"
     in
-    sprintf
-      "module %s : sig\n\
-       %s  type t =\n\
-       %s\n\n\
-      \  val to_int : t -> int\n\
-      \  val list_to_int : t list -> int\n\
-       end\n"
-      module_name
-      doc_comment
-      variants
+    {%string|module %{module_name} : sig
+  %{doc_comment}type t =
+%{variants}
+
+  val to_int : t -> int
+  val list_to_int : t list -> int
+end
+|}
 ;;
 
 (** Generate ML implementation for a bitflag type *)
@@ -1435,16 +1431,15 @@ let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object
     let methods =
       List.filter_map obj.methods ~f:(gen_ml_method structs obj) |> String.concat ~sep:""
     in
-    sprintf
-      "module %s = struct\n\
-      \  type t = { handle : Wgpu_low.%s }\n\n\
-       %s  let release t = Wgpu_low.%s_release t.handle\n\
-       %send\n"
-      module_name
-      obj.name
-      (if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n")
-      obj.name
-      methods
+    let output_types_section =
+      if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n"
+    in
+    {%string|module %{module_name} = struct
+  type t = { handle : Wgpu_low.%{obj.name} }
+
+%{output_types_section}  let release t = Wgpu_low.%{obj.name}_release t.handle
+%{methods}end
+|}
   | Interface ->
     let doc_comment =
       match useful_doc obj.doc with
@@ -1454,12 +1449,15 @@ let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object
     let methods =
       List.filter_map obj.methods ~f:(gen_mli_method structs obj) |> String.concat ~sep:""
     in
-    sprintf
-      "module %s : sig\n%s  type t\n\n%s  val release : t -> unit\n%send\n"
-      module_name
-      doc_comment
-      (if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n")
-      methods
+    let output_types_section =
+      if String.is_empty output_struct_types then "" else "  " ^ output_struct_types ^ "\n"
+    in
+    {%string|module %{module_name} : sig
+%{doc_comment}  type t
+
+%{output_types_section}  val release : t -> unit
+%{methods}end
+|}
 ;;
 
 (** Generate ML implementation for an object type *)
