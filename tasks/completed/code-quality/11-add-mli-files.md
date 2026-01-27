@@ -103,3 +103,32 @@ val to_camel_case : string -> string
 
 - High value: Significantly improves code documentation and encapsulation
 - Low effort: Mostly extracting existing function signatures and adding docs
+
+## Implementation Plan
+
+### Approach
+
+Create .mli interface files for each module in priority order. For each file:
+1. Add a module-level doc comment explaining the module's purpose
+2. Expose only public types and functions used by other modules or gen_bindings.ml
+3. Hide internal helper functions not needed externally
+4. Add documentation to exposed types and functions
+5. Follow Jane Street conventions for naming and documentation
+
+### Priority Order
+
+1. **ir.mli** - Core type definitions (all types are public, just need doc comments)
+2. **names.mli** - Public name transformation utilities
+3. **predicates.mli** - Public predicates for code generation
+4. **config.mli** - Method handling configuration (expose Method_key, method_handling, and lookup functions)
+5. **parse_yml.mli** - Only expose load_file (main entry point)
+6. **gen_low.mli** - Expose output_mode and gen_* functions
+7. **gen_high.mli** - Expose output_mode, record types, and gen_* functions
+
+### Validation Criteria
+
+1. All .mli files created and formatted
+2. `dune build @check` passes with no warnings
+3. `dune exec test/test_compute.exe` tests pass
+4. Internal helpers are hidden from public API
+5. Each module has clear documentation

@@ -3,8 +3,8 @@ open! Core
 (** Name transformation utilities for code generation *)
 
 (** Convert snake_case to PascalCase. Simple version that doesn't handle double
-    underscores. *)
-let to_pascal_case_simple (name : string) : string =
+    underscores. (Internal, prefixed with _ to avoid unused warning.) *)
+let _to_pascal_case_simple (name : string) : string =
   String.split name ~on:'_' |> List.map ~f:String.capitalize |> String.concat ~sep:""
 ;;
 

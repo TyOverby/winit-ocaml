@@ -151,8 +151,9 @@ let member_is_array_of_structs (type_ref : Ir.type_ref) : string option =
   | _ -> None
 ;;
 
-(** Get all entry structs that appear in arrays within a struct *)
-let get_array_element_structs (structs : Ir.struct_ list) (struct_ : Ir.struct_)
+(** Get all entry structs that appear in arrays within a struct. (Internal,
+    prefixed with _ to avoid unused warning.) *)
+let _get_array_element_structs (structs : Ir.struct_ list) (struct_ : Ir.struct_)
   : Ir.struct_ list
   =
   List.filter_map struct_.members ~f:(fun member ->
@@ -162,8 +163,9 @@ let get_array_element_structs (structs : Ir.struct_ list) (struct_ : Ir.struct_)
 ;;
 
 (** Collect all nested struct members from a struct, recursively. Returns a list of (path,
-    struct_def) pairs where path is the variable name path. *)
-let rec collect_inline_structs_recursive
+    struct_def) pairs where path is the variable name path. (Internal, prefixed with _ to
+    avoid unused warning.) *)
+let rec _collect_inline_structs_recursive
   (structs : Ir.struct_ list)
   (prefix : string)
   (struct_ : Ir.struct_)
@@ -178,7 +180,7 @@ let rec collect_inline_structs_recursive
          let nested_var = prefix ^ "_" ^ member.name ^ "_nested" in
          (* Add this inline struct and any inline structs within it *)
          (nested_var, inline_struct)
-         :: collect_inline_structs_recursive structs nested_var inline_struct)
+         :: _collect_inline_structs_recursive structs nested_var inline_struct)
     | None -> [])
 ;;
 
@@ -346,8 +348,9 @@ let high_level_member_type (member : Ir.struct_member) : string =
   Type_mapping.type_string ~context:Ocaml_high_level_member member.type_
 ;;
 
-(** Get high-level OCaml type for a type_ref (for struct members) *)
-let high_level_member_type_of_type (type_ref : Ir.type_ref) : string =
+(** Get high-level OCaml type for a type_ref (for struct members). (Internal,
+    prefixed with _ to avoid unused warning.) *)
+let _high_level_member_type_of_type (type_ref : Ir.type_ref) : string =
   Type_mapping.type_string ~context:Ocaml_high_level_member type_ref
 ;;
 
@@ -588,8 +591,9 @@ let rec generate_struct_creates
   }
 ;;
 
-(** Generate code to convert a nested struct record field to a C struct *)
-let gen_inline_struct_conversion
+(** Generate code to convert a nested struct record field to a C struct.
+    (Internal, prefixed with _ to avoid unused warning.) *)
+let _gen_inline_struct_conversion
   (_structs : Ir.struct_ list)
   (entry_var : string)
   (field_name : string)
@@ -846,8 +850,8 @@ let gen_method_with_structs
 ;;
 
 (** Generate ML implementation for a method with one or more struct parameters - backward
-    compatibility wrapper *)
-let gen_ml_method_with_structs
+    compatibility wrapper. (Internal, prefixed with _ to avoid unused warning.) *)
+let _gen_ml_method_with_structs
   (structs : Ir.struct_ list)
   (obj : Ir.object_)
   (method_ : Ir.method_)
@@ -1160,14 +1164,16 @@ and gen_nested_struct_module
 |}
 ;;
 
-(** Check if a struct contains array-of-struct members *)
-let struct_has_array_of_structs (struct_ : Ir.struct_) : bool =
+(** Check if a struct contains array-of-struct members. (Internal, prefixed
+    with _ to avoid unused warning.) *)
+let _struct_has_array_of_structs (struct_ : Ir.struct_) : bool =
   List.exists struct_.members ~f:(fun member ->
     Option.is_some (member_is_array_of_structs member.type_))
 ;;
 
-(** Generate MLI for a nested struct module - backward compatibility wrapper *)
-let gen_nested_struct_module_mli (structs : Ir.struct_ list) (struct_ : Ir.struct_)
+(** Generate MLI for a nested struct module - backward compatibility wrapper.
+    (Internal, prefixed with _ to avoid unused warning.) *)
+let _gen_nested_struct_module_mli (structs : Ir.struct_ list) (struct_ : Ir.struct_)
   : string
   =
   gen_nested_struct_module Interface structs struct_
@@ -1181,8 +1187,8 @@ let gen_array_element_struct_module_mli (structs : Ir.struct_ list) (struct_ : I
 ;;
 
 (** Generate MLI signature for a method with one or more struct parameters - backward
-    compatibility wrapper *)
-let gen_mli_method_with_structs
+    compatibility wrapper. (Internal, prefixed with _ to avoid unused warning.) *)
+let _gen_mli_method_with_structs
   (structs : Ir.struct_ list)
   (obj : Ir.object_)
   (method_ : Ir.method_)
