@@ -25,3 +25,7 @@ be tied together with guidance on ordering in a `tasks/triage/code-quality/repor
 file. For now don't comment on the quality of the _output_ of this program; for
 the purposes of the code quality report, pretend that the output is fine
 (though if you do find any bugs, file them under `tasks/triage`).
+
+Don't make any changes to the code at this time (unless you're testing
+a hypothesis, in which case that's fine, but revert the changes after you're
+done), for now, focus on writing the report instead of fixing the things.
