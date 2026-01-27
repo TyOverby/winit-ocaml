@@ -543,6 +543,49 @@ let gen_result_with_cleanup
       (return_to_high_level "result" ret.type_)
 ;;
 
+(** Generate code to read fields from an output struct into local variables *)
+let gen_output_struct_field_reads
+  (struct_ : Ir.struct_)
+  (struct_var : string)
+  (struct_module : string)
+  : string list
+  =
+  List.filter_map struct_.members ~f:(fun member ->
+    (* Skip nextInChain *)
+    if String.equal member.name "nextInChain"
+    then None
+    else (
+      let field_name = escape_keyword member.name in
+      let getter_name =
+        sprintf "Wgpu_low.%s.%s_get_%s" struct_module struct_.name member.name
+      in
+      let value_expr =
+        match member.type_ with
+        | Enum name ->
+          sprintf "(%s.of_int (%s %s))" (ocaml_module_name name) getter_name struct_var
+        | Object name ->
+          sprintf
+            "({ %s.handle = %s %s } : %s.t)"
+            (ocaml_module_name name)
+            getter_name
+            struct_var
+            (ocaml_module_name name)
+        | _ -> sprintf "(%s %s)" getter_name struct_var
+      in
+      Some (sprintf "let %s = %s in" field_name value_expr)))
+;;
+
+(** Generate code to build a result record from struct field names *)
+let gen_output_struct_record (struct_ : Ir.struct_) : string =
+  let record_fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else Some (sprintf "%s" (escape_keyword member.name)))
+  in
+  sprintf "let result = { %s } in" (String.concat ~sep:"; " record_fields)
+;;
+
 (** Recursively collect all parameters from a struct, including nested structs. Returns
     (param_name, member, is_optional, nested_var_name option) list. nested_var_name is
     Some if this parameter belongs to a nested struct.
@@ -959,42 +1002,9 @@ let gen_ml_method_with_output_struct
       method_.name
       (String.concat ~sep:" " call_args)
   in
-  (* Read fields from the struct *)
-  let read_fields =
-    List.filter_map struct_.members ~f:(fun member ->
-      (* Skip nextInChain *)
-      if String.equal member.name "nextInChain"
-      then None
-      else (
-        let field_name = escape_keyword member.name in
-        let getter_name =
-          sprintf "Wgpu_low.%s.%s_get_%s" struct_module struct_.name member.name
-        in
-        let value_expr =
-          match member.type_ with
-          | Enum name ->
-            sprintf "(%s.of_int (%s %s))" (ocaml_module_name name) getter_name struct_var
-          | Object name ->
-            sprintf
-              "({ %s.handle = %s %s } : %s.t)"
-              (ocaml_module_name name)
-              getter_name
-              struct_var
-              (ocaml_module_name name)
-          | _ -> sprintf "(%s %s)" getter_name struct_var
-        in
-        Some (sprintf "let %s = %s in" field_name value_expr)))
-  in
-  (* Build the record *)
-  let record_fields =
-    List.filter_map struct_.members ~f:(fun member ->
-      if String.equal member.name "nextInChain"
-      then None
-      else Some (sprintf "%s" (escape_keyword member.name)))
-  in
-  let build_record =
-    sprintf "let result = { %s } in" (String.concat ~sep:"; " record_fields)
-  in
+  (* Read fields from the struct and build result record *)
+  let read_fields = gen_output_struct_field_reads struct_ struct_var struct_module in
+  let build_record = gen_output_struct_record struct_ in
   (* Free the struct *)
   let free_struct =
     sprintf "Wgpu_low.%s.%s_free %s;" struct_module struct_.name struct_var
