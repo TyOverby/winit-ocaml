@@ -96,7 +96,7 @@ module Device = struct
       ?(cull_mode = Cull_mode.None)
       ?(blend : (Blend_factor.t * Blend_factor.t * Blend_operation.t *
                  Blend_factor.t * Blend_factor.t * Blend_operation.t) option)
-      ?(write_mask = [ Color_write_mask.All ])
+      ?(write_mask = [ Color_write_mask.Item.All ])
       () =
     let blend_enabled, color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op =
       match blend with

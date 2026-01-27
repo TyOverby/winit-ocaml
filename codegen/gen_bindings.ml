@@ -5,6 +5,10 @@ module Kind = struct
     | C
     | Ml
     | Mli
+    | Enums_ml
+    | Enums_mli
+    | Bitsets_ml
+    | Bitsets_mli
 
   let arg =
     Command.Arg_type.create (fun s ->
@@ -12,7 +16,12 @@ module Kind = struct
       | "c" -> C
       | "ml" -> Ml
       | "mli" -> Mli
-      | _ -> failwith "kind must be 'c', 'ml' or 'mli'")
+      | "enums_ml" -> Enums_ml
+      | "enums_mli" -> Enums_mli
+      | "bitsets_ml" -> Bitsets_ml
+      | "bitsets_mli" -> Bitsets_mli
+      | _ ->
+        failwith "kind must be 'c', 'ml', 'mli', 'enums_ml', 'enums_mli', 'bitsets_ml', or 'bitsets_mli'")
   ;;
 end
 
@@ -63,7 +72,13 @@ let command =
        | Mli, High ->
          Gen_high.check_method_coverage api;
          print_string (Gen_high.gen_mli api)
-       | C, High -> failwith "no c bindings in high level module")
+       | Enums_ml, High -> print_string (Gen_high.gen_enums_ml api)
+       | Enums_mli, High -> print_string (Gen_high.gen_enums_mli api)
+       | Bitsets_ml, High -> print_string (Gen_high.gen_bitsets_ml api)
+       | Bitsets_mli, High -> print_string (Gen_high.gen_bitsets_mli api)
+       | C, High -> failwith "no c bindings in high level module"
+       | (Enums_ml | Enums_mli | Bitsets_ml | Bitsets_mli), Low ->
+         failwith "enums and bitsets files only for high level")
 ;;
 
 let () = Command_unix.run command

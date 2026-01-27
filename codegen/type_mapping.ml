@@ -52,7 +52,7 @@ let rec type_string ~context (type_ref : Ir.type_ref) : string =
   | Ocaml_low_level, Bitflag _ -> "int"
   | Ocaml_high_level_return, Bitflag _ -> "int" (* Could be combination *)
   | (Ocaml_high_level_arg | Ocaml_high_level_member), Bitflag name ->
-    ocaml_module_name name ^ ".t list"
+    ocaml_module_name name ^ ".Item.t list"
   (* Objects: low-level uses raw type, high-level uses module type *)
   | C_code, Object name -> c_type_name name
   | Ocaml_low_level, Object name -> name (* type alias to nativeint *)
