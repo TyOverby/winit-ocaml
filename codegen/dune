@@ -1,7 +1,7 @@
 (library
  (name codegen_lib)
  (wrapped false)
- (modules ir parse_yml gen_low gen_high)
+ (modules ir parse_yml gen_low gen_high config)
  (libraries yaml core)
  (preprocess
   (pps ppx_jane)))

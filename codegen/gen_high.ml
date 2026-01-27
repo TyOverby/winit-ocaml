@@ -2,105 +2,6 @@ open! Core
 
 (** Generate high-level idiomatic OCaml bindings *)
 
-module Method_key = struct
-  module T = struct
-    type t = string * string [@@deriving sexp, compare]
-  end
-
-  include T
-  include Comparator.Make (T)
-end
-
-(** Methods that are manually implemented in the hand-written sections. These are
-    (object_name, method_name) pairs. *)
-let manual_implementations =
-  Set.of_list
-    (module Method_key)
-    [ (* Instance methods - some manually implemented in instance_module *)
-      "instance", "release" (* manually implemented *)
-    ; "instance", "create_surface"
-    ; "instance", "process_events"
-    ; ( "instance"
-      , "request_adapter" (* async, we have sync wrapper, manually implemented *) )
-    ; "instance", "get_WGSL_language_features" (* uses struct output parameter *)
-    ; "instance", "wait_any"
-      (* uses struct input parameter *)
-      (* Adapter methods - some manually implemented in adapter_module_suffix *)
-    ; "adapter", "release" (* manually implemented *)
-    ; "adapter", "has_feature" (* manually implemented *)
-    ; "adapter", "get_info" (* uses special struct return, manually implemented *)
-    ; "adapter", "request_device" (* async, we have sync wrapper, manually implemented *)
-    ; "adapter", "get_features"
-      (* output struct with array member *)
-      (* Device methods - manually implemented in adapter_module_prefix *)
-    ; "device", "release" (* manually implemented *)
-    ; "device", "poll" (* manually implemented *)
-    ; "device", "get_features" (* output struct with array member *)
-    ; "device", "create_shader_module" (* uses chained WGSL struct *)
-    ; "device", "create_texture" (* uses nested extent_3D struct *)
-    ; "device", "create_compute_pipeline" (* uses nested programmable_stage *)
-    ; "device", "create_render_pipeline" (* deeply nested descriptors *)
-    ; "device", "create_bind_group_layout_for_storage_buffer" (* convenience helper *)
-    ; "device", "pop_error_scope" (* async callback *)
-    ; "device", "get_queue" (* hand-written for cleaner return type *)
-    ; "device", "get_lost_future" (* returns Future struct *)
-    ; "device", "get_adapter_info"
-      (* returns struct *)
-      (* Queue methods - some manually implemented in adapter_module_prefix *)
-    ; "queue", "release" (* manually implemented *)
-    ; "queue", "set_label" (* manually implemented *)
-    ; "queue", "submit" (* uses array argument, manually implemented *)
-    ; "queue", "write_buffer" (* uses pointer + size, manually implemented *)
-    ; "queue", "write_texture" (* uses structs and pointer *)
-    ; "queue", "on_submitted_work_done"
-      (* async callback *)
-      (* Command encoder methods - keep only complex ones *)
-    ; "command_encoder", "begin_compute_pass" (* uses descriptor struct with arrays *)
-    ; "command_encoder", "begin_render_pass"
-      (* uses descriptor struct with arrays *)
-      (* Render pass encoder methods - keep only complex ones *)
-    ; "render_pass_encoder", "set_vertex_buffer" (* manual for better API *)
-    ; "render_pass_encoder", "set_index_buffer"
-      (* manual for better API *)
-      (* Render bundle encoder methods - keep only complex ones *)
-    ; "render_bundle_encoder", "set_vertex_buffer" (* manual *)
-    ; "render_bundle_encoder", "set_index_buffer"
-      (* manual *)
-      (* Buffer methods *)
-    ; "buffer", "map_async" (* async, we have sync wrapper *)
-    ; "buffer", "get_mapped_range" (* returns pointer, we have bigarray wrapper *)
-    ; "buffer", "get_const_mapped_range"
-      (* returns pointer, we have bigarray wrapper *)
-      (* Shader module methods *)
-    ; "shader_module", "get_compilation_info"
-      (* async callback *)
-      (* Surface methods - mostly for windowed rendering *)
-    ; "surface", "configure" (* uses struct *)
-    ; "surface", "get_capabilities" (* uses struct output with arrays *)
-    ]
-;;
-
-(** Methods that are intentionally not exposed in the high-level API. These are
-    (object_name, method_name) pairs with reasons. *)
-let intentionally_skipped =
-  Set.of_list
-    (module Method_key)
-    [ (* Internal/advanced methods that typical users don't need *)
-      "adapter", "request_adapter_info" (* deprecated, use get_info *)
-    ; "device", "create_error_external_texture" (* internal/testing *)
-    ; "device", "import_external_texture" (* advanced external interop *)
-    ; "device", "create_render_pipeline_async" (* async version, use sync *)
-    ; "device", "create_compute_pipeline_async" (* async version, use sync *)
-    ; "surface", "get_preferred_format" (* deprecated *)
-    ]
-;;
-
-(** Check if a method is accounted for (either manual or intentionally skipped) *)
-let method_is_accounted_for (obj_name : string) (method_name : string) : bool =
-  Set.mem manual_implementations (obj_name, method_name)
-  || Set.mem intentionally_skipped (obj_name, method_name)
-;;
-
 (** Filter out unhelpful doc strings like "TODO" *)
 let useful_doc (doc : string) : string option =
   let doc = String.strip doc in
@@ -1120,7 +1021,7 @@ let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.m
   : string option
   =
   (* Skip methods that are manually implemented *)
-  if Set.mem manual_implementations (obj.name, method_.name)
+  if Config.is_manual ~object_name:obj.name ~method_name:method_.name
   then None
   else if not (method_is_high_level structs method_)
   then None
@@ -1434,7 +1335,7 @@ let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.
   : string option
   =
   (* Skip methods that are manually implemented *)
-  if Set.mem manual_implementations (obj.name, method_.name)
+  if Config.is_manual ~object_name:obj.name ~method_name:method_.name
   then None
   else if not (method_is_high_level structs method_)
   then None
@@ -1719,9 +1620,8 @@ let gen_special_object_auto_methods (structs : Ir.struct_ list) (obj : Ir.object
   =
   let methods_to_generate =
     List.filter obj.methods ~f:(fun method_ ->
-      let key : Method_key.t = obj.name, method_.name in
-      (not (Set.mem manual_implementations key))
-      && not (Set.mem intentionally_skipped key))
+      (not (Config.is_manual ~object_name:obj.name ~method_name:method_.name))
+      && not (Config.is_skipped ~object_name:obj.name ~method_name:method_.name))
   in
   (* Collect output struct types from methods that will be auto-generated *)
   let output_struct_types =
@@ -1747,9 +1647,8 @@ let gen_special_object_auto_methods_mli (structs : Ir.struct_ list) (obj : Ir.ob
   =
   let methods_to_generate =
     List.filter obj.methods ~f:(fun method_ ->
-      let key : Method_key.t = obj.name, method_.name in
-      (not (Set.mem manual_implementations key))
-      && not (Set.mem intentionally_skipped key))
+      (not (Config.is_manual ~object_name:obj.name ~method_name:method_.name))
+      && not (Config.is_skipped ~object_name:obj.name ~method_name:method_.name))
   in
   (* Collect output struct types from methods that will be auto-generated *)
   let output_struct_types =
@@ -2238,7 +2137,7 @@ let validate_method_coverage (api : Ir.api) : string list =
       if not (method_is_high_level api.structs method_)
       then
         if (* This method isn't auto-generated, check if it's accounted for *)
-           not (method_is_accounted_for obj.name method_.name)
+           not (Config.is_accounted_for ~object_name:obj.name ~method_name:method_.name)
         then (
           let reason =
             if method_is_async method_
@@ -2284,12 +2183,12 @@ let check_method_coverage (api : Ir.api) : unit =
   then (
     eprintf "\n=== UNACCOUNTED METHODS ===\n";
     eprintf "The following methods are not auto-generated and not listed in\n";
-    eprintf "manual_implementations or intentionally_skipped:\n\n";
+    eprintf "Config.method_config:\n\n";
     List.iter errors ~f:(fun msg -> eprintf "  %s\n" msg);
     eprintf
       "\n\
-       Please add these methods to either:\n\
-      \  - manual_implementations (if you will implement them)\n\
-      \  - intentionally_skipped (if they should not be exposed)\n\n";
+       Please add these methods to Config.method_config in codegen/config.ml as either:\n\
+      \  - Manual { reason = \"...\" } (if you will implement them manually)\n\
+      \  - Skipped { reason = \"...\" } (if they should not be exposed)\n\n";
     failwith "Unaccounted methods in high-level API")
 ;;
