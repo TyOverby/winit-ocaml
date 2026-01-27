@@ -18,11 +18,13 @@ Each file contains multiple distinct concerns mixed together:
 ```
 codegen/
   lib/
+    dune
     names.ml          # Name transformations (to_pascal_case, ocaml_module_name, etc.)
     types.ml          # Type mapping (IR -> OCaml type strings, IR -> C type strings)
     predicates.ml     # is_simple_struct, method_is_async, is_simple_arg_type, etc.
 
     low/
+      dune
       enums.ml        # gen_c_enum_constants, gen_ml_enum, gen_mli_enum
       bitflags.ml     # gen_c_bitflag_constants, gen_ml_bitflag, gen_mli_bitflag
       structs.ml      # gen_c_struct_*, gen_ml_struct, gen_mli_struct
@@ -30,17 +32,19 @@ codegen/
       functions.ml    # gen_c_function_stubs
 
     high/
+      dune
       enums.ml        # gen_ml_enum, gen_mli_enum (re-exports)
       bitflags.ml     # gen_ml_bitflag, gen_mli_bitflag
       objects.ml      # gen_ml_object, gen_mli_object, method generation
       entry_structs.ml # Entry struct module generation
       special_modules.ml # Instance, Adapter, Device, Queue
-      convenience.ml  # Convenience functions
-
+  dune
   gen_low.ml          # Entry point for low-level generation
   gen_high.ml         # Entry point for high-level generation
   gen_bindings.ml     # CLI entry point (already small)
 ```
+
+More files, for containing utilities that are used from multiple files may also be necessary
 
 ## Specific Extractions
 
@@ -48,27 +52,19 @@ codegen/
 
 1. **Name utilities** (lines 6-48): `to_pascal_case`, `to_camel_case`, `c_type_name`, etc.
    These are also duplicated in gen_high.ml.
-
 2. **Type mapping** (lines 56-78): `c_type_of_type_ref`
-
 3. **Enum generation** (lines 80-170): `gen_c_enum_constants`, `gen_ml_enum`, `gen_mli_enum`
-
 4. **Bitflag generation** (lines 172-252): Similar pattern
-
 5. **Struct generation** (lines 254-757): This is a large block that could be its own module
-
 6. **Object/method generation** (lines 759-1176): Another distinct concern
 
 ### From gen_high.ml
 
 1. **Method accounting** (lines 14-102): `manual_implementations`, `intentionally_skipped`,
    `method_is_accounted_for` - this is configuration, not generation
-
 2. **Type predicates** (lines 197-461): `is_simple_member_type`, `is_simple_struct`,
    `method_is_high_level`, etc.
-
 3. **Parameter collection** (lines 609-691): `collect_struct_params`, `generate_struct_creates`
-
 4. **Method generation** (lines 911-1163): Multiple functions for different method types
 
 ## Benefits

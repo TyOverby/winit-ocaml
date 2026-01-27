@@ -42,21 +42,21 @@ Move hardcoded templates to separate files that are read at generation time:
 codegen/
   templates/
     high/
-      adapter_info.ml.template
-      queue.ml.template
-      device_prefix.ml.template
-      device_suffix.ml.template
-      instance.ml.template
-      convenience_functions.ml.template
+      adapter_info.template.ml
+      queue.template.ml
+      device_prefix.template.ml
+      device_suffix.template.ml
+      instance.template.ml
+      convenience_functions.template.ml
     low/
-      sync_helpers.c.template
-      header.c.template
+      sync_helpers.template.c
+      header.template.c
 ```
 
 Then read these at generation time:
 ```ocaml
 let adapter_info_template =
-  In_channel.read_all "templates/high/adapter_info.ml.template"
+  In_channel.read_all "templates/high/adapter_info.template.ml"
 ```
 
 ## Benefits

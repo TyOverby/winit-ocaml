@@ -1,5 +1,8 @@
 open! Core
 
+let s = "hi"
+let x = {%string|a %{s}|}
+
 module Kind = struct
   type t =
     | C

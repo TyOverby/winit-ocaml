@@ -38,8 +38,6 @@ let gen_mli_enum (enum : Ir.enum) : string =
 
 ## Proposed Fix
 
-### Option A: Parameterized Generation
-
 Use a variant to indicate output mode:
 
 ```ocaml
@@ -56,44 +54,6 @@ let gen_enum (mode : output_mode) (enum : Ir.enum) : string =
   | Interface ->
       sprintf "module %s : sig\n  type t = ...\n  val to_int : ...\n"
 ```
-
-### Option B: Structured Intermediate Representation
-
-Generate an intermediate structure, then render it:
-
-```ocaml
-type module_content = {
-  name : string;
-  type_decl : string;
-  functions : (string * string * string option) list;  (* name, type, impl option *)
-}
-
-let enum_to_module_content (enum : Ir.enum) : module_content = ...
-
-let render_ml (content : module_content) : string = ...
-let render_mli (content : module_content) : string = ...
-```
-
-### Option C: Paired Generation
-
-Return both at once:
-
-```ocaml
-let gen_enum (enum : Ir.enum) : string * string =
-  let module_name = ... in
-  let variants = ... in  (* Compute once *)
-  let ml = sprintf "module %s = struct ..." in
-  let mli = sprintf "module %s : sig ..." in
-  ml, mli
-```
-
-## Recommendation
-
-Option A is the simplest to implement and reduces duplication significantly. It's
-particularly good for the common case where ML and MLI differ only in syntax.
-
-Option B is more powerful but requires more upfront design work. It would be
-valuable if we need to support additional output formats (e.g., documentation).
 
 ## Benefits
 
