@@ -28,11 +28,13 @@ test/fundamentals/
     rotation_via_unit_circle.expected.png
 ```
 
-Refer to `test/CLAUDE.md` for the dune file templates and test patterns.
+Refer to `test/CLAUDE.md` for the dune file templates and test patterns,
+especially for how to test and promote image files.
 
 ## Handling Headless Output
 
 We render to PNG files, not interactive windows. This is fine for our purposes.
+Default to 600x400 images unless there's a really good reason not to.
 
 **For lessons with parameters or animation**: Output 4-5 representative frames
 showing the range of behavior. For example, a rotation lesson might output:
@@ -126,6 +128,9 @@ If a lesson requires WebGPU functionality that isn't exposed in our bindings:
 
 Do NOT attempt workarounds that require modifying the bindings. The lesson can
 be completed after the API is added.
+
+If some examples in a lesson are able to be ported but not others, file a task 
+as described above, but commit the example code that is workable and proceed.
 
 ## Adapting to Available APIs
 
