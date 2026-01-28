@@ -171,8 +171,9 @@ equivalent that achieves the same visual/computational result.
 # Run all tests (will compare against expected PNGs)
 dune runtest
 
-# Promote new expected images after visual verification
-dune promote test/fundamentals/rotation/rotation.expected.png
+# Generated .png files are automatically promoted to the source directory
+# via (mode promote). To create or update expected images:
+cp test/fundamentals/lesson_name/output.png test/fundamentals/lesson_name/output.expected.png
 
 # Format code
 dune fmt > /dev/null || true
@@ -180,6 +181,8 @@ dune fmt > /dev/null || true
 # Check for warnings (must pass before committing)
 dune build @check
 ```
+
+See `test/CLAUDE.md` for more details on the image testing workflow.
 
 ## Report experience back to the user
 

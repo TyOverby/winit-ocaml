@@ -8,9 +8,14 @@
  (alias runtest)
  (action
   (run ./vertex_buffer_layout.exe))
- (targets vertex_buffer_layout.png))
+ (targets vertex_buffer_layout.png)
+ (mode promote))
 
 (rule
  (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  vertex_buffer_layout.expected.png
+  vertex_buffer_layout.png)
  (action
-  (cmp vertex_buffer_layout.expected.png vertex_buffer_layout.png)))
+  (bash "%{deps}")))

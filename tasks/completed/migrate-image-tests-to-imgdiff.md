@@ -87,3 +87,51 @@ cp test/path/to/image.png test/path/to/image.expected.png
   different GPU drivers or anti-aliasing) while still catching meaningful
   changes
 - The threshold of 0.01 (1%) can be adjusted in `imgdiff.sh` if needed
+
+## Plan
+
+### Files to update:
+1. `test/integration/render_clear/dune` - uses `cmp`, needs `imgdiff.sh` + `mode promote`
+2. `test/integration/render_triangle/dune` - uses `cmp`, needs `imgdiff.sh` + `mode promote`
+3. `test/integration/vertex_buffer_layout/dune` - uses `cmp`, needs `imgdiff.sh` + `mode promote`
+4. `test/fundamentals/rotation/dune` - uses `diff`, has multiple images, needs `imgdiff.sh` + `mode promote`
+5. `test/CLAUDE.md` - update documentation with new workflow
+
+Note: `test/integration/bigarray_polymorphism/dune` does NOT produce images, so no changes needed.
+
+### Pattern to apply:
+For each image-generating test, transform:
+```dune
+(rule
+ (alias runtest)
+ (action (run ./test.exe))
+ (targets test.png))
+
+(rule
+ (alias runtest)
+ (action (cmp test.expected.png test.png)))
+```
+
+Into:
+```dune
+(rule
+ (alias runtest)
+ (action (run ./test.exe))
+ (targets test.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  test.expected.png
+  test.png)
+ (action (bash "%{deps}")))
+```
+
+### Validation criteria:
+1. All dune files updated to use `mode promote` and `imgdiff.sh`
+2. `dune build` succeeds
+3. `dune runtest` passes (or at least runs the image comparison correctly)
+4. `test/CLAUDE.md` updated with new workflow documentation
+5. No warnings from `dune build @check`

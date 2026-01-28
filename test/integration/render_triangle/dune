@@ -8,9 +8,14 @@
  (alias runtest)
  (action
   (run ./render_triangle.exe))
- (targets render_triangle.png))
+ (targets render_triangle.png)
+ (mode promote))
 
 (rule
  (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  render_triangle.expected.png
+  render_triangle.png)
  (action
-  (cmp render_triangle.expected.png render_triangle.png)))
+  (bash "%{deps}")))

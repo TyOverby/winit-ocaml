@@ -38,12 +38,22 @@ Tests that render images and compare against expected baselines (e.g., `render_c
 (rule
  (alias runtest)
  (action (run ./render_foo.exe))
- (targets render_foo.png))
+ (targets render_foo.png)
+ (mode promote))
 
 (rule
  (alias runtest)
- (action (cmp render_foo.expected.png render_foo.png)))
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  render_foo.expected.png
+  render_foo.png)
+ (action (bash "%{deps}")))
 ```
+
+Key points:
+- `(mode promote)` automatically copies the generated `.png` to the source directory
+- `imgdiff.sh` uses fuzzy image comparison (1% threshold) instead of exact byte matching
+- This allows for minor rendering differences across GPU drivers while catching real changes
 
 ## Image Generation
 
@@ -58,13 +68,39 @@ if Test_util.ppm_to_png ~ppm_file ~png_file then Core_unix.unlink ppm_file
 
 ### Creating/Updating Baselines
 
-The first time you run an image-generating test, it'll fail because there is no
-"expected" file yet.  Look at the image file to see if it's what you expect, and if it's 
-good, then run `dune promote test/path/to/image_file.expected.png` to promote it.
+With `(mode promote)`, the generated `.png` files are automatically copied to the
+source directory after each build. This makes working with image tests simpler.
 
-If the image expect-test fails, the error message should contain paths to both the 
-"expected" and "actual" files.  Look at both of the files and evaluate the differences.
-If the new version is better, run `dune promote test/path/to/image_file.expected.png`
+**Creating new expected images:**
+```bash
+# Run the test - the .png file is generated and promoted automatically
+dune runtest
+
+# The generated .png is now in the source directory
+# Inspect it visually, then copy to expected:
+cp test/path/to/image.png test/path/to/image.expected.png
+
+# Run tests again to verify
+dune runtest
+```
+
+**Updating existing baselines:**
+```bash
+# If the test fails (images differ beyond threshold), the generated .png
+# is already in the source directory. Compare it visually:
+# - test/path/to/image.png (new output)
+# - test/path/to/image.expected.png (current expected)
+
+# If the new image is correct, update the expected file:
+cp test/path/to/image.png test/path/to/image.expected.png
+
+# Run tests again to verify
+dune runtest
+```
+
+**Note:** The fuzzy comparison allows for minor rendering differences (e.g., from
+different GPU drivers or anti-aliasing) while still catching meaningful changes.
+The threshold of 1% can be adjusted in `imgdiff.sh` if needed
 
 ## Code Style Guidelines
 
