@@ -17,3 +17,10 @@ val write_ppm
 
 (** Convert PPM to PNG using ImageMagick. Raises if ImageMagick convert command fails. *)
 val ppm_to_png : ppm_file:string -> png_file:string -> unit
+
+(** Load a PNG file into RGBA pixel data using ImageMagick. Returns (width, height, data)
+    where data is a Bigarray of RGBA bytes with 4 bytes per pixel (R, G, B, A) in
+    row-major order. *)
+val load_png
+  :  filename:string
+  -> int * int * (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t

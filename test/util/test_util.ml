@@ -55,3 +55,41 @@ let ppm_to_png ~ppm_file ~png_file =
     Error.raise_s
       [%message "Error: ImageMagick convert failed" (e : Core_unix.Exit_or_signal.error)]
 ;;
+
+(* Load a PNG file into RGBA pixel data using ImageMagick.
+   Returns (width, height, data) where data is a Bigarray of RGBA bytes. *)
+let load_png ~filename =
+  (* Use ImageMagick to get dimensions *)
+  let identify_cmd = sprintf "identify -format '%%w %%h' %s" filename in
+  let width, height =
+    let ic = Core_unix.open_process_in identify_cmd in
+    let line = In_channel.input_line_exn ic in
+    (match Core_unix.close_process_in ic with
+     | Ok () -> ()
+     | Error _ -> failwith "identify command failed");
+    match String.split line ~on:' ' with
+    | [ w; h ] -> Int.of_string w, Int.of_string h
+    | _ -> failwith "Failed to parse image dimensions"
+  in
+  (* Convert to raw RGBA and read *)
+  let convert_cmd = sprintf "convert %s -depth 8 rgba:-" filename in
+  let ic = Core_unix.open_process_in convert_cmd in
+  let data_size = width * height * 4 in
+  let data = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout data_size in
+  let bytes_read = ref 0 in
+  (try
+     while !bytes_read < data_size do
+       let c = In_channel.input_char ic in
+       match c with
+       | Some ch ->
+         Bigarray.Array1.set data !bytes_read (Char.to_int ch);
+         incr bytes_read
+       | None -> failwith "Unexpected end of image data"
+     done
+   with
+   | End_of_file -> failwith "Unexpected end of image data");
+  (match Core_unix.close_process_in ic with
+   | Ok () -> ()
+   | Error _ -> failwith "convert command failed");
+  width, height, data
+;;
