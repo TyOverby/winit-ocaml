@@ -158,3 +158,22 @@ The existing `print_method_outputs` helper should work without changes since the
 ## Dependency
 
 This task should be completed **before** `hardcoded-function-regression-tests.md`, as that task depends on being able to generate code for manual methods.
+
+## Implementation Plan (by Claude)
+
+I will follow the phases outlined in the task description:
+
+1. **Phase 1**: Add `Config.t` type with `default` and `for_testing` values
+2. **Phase 2**: Thread config through all `Gen_high` functions
+3. **Phase 3**: Thread config through all `Gen_low` functions, remove duplicate `method_is_manual`
+4. **Phase 4**: Update `gen_bindings.ml` to pass `Config.default`
+5. **Phase 5**: Update `For_testing` modules to use `Config.for_testing` by default
+6. **Phase 6**: Verify tests still pass
+
+The key insight is that `ignore_manual_for_generation` allows test code to see what would be generated for manually-implemented methods, while production code continues to respect the manual/skipped configuration.
+
+### Validation
+- `dune build` succeeds
+- `dune build @check` reports no warnings
+- `dune exec test/test_compute.exe` passes
+- All manual/skipped methods continue to work as before

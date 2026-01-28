@@ -794,6 +794,7 @@ let gen_ml_method_with_output_struct
 ;;
 
 let gen_method
+  (config : Config.t)
   (mode : output_mode)
   (structs : Ir.struct_ list)
   (obj : Ir.object_)
@@ -801,7 +802,7 @@ let gen_method
   : string option
   =
   (* Skip methods that are manually implemented *)
-  if Config.is_manual ~object_name:obj.name ~method_name:method_.name
+  if Config.is_manual_with_config config ~object_name:obj.name ~method_name:method_.name
   then None
   else if not (method_is_high_level structs method_)
   then None
@@ -871,10 +872,14 @@ let gen_method
 |})))
 ;;
 
-let gen_ml_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
+let gen_ml_method
+  (config : Config.t)
+  (structs : Ir.struct_ list)
+  (obj : Ir.object_)
+  (method_ : Ir.method_)
   : string option
   =
-  gen_method Implementation structs obj method_
+  gen_method config Implementation structs obj method_
 ;;
 
 let gen_output_struct_record_type (struct_ : Ir.struct_) : string =
@@ -1001,10 +1006,14 @@ let gen_mli_method_with_output_struct
   gen_method_with_output_struct Interface obj method_ struct_
 ;;
 
-let gen_mli_method (structs : Ir.struct_ list) (obj : Ir.object_) (method_ : Ir.method_)
+let gen_mli_method
+  (config : Config.t)
+  (structs : Ir.struct_ list)
+  (obj : Ir.object_)
+  (method_ : Ir.method_)
   : string option
   =
-  gen_method Interface structs obj method_
+  gen_method config Interface structs obj method_
 ;;
 
 let gen_enum (mode : output_mode) (enum : Ir.enum) : string =
@@ -1069,7 +1078,11 @@ end
 let gen_ml_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Implementation bitflag
 let gen_mli_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Interface bitflag
 
-let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object_)
+let gen_object
+  (config : Config.t)
+  (mode : output_mode)
+  (structs : Ir.struct_ list)
+  (obj : Ir.object_)
   : string
   =
   let module_name = ocaml_module_name obj.name in
@@ -1085,7 +1098,8 @@ let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object
   match mode with
   | Implementation ->
     let methods =
-      List.filter_map obj.methods ~f:(gen_ml_method structs obj) |> String.concat ~sep:""
+      List.filter_map obj.methods ~f:(gen_ml_method config structs obj)
+      |> String.concat ~sep:""
     in
     let output_types_section =
       if String.is_empty output_struct_types
@@ -1107,7 +1121,8 @@ let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object
 |}
     in
     let methods =
-      List.filter_map obj.methods ~f:(gen_mli_method structs obj) |> String.concat ~sep:""
+      List.filter_map obj.methods ~f:(gen_mli_method config structs obj)
+      |> String.concat ~sep:""
     in
     let output_types_section =
       if String.is_empty output_struct_types
@@ -1122,12 +1137,16 @@ let gen_object (mode : output_mode) (structs : Ir.struct_ list) (obj : Ir.object
 |}
 ;;
 
-let gen_ml_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
-  gen_object Implementation structs obj
+let gen_ml_object (config : Config.t) (structs : Ir.struct_ list) (obj : Ir.object_)
+  : string
+  =
+  gen_object config Implementation structs obj
 ;;
 
-let gen_mli_object (structs : Ir.struct_ list) (obj : Ir.object_) : string =
-  gen_object Interface structs obj
+let gen_mli_object (config : Config.t) (structs : Ir.struct_ list) (obj : Ir.object_)
+  : string
+  =
+  gen_object config Interface structs obj
 ;;
 
 let rec extract_object_deps (type_ref : Ir.type_ref) : string list =
@@ -1246,13 +1265,24 @@ let collect_array_element_structs (api : Ir.api) : (Ir.struct_ * Ir.struct_ list
     | None -> None)
 ;;
 
-let gen_special_object_auto_methods (structs : Ir.struct_ list) (obj : Ir.object_)
+let gen_special_object_auto_methods
+  (config : Config.t)
+  (structs : Ir.struct_ list)
+  (obj : Ir.object_)
   : string * string
   =
   let methods_to_generate =
     List.filter obj.methods ~f:(fun method_ ->
-      (not (Config.is_manual ~object_name:obj.name ~method_name:method_.name))
-      && not (Config.is_skipped ~object_name:obj.name ~method_name:method_.name))
+      (not
+         (Config.is_manual_with_config
+            config
+            ~object_name:obj.name
+            ~method_name:method_.name))
+      && not
+           (Config.is_skipped_with_config
+              config
+              ~object_name:obj.name
+              ~method_name:method_.name))
   in
   (* Collect output struct types from methods that will be auto-generated *)
   let output_struct_types =
@@ -1265,19 +1295,30 @@ let gen_special_object_auto_methods (structs : Ir.struct_ list) (obj : Ir.object
   in
   let methods =
     List.filter_map methods_to_generate ~f:(fun method_ ->
-      gen_ml_method structs obj method_)
+      gen_ml_method config structs obj method_)
     |> String.concat ~sep:""
   in
   output_struct_types, methods
 ;;
 
-let gen_special_object_auto_methods_mli (structs : Ir.struct_ list) (obj : Ir.object_)
+let gen_special_object_auto_methods_mli
+  (config : Config.t)
+  (structs : Ir.struct_ list)
+  (obj : Ir.object_)
   : string * string
   =
   let methods_to_generate =
     List.filter obj.methods ~f:(fun method_ ->
-      (not (Config.is_manual ~object_name:obj.name ~method_name:method_.name))
-      && not (Config.is_skipped ~object_name:obj.name ~method_name:method_.name))
+      (not
+         (Config.is_manual_with_config
+            config
+            ~object_name:obj.name
+            ~method_name:method_.name))
+      && not
+           (Config.is_skipped_with_config
+              config
+              ~object_name:obj.name
+              ~method_name:method_.name))
   in
   (* Collect output struct types from methods that will be auto-generated *)
   let output_struct_types =
@@ -1290,13 +1331,14 @@ let gen_special_object_auto_methods_mli (structs : Ir.struct_ list) (obj : Ir.ob
   in
   let methods =
     List.filter_map methods_to_generate ~f:(fun method_ ->
-      gen_mli_method structs obj method_)
+      gen_mli_method config structs obj method_)
     |> String.concat ~sep:""
   in
   output_struct_types, methods
 ;;
 
 let gen_ml (api : Ir.api) : string =
+  let config = Config.default in
   let header = "(* Generated by gen_bindings - high-level OCaml bindings *)\n\n" in
   let includes = "include Enums\ninclude Bitsets\n\n" in
   (* Generate entry struct modules (for array-of-struct parameters) *)
@@ -1315,13 +1357,13 @@ let gen_ml (api : Ir.api) : string =
   let objects =
     regular_objects
     |> sort_objects api.structs
-    |> List.map ~f:(gen_ml_object api.structs)
+    |> List.map ~f:(gen_ml_object config api.structs)
     |> String.concat ~sep:"\n"
   in
   (* Generate auto-generated methods for Device *)
   let device_output_types, device_auto_methods =
     match List.find api.objects ~f:(fun obj -> String.equal obj.name "device") with
-    | Some device_obj -> gen_special_object_auto_methods api.structs device_obj
+    | Some device_obj -> gen_special_object_auto_methods config api.structs device_obj
     | None -> "", ""
   in
   (* Adapter module *)
@@ -1347,6 +1389,7 @@ let gen_ml (api : Ir.api) : string =
 ;;
 
 let gen_mli (api : Ir.api) : string =
+  let config = Config.default in
   let header = "(* Generated by gen_bindings - high-level OCaml interface *)\n\n" in
   let includes = "include module type of Enums\ninclude module type of Bitsets\n\n" in
   (* Generate array element struct module signatures (for array-of-struct parameters) *)
@@ -1359,7 +1402,7 @@ let gen_mli (api : Ir.api) : string =
   (* Generate auto-generated method signatures for Device *)
   let device_output_types_mli, device_auto_methods_mli =
     match List.find api.objects ~f:(fun obj -> String.equal obj.name "device") with
-    | Some device_obj -> gen_special_object_auto_methods_mli api.structs device_obj
+    | Some device_obj -> gen_special_object_auto_methods_mli config api.structs device_obj
     | None -> "", ""
   in
   (* Filter out objects we handle specially *)
@@ -1371,7 +1414,7 @@ let gen_mli (api : Ir.api) : string =
   let objects =
     regular_objects
     |> sort_objects api.structs
-    |> List.map ~f:(gen_mli_object api.structs)
+    |> List.map ~f:(gen_mli_object config api.structs)
     |> String.concat ~sep:"\n"
   in
   (* Adapter module *)
@@ -1396,14 +1439,18 @@ let gen_mli (api : Ir.api) : string =
     ]
 ;;
 
-let validate_method_coverage (api : Ir.api) : string list =
+let validate_method_coverage (config : Config.t) (api : Ir.api) : string list =
   let errors = ref [] in
   List.iter api.objects ~f:(fun obj ->
     List.iter obj.methods ~f:(fun method_ ->
       if not (method_is_high_level api.structs method_)
       then
         if (* This method isn't auto-generated, check if it's accounted for *)
-           not (Config.is_accounted_for ~object_name:obj.name ~method_name:method_.name)
+           not
+             (Config.is_accounted_for_with_config
+                config
+                ~object_name:obj.name
+                ~method_name:method_.name)
         then (
           let reason =
             if method_is_async method_
@@ -1443,7 +1490,8 @@ let validate_method_coverage (api : Ir.api) : string list =
 ;;
 
 let check_method_coverage (api : Ir.api) : unit =
-  let errors = validate_method_coverage api in
+  let config = Config.default in
+  let errors = validate_method_coverage config api in
   if not (List.is_empty errors)
   then (
     eprintf "\n=== UNACCOUNTED METHODS ===\n";
@@ -1660,12 +1708,21 @@ module For_testing = struct
     | Implementation
     | Interface
 
+  (* Use config that ignores manual flags by default in tests *)
+  let default_test_config = Config.for_testing
   let gen_ml_enum = gen_ml_enum
   let gen_mli_enum = gen_mli_enum
   let gen_ml_bitflag = gen_ml_bitflag
   let gen_mli_bitflag = gen_mli_bitflag
-  let gen_ml_method = gen_ml_method
-  let gen_mli_method = gen_mli_method
+
+  let gen_ml_method ?(config = default_test_config) structs obj method_ =
+    gen_ml_method config structs obj method_
+  ;;
+
+  let gen_mli_method ?(config = default_test_config) structs obj method_ =
+    gen_mli_method config structs obj method_
+  ;;
+
   let gen_ml_method_with_output_struct = gen_ml_method_with_output_struct
   let gen_mli_method_with_output_struct = gen_mli_method_with_output_struct
   let is_flat_member_type = is_flat_member_type

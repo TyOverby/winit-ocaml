@@ -158,3 +158,84 @@ let validate_config (api : Ir.api) : unit =
     if not (Set.mem all_methods (obj, meth))
     then eprintf "Warning: Configured method %s.%s does not exist in API\n%!" obj meth)
 ;;
+
+(** Configuration record that can be threaded through codegen functions. *)
+type t =
+  { method_config : (Method_key.t * method_handling) list
+  ; ignore_manual_for_generation : bool
+  (** When [true], all methods are generated regardless of manual/skipped status. This is
+      useful for testing to see what code would be generated. *)
+  }
+
+(** Default config for production code generation - respects manual/skipped flags. *)
+let default : t = { method_config; ignore_manual_for_generation = false }
+
+(** Config for testing - generates code for all methods including manual ones. *)
+let for_testing : t = { method_config; ignore_manual_for_generation = true }
+
+(** Config for low-level bindings - only skips methods that are truly problematic at the C
+    level. Most "manual" methods in the high-level API still need low-level bindings. *)
+let for_low_level : t =
+  { method_config =
+      [ (* Only adapter.get_info is manually implemented at the low level *)
+        ( ("adapter", "get_info")
+        , Manual { reason = "Uses special struct return, manually implemented" } )
+      ]
+  ; ignore_manual_for_generation = false
+  }
+;;
+
+(** Get manual implementations set from a config. *)
+let manual_implementations_of (config : t)
+  : (string * string, Method_key.comparator_witness) Set.t
+  =
+  List.filter_map config.method_config ~f:(fun (key, handling) ->
+    match handling with
+    | Manual _ -> Some key
+    | _ -> None)
+  |> Set.of_list (module Method_key)
+;;
+
+(** Get intentionally skipped methods set from a config. *)
+let intentionally_skipped_of (config : t)
+  : (string * string, Method_key.comparator_witness) Set.t
+  =
+  List.filter_map config.method_config ~f:(fun (key, handling) ->
+    match handling with
+    | Skipped _ -> Some key
+    | _ -> None)
+  |> Set.of_list (module Method_key)
+;;
+
+(** Check if a method is manually implemented according to the config. Returns [false] if
+    [config.ignore_manual_for_generation] is [true]. *)
+let is_manual_with_config (config : t) ~(object_name : string) ~(method_name : string)
+  : bool
+  =
+  if config.ignore_manual_for_generation
+  then false
+  else Set.mem (manual_implementations_of config) (object_name, method_name)
+;;
+
+(** Check if a method is skipped according to the config. Returns [false] if
+    [config.ignore_manual_for_generation] is [true]. *)
+let is_skipped_with_config (config : t) ~(object_name : string) ~(method_name : string)
+  : bool
+  =
+  if config.ignore_manual_for_generation
+  then false
+  else Set.mem (intentionally_skipped_of config) (object_name, method_name)
+;;
+
+(** Check if a method is accounted for (either manual or skipped) according to the config.
+    Returns [false] if [config.ignore_manual_for_generation] is [true]. *)
+let is_accounted_for_with_config
+  (config : t)
+  ~(object_name : string)
+  ~(method_name : string)
+  : bool
+  =
+  if config.ignore_manual_for_generation
+  then false
+  else is_accounted_for ~object_name ~method_name
+;;

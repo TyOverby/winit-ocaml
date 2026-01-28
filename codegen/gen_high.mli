@@ -50,7 +50,7 @@ val gen_bitsets_mli : Ir.api -> string
     Returns a list of error messages for methods that:
     - Cannot be auto-generated (complex args/returns)
     - Are not listed in Config.method_config as Manual or Skipped *)
-val validate_method_coverage : Ir.api -> string list
+val validate_method_coverage : Config.t -> Ir.api -> string list
 
 (** Check method coverage and fail if there are unaccounted methods.
 
@@ -81,13 +81,25 @@ module For_testing : sig
 
   (** Generate ML implementation for a method.
 
-      Returns [None] if the method is manually implemented or cannot be auto-generated. *)
-  val gen_ml_method : Ir.struct_ list -> Ir.object_ -> Ir.method_ -> string option
+      Returns [None] if the method is manually implemented or cannot be auto-generated.
+      Uses [Config.for_testing] by default unless a different config is provided. *)
+  val gen_ml_method
+    :  ?config:Config.t
+    -> Ir.struct_ list
+    -> Ir.object_
+    -> Ir.method_
+    -> string option
 
   (** Generate MLI interface for a method.
 
-      Returns [None] if the method is manually implemented or cannot be auto-generated. *)
-  val gen_mli_method : Ir.struct_ list -> Ir.object_ -> Ir.method_ -> string option
+      Returns [None] if the method is manually implemented or cannot be auto-generated.
+      Uses [Config.for_testing] by default unless a different config is provided. *)
+  val gen_mli_method
+    :  ?config:Config.t
+    -> Ir.struct_ list
+    -> Ir.object_
+    -> Ir.method_
+    -> string option
 
   (** Generate ML implementation for method with output struct argument. *)
   val gen_ml_method_with_output_struct

@@ -695,8 +695,9 @@ let%expect_test "method - queue.submit (method with array arg)" =
     === Low-level ML ===
     external queue_submit : queue -> command_buffer array -> unit = "caml_wgpu_queue_submit"
     === High-level MLI ===
-    (none)
+      val submit : t -> commands:Command_buffer.t list -> unit
+
     === High-level ML ===
-    (none)
+      let submit t ~commands = Wgpu_low.queue_submit t.handle (Array.of_list (List.map (fun x -> x.Command_buffer.handle) commands))
     |}]
 ;;

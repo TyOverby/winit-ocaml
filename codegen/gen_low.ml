@@ -610,13 +610,6 @@ end
 
 let method_is_async = Predicates.method_is_async
 
-let method_is_manual (obj_name : string) (method_name : string) : bool =
-  match obj_name, method_name with
-  | "adapter", "get_info" -> true
-  (* device.get_queue is now auto-generated *)
-  | _ -> false
-;;
-
 let gen_c_array_conversion (arg : Ir.arg) : string =
   match arg.type_ with
   | Array { elem; _ } ->
@@ -659,12 +652,17 @@ let gen_c_array_conversion (arg : Ir.arg) : string =
   | _ -> ""
 ;;
 
-let gen_c_method_stub (obj : Ir.object_) (method_ : Ir.method_) : string =
+let gen_c_method_stub (config : Config.t) (obj : Ir.object_) (method_ : Ir.method_)
+  : string
+  =
   (* Skip async methods and manually implemented methods *)
   if method_is_async method_
   then {%string|/* TODO: async method %{obj.name}.%{method_.name} */
 |}
-  else if method_is_manual obj.name method_.name
+  else if Config.is_manual_with_config
+            config
+            ~object_name:obj.name
+            ~method_name:method_.name
   then {%string|/* Manually implemented: %{obj.name}.%{method_.name} */
 |}
   else (
@@ -794,7 +792,7 @@ CAMLprim value %{caml_func}_bytecode(value *argv, int argn) {
 |})
 ;;
 
-let gen_c_object_stubs (obj : Ir.object_) : string =
+let gen_c_object_stubs (config : Config.t) (obj : Ir.object_) : string =
   let c_type = c_type_name obj.name in
   (* Generate release function *)
   let obj_lower = String.lowercase obj.name in
@@ -811,7 +809,7 @@ let gen_c_object_stubs (obj : Ir.object_) : string =
   in
   (* Generate method stubs *)
   let methods =
-    List.map obj.methods ~f:(gen_c_method_stub obj) |> String.concat ~sep:"\n"
+    List.map obj.methods ~f:(gen_c_method_stub config obj) |> String.concat ~sep:"\n"
   in
   {%string|/* Object: %{c_type} */
 %{release}
@@ -823,10 +821,13 @@ let ml_type_of_type_ref (type_ref : Ir.type_ref) : string =
   Type_mapping.type_string ~context:Ocaml_low_level type_ref
 ;;
 
-let gen_ml_method (obj : Ir.object_) (method_ : Ir.method_) : string =
+let gen_ml_method (config : Config.t) (obj : Ir.object_) (method_ : Ir.method_) : string =
   if method_is_async method_
   then {%string|(* TODO: async method %{obj.name}_%{method_.name} *)|}
-  else if method_is_manual obj.name method_.name
+  else if Config.is_manual_with_config
+            config
+            ~object_name:obj.name
+            ~method_name:method_.name
   then "" (* Already defined manually *)
   else (
     let func_name = {%string|%{obj.name}_%{method_.name}|} in
@@ -854,7 +855,7 @@ let gen_ml_object_type (obj : Ir.object_) : string =
 |}
 ;;
 
-let gen_ml_object_methods (obj : Ir.object_) : string =
+let gen_ml_object_methods (config : Config.t) (obj : Ir.object_) : string =
   let obj_lower = String.lowercase obj.name in
   let release =
     {%string|external %{obj.name}_release : %{obj.name} -> unit = "caml_wgpu_%{obj_lower}_release"
@@ -862,15 +863,19 @@ let gen_ml_object_methods (obj : Ir.object_) : string =
   in
   let methods =
     List.filter_map obj.methods ~f:(fun m ->
-      let s = gen_ml_method obj m in
+      let s = gen_ml_method config obj m in
       if String.is_empty s then None else Some s)
     |> String.concat ~sep:"\n"
   in
   release ^ methods
 ;;
 
-let gen_mli_method (obj : Ir.object_) (method_ : Ir.method_) : string =
-  if method_is_async method_ || method_is_manual obj.name method_.name
+let gen_mli_method (config : Config.t) (obj : Ir.object_) (method_ : Ir.method_) : string =
+  if method_is_async method_
+     || Config.is_manual_with_config
+          config
+          ~object_name:obj.name
+          ~method_name:method_.name
   then ""
   else (
     let func_name = {%string|%{obj.name}_%{method_.name}|} in
@@ -891,12 +896,12 @@ let gen_mli_object_type (obj : Ir.object_) : string =
 |}
 ;;
 
-let gen_mli_object_methods (obj : Ir.object_) : string =
+let gen_mli_object_methods (config : Config.t) (obj : Ir.object_) : string =
   let release = {%string|val %{obj.name}_release : %{obj.name} -> unit
 |} in
   let methods =
     List.filter_map obj.methods ~f:(fun m ->
-      let s = gen_mli_method obj m in
+      let s = gen_mli_method config obj m in
       if String.is_empty s then None else Some s)
     |> String.concat ~sep:"\n"
   in
@@ -922,6 +927,7 @@ let gen_c_function_stubs (func : Ir.function_) : string =
 let gen_c_sync_helpers () : string = read_template "low/sync_helpers.c"
 
 let gen_c_stubs (api : Ir.api) : string =
+  let config = Config.for_low_level in
   let header = read_template "low/header.c" in
   let enum_stubs =
     List.map api.enums ~f:gen_c_enum_constants |> String.concat ~sep:"\n"
@@ -933,7 +939,7 @@ let gen_c_stubs (api : Ir.api) : string =
     List.map api.structs ~f:gen_c_struct_stubs |> String.concat ~sep:"\n"
   in
   let object_stubs =
-    List.map api.objects ~f:gen_c_object_stubs |> String.concat ~sep:"\n"
+    List.map api.objects ~f:(gen_c_object_stubs config) |> String.concat ~sep:"\n"
   in
   let function_stubs =
     List.map api.functions ~f:gen_c_function_stubs |> String.concat ~sep:"\n"
@@ -951,6 +957,7 @@ let gen_c_stubs (api : Ir.api) : string =
 ;;
 
 let gen_ml (api : Ir.api) : string =
+  let config = Config.for_low_level in
   let header = "(* Generated by gen_bindings - low-level OCaml bindings *)\n\n" in
   let enums = List.map api.enums ~f:gen_ml_enum |> String.concat ~sep:"\n" in
   let bitflags = List.map api.bitflags ~f:gen_ml_bitflag |> String.concat ~sep:"\n" in
@@ -960,7 +967,7 @@ let gen_ml (api : Ir.api) : string =
     List.map api.objects ~f:gen_ml_object_type |> String.concat ~sep:""
   in
   let object_methods =
-    List.map api.objects ~f:gen_ml_object_methods |> String.concat ~sep:"\n"
+    List.map api.objects ~f:(gen_ml_object_methods config) |> String.concat ~sep:"\n"
   in
   let functions = read_template "low/convenience_functions.ml" in
   String.concat
@@ -968,6 +975,7 @@ let gen_ml (api : Ir.api) : string =
 ;;
 
 let gen_mli (api : Ir.api) : string =
+  let config = Config.for_low_level in
   let header = "(* Generated by gen_bindings - low-level OCaml interface *)\n\n" in
   let enums = List.map api.enums ~f:gen_mli_enum |> String.concat ~sep:"\n" in
   let bitflags = List.map api.bitflags ~f:gen_mli_bitflag |> String.concat ~sep:"\n" in
@@ -977,7 +985,7 @@ let gen_mli (api : Ir.api) : string =
     List.map api.objects ~f:gen_mli_object_type |> String.concat ~sep:""
   in
   let object_methods =
-    List.map api.objects ~f:gen_mli_object_methods |> String.concat ~sep:"\n"
+    List.map api.objects ~f:(gen_mli_object_methods config) |> String.concat ~sep:"\n"
   in
   let functions = read_template "low/convenience_functions.mli" in
   String.concat
@@ -989,16 +997,29 @@ module For_testing = struct
     | Implementation
     | Interface
 
+  (* Use config that ignores manual flags by default in tests *)
+  let default_test_config = Config.for_testing
   let gen_c_enum_constants = gen_c_enum_constants
   let gen_c_bitflag_constants = gen_c_bitflag_constants
   let gen_c_struct_stubs = gen_c_struct_stubs
-  let gen_c_method_stub = gen_c_method_stub
+
+  let gen_c_method_stub ?(config = default_test_config) obj method_ =
+    gen_c_method_stub config obj method_
+  ;;
+
   let gen_ml_enum = gen_ml_enum
   let gen_mli_enum = gen_mli_enum
   let gen_ml_struct = gen_ml_struct
   let gen_mli_struct = gen_mli_struct
-  let gen_ml_method = gen_ml_method
-  let gen_mli_method = gen_mli_method
+
+  let gen_ml_method ?(config = default_test_config) obj method_ =
+    gen_ml_method config obj method_
+  ;;
+
+  let gen_mli_method ?(config = default_test_config) obj method_ =
+    gen_mli_method config obj method_
+  ;;
+
   let c_type_of_type_ref = c_type_of_type_ref
   let ml_type_of_type_ref = ml_type_of_type_ref
   let c_type_name = c_type_name
