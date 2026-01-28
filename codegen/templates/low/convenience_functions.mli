@@ -20,13 +20,15 @@ val buffer_get_mapped_range_bigarray
   :  buffer
   -> int64
   -> int64
-  -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  -> ('a, 'b) Bigarray.kind
+  -> ('a, 'b, Bigarray.c_layout) Bigarray.Array1.t
 
 val buffer_get_const_mapped_range_bigarray
   :  buffer
   -> int64
   -> int64
-  -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  -> ('a, 'b) Bigarray.kind
+  -> ('a, 'b, Bigarray.c_layout) Bigarray.Array1.t
 
 val queue_write_buffer_bigarray
   :  queue

@@ -163,7 +163,11 @@ let () =
       ~offset:0L
       ~size:(Int64.of_int data_size);
     Wgpu.Device.poll device ~wait:true ();
-    Wgpu.get_const_mapped_range readback_buffer ~offset:0L ~size:(Int64.of_int data_size)
+    Wgpu.get_const_mapped_range
+      readback_buffer
+      ~offset:0L
+      ~size:(Int64.of_int data_size)
+      ~kind:Bigarray.int8_unsigned
   in
   (* Verify: each value should be doubled *)
   let all_correct = ref true in

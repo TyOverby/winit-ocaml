@@ -207,6 +207,7 @@ let render_frame
       readback_buffer
       ~offset:0L
       ~size:(Int64.of_int buffer_size)
+      ~kind:Bigarray.int8_unsigned
   in
   let ( (* Write output *) ) =
     let ppm_file = Test_util.output_path (output_name ^ ".ppm") in

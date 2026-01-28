@@ -102,6 +102,7 @@ let () =
       readback_buffer
       ~offset:0L
       ~size:(Int64.of_int buffer_size)
+      ~kind:Bigarray.int8_unsigned
   in
   (* Verify all pixels are red (255, 0, 0, 255) *)
   let all_correct = ref true in

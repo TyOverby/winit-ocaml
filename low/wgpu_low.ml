@@ -8682,19 +8682,48 @@ external buffer_map_sync
   -> int
   = "caml_wgpu_buffer_map_sync"
 
-external buffer_get_mapped_range_bigarray
+external buffer_get_mapped_range_bigarray_raw
   :  buffer
   -> int64
   -> int64
-  -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  -> int
+  -> ('a, 'b, Bigarray.c_layout) Bigarray.Array1.t
   = "caml_wgpu_buffer_get_mapped_range_bigarray"
 
-external buffer_get_const_mapped_range_bigarray
+let kind_to_int : type a b. (a, b) Bigarray.kind -> int =
+  fun kind ->
+  match kind with
+  | Bigarray.Float16 -> 14
+  | Bigarray.Float32 -> 0
+  | Bigarray.Float64 -> 1
+  | Bigarray.Int8_signed -> 2
+  | Bigarray.Int8_unsigned -> 3
+  | Bigarray.Int16_signed -> 4
+  | Bigarray.Int16_unsigned -> 5
+  | Bigarray.Int32 -> 6
+  | Bigarray.Int64 -> 7
+  | Bigarray.Int -> 8
+  | Bigarray.Nativeint -> 9
+  | Bigarray.Complex32 -> 10
+  | Bigarray.Complex64 -> 11
+  | Bigarray.Char -> 12
+;;
+
+let buffer_get_mapped_range_bigarray buffer offset size kind =
+  buffer_get_mapped_range_bigarray_raw buffer offset size (kind_to_int kind)
+;;
+
+external buffer_get_const_mapped_range_bigarray_raw
   :  buffer
   -> int64
   -> int64
-  -> (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  -> int
+  -> ('a, 'b, Bigarray.c_layout) Bigarray.Array1.t
   = "caml_wgpu_buffer_get_const_mapped_range_bigarray"
+
+let buffer_get_const_mapped_range_bigarray buffer offset size kind =
+  buffer_get_const_mapped_range_bigarray_raw buffer offset size (kind_to_int kind)
+;;
 
 external queue_write_buffer_bigarray
   :  queue

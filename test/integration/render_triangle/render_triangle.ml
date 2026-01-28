@@ -139,6 +139,7 @@ let () =
       readback_buffer
       ~offset:0L
       ~size:(Int64.of_int buffer_size)
+      ~kind:Bigarray.int8_unsigned
   in
   (* Check center pixel - should be green (triangle covers center) *)
   let center_x = width / 2 in

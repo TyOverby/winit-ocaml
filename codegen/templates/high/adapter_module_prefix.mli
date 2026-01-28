@@ -33,7 +33,7 @@ module Queue : sig
   type t
 
   val write_buffer : t -> buffer:Buffer.t -> offset:int64 ->
-    data:(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t -> unit
+    data:(_, _, Bigarray.c_layout) Bigarray.Array1.t -> unit
 
   (* AUTO-GENERATED QUEUE METHOD SIGNATURES INJECTED HERE *)
 end

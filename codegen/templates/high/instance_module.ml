@@ -98,12 +98,12 @@ let map_buffer (buffer : Buffer.t) ~mode ~offset ~size =
     (Wgpu_low.buffer_map_sync buffer.handle (Map_mode.list_to_int mode) offset size : int)
 ;;
 
-let get_mapped_range (buffer : Buffer.t) ~offset ~size =
-  Wgpu_low.buffer_get_mapped_range_bigarray buffer.handle offset size
+let get_mapped_range (buffer : Buffer.t) ~offset ~size ~kind =
+  Wgpu_low.buffer_get_mapped_range_bigarray buffer.handle offset size kind
 ;;
 
-let get_const_mapped_range (buffer : Buffer.t) ~offset ~size =
-  Wgpu_low.buffer_get_const_mapped_range_bigarray buffer.handle offset size
+let get_const_mapped_range (buffer : Buffer.t) ~offset ~size ~kind =
+  Wgpu_low.buffer_get_const_mapped_range_bigarray buffer.handle offset size kind
 ;;
 
 let create_texture_view

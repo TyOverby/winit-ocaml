@@ -130,13 +130,46 @@ CAMLprim value caml_wgpu_buffer_map_sync(value buffer_val, value mode_val, value
   CAMLreturn(Val_int(status));
 }
 
+/* Helper to get element size for a bigarray kind */
+static size_t ba_element_size(int kind) {
+  switch (kind) {
+  case CAML_BA_FLOAT16:
+    return 2;
+  case CAML_BA_FLOAT32:
+    return 4;
+  case CAML_BA_FLOAT64:
+    return 8;
+  case CAML_BA_SINT8:
+  case CAML_BA_UINT8:
+  case CAML_BA_CHAR:
+    return 1;
+  case CAML_BA_SINT16:
+  case CAML_BA_UINT16:
+    return 2;
+  case CAML_BA_INT32:
+    return 4;
+  case CAML_BA_INT64:
+    return 8;
+  case CAML_BA_CAML_INT:
+  case CAML_BA_NATIVE_INT:
+    return sizeof(intnat);
+  case CAML_BA_COMPLEX32:
+    return 8;  /* Two float32s */
+  case CAML_BA_COMPLEX64:
+    return 16; /* Two float64s */
+  default:
+    return 1;
+  }
+}
+
 /* Get mapped range as bigarray */
-CAMLprim value caml_wgpu_buffer_get_mapped_range_bigarray(value buffer_val, value offset_val, value size_val) {
-  CAMLparam3(buffer_val, offset_val, size_val);
+CAMLprim value caml_wgpu_buffer_get_mapped_range_bigarray(value buffer_val, value offset_val, value size_val, value kind_val) {
+  CAMLparam4(buffer_val, offset_val, size_val, kind_val);
   CAMLlocal1(ba);
   WGPUBuffer buffer = (WGPUBuffer)Nativeint_val(buffer_val);
   size_t offset = Int64_val(offset_val);
   size_t size = Int64_val(size_val);
+  int kind = Int_val(kind_val);
 
   void* ptr = wgpuBufferGetMappedRange(buffer, offset, size);
   if (ptr == NULL) {
@@ -144,27 +177,30 @@ CAMLprim value caml_wgpu_buffer_get_mapped_range_bigarray(value buffer_val, valu
   }
 
   /* Create a bigarray that wraps the mapped memory */
-  intnat dims[1] = { size };
-  ba = caml_ba_alloc(CAML_BA_UINT8 | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL, 1, ptr, dims);
+  size_t elem_size = ba_element_size(kind);
+  intnat dims[1] = { size / elem_size };
+  ba = caml_ba_alloc(kind | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL, 1, ptr, dims);
 
   CAMLreturn(ba);
 }
 
 /* Get const mapped range as bigarray (for reading) */
-CAMLprim value caml_wgpu_buffer_get_const_mapped_range_bigarray(value buffer_val, value offset_val, value size_val) {
-  CAMLparam3(buffer_val, offset_val, size_val);
+CAMLprim value caml_wgpu_buffer_get_const_mapped_range_bigarray(value buffer_val, value offset_val, value size_val, value kind_val) {
+  CAMLparam4(buffer_val, offset_val, size_val, kind_val);
   CAMLlocal1(ba);
   WGPUBuffer buffer = (WGPUBuffer)Nativeint_val(buffer_val);
   size_t offset = Int64_val(offset_val);
   size_t size = Int64_val(size_val);
+  int kind = Int_val(kind_val);
 
   const void* ptr = wgpuBufferGetConstMappedRange(buffer, offset, size);
   if (ptr == NULL) {
     caml_failwith("wgpuBufferGetConstMappedRange returned NULL");
   }
 
-  intnat dims[1] = { size };
-  ba = caml_ba_alloc(CAML_BA_UINT8 | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL, 1, (void*)ptr, dims);
+  size_t elem_size = ba_element_size(kind);
+  intnat dims[1] = { size / elem_size };
+  ba = caml_ba_alloc(kind | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL, 1, (void*)ptr, dims);
 
   CAMLreturn(ba);
 }

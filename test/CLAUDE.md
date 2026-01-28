@@ -135,7 +135,7 @@ let my_function () =
   (* poll for map_buffer to complete *)
   Wgpu.Device.poll device ~wait:true ();
   (* extract values from mapped readback buffer *)
-  let mapped_data = Wgpu.get_const_mapped_range readback_buffer ~offset:0L ~size:(Int64.of_int data_size) in
+  let mapped_data = Wgpu.get_const_mapped_range readback_buffer ~offset:0L ~size:(Int64.of_int data_size) ~kind:Bigarray.int8_unsigned in
   ... other code ...
 ```
 
@@ -147,7 +147,7 @@ let my_function () =
     (* map the readback buffer and read from it *)
     Wgpu.map_buffer readback_buffer ~mode:[ Wgpu.Map_mode.Item.Read ] ~offset:0L ~size:(Int64.of_int data_size);
     Wgpu.Device.poll device ~wait:true ();
-    Wgpu.get_const_mapped_range readback_buffer ~offset:0L ~size:(Int64.of_int data_size)
+    Wgpu.get_const_mapped_range readback_buffer ~offset:0L ~size:(Int64.of_int data_size) ~kind:Bigarray.int8_unsigned
   in
   ... other code ...
 ```
