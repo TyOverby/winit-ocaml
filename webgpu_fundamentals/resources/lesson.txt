@@ -1,0 +1,77 @@
+Here are some other webgpu resources
+
+Articles
+
+Your first WebGPU app
+
+Tour of WGSL
+
+WebGPU Unleashed: A practical tutorial
+
+Efficiently rendering glTF models
+
+WebGPU Best Practices
+
+Rosetta - compare shaders in multiple shader languages
+
+3D Graphics Beginner Tutorials and Projects
+
+WebGPU Render Bundle Best Practices
+
+Examples
+
+WebGPU Samples
+
+WebGPU Deferred Rendering
+
+WebGPU Shadow Playground
+
+WebGPU Metaballs
+
+Shadertoy example in WebGPU
+
+Shader Graph WGSL
+
+Compute Toys
+
+Debugging / Profiling
+
+Profiling WebGPU with PIX (Windows Only)
+
+Tools
+
+WebGPUReport.org - shows your WebGPU’s features
+
+Libraries
+
+3D Libraries
+
+three.js Examples
+
+babylon.js
+
+Utilities
+
+webgpu-utils - helps set uniform buffer data and more
+
+wgsl-struct-buffer - wgsl’s struct buffer view in ts with type check & infer
+
+TypeGPU - allows WebGPU resource management in a type-safe, declarative way.
+
+Debugging / Profiling Libraries
+
+webgpu_inspector - inspect webgpu resource and commands
+
+webgpu-dev-extension - various helpers for debugging and development as an extension.
+
+webgpu-helpers - various helpers for debugging and development.
+
+webgpu-memory - tells you how much memory you’re using
+
+webgpu-avoid-redundant-state-setting - checks your code for redundant WebGPU calls
+
+webgpu_recorder - records WebGPU to an .HTML fil. Helpful for making a standalone repo of a bug/issue.
+
+Game Dev
+
+Web Game Dev
