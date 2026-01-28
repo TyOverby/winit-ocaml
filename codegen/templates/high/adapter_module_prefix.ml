@@ -67,7 +67,7 @@ end
 module Device = struct
   type t = { handle : Wgpu_low.device }
 
-  let create_shader_module' t ?(label = "") ~wgsl () =
+  let create_shader_module t ?(label = "") ~wgsl () =
     (* Create the WGSL source extension struct *)
     let wgsl_source = Wgpu_low.Shader_source_wgsl.shader_source_WGSL_create () in
     Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_code wgsl_source wgsl;

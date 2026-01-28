@@ -110,7 +110,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 }
 |}
   in
-  let shader = Wgpu.Device.create_shader_module' device ~wgsl:shader_code () in
+  let shader = Wgpu.Device.create_shader_module device ~wgsl:shader_code () in
   print_endline "Shader module created!";
   (* Create storage buffer (GPU only, not mappable) *)
   let num_elements = 64 in
@@ -449,7 +449,7 @@ fn fs_main() -> @location(0) vec4<f32> {
 |}
   in
   let shader =
-    Wgpu.Device.create_shader_module' device ~label:"triangle_shader" ~wgsl:shader_code ()
+    Wgpu.Device.create_shader_module device ~label:"triangle_shader" ~wgsl:shader_code ()
   in
   print_endline "Shader module created.";
   (* Create render target texture *)

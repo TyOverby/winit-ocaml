@@ -41,8 +41,8 @@ end
 module Device : sig
   type t
 
-  (** Create a shader module from WGSL source *)
-  val create_shader_module' : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
+  (** Create a shader module from WGSL source code *)
+  val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
 
   (* create_compute_pipeline is now auto-generated *)
 
