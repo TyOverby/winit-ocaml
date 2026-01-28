@@ -5,7 +5,6 @@ module type S = sig
     type t
 
     val to_int : t -> int
-    val all : t list
   end
 
   type t = int
@@ -39,7 +38,6 @@ module Buffer_usage : sig
       | Query_resolve
 
     val to_int : t -> int
-    val all : t list
   end
 
   include S with module Item := Item
@@ -56,7 +54,6 @@ module Color_write_mask : sig
       | All
 
     val to_int : t -> int
-    val all : t list
   end
 
   include S with module Item := Item
@@ -70,7 +67,6 @@ module Map_mode : sig
       | Write
 
     val to_int : t -> int
-    val all : t list
   end
 
   include S with module Item := Item
@@ -85,7 +81,6 @@ module Shader_stage : sig
       | Compute
 
     val to_int : t -> int
-    val all : t list
   end
 
   include S with module Item := Item
@@ -102,7 +97,6 @@ module Texture_usage : sig
       | Render_attachment
 
     val to_int : t -> int
-    val all : t list
   end
 
   include S with module Item := Item

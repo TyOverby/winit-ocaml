@@ -5,7 +5,6 @@ module type S = sig
     type t
 
     val to_int : t -> int
-    val all : t list
   end
 
   type t = int

@@ -1541,7 +1541,6 @@ end
 %{variants}
 
     val to_int : t -> int
-    val all : t list
   end
 
   include S with module Item := Item
@@ -1596,7 +1595,6 @@ let gen_bitsets_ml (api : Ir.api) : string =
     type t
 
     val to_int : t -> int
-    val all : t list
   end
 
   type t = int
@@ -1631,7 +1629,6 @@ let gen_bitsets_mli (api : Ir.api) : string =
     type t
 
     val to_int : t -> int
-    val all : t list
   end
 
   type t = int

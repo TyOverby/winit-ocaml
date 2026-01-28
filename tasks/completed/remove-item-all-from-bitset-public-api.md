@@ -80,3 +80,27 @@ If the functor task (`use-functor-for-bitsets-ml.md`) is implemented first, the 
 4. Generated `high/bitsets.mli` has no `val all : t list` in any `Item` submodule
 5. The `module type S` no longer includes `Item.all`
 6. All existing tests pass (internal usage of `Item.all` still works)
+
+## Implementation Plan
+
+The code generator function `gen_bitset_with_helpers` in `codegen/gen_high.ml` generates
+both the `.ml` and `.mli` for bitsets. The function distinguishes between `Implementation`
+and `Interface` mode via the `output_mode` parameter.
+
+The plan is:
+1. In `gen_bitset_with_helpers`, remove `val all : t list` from the Item module signature
+   when generating the interface (`.mli` file) - but keep it in the implementation (`.ml` file).
+2. In `gen_bitsets_mli`, update the `module type S` definition to not include `val all : t list`
+   in the Item submodule.
+
+The `.ml` will continue to have `Item.all` since:
+- The `Bitset_functor.Make` functor requires it via its `Item_intf` input module type
+- The functor uses `Item.all` internally to implement `all` and `to_list`
+
+Validation criteria:
+1. Run `dune build` - must succeed
+2. Run `dune fmt > /dev/null || true` - must not error
+3. Run `dune build @check` - no warnings
+4. Verify `high/bitsets.mli` has no `val all : t list` in any Item submodule
+5. Verify `module type S` in `.mli` does not have `Item.all`
+6. Run `dune exec test/test_compute.exe` - tests must pass
