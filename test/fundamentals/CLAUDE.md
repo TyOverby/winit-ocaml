@@ -15,8 +15,10 @@ lesson, adapting to the APIs we have available.
 
 ## Directory Structure
 
-Each JavaScript file becomes its own OCaml test. For a lesson with multiple
-examples:
+When starting a port, you'll be given a source directory
+`./webgpu_fundamentals/%{lesson_name}`. From this, you'll infer the lesson name
+and create a test directory in `./test/fundamentals/%{lesson_name}` Each
+JavaScript file becomes its own OCaml test.  e.g.
 
 ```
 test/fundamentals/
@@ -152,9 +154,6 @@ equivalent that achieves the same visual/computational result.
 ## Running Your Port
 
 ```bash
-# Build and run
-dune exec test/fundamentals/rotation/rotation.exe
-
 # Run all tests (will compare against expected PNGs)
 dune runtest
 
