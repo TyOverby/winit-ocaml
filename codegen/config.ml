@@ -28,7 +28,6 @@ let method_config : (Method_key.t * method_handling) list =
   ; ("device", "create_render_pipeline"), Manual { reason = "Deeply nested descriptors" }
   ; ("device", "get_adapter_info"), Manual { reason = "Returns struct" }
   ; ("queue", "write_buffer"), Manual { reason = "Uses pointer + size" }
-  ; ("queue", "on_submitted_work_done"), Manual { reason = "Async callback" }
   ; ( ("command_encoder", "begin_compute_pass")
     , Manual { reason = "Uses descriptor struct with arrays" } )
   ; ( ("command_encoder", "begin_render_pass")
@@ -39,9 +38,9 @@ let method_config : (Method_key.t * method_handling) list =
   ; ("queue", "release"), Manual { reason = "Custom release logic" }
   ; ("device", "release"), Manual { reason = "Custom release logic" }
   ; ("adapter", "release"), Manual { reason = "Custom release logic" }
-    (* Intentionally skipped methods, usually for async reasons *)
   ; ( ("surface", "get_capabilities")
     , Skipped { reason = "Low-level array getters not yet implemented" } )
+    (* Intentionally skipped methods, usually for async reasons *)
   ; ("shader_module", "get_compilation_info"), Manual { reason = "Async callback" }
   ; ("buffer", "map_async"), Manual { reason = "Async method, we provide sync wrapper" }
   ; ( ("adapter", "request_adapter_info")
@@ -61,6 +60,7 @@ let method_config : (Method_key.t * method_handling) list =
     , Manual { reason = "Async method, we provide sync wrapper" } )
   ; ( ("instance", "request_adapter")
     , Manual { reason = "Async method, we provide sync wrapper" } )
+  ; ("queue", "on_submitted_work_done"), Manual { reason = "Async callback" }
   ]
 ;;
 
