@@ -104,3 +104,43 @@ The key change is in the Interface generation path for bitsets. Instead of gener
 3. `dune build @check` reports no warnings
 4. Generated `high/bitsets.mli` uses `include S with type Item.t := Item.t` in each module
 5. Each bitset module signature is significantly shorter (no repeated function signatures)
+
+---
+
+## Implementation Plan
+
+The key function to modify is `gen_bitset_with_helpers` in `codegen/gen_high.ml` (around line 1501).
+
+### Changes to make:
+
+1. **Add module type `S` to the `.mli` file header**: Modify `gen_bitsets_mli` to include a module type `S` that contains all the common bitset operations (except the Item-specific `to_int` and `all`).
+
+2. **Update `gen_bitset_with_helpers` for Interface mode**: Change the Interface case to:
+   - Keep the `Item` submodule with the concrete type definition, `to_int`, and `all`
+   - Use `include S with type Item.t := Item.t` instead of listing all function signatures
+   - Keep `list_to_int` which is an extra function not in `S`
+
+### Module type S should contain:
+```ocaml
+module type S = sig
+  module Item : sig
+    type t
+    val to_int : t -> int
+    val all : t list
+  end
+  type t
+  val singleton : Item.t -> t
+  val of_list : Item.t list -> t
+  val is_member : t -> Item.t -> bool
+  val empty : t
+  val all : t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val to_int : t -> int
+  val to_list : t -> Item.t list
+  val list_to_int : Item.t list -> t
+end
+```
+
+Note: `list_to_int` can be included in `S` since all bitset modules have it.
