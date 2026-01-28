@@ -21,6 +21,8 @@ module Buffer : sig
   type t
 
   val release : t -> unit
+  val get_mapped_range : t -> offset:int64 -> size:int64 -> nativeint
+  val get_const_mapped_range : t -> offset:int64 -> size:int64 -> nativeint
   val set_label : t -> label:string -> unit
   val get_usage : t -> int
   val get_size : t -> int64
@@ -202,6 +204,23 @@ module Render_bundle_encoder : sig
   val insert_debug_marker : t -> marker_label:string -> unit
   val pop_debug_group : t -> unit
   val push_debug_group : t -> group_label:string -> unit
+
+  val set_vertex_buffer
+    :  t
+    -> slot:int
+    -> buffer:Buffer.t
+    -> offset:int64
+    -> size:int64
+    -> unit
+
+  val set_index_buffer
+    :  t
+    -> buffer:Buffer.t
+    -> format:Index_format.t
+    -> offset:int64
+    -> size:int64
+    -> unit
+
   val finish : t -> ?label:string -> unit -> Render_bundle.t
   val set_label : t -> label:string -> unit
 end
@@ -262,6 +281,23 @@ module Render_pass_encoder : sig
     -> unit
 
   val set_scissor_rect : t -> x:int -> y:int -> width:int -> height:int -> unit
+
+  val set_vertex_buffer
+    :  t
+    -> slot:int
+    -> buffer:Buffer.t
+    -> offset:int64
+    -> size:int64
+    -> unit
+
+  val set_index_buffer
+    :  t
+    -> buffer:Buffer.t
+    -> format:Index_format.t
+    -> offset:int64
+    -> size:int64
+    -> unit
+
   val begin_occlusion_query : t -> query_index:int -> unit
   val end_occlusion_query : t -> unit
   val end_ : t -> unit
@@ -527,20 +563,7 @@ module Device : sig
   val get_queue : t -> Queue.t
 
   (** Create a shader module from WGSL source *)
-  val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
-
-  (** Create a texture *)
-  val create_texture
-    :  t
-    -> ?label:string
-    -> size:int * int * int
-    -> format:Texture_format.t
-    -> usage:Texture_usage.Item.t list
-    -> ?dimension:Texture_dimension.t
-    -> ?mip_level_count:int
-    -> ?sample_count:int
-    -> unit
-    -> Texture.t
+  val create_shader_module' : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
 
   (** Create a compute pipeline *)
   val create_compute_pipeline
@@ -687,6 +710,21 @@ module Device : sig
     -> max_anisotropy:int
     -> unit
     -> Sampler.t
+
+  val create_texture
+    :  t
+    -> ?label:string
+    -> usage:Texture_usage.Item.t list
+    -> dimension:Texture_dimension.t
+    -> size_width:int
+    -> size_height:int
+    -> size_depth_or_array_layers:int
+    -> format:Texture_format.t
+    -> mip_level_count:int
+    -> sample_count:int
+    -> ?view_formats:Texture_format.t list
+    -> unit
+    -> Texture.t
 
   val destroy : t -> unit
   val get_limits : t -> limits

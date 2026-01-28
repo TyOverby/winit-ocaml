@@ -26,13 +26,7 @@ module Device : sig
   val get_queue : t -> Queue.t
 
   (** Create a shader module from WGSL source *)
-  val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
-
-  (** Create a texture *)
-  val create_texture : t -> ?label:string -> size:(int * int * int) ->
-    format:Texture_format.t -> usage:Texture_usage.Item.t list ->
-    ?dimension:Texture_dimension.t -> ?mip_level_count:int -> ?sample_count:int ->
-    unit -> Texture.t
+  val create_shader_module' : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
 
   (** Create a compute pipeline *)
   val create_compute_pipeline : t -> ?label:string -> layout:Pipeline_layout.t ->

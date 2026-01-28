@@ -110,7 +110,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 }
 |}
   in
-  let shader = Wgpu.Device.create_shader_module device ~wgsl:shader_code () in
+  let shader = Wgpu.Device.create_shader_module' device ~wgsl:shader_code () in
   print_endline "Shader module created!";
   (* Create storage buffer (GPU only, not mappable) *)
   let num_elements = 64 in
@@ -294,8 +294,13 @@ let test_render_clear () =
     Wgpu.Device.create_texture
       device
       ~label:"render_target"
-      ~size:(width, height, 1)
+      ~size_width:width
+      ~size_height:height
+      ~size_depth_or_array_layers:1
       ~format:Wgpu.Texture_format.Rgba8_unorm
+      ~dimension:N2d
+      ~mip_level_count:1
+      ~sample_count:1
       ~usage:
         [ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]
       ()
@@ -440,7 +445,7 @@ fn fs_main() -> @location(0) vec4<f32> {
 |}
   in
   let shader =
-    Wgpu.Device.create_shader_module device ~label:"triangle_shader" ~wgsl:shader_code ()
+    Wgpu.Device.create_shader_module' device ~label:"triangle_shader" ~wgsl:shader_code ()
   in
   print_endline "Shader module created.";
   (* Create render target texture *)
@@ -450,7 +455,12 @@ fn fs_main() -> @location(0) vec4<f32> {
     Wgpu.Device.create_texture
       device
       ~label:"render_target"
-      ~size:(width, height, 1)
+      ~size_width:width
+      ~size_height:height
+      ~size_depth_or_array_layers:1
+      ~dimension:N2d
+      ~mip_level_count:1
+      ~sample_count:1
       ~format:Wgpu.Texture_format.Rgba8_unorm
       ~usage:
         [ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]

@@ -39,12 +39,9 @@ let method_config : (Method_key.t * method_handling) list =
   ; ("device", "poll"), Manual { reason = "Custom polling logic" }
   ; ("device", "get_features"), Manual { reason = "Output struct with array member" }
   ; ("device", "create_shader_module"), Manual { reason = "Uses chained WGSL struct" }
-  ; ("device", "create_texture"), Manual { reason = "Uses nested extent_3D struct" }
   ; ( ("device", "create_compute_pipeline")
-    , Manual { reason = "Uses nested programmable_stage" } )
+    , Manual { reason = "bug in code generator, layout isn't a string" } )
   ; ("device", "create_render_pipeline"), Manual { reason = "Deeply nested descriptors" }
-  ; ( ("device", "create_bind_group_layout_for_storage_buffer")
-    , Manual { reason = "Convenience helper method" } )
   ; ("device", "pop_error_scope"), Manual { reason = "Async callback" }
   ; ("device", "get_queue"), Manual { reason = "Hand-written for cleaner return type" }
   ; ("device", "get_lost_future"), Manual { reason = "Returns Future struct" }
@@ -52,36 +49,20 @@ let method_config : (Method_key.t * method_handling) list =
     (* Queue methods - some manually implemented in adapter_module_prefix *)
   ; ("queue", "release"), Manual { reason = "Custom release logic" }
   ; ("queue", "set_label"), Manual { reason = "Custom label handling" }
-  ; ("queue", "submit"), Manual { reason = "Uses array argument" }
   ; ("queue", "write_buffer"), Manual { reason = "Uses pointer + size" }
-  ; ("queue", "write_texture"), Manual { reason = "Uses structs and pointer" }
   ; ("queue", "on_submitted_work_done"), Manual { reason = "Async callback" }
     (* Command encoder methods - keep only complex ones *)
   ; ( ("command_encoder", "begin_compute_pass")
     , Manual { reason = "Uses descriptor struct with arrays" } )
   ; ( ("command_encoder", "begin_render_pass")
     , Manual { reason = "Uses descriptor struct with arrays" } )
-    (* Render pass encoder methods - keep only complex ones *)
-  ; ( ("render_pass_encoder", "set_vertex_buffer")
-    , Manual { reason = "Manual for better API" } )
-  ; ( ("render_pass_encoder", "set_index_buffer")
-    , Manual { reason = "Manual for better API" } )
-    (* Render bundle encoder methods - keep only complex ones *)
-  ; ( ("render_bundle_encoder", "set_vertex_buffer")
-    , Manual { reason = "Manual for better API" } )
-  ; ( ("render_bundle_encoder", "set_index_buffer")
-    , Manual { reason = "Manual for better API" } )
     (* Buffer methods *)
   ; ("buffer", "map_async"), Manual { reason = "Async method, we provide sync wrapper" }
-  ; ( ("buffer", "get_mapped_range")
-    , Manual { reason = "Returns pointer, we have bigarray wrapper" } )
-  ; ( ("buffer", "get_const_mapped_range")
-    , Manual { reason = "Returns pointer, we have bigarray wrapper" } )
     (* Shader module methods *)
   ; ("shader_module", "get_compilation_info"), Manual { reason = "Async callback" }
     (* Surface methods - mostly for windowed rendering *)
-  ; ("surface", "configure"), Manual { reason = "Uses struct" }
-  ; ("surface", "get_capabilities"), Manual { reason = "Uses struct output with arrays" }
+  ; ("surface", "configure"), Manual { reason = "Module ordering issue" }
+  ; ("surface", "get_capabilities"), Manual { reason = "Module ordering issue" }
     (* Intentionally skipped methods *)
   ; ( ("adapter", "request_adapter_info")
     , Skipped { reason = "Deprecated, use get_info instead" } )

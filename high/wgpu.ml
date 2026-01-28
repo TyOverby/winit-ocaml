@@ -21,6 +21,15 @@ module Buffer = struct
   type t = { handle : Wgpu_low.buffer }
 
   let release t = Wgpu_low.buffer_release t.handle
+
+  let get_mapped_range t ~offset ~size =
+    Wgpu_low.buffer_get_mapped_range t.handle offset size
+  ;;
+
+  let get_const_mapped_range t ~offset ~size =
+    Wgpu_low.buffer_get_const_mapped_range t.handle offset size
+  ;;
+
   let set_label t ~label = Wgpu_low.buffer_set_label t.handle label
   let get_usage t = Wgpu_low.buffer_get_usage t.handle
   let get_size t = Wgpu_low.buffer_get_size t.handle
@@ -287,6 +296,24 @@ module Render_bundle_encoder = struct
     Wgpu_low.render_bundle_encoder_push_debug_group t.handle group_label
   ;;
 
+  let set_vertex_buffer t ~slot ~buffer ~offset ~size =
+    Wgpu_low.render_bundle_encoder_set_vertex_buffer
+      t.handle
+      slot
+      buffer.Buffer.handle
+      offset
+      size
+  ;;
+
+  let set_index_buffer t ~buffer ~format ~offset ~size =
+    Wgpu_low.render_bundle_encoder_set_index_buffer
+      t.handle
+      buffer.Buffer.handle
+      (Index_format.to_int format)
+      offset
+      size
+  ;;
+
   let finish t ?(label = "") () =
     let desc_descriptor =
       Wgpu_low.Render_bundle_descriptor.render_bundle_descriptor_create ()
@@ -403,6 +430,24 @@ module Render_pass_encoder = struct
 
   let set_scissor_rect t ~x ~y ~width ~height =
     Wgpu_low.render_pass_encoder_set_scissor_rect t.handle x y width height
+  ;;
+
+  let set_vertex_buffer t ~slot ~buffer ~offset ~size =
+    Wgpu_low.render_pass_encoder_set_vertex_buffer
+      t.handle
+      slot
+      buffer.Buffer.handle
+      offset
+      size
+  ;;
+
+  let set_index_buffer t ~buffer ~format ~offset ~size =
+    Wgpu_low.render_pass_encoder_set_index_buffer
+      t.handle
+      buffer.Buffer.handle
+      (Index_format.to_int format)
+      offset
+      size
   ;;
 
   let begin_occlusion_query t ~query_index =
@@ -909,7 +954,7 @@ module Device = struct
   let release t = Wgpu_low.device_release t.handle
   let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
 
-  let create_shader_module t ?(label = "") ~wgsl () =
+  let create_shader_module' t ?(label = "") ~wgsl () =
     (* Create the WGSL source extension struct *)
     let wgsl_source = Wgpu_low.Shader_source_wgsl.shader_source_WGSL_create () in
     Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_code wgsl_source wgsl;
@@ -929,44 +974,6 @@ module Device = struct
     Wgpu_low.Shader_module_descriptor.shader_module_descriptor_free desc;
     Wgpu_low.Shader_source_wgsl.shader_source_WGSL_free wgsl_source;
     ({ Shader_module.handle = shader } : Shader_module.t)
-  ;;
-
-  let create_texture
-    t
-    ?(label = "")
-    ~size
-    ~format
-    ~usage
-    ?(dimension = Texture_dimension.N2d)
-    ?(mip_level_count = 1)
-    ?(sample_count = 1)
-    ()
-    =
-    let desc = Wgpu_low.Texture_descriptor.texture_descriptor_create () in
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_label desc label;
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_dimension
-      desc
-      (Texture_dimension.to_int dimension);
-    let extent = Wgpu_low.Extent_3d.extent_3D_create () in
-    let width, height, depth = size in
-    Wgpu_low.Extent_3d.extent_3D_set_width extent width;
-    Wgpu_low.Extent_3d.extent_3D_set_height extent height;
-    Wgpu_low.Extent_3d.extent_3D_set_depth_or_array_layers extent depth;
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_size desc extent;
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_format
-      desc
-      (Texture_format.to_int format);
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_usage
-      desc
-      (Texture_usage.list_to_int usage);
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_mip_level_count
-      desc
-      mip_level_count;
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_sample_count desc sample_count;
-    let texture = Wgpu_low.device_create_texture t.handle desc in
-    Wgpu_low.Extent_3d.extent_3D_free extent;
-    Wgpu_low.Texture_descriptor.texture_descriptor_free desc;
-    ({ Texture.handle = texture } : Texture.t)
   ;;
 
   let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
@@ -1395,6 +1402,53 @@ module Device = struct
     let result = Wgpu_low.device_create_sampler t.handle desc_descriptor in
     Wgpu_low.Sampler_descriptor.sampler_descriptor_free desc_descriptor;
     ({ Sampler.handle = result } : Sampler.t)
+  ;;
+
+  let create_texture
+    t
+    ?(label = "")
+    ~usage
+    ~dimension
+    ~size_width
+    ~size_height
+    ~size_depth_or_array_layers
+    ~format
+    ~mip_level_count
+    ~sample_count
+    ?(view_formats = [])
+    ()
+    =
+    let size_nested = Wgpu_low.Extent_3d.extent_3D_create () in
+    let desc_descriptor = Wgpu_low.Texture_descriptor.texture_descriptor_create () in
+    Wgpu_low.Texture_descriptor.texture_descriptor_set_label desc_descriptor label;
+    Wgpu_low.Texture_descriptor.texture_descriptor_set_usage
+      desc_descriptor
+      (Texture_usage.list_to_int usage);
+    Wgpu_low.Texture_descriptor.texture_descriptor_set_dimension
+      desc_descriptor
+      (Texture_dimension.to_int dimension);
+    Wgpu_low.Extent_3d.extent_3D_set_width size_nested size_width;
+    Wgpu_low.Extent_3d.extent_3D_set_height size_nested size_height;
+    Wgpu_low.Extent_3d.extent_3D_set_depth_or_array_layers
+      size_nested
+      size_depth_or_array_layers;
+    Wgpu_low.Texture_descriptor.texture_descriptor_set_size desc_descriptor size_nested;
+    Wgpu_low.Texture_descriptor.texture_descriptor_set_format
+      desc_descriptor
+      (Texture_format.to_int format);
+    Wgpu_low.Texture_descriptor.texture_descriptor_set_mip_level_count
+      desc_descriptor
+      mip_level_count;
+    Wgpu_low.Texture_descriptor.texture_descriptor_set_sample_count
+      desc_descriptor
+      sample_count;
+    Wgpu_low.Texture_descriptor.texture_descriptor_set_view_formats
+      desc_descriptor
+      (Array.of_list (List.map Texture_format.to_int view_formats));
+    let result = Wgpu_low.device_create_texture t.handle desc_descriptor in
+    Wgpu_low.Extent_3d.extent_3D_free size_nested;
+    Wgpu_low.Texture_descriptor.texture_descriptor_free desc_descriptor;
+    ({ Texture.handle = result } : Texture.t)
   ;;
 
   let destroy t = Wgpu_low.device_destroy t.handle

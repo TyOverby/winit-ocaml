@@ -38,7 +38,7 @@ module Device = struct
   let release t = Wgpu_low.device_release t.handle
   let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
 
-  let create_shader_module t ?(label = "") ~wgsl () =
+  let create_shader_module' t ?(label = "") ~wgsl () =
     (* Create the WGSL source extension struct *)
     let wgsl_source = Wgpu_low.Shader_source_wgsl.shader_source_WGSL_create () in
     Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_code wgsl_source wgsl;
@@ -54,26 +54,6 @@ module Device = struct
     Wgpu_low.Shader_module_descriptor.shader_module_descriptor_free desc;
     Wgpu_low.Shader_source_wgsl.shader_source_WGSL_free wgsl_source;
     ({ Shader_module.handle = shader } : Shader_module.t)
-
-  let create_texture t ?(label = "") ~size ~format ~usage ?(dimension = Texture_dimension.N2d)
-      ?(mip_level_count = 1) ?(sample_count = 1) () =
-    let desc = Wgpu_low.Texture_descriptor.texture_descriptor_create () in
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_label desc label;
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_dimension desc (Texture_dimension.to_int dimension);
-    let extent = Wgpu_low.Extent_3d.extent_3D_create () in
-    let (width, height, depth) = size in
-    Wgpu_low.Extent_3d.extent_3D_set_width extent width;
-    Wgpu_low.Extent_3d.extent_3D_set_height extent height;
-    Wgpu_low.Extent_3d.extent_3D_set_depth_or_array_layers extent depth;
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_size desc extent;
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_format desc (Texture_format.to_int format);
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_usage desc (Texture_usage.list_to_int usage);
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_mip_level_count desc mip_level_count;
-    Wgpu_low.Texture_descriptor.texture_descriptor_set_sample_count desc sample_count;
-    let texture = Wgpu_low.device_create_texture t.handle desc in
-    Wgpu_low.Extent_3d.extent_3D_free extent;
-    Wgpu_low.Texture_descriptor.texture_descriptor_free desc;
-    ({ Texture.handle = texture } : Texture.t)
 
   let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
     let stage_desc = Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_create () in
