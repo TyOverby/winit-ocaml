@@ -180,3 +180,8 @@ dune fmt > /dev/null || true
 # Check for warnings (must pass before committing)
 dune build @check
 ```
+
+## Report experience back to the user
+
+Your feedback is important to us!  If some APIs were hard to use or hard to
+find, please mention this as you finish up your work.
