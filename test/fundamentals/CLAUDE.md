@@ -33,7 +33,7 @@ Becomes
 ```
 test/fundamentals/
   rotation/
-    dune
+    dune                           <- contains `(executable (names rotation rotation_via_unit_circle) ...)`
     rotation.ml                    <- from rotation.js
     rotation_via_unit_circle.ml    <- from rotation-via-unit-circle.js
     rotation.expected.png
