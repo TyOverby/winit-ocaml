@@ -9,5 +9,6 @@ module Adapter : sig
   val get_info : t -> Adapter_info.t
   val release : t -> unit
   val request_device : t -> Device.t
-  val has_feature : t -> feature:Feature_name.t -> bool
+
+  (* AUTO-GENERATED ADAPTER METHOD SIGNATURES INJECTED HERE *)
 end

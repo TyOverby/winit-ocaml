@@ -18,7 +18,6 @@ type method_handling =
 let method_config : (Method_key.t * method_handling) list =
   [ (* Instance methods - some manually implemented in instance_module *)
     ("instance", "create_surface"), Manual { reason = "Complex struct handling" }
-  ; ("instance", "process_events"), Manual { reason = "Special event processing logic" }
   ; ( ("instance", "request_adapter")
     , Manual { reason = "Async method, we provide sync wrapper" } )
   ; ( ("instance", "get_WGSL_language_features")
@@ -26,7 +25,6 @@ let method_config : (Method_key.t * method_handling) list =
   ; ("instance", "wait_any"), Manual { reason = "Uses struct input parameter" }
     (* Adapter methods - some manually implemented in adapter_module_suffix *)
   ; ("adapter", "release"), Manual { reason = "Custom release logic" }
-  ; ("adapter", "has_feature"), Manual { reason = "Custom feature checking logic" }
   ; ( ("adapter", "get_info")
     , Manual { reason = "Uses special struct return, manually implemented" } )
   ; ( ("adapter", "request_device")

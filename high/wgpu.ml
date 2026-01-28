@@ -1672,6 +1672,164 @@ module Adapter = struct
     { Device.handle = device }
   ;;
 
+  type limits =
+    { max_texture_dimension_1D : int
+    ; max_texture_dimension_2D : int
+    ; max_texture_dimension_3D : int
+    ; max_texture_array_layers : int
+    ; max_bind_groups : int
+    ; max_bind_groups_plus_vertex_buffers : int
+    ; max_bindings_per_bind_group : int
+    ; max_dynamic_uniform_buffers_per_pipeline_layout : int
+    ; max_dynamic_storage_buffers_per_pipeline_layout : int
+    ; max_sampled_textures_per_shader_stage : int
+    ; max_samplers_per_shader_stage : int
+    ; max_storage_buffers_per_shader_stage : int
+    ; max_storage_textures_per_shader_stage : int
+    ; max_uniform_buffers_per_shader_stage : int
+    ; max_uniform_buffer_binding_size : int64
+    ; max_storage_buffer_binding_size : int64
+    ; min_uniform_buffer_offset_alignment : int
+    ; min_storage_buffer_offset_alignment : int
+    ; max_vertex_buffers : int
+    ; max_buffer_size : int64
+    ; max_vertex_attributes : int
+    ; max_vertex_buffer_array_stride : int
+    ; max_inter_stage_shader_variables : int
+    ; max_color_attachments : int
+    ; max_color_attachment_bytes_per_sample : int
+    ; max_compute_workgroup_storage_size : int
+    ; max_compute_invocations_per_workgroup : int
+    ; max_compute_workgroup_size_x : int
+    ; max_compute_workgroup_size_y : int
+    ; max_compute_workgroup_size_z : int
+    ; max_compute_workgroups_per_dimension : int
+    }
+
+  let get_limits t =
+    let output = Wgpu_low.Limits.limits_create () in
+    let _status = Wgpu_low.adapter_get_limits t.handle output in
+    let max_texture_dimension_1D =
+      Wgpu_low.Limits.limits_get_max_texture_dimension_1D output
+    in
+    let max_texture_dimension_2D =
+      Wgpu_low.Limits.limits_get_max_texture_dimension_2D output
+    in
+    let max_texture_dimension_3D =
+      Wgpu_low.Limits.limits_get_max_texture_dimension_3D output
+    in
+    let max_texture_array_layers =
+      Wgpu_low.Limits.limits_get_max_texture_array_layers output
+    in
+    let max_bind_groups = Wgpu_low.Limits.limits_get_max_bind_groups output in
+    let max_bind_groups_plus_vertex_buffers =
+      Wgpu_low.Limits.limits_get_max_bind_groups_plus_vertex_buffers output
+    in
+    let max_bindings_per_bind_group =
+      Wgpu_low.Limits.limits_get_max_bindings_per_bind_group output
+    in
+    let max_dynamic_uniform_buffers_per_pipeline_layout =
+      Wgpu_low.Limits.limits_get_max_dynamic_uniform_buffers_per_pipeline_layout output
+    in
+    let max_dynamic_storage_buffers_per_pipeline_layout =
+      Wgpu_low.Limits.limits_get_max_dynamic_storage_buffers_per_pipeline_layout output
+    in
+    let max_sampled_textures_per_shader_stage =
+      Wgpu_low.Limits.limits_get_max_sampled_textures_per_shader_stage output
+    in
+    let max_samplers_per_shader_stage =
+      Wgpu_low.Limits.limits_get_max_samplers_per_shader_stage output
+    in
+    let max_storage_buffers_per_shader_stage =
+      Wgpu_low.Limits.limits_get_max_storage_buffers_per_shader_stage output
+    in
+    let max_storage_textures_per_shader_stage =
+      Wgpu_low.Limits.limits_get_max_storage_textures_per_shader_stage output
+    in
+    let max_uniform_buffers_per_shader_stage =
+      Wgpu_low.Limits.limits_get_max_uniform_buffers_per_shader_stage output
+    in
+    let max_uniform_buffer_binding_size =
+      Wgpu_low.Limits.limits_get_max_uniform_buffer_binding_size output
+    in
+    let max_storage_buffer_binding_size =
+      Wgpu_low.Limits.limits_get_max_storage_buffer_binding_size output
+    in
+    let min_uniform_buffer_offset_alignment =
+      Wgpu_low.Limits.limits_get_min_uniform_buffer_offset_alignment output
+    in
+    let min_storage_buffer_offset_alignment =
+      Wgpu_low.Limits.limits_get_min_storage_buffer_offset_alignment output
+    in
+    let max_vertex_buffers = Wgpu_low.Limits.limits_get_max_vertex_buffers output in
+    let max_buffer_size = Wgpu_low.Limits.limits_get_max_buffer_size output in
+    let max_vertex_attributes = Wgpu_low.Limits.limits_get_max_vertex_attributes output in
+    let max_vertex_buffer_array_stride =
+      Wgpu_low.Limits.limits_get_max_vertex_buffer_array_stride output
+    in
+    let max_inter_stage_shader_variables =
+      Wgpu_low.Limits.limits_get_max_inter_stage_shader_variables output
+    in
+    let max_color_attachments = Wgpu_low.Limits.limits_get_max_color_attachments output in
+    let max_color_attachment_bytes_per_sample =
+      Wgpu_low.Limits.limits_get_max_color_attachment_bytes_per_sample output
+    in
+    let max_compute_workgroup_storage_size =
+      Wgpu_low.Limits.limits_get_max_compute_workgroup_storage_size output
+    in
+    let max_compute_invocations_per_workgroup =
+      Wgpu_low.Limits.limits_get_max_compute_invocations_per_workgroup output
+    in
+    let max_compute_workgroup_size_x =
+      Wgpu_low.Limits.limits_get_max_compute_workgroup_size_x output
+    in
+    let max_compute_workgroup_size_y =
+      Wgpu_low.Limits.limits_get_max_compute_workgroup_size_y output
+    in
+    let max_compute_workgroup_size_z =
+      Wgpu_low.Limits.limits_get_max_compute_workgroup_size_z output
+    in
+    let max_compute_workgroups_per_dimension =
+      Wgpu_low.Limits.limits_get_max_compute_workgroups_per_dimension output
+    in
+    let result =
+      { max_texture_dimension_1D
+      ; max_texture_dimension_2D
+      ; max_texture_dimension_3D
+      ; max_texture_array_layers
+      ; max_bind_groups
+      ; max_bind_groups_plus_vertex_buffers
+      ; max_bindings_per_bind_group
+      ; max_dynamic_uniform_buffers_per_pipeline_layout
+      ; max_dynamic_storage_buffers_per_pipeline_layout
+      ; max_sampled_textures_per_shader_stage
+      ; max_samplers_per_shader_stage
+      ; max_storage_buffers_per_shader_stage
+      ; max_storage_textures_per_shader_stage
+      ; max_uniform_buffers_per_shader_stage
+      ; max_uniform_buffer_binding_size
+      ; max_storage_buffer_binding_size
+      ; min_uniform_buffer_offset_alignment
+      ; min_storage_buffer_offset_alignment
+      ; max_vertex_buffers
+      ; max_buffer_size
+      ; max_vertex_attributes
+      ; max_vertex_buffer_array_stride
+      ; max_inter_stage_shader_variables
+      ; max_color_attachments
+      ; max_color_attachment_bytes_per_sample
+      ; max_compute_workgroup_storage_size
+      ; max_compute_invocations_per_workgroup
+      ; max_compute_workgroup_size_x
+      ; max_compute_workgroup_size_y
+      ; max_compute_workgroup_size_z
+      ; max_compute_workgroups_per_dimension
+      }
+    in
+    Wgpu_low.Limits.limits_free output;
+    result
+  ;;
+
   let has_feature t ~feature =
     Wgpu_low.adapter_has_feature t.handle (Feature_name.to_int feature)
   ;;
@@ -1697,6 +1855,14 @@ module Instance = struct
     in
     { Adapter.handle = adapter }
   ;;
+
+  let has_WGSL_language_feature t ~feature =
+    Wgpu_low.instance_has_WGSL_language_feature
+      t.handle
+      (Wgsl_language_feature_name.to_int feature)
+  ;;
+
+  let process_events t = Wgpu_low.instance_process_events t.handle
 end
 
 (* Convenience functions for methods that take complex descriptors *)

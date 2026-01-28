@@ -10,6 +10,8 @@ module Instance : sig
     -> ?backend_type:Backend_type.t
     -> unit
     -> Adapter.t
+
+  (* AUTO-GENERATED INSTANCE METHOD SIGNATURES INJECTED HERE *)
 end
 
 (** Begin a compute pass on a command encoder *)

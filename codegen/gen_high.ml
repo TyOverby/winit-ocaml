@@ -1372,6 +1372,18 @@ let gen_ml (api : Ir.api) : string =
     | Some queue_obj -> gen_special_object_auto_methods config api.structs queue_obj
     | None -> "", ""
   in
+  (* Generate auto-generated methods for Adapter *)
+  let adapter_output_types, adapter_auto_methods =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "adapter") with
+    | Some adapter_obj -> gen_special_object_auto_methods config api.structs adapter_obj
+    | None -> "", ""
+  in
+  (* Generate auto-generated methods for Instance *)
+  let instance_output_types, instance_auto_methods =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "instance") with
+    | Some instance_obj -> gen_special_object_auto_methods config api.structs instance_obj
+    | None -> "", ""
+  in
   (* Adapter module *)
   let adapter_module_prefix = read_template "high/adapter_module_prefix.ml" in
   let adapter_module_suffix = read_template "high/adapter_module_suffix.ml" in
@@ -1383,6 +1395,19 @@ let gen_ml (api : Ir.api) : string =
       ~pattern:queue_marker
       ~with_:queue_auto_methods
   in
+  (* Inject Adapter output types and methods at the marker *)
+  let adapter_marker = "(* AUTO-GENERATED ADAPTER METHODS INJECTED HERE *)" in
+  let adapter_injection =
+    if String.is_empty adapter_output_types
+    then adapter_auto_methods
+    else adapter_output_types ^ "\n" ^ adapter_auto_methods
+  in
+  let adapter_module_suffix =
+    String.substr_replace_first
+      adapter_module_suffix
+      ~pattern:adapter_marker
+      ~with_:adapter_injection
+  in
   let adapter_module =
     adapter_module_prefix
     ^ device_output_types
@@ -1392,6 +1417,19 @@ let gen_ml (api : Ir.api) : string =
   in
   (* Instance module with create function - special handling *)
   let instance_module = read_template "high/instance_module.ml" in
+  (* Inject Instance output types and methods at the marker *)
+  let instance_marker = "(* AUTO-GENERATED INSTANCE METHODS INJECTED HERE *)" in
+  let instance_injection =
+    if String.is_empty instance_output_types
+    then instance_auto_methods
+    else instance_output_types ^ "\n" ^ instance_auto_methods
+  in
+  let instance_module =
+    String.substr_replace_first
+      instance_module
+      ~pattern:instance_marker
+      ~with_:instance_injection
+  in
   String.concat
     [ header
     ; includes
@@ -1425,6 +1463,20 @@ let gen_mli (api : Ir.api) : string =
     | Some queue_obj -> gen_special_object_auto_methods_mli config api.structs queue_obj
     | None -> "", ""
   in
+  (* Generate auto-generated method signatures for Adapter *)
+  let adapter_output_types_mli, adapter_auto_methods_mli =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "adapter") with
+    | Some adapter_obj ->
+      gen_special_object_auto_methods_mli config api.structs adapter_obj
+    | None -> "", ""
+  in
+  (* Generate auto-generated method signatures for Instance *)
+  let instance_output_types_mli, instance_auto_methods_mli =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "instance") with
+    | Some instance_obj ->
+      gen_special_object_auto_methods_mli config api.structs instance_obj
+    | None -> "", ""
+  in
   (* Filter out objects we handle specially *)
   let special_objects = [ "instance"; "adapter"; "device"; "queue" ] in
   let regular_objects =
@@ -1448,6 +1500,21 @@ let gen_mli (api : Ir.api) : string =
       ~pattern:queue_marker_mli
       ~with_:queue_auto_methods_mli
   in
+  (* Inject Adapter output types and method signatures at the marker *)
+  let adapter_marker_mli =
+    "(* AUTO-GENERATED ADAPTER METHOD SIGNATURES INJECTED HERE *)"
+  in
+  let adapter_injection_mli =
+    if String.is_empty adapter_output_types_mli
+    then adapter_auto_methods_mli
+    else adapter_output_types_mli ^ "\n" ^ adapter_auto_methods_mli
+  in
+  let adapter_module_suffix =
+    String.substr_replace_first
+      adapter_module_suffix
+      ~pattern:adapter_marker_mli
+      ~with_:adapter_injection_mli
+  in
   let adapter_module =
     adapter_module_prefix
     ^ device_output_types_mli
@@ -1457,6 +1524,21 @@ let gen_mli (api : Ir.api) : string =
   in
   (* Instance module interface - special handling *)
   let instance_module = read_template "high/instance_module.mli" in
+  (* Inject Instance output types and method signatures at the marker *)
+  let instance_marker_mli =
+    "(* AUTO-GENERATED INSTANCE METHOD SIGNATURES INJECTED HERE *)"
+  in
+  let instance_injection_mli =
+    if String.is_empty instance_output_types_mli
+    then instance_auto_methods_mli
+    else instance_output_types_mli ^ "\n" ^ instance_auto_methods_mli
+  in
+  let instance_module =
+    String.substr_replace_first
+      instance_module
+      ~pattern:instance_marker_mli
+      ~with_:instance_injection_mli
+  in
   String.concat
     [ header
     ; includes

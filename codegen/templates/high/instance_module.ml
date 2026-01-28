@@ -18,6 +18,8 @@ module Instance = struct
     in
     { Adapter.handle = adapter }
   ;;
+
+  (* AUTO-GENERATED INSTANCE METHODS INJECTED HERE *)
 end
 
 (* Convenience functions for methods that take complex descriptors *)

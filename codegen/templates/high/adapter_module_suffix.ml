@@ -10,5 +10,6 @@ module Adapter = struct
   let request_device t =
     let device = Wgpu_low.adapter_request_device_sync t.handle in
     { Device.handle = device }
-  let has_feature t ~feature = Wgpu_low.adapter_has_feature t.handle (Feature_name.to_int feature)
+
+  (* AUTO-GENERATED ADAPTER METHODS INJECTED HERE *)
 end
