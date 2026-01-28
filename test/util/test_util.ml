@@ -7,21 +7,11 @@ let output_path filename =
   let cwd = Stdlib.Sys.getcwd () in
   let in_build = String.is_substring cwd ~substring:"_build" in
   if in_build
-  then (
-    (* Running in _build (e.g., dune runtest) - write next to executable *)
-    let exe_dir = Filename.dirname Stdlib.Sys.executable_name in
-    Filename.concat exe_dir filename)
+  then filename
   else (
-    (* Running outside _build (e.g., dune exec) - write to source directory *)
-    let exe_path = Stdlib.Sys.executable_name in
-    (* exe_path is like _build/default/test/test_compute.exe *)
-    (* Strip _build/default/ prefix to get test/test_compute.exe, then take dirname *)
-    let relative =
-      match String.substr_replace_first exe_path ~pattern:"_build/default/" ~with_:"" with
-      | s when not (String.equal s exe_path) -> Filename.dirname s
-      | _ -> Filename.dirname exe_path
-    in
-    Filename.concat relative filename)
+    let filename = Filename.concat "/tmp/" filename in
+    print_endline ("writing to " ^ filename);
+    filename)
 ;;
 
 (* Write RGBA pixel data to a PPM file (P6 binary format) *)
