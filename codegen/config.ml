@@ -17,9 +17,7 @@ type method_handling =
 
 let method_config : (Method_key.t * method_handling) list =
   [ (* Instance methods - some manually implemented in instance_module *)
-    ( ("instance", "release")
-    , Manual { reason = "Custom release logic with instance cleanup" } )
-  ; ("instance", "create_surface"), Manual { reason = "Complex struct handling" }
+    ("instance", "create_surface"), Manual { reason = "Complex struct handling" }
   ; ("instance", "process_events"), Manual { reason = "Special event processing logic" }
   ; ( ("instance", "request_adapter")
     , Manual { reason = "Async method, we provide sync wrapper" } )
@@ -56,14 +54,13 @@ let method_config : (Method_key.t * method_handling) list =
     , Manual { reason = "Uses descriptor struct with arrays" } )
   ; ( ("command_encoder", "begin_render_pass")
     , Manual { reason = "Uses descriptor struct with arrays" } )
-    (* Buffer methods *)
-  ; ("buffer", "map_async"), Manual { reason = "Async method, we provide sync wrapper" }
     (* Shader module methods *)
   ; ("shader_module", "get_compilation_info"), Manual { reason = "Async callback" }
     (* Surface methods - mostly for windowed rendering *)
   ; ("surface", "configure"), Manual { reason = "Module ordering issue" }
   ; ("surface", "get_capabilities"), Manual { reason = "Module ordering issue" }
     (* Intentionally skipped methods *)
+  ; ("buffer", "map_async"), Manual { reason = "Async method, we provide sync wrapper" }
   ; ( ("adapter", "request_adapter_info")
     , Skipped { reason = "Deprecated, use get_info instead" } )
   ; ("device", "create_error_external_texture"), Skipped { reason = "Internal/testing" }
