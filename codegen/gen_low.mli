@@ -60,7 +60,7 @@ module For_testing : sig
 
   (** Generate C stub for a single method. Uses [Config.for_testing] by default unless a
       different config is provided. *)
-  val gen_c_method_stub : ?config:Config.t -> Ir.object_ -> Ir.method_ -> string
+  val gen_c_method_stub : Ir.object_ -> Ir.method_ -> string
 
   (** Generate OCaml enum module implementation. *)
   val gen_ml_enum : Ir.enum -> string
@@ -76,11 +76,11 @@ module For_testing : sig
 
   (** Generate OCaml external declaration for a method. Uses [Config.for_testing] by
       default unless a different config is provided. *)
-  val gen_ml_method : ?config:Config.t -> Ir.object_ -> Ir.method_ -> string
+  val gen_ml_method : Ir.object_ -> Ir.method_ -> string
 
   (** Generate MLI declaration for a method. Uses [Config.for_testing] by default unless a
       different config is provided. *)
-  val gen_mli_method : ?config:Config.t -> Ir.object_ -> Ir.method_ -> string
+  val gen_mli_method : Ir.object_ -> Ir.method_ -> string
 
   (** {3 Type Mapping Utilities} *)
 

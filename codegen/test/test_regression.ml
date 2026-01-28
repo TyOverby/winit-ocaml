@@ -126,21 +126,11 @@ let print_method_outputs obj method_ =
 (* Instance methods *)
 
 let%expect_test "manual: instance.release" =
-  let obj = lookup_object "instance" in
-  let method_ = lookup_method obj "release" in
-  print_method_outputs obj method_;
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Failure "Method not found: instance.release")
-  Raised at Stdlib.failwith in file "stdlib.ml" (inlined), line 39, characters 17-33
-  Called from Base__Printf.failwithf.(fun) in file "src/printf.ml", line 7, characters 24-34
-  Called from Codegen_test__Test_regression.(fun) in file "codegen/test/test_regression.ml", line 130, characters 16-43
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 359, characters 10-25
-  |}]
+  Expect_test_helpers_core.require_does_raise (fun () ->
+    let obj = lookup_object "instance" in
+    let method_ = lookup_method obj "release" in
+    print_method_outputs obj method_);
+  [%expect {| (Failure "Method not found: instance.release") |}]
 ;;
 
 let%expect_test "manual: instance.create_surface" =
@@ -279,20 +269,11 @@ let%expect_test "manual: instance.wait_any" =
 (* Adapter methods *)
 
 let%expect_test "manual: adapter.release" =
-  let obj = lookup_object "adapter" in
-  let method_ = lookup_method obj "release" in
-  print_method_outputs obj method_;
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Failure "Method not found: adapter.release")
-  Raised at Stdlib.failwith in file "stdlib.ml" (inlined), line 39, characters 17-33
-  Called from Base__Printf.failwithf.(fun) in file "src/printf.ml", line 7, characters 24-34
-  Called from Codegen_test__Test_regression.(fun) in file "codegen/test/test_regression.ml", line 283, characters 16-43
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 359, characters 10-25
-  |}]
+  Expect_test_helpers_core.require_does_raise (fun () ->
+    let obj = lookup_object "adapter" in
+    let method_ = lookup_method obj "release" in
+    print_method_outputs obj method_);
+  [%expect {| (Failure "Method not found: adapter.release") |}]
 ;;
 
 let%expect_test "manual: adapter.has_feature" =
@@ -411,37 +392,19 @@ let%expect_test "manual: adapter.get_features" =
 (* Device methods *)
 
 let%expect_test "manual: device.release" =
-  let obj = lookup_object "device" in
-  let method_ = lookup_method obj "release" in
-  print_method_outputs obj method_;
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Failure "Method not found: device.release")
-  Raised at Stdlib.failwith in file "stdlib.ml" (inlined), line 39, characters 17-33
-  Called from Base__Printf.failwithf.(fun) in file "src/printf.ml", line 7, characters 24-34
-  Called from Codegen_test__Test_regression.(fun) in file "codegen/test/test_regression.ml", line 415, characters 16-43
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 359, characters 10-25
-  |}]
+  Expect_test_helpers_core.require_does_raise (fun () ->
+    let obj = lookup_object "device" in
+    let method_ = lookup_method obj "release" in
+    print_method_outputs obj method_);
+  [%expect {| (Failure "Method not found: device.release") |}]
 ;;
 
 let%expect_test "manual: device.poll" =
-  let obj = lookup_object "device" in
-  let method_ = lookup_method obj "poll" in
-  print_method_outputs obj method_;
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Failure "Method not found: device.poll")
-  Raised at Stdlib.failwith in file "stdlib.ml" (inlined), line 39, characters 17-33
-  Called from Base__Printf.failwithf.(fun) in file "src/printf.ml", line 7, characters 24-34
-  Called from Codegen_test__Test_regression.(fun) in file "codegen/test/test_regression.ml", line 432, characters 16-40
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 359, characters 10-25
-  |}]
+  Expect_test_helpers_core.require_does_raise (fun () ->
+    let obj = lookup_object "device" in
+    let method_ = lookup_method obj "poll" in
+    print_method_outputs obj method_);
+  [%expect {| (Failure "Method not found: device.poll") |}]
 ;;
 
 let%expect_test "manual: device.get_features" =
@@ -619,21 +582,15 @@ let%expect_test "manual: device.create_render_pipeline" =
 ;;
 
 let%expect_test "manual: device.create_bind_group_layout_for_storage_buffer" =
-  let obj = lookup_object "device" in
-  let method_ = lookup_method obj "create_bind_group_layout_for_storage_buffer" in
-  print_method_outputs obj method_;
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Failure
-    "Method not found: device.create_bind_group_layout_for_storage_buffer")
-  Raised at Stdlib.failwith in file "stdlib.ml" (inlined), line 39, characters 17-33
-  Called from Base__Printf.failwithf.(fun) in file "src/printf.ml", line 7, characters 24-34
-  Called from Codegen_test__Test_regression.(fun) in file "codegen/test/test_regression.ml", line 623, characters 16-79
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 359, characters 10-25
-  |}]
+  Expect_test_helpers_core.require_does_raise (fun () ->
+    let obj = lookup_object "device" in
+    let method_ = lookup_method obj "create_bind_group_layout_for_storage_buffer" in
+    print_method_outputs obj method_);
+  [%expect
+    {|
+    (Failure
+     "Method not found: device.create_bind_group_layout_for_storage_buffer")
+    |}]
 ;;
 
 let%expect_test "manual: device.pop_error_scope" =
@@ -740,20 +697,11 @@ let%expect_test "manual: device.get_adapter_info" =
 (* Queue methods *)
 
 let%expect_test "manual: queue.release" =
-  let obj = lookup_object "queue" in
-  let method_ = lookup_method obj "release" in
-  print_method_outputs obj method_;
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Failure "Method not found: queue.release")
-  Raised at Stdlib.failwith in file "stdlib.ml" (inlined), line 39, characters 17-33
-  Called from Base__Printf.failwithf.(fun) in file "src/printf.ml", line 7, characters 24-34
-  Called from Codegen_test__Test_regression.(fun) in file "codegen/test/test_regression.ml", line 744, characters 16-43
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 359, characters 10-25
-  |}]
+  Expect_test_helpers_core.require_does_raise (fun () ->
+    let obj = lookup_object "queue" in
+    let method_ = lookup_method obj "release" in
+    print_method_outputs obj method_);
+  [%expect {| (Failure "Method not found: queue.release") |}]
 ;;
 
 let%expect_test "manual: queue.set_label" =

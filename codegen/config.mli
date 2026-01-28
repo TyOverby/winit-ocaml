@@ -24,43 +24,8 @@ type method_handling =
   | Auto (** Method is auto-generated *)
 [@@deriving sexp_of]
 
-(** Get the handling configuration for a specific method.
-
-    Returns [Auto] if the method is not explicitly configured. *)
-val get_handling : object_name:string -> method_name:string -> method_handling
-
-(** List of all manually implemented methods as (object_name, method_name) pairs. *)
-val manual_methods : Method_key.t list
-
-(** List of all intentionally skipped methods as (object_name, method_name) pairs. *)
-val skipped_methods : Method_key.t list
-
-(** Check if a method is accounted for in the configuration.
-
-    Returns [true] if the method is either manually implemented or skipped. Returns
-    [false] if the method should be auto-generated. *)
-val is_accounted_for : object_name:string -> method_name:string -> bool
-
-(** Check if a method is manually implemented. *)
-val is_manual : object_name:string -> method_name:string -> bool
-
-(** Check if a method is intentionally skipped. *)
-val is_skipped : object_name:string -> method_name:string -> bool
-
-(** Validate that all configured methods exist in the API.
-
-    Prints warnings for any methods in the configuration that do not exist in the provided
-    API specification. Call this during code generation to catch stale configuration
-    entries. *)
-val validate_config : Ir.api -> unit
-
 (** Configuration record that can be threaded through codegen functions. *)
-type t =
-  { method_config : (Method_key.t * method_handling) list
-  ; ignore_manual_for_generation : bool
-  (** When [true], all methods are generated regardless of manual/skipped status. This is
-      useful for testing to see what code would be generated. *)
-  }
+type t
 
 (** Default config for production code generation - respects manual/skipped flags. *)
 val default : t

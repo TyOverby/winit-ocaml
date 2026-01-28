@@ -1709,20 +1709,13 @@ module For_testing = struct
     | Interface
 
   (* Use config that ignores manual flags by default in tests *)
-  let default_test_config = Config.for_testing
+  let config = Config.for_testing
   let gen_ml_enum = gen_ml_enum
   let gen_mli_enum = gen_mli_enum
   let gen_ml_bitflag = gen_ml_bitflag
   let gen_mli_bitflag = gen_mli_bitflag
-
-  let gen_ml_method ?(config = default_test_config) structs obj method_ =
-    gen_ml_method config structs obj method_
-  ;;
-
-  let gen_mli_method ?(config = default_test_config) structs obj method_ =
-    gen_mli_method config structs obj method_
-  ;;
-
+  let gen_ml_method structs obj method_ = gen_ml_method config structs obj method_
+  let gen_mli_method structs obj method_ = gen_mli_method config structs obj method_
   let gen_ml_method_with_output_struct = gen_ml_method_with_output_struct
   let gen_mli_method_with_output_struct = gen_mli_method_with_output_struct
   let is_flat_member_type = is_flat_member_type

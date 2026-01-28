@@ -998,28 +998,17 @@ module For_testing = struct
     | Interface
 
   (* Use config that ignores manual flags by default in tests *)
-  let default_test_config = Config.for_testing
+  let config = Config.for_testing
   let gen_c_enum_constants = gen_c_enum_constants
   let gen_c_bitflag_constants = gen_c_bitflag_constants
   let gen_c_struct_stubs = gen_c_struct_stubs
-
-  let gen_c_method_stub ?(config = default_test_config) obj method_ =
-    gen_c_method_stub config obj method_
-  ;;
-
+  let gen_c_method_stub obj method_ = gen_c_method_stub config obj method_
   let gen_ml_enum = gen_ml_enum
   let gen_mli_enum = gen_mli_enum
   let gen_ml_struct = gen_ml_struct
   let gen_mli_struct = gen_mli_struct
-
-  let gen_ml_method ?(config = default_test_config) obj method_ =
-    gen_ml_method config obj method_
-  ;;
-
-  let gen_mli_method ?(config = default_test_config) obj method_ =
-    gen_mli_method config obj method_
-  ;;
-
+  let gen_ml_method obj method_ = gen_ml_method config obj method_
+  let gen_mli_method obj method_ = gen_mli_method config obj method_
   let c_type_of_type_ref = c_type_of_type_ref
   let ml_type_of_type_ref = ml_type_of_type_ref
   let c_type_name = c_type_name

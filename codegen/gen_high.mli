@@ -83,23 +83,13 @@ module For_testing : sig
 
       Returns [None] if the method is manually implemented or cannot be auto-generated.
       Uses [Config.for_testing] by default unless a different config is provided. *)
-  val gen_ml_method
-    :  ?config:Config.t
-    -> Ir.struct_ list
-    -> Ir.object_
-    -> Ir.method_
-    -> string option
+  val gen_ml_method : Ir.struct_ list -> Ir.object_ -> Ir.method_ -> string option
 
   (** Generate MLI interface for a method.
 
       Returns [None] if the method is manually implemented or cannot be auto-generated.
       Uses [Config.for_testing] by default unless a different config is provided. *)
-  val gen_mli_method
-    :  ?config:Config.t
-    -> Ir.struct_ list
-    -> Ir.object_
-    -> Ir.method_
-    -> string option
+  val gen_mli_method : Ir.struct_ list -> Ir.object_ -> Ir.method_ -> string option
 
   (** Generate ML implementation for method with output struct argument. *)
   val gen_ml_method_with_output_struct

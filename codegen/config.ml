@@ -96,82 +96,14 @@ let method_config : (Method_key.t * method_handling) list =
   ]
 ;;
 
-let manual_implementations =
-  List.filter_map method_config ~f:(fun (key, handling) ->
-    match handling with
-    | Manual _ -> Some key
-    | _ -> None)
-  |> Set.of_list (module Method_key)
-;;
-
-let intentionally_skipped =
-  List.filter_map method_config ~f:(fun (key, handling) ->
-    match handling with
-    | Skipped _ -> Some key
-    | _ -> None)
-  |> Set.of_list (module Method_key)
-;;
-
-let get_handling ~(object_name : string) ~(method_name : string) : method_handling =
-  match
-    List.Assoc.find method_config ~equal:[%equal: Method_key.t] (object_name, method_name)
-  with
-  | Some handling -> handling
-  | None -> Auto
-;;
-
-let manual_methods : Method_key.t list =
-  List.filter_map method_config ~f:(fun (key, handling) ->
-    match handling with
-    | Manual _ -> Some key
-    | _ -> None)
-;;
-
-let skipped_methods : Method_key.t list =
-  List.filter_map method_config ~f:(fun (key, handling) ->
-    match handling with
-    | Skipped _ -> Some key
-    | _ -> None)
-;;
-
-let is_accounted_for ~(object_name : string) ~(method_name : string) : bool =
-  match get_handling ~object_name ~method_name with
-  | Auto -> false
-  | Manual _ | Skipped _ -> true
-;;
-
-let is_manual ~(object_name : string) ~(method_name : string) : bool =
-  Set.mem manual_implementations (object_name, method_name)
-;;
-
-let is_skipped ~(object_name : string) ~(method_name : string) : bool =
-  Set.mem intentionally_skipped (object_name, method_name)
-;;
-
-let validate_config (api : Ir.api) : unit =
-  let all_methods =
-    List.concat_map api.objects ~f:(fun obj ->
-      List.map obj.methods ~f:(fun m -> obj.name, m.name))
-    |> Set.of_list (module Method_key)
-  in
-  List.iter method_config ~f:(fun ((obj, meth), _handling) ->
-    if not (Set.mem all_methods (obj, meth))
-    then eprintf "Warning: Configured method %s.%s does not exist in API\n%!" obj meth)
-;;
-
 (** Configuration record that can be threaded through codegen functions. *)
-type t =
-  { method_config : (Method_key.t * method_handling) list
-  ; ignore_manual_for_generation : bool
-  (** When [true], all methods are generated regardless of manual/skipped status. This is
-      useful for testing to see what code would be generated. *)
-  }
+type t = { method_config : (Method_key.t * method_handling) list }
 
 (** Default config for production code generation - respects manual/skipped flags. *)
-let default : t = { method_config; ignore_manual_for_generation = false }
+let default : t = { method_config }
 
 (** Config for testing - generates code for all methods including manual ones. *)
-let for_testing : t = { method_config; ignore_manual_for_generation = true }
+let for_testing : t = { method_config = [] }
 
 (** Config for low-level bindings - only skips methods that are truly problematic at the C
     level. Most "manual" methods in the high-level API still need low-level bindings. *)
@@ -181,7 +113,6 @@ let for_low_level : t =
         ( ("adapter", "get_info")
         , Manual { reason = "Uses special struct return, manually implemented" } )
       ]
-  ; ignore_manual_for_generation = false
   }
 ;;
 
@@ -212,9 +143,7 @@ let intentionally_skipped_of (config : t)
 let is_manual_with_config (config : t) ~(object_name : string) ~(method_name : string)
   : bool
   =
-  if config.ignore_manual_for_generation
-  then false
-  else Set.mem (manual_implementations_of config) (object_name, method_name)
+  Set.mem (manual_implementations_of config) (object_name, method_name)
 ;;
 
 (** Check if a method is skipped according to the config. Returns [false] if
@@ -222,9 +151,7 @@ let is_manual_with_config (config : t) ~(object_name : string) ~(method_name : s
 let is_skipped_with_config (config : t) ~(object_name : string) ~(method_name : string)
   : bool
   =
-  if config.ignore_manual_for_generation
-  then false
-  else Set.mem (intentionally_skipped_of config) (object_name, method_name)
+  Set.mem (intentionally_skipped_of config) (object_name, method_name)
 ;;
 
 (** Check if a method is accounted for (either manual or skipped) according to the config.
@@ -235,7 +162,6 @@ let is_accounted_for_with_config
   ~(method_name : string)
   : bool
   =
-  if config.ignore_manual_for_generation
-  then false
-  else is_accounted_for ~object_name ~method_name
+  is_skipped_with_config config ~object_name ~method_name
+  || is_manual_with_config config ~object_name ~method_name
 ;;
