@@ -41,7 +41,6 @@ let method_config : (Method_key.t * method_handling) list =
     , Manual { reason = "bug in code generator, layout isn't a string" } )
   ; ("device", "create_render_pipeline"), Manual { reason = "Deeply nested descriptors" }
   ; ("device", "pop_error_scope"), Manual { reason = "Async callback" }
-  ; ("device", "get_queue"), Manual { reason = "Hand-written for cleaner return type" }
   ; ("device", "get_lost_future"), Manual { reason = "Returns Future struct" }
   ; ("device", "get_adapter_info"), Manual { reason = "Returns struct" }
     (* Queue methods - some manually implemented in adapter_module_prefix *)

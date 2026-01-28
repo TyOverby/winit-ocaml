@@ -560,7 +560,6 @@ module Device : sig
   type t
 
   val release : t -> unit
-  val get_queue : t -> Queue.t
 
   (** Create a shader module from WGSL source *)
   val create_shader_module' : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
@@ -729,6 +728,7 @@ module Device : sig
   val destroy : t -> unit
   val get_limits : t -> limits
   val has_feature : t -> feature:Feature_name.t -> bool
+  val get_queue : t -> Queue.t
   val push_error_scope : t -> filter:Error_filter.t -> unit
   val set_label : t -> label:string -> unit
 

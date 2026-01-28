@@ -36,7 +36,6 @@ module Device = struct
   type t = { handle : Wgpu_low.device }
 
   let release t = Wgpu_low.device_release t.handle
-  let get_queue t = { Queue.handle = Wgpu_low.device_get_queue t.handle }
 
   let create_shader_module' t ?(label = "") ~wgsl () =
     (* Create the WGSL source extension struct *)

@@ -23,7 +23,6 @@ module Device : sig
   type t
 
   val release : t -> unit
-  val get_queue : t -> Queue.t
 
   (** Create a shader module from WGSL source *)
   val create_shader_module' : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
