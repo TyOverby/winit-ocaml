@@ -21,6 +21,14 @@ and create a test directory in `./test/fundamentals/%{lesson_name}` Each
 JavaScript file becomes its own OCaml test.  e.g.
 
 ```
+webgpu_fundamentals/rotation/
+  rotation.js
+  rotation-via-unit-circle.js
+```
+
+Becomes
+
+```
 test/fundamentals/
   rotation/
     dune
@@ -29,6 +37,10 @@ test/fundamentals/
     rotation.expected.png
     rotation_via_unit_circle.expected.png
 ```
+
+Many of the examples in a lesson are very similar to one another.  It might
+help to diff the example javascript files to see what's different and then copy
+your own ml files and then apply the appropriate patch.
 
 Refer to `test/CLAUDE.md` for the dune file templates and test patterns,
 especially for how to test and promote image files.
