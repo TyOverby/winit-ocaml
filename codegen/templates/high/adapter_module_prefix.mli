@@ -47,7 +47,8 @@ module Device : sig
   (* create_compute_pipeline is now auto-generated *)
 
   (** Create a render pipeline (uses single shader module for vertex and fragment).
-      The [blend] parameter is a tuple of (color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op). *)
+      The [blend] parameter is a tuple of (color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op).
+      The optional [layout] parameter specifies the pipeline layout; if omitted, an empty layout is used. *)
   val create_render_pipeline : t -> ?label:string -> shader_module:Shader_module.t ->
     vertex_entry_point:string -> fragment_entry_point:string ->
     color_format:Texture_format.t ->
@@ -56,10 +57,15 @@ module Device : sig
     ?blend:(Blend_factor.t * Blend_factor.t * Blend_operation.t *
             Blend_factor.t * Blend_factor.t * Blend_operation.t) ->
     ?write_mask:Color_write_mask.Item.t list ->
+    ?layout:Pipeline_layout.t ->
     unit -> Render_pipeline.t
 
   (** Create a bind group layout for a single storage buffer *)
   val create_bind_group_layout_for_storage_buffer : t -> ?label:string -> binding:int ->
     ?read_only:bool -> unit -> Bind_group_layout.t
+
+  (** Create a bind group layout for a single uniform buffer *)
+  val create_bind_group_layout_for_uniform_buffer : t -> ?label:string -> binding:int ->
+    visibility:Shader_stage.Item.t list -> unit -> Bind_group_layout.t
 
   (* AUTO-GENERATED DEVICE METHOD SIGNATURES INJECTED HERE *)

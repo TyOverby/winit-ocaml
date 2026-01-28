@@ -1,0 +1,16 @@
+(executable
+ (name render_uniform_buffer)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./render_uniform_buffer.exe))
+ (targets render_uniform_buffer.png))
+
+(rule
+ (alias runtest)
+ (action
+  (diff render_uniform_buffer.expected.png render_uniform_buffer.png)))

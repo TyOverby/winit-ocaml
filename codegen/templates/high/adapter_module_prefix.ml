@@ -94,6 +94,7 @@ module Device = struct
       ?(blend : (Blend_factor.t * Blend_factor.t * Blend_operation.t *
                  Blend_factor.t * Blend_factor.t * Blend_operation.t) option)
       ?(write_mask = [ Color_write_mask.Item.All ])
+      ?layout
       () =
     let blend_enabled, color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op =
       match blend with
@@ -101,23 +102,46 @@ module Device = struct
                        Blend_factor.One, Blend_factor.Zero, Blend_operation.Add
       | Some (cs, cd, co, as_, ad, ao) -> true, cs, cd, co, as_, ad, ao
     in
-    let pipeline = Wgpu_low.device_create_render_pipeline_full t.handle
-      label shader_module.Shader_module.handle vertex_entry_point
-      fragment_entry_point (Texture_format.to_int color_format)
-      (Primitive_topology.to_int topology)
-      (Front_face.to_int front_face)
-      (Cull_mode.to_int cull_mode)
-      blend_enabled
-      (Blend_factor.to_int color_src) (Blend_factor.to_int color_dst)
-      (Blend_operation.to_int color_op)
-      (Blend_factor.to_int alpha_src) (Blend_factor.to_int alpha_dst)
-      (Blend_operation.to_int alpha_op)
-      (Color_write_mask.list_to_int write_mask) in
+    let pipeline = match layout with
+      | None ->
+        Wgpu_low.device_create_render_pipeline_full t.handle
+          label shader_module.Shader_module.handle vertex_entry_point
+          fragment_entry_point (Texture_format.to_int color_format)
+          (Primitive_topology.to_int topology)
+          (Front_face.to_int front_face)
+          (Cull_mode.to_int cull_mode)
+          blend_enabled
+          (Blend_factor.to_int color_src) (Blend_factor.to_int color_dst)
+          (Blend_operation.to_int color_op)
+          (Blend_factor.to_int alpha_src) (Blend_factor.to_int alpha_dst)
+          (Blend_operation.to_int alpha_op)
+          (Color_write_mask.list_to_int write_mask)
+      | Some layout ->
+        Wgpu_low.device_create_render_pipeline_with_layout t.handle
+          label shader_module.Shader_module.handle vertex_entry_point
+          fragment_entry_point (Texture_format.to_int color_format)
+          (Primitive_topology.to_int topology)
+          (Front_face.to_int front_face)
+          (Cull_mode.to_int cull_mode)
+          blend_enabled
+          (Blend_factor.to_int color_src) (Blend_factor.to_int color_dst)
+          (Blend_operation.to_int color_op)
+          (Blend_factor.to_int alpha_src) (Blend_factor.to_int alpha_dst)
+          (Blend_operation.to_int alpha_op)
+          (Color_write_mask.list_to_int write_mask)
+          layout.Pipeline_layout.handle
+    in
     ({ Render_pipeline.handle = pipeline } : Render_pipeline.t)
 
   let create_bind_group_layout_for_storage_buffer t ?(label = "") ~binding ?(read_only = false) () =
     let layout = Wgpu_low.device_create_bind_group_layout_storage t.handle
       label binding read_only in
+    ({ Bind_group_layout.handle = layout } : Bind_group_layout.t)
+
+  let create_bind_group_layout_for_uniform_buffer t ?(label = "") ~binding ~visibility () =
+    let visibility_int = Shader_stage.list_to_int visibility in
+    let layout = Wgpu_low.device_create_bind_group_layout_uniform t.handle
+      label binding visibility_int in
     ({ Bind_group_layout.handle = layout } : Bind_group_layout.t)
 
   (* AUTO-GENERATED DEVICE METHODS INJECTED HERE *)

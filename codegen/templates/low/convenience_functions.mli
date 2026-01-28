@@ -97,3 +97,31 @@ val device_create_render_pipeline_full
   -> int
   -> int
   -> render_pipeline
+
+val device_create_bind_group_layout_uniform
+  :  device
+  -> string
+  -> int
+  -> int
+  -> bind_group_layout
+
+val device_create_render_pipeline_with_layout
+  :  device
+  -> string
+  -> shader_module
+  -> string
+  -> string
+  -> int
+  -> int
+  -> int
+  -> int
+  -> bool
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> pipeline_layout
+  -> render_pipeline

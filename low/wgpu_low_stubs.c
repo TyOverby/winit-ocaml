@@ -10716,3 +10716,147 @@ caml_wgpu_device_create_render_pipeline_full_bytecode(value *argv, int argn) {
       argv[8], argv[9], argv[10], argv[11], argv[12], argv[13], argv[14],
       argv[15], argv[16]);
 }
+
+/* Create bind group layout with a single uniform buffer entry */
+CAMLprim value caml_wgpu_device_create_bind_group_layout_uniform(
+    value device_val, value label_val, value binding_val,
+    value visibility_val) {
+  CAMLparam4(device_val, label_val, binding_val, visibility_val);
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char *label = String_val(label_val);
+  uint32_t binding = Int_val(binding_val);
+  WGPUShaderStage visibility = Int_val(visibility_val);
+
+  WGPUBindGroupLayoutEntry entry = {
+      .binding = binding,
+      .visibility = visibility,
+      .buffer =
+          {
+              .type = WGPUBufferBindingType_Uniform,
+              .hasDynamicOffset = false,
+              .minBindingSize = 0,
+          },
+  };
+
+  WGPUBindGroupLayoutDescriptor desc = {
+      .label = {.data = label, .length = caml_string_length(label_val)},
+      .entryCount = 1,
+      .entries = &entry,
+  };
+
+  WGPUBindGroupLayout layout = wgpuDeviceCreateBindGroupLayout(device, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)layout));
+}
+
+/* Create a render pipeline with an explicit pipeline layout */
+CAMLprim value caml_wgpu_device_create_render_pipeline_with_layout(
+    value device_val, value label_val, value shader_val, value vs_entry_val,
+    value fs_entry_val, value format_val, value topology_val,
+    value front_face_val, value cull_mode_val, value blend_enabled_val,
+    value color_src_factor_val, value color_dst_factor_val,
+    value color_operation_val, value alpha_src_factor_val,
+    value alpha_dst_factor_val, value alpha_operation_val, value write_mask_val,
+    value layout_val) {
+  CAMLparam5(device_val, label_val, shader_val, vs_entry_val, fs_entry_val);
+  CAMLxparam5(format_val, topology_val, front_face_val, cull_mode_val,
+              blend_enabled_val);
+  CAMLxparam4(color_src_factor_val, color_dst_factor_val, color_operation_val,
+              alpha_src_factor_val);
+  CAMLxparam4(alpha_dst_factor_val, alpha_operation_val, write_mask_val,
+              layout_val);
+
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char *label = String_val(label_val);
+  WGPUShaderModule shader = (WGPUShaderModule)Nativeint_val(shader_val);
+  const char *vs_entry = String_val(vs_entry_val);
+  const char *fs_entry = String_val(fs_entry_val);
+  WGPUTextureFormat format = Int_val(format_val);
+  WGPUPrimitiveTopology topology = Int_val(topology_val);
+  WGPUFrontFace front_face = Int_val(front_face_val);
+  WGPUCullMode cull_mode = Int_val(cull_mode_val);
+  bool blend_enabled = Bool_val(blend_enabled_val);
+  WGPUBlendFactor color_src_factor = Int_val(color_src_factor_val);
+  WGPUBlendFactor color_dst_factor = Int_val(color_dst_factor_val);
+  WGPUBlendOperation color_operation = Int_val(color_operation_val);
+  WGPUBlendFactor alpha_src_factor = Int_val(alpha_src_factor_val);
+  WGPUBlendFactor alpha_dst_factor = Int_val(alpha_dst_factor_val);
+  WGPUBlendOperation alpha_operation = Int_val(alpha_operation_val);
+  WGPUColorWriteMask write_mask = Int_val(write_mask_val);
+  WGPUPipelineLayout layout = (WGPUPipelineLayout)Nativeint_val(layout_val);
+
+  /* Blend state (only used if blend_enabled) */
+  WGPUBlendState blend_state = {
+      .color =
+          {
+              .srcFactor = color_src_factor,
+              .dstFactor = color_dst_factor,
+              .operation = color_operation,
+          },
+      .alpha =
+          {
+              .srcFactor = alpha_src_factor,
+              .dstFactor = alpha_dst_factor,
+              .operation = alpha_operation,
+          },
+  };
+
+  /* Color target state */
+  WGPUColorTargetState color_target = {
+      .format = format,
+      .blend = blend_enabled ? &blend_state : NULL,
+      .writeMask = write_mask,
+  };
+
+  /* Fragment state */
+  WGPUFragmentState fragment = {
+      .module = shader,
+      .entryPoint = {.data = fs_entry, .length = strlen(fs_entry)},
+      .constantCount = 0,
+      .constants = NULL,
+      .targetCount = 1,
+      .targets = &color_target,
+  };
+
+  /* Render pipeline descriptor */
+  WGPURenderPipelineDescriptor desc = {
+      .label = {.data = label, .length = caml_string_length(label_val)},
+      .layout = layout,
+      .vertex =
+          {
+              .module = shader,
+              .entryPoint = {.data = vs_entry, .length = strlen(vs_entry)},
+              .constantCount = 0,
+              .constants = NULL,
+              .bufferCount = 0,
+              .buffers = NULL,
+          },
+      .primitive =
+          {
+              .topology = topology,
+              .stripIndexFormat = WGPUIndexFormat_Undefined,
+              .frontFace = front_face,
+              .cullMode = cull_mode,
+          },
+      .depthStencil = NULL,
+      .multisample =
+          {
+              .count = 1,
+              .mask = 0xFFFFFFFF,
+              .alphaToCoverageEnabled = false,
+          },
+      .fragment = &fragment,
+  };
+
+  WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(device, &desc);
+
+  CAMLreturn(caml_copy_nativeint((intnat)pipeline));
+}
+
+CAMLprim value caml_wgpu_device_create_render_pipeline_with_layout_bytecode(
+    value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_device_create_render_pipeline_with_layout(
+      argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7],
+      argv[8], argv[9], argv[10], argv[11], argv[12], argv[13], argv[14],
+      argv[15], argv[16], argv[17]);
+}
