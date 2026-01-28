@@ -8,5 +8,10 @@
  (alias runtest)
  (action
   (run ./render_triangle.exe))
- (targets render_triangle.png)
- (mode promote))
+ (targets render_triangle.png))
+
+(rule
+ (alias runtest)
+ (action
+  (cmp render_triangle.expected.png render_triangle.png)))
+ 
