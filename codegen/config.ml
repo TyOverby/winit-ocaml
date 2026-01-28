@@ -16,49 +16,33 @@ type method_handling =
 [@@deriving sexp_of]
 
 let method_config : (Method_key.t * method_handling) list =
-  [ (* Instance methods - some manually implemented in instance_module *)
-    ("instance", "create_surface"), Manual { reason = "Complex struct handling" }
-  ; ( ("instance", "request_adapter")
-    , Manual { reason = "Async method, we provide sync wrapper" } )
+  [ ("instance", "create_surface"), Manual { reason = "Complex struct handling" }
   ; ( ("instance", "get_WGSL_language_features")
     , Manual { reason = "Uses struct output parameter" } )
   ; ("instance", "wait_any"), Manual { reason = "Uses struct input parameter" }
-    (* Adapter methods - some manually implemented in adapter_module_suffix *)
-  ; ("adapter", "release"), Manual { reason = "Custom release logic" }
   ; ( ("adapter", "get_info")
     , Manual { reason = "Uses special struct return, manually implemented" } )
-  ; ( ("adapter", "request_device")
-    , Manual { reason = "Async method, we provide sync wrapper" } )
   ; ("adapter", "get_features"), Manual { reason = "Output struct with array member" }
-    (* Device methods - manually implemented in adapter_module_prefix *)
-  ; ("device", "release"), Manual { reason = "Custom release logic" }
-  ; ("device", "poll"), Manual { reason = "Custom polling logic" }
   ; ("device", "get_features"), Manual { reason = "Output struct with array member" }
   ; ("device", "create_shader_module"), Manual { reason = "Uses chained WGSL struct" }
-    (* device.create_compute_pipeline is now auto-generated (optional object param bug fixed) *)
   ; ("device", "create_render_pipeline"), Manual { reason = "Deeply nested descriptors" }
-  ; ("device", "pop_error_scope"), Manual { reason = "Async callback" }
-  ; ("device", "get_lost_future"), Manual { reason = "Returns Future struct" }
   ; ("device", "get_adapter_info"), Manual { reason = "Returns struct" }
-    (* Queue methods - some manually implemented in adapter_module_prefix *)
-  ; ("queue", "release"), Manual { reason = "Custom release logic" }
   ; ("queue", "write_buffer"), Manual { reason = "Uses pointer + size" }
   ; ("queue", "on_submitted_work_done"), Manual { reason = "Async callback" }
-    (* Command encoder methods - keep only complex ones *)
   ; ( ("command_encoder", "begin_compute_pass")
     , Manual { reason = "Uses descriptor struct with arrays" } )
   ; ( ("command_encoder", "begin_render_pass")
     , Manual { reason = "Uses descriptor struct with arrays" } )
-    (* Shader module methods *)
-  ; ("shader_module", "get_compilation_info"), Manual { reason = "Async callback" }
-    (* Surface methods - mostly for windowed rendering *)
-    (* Surface module is moved to after Device/Adapter in templates *)
   ; ( ("surface", "get_current_texture")
     , Manual { reason = "Manually implemented with custom surface_texture type" } )
-    (* surface.configure is now auto-generated (module moved after Device/Adapter) *)
-    (* Intentionally skipped methods *)
+    (* custom release implementation *)
+  ; ("queue", "release"), Manual { reason = "Custom release logic" }
+  ; ("device", "release"), Manual { reason = "Custom release logic" }
+  ; ("adapter", "release"), Manual { reason = "Custom release logic" }
+    (* Intentionally skipped methods, usually for async reasons *)
   ; ( ("surface", "get_capabilities")
     , Skipped { reason = "Low-level array getters not yet implemented" } )
+  ; ("shader_module", "get_compilation_info"), Manual { reason = "Async callback" }
   ; ("buffer", "map_async"), Manual { reason = "Async method, we provide sync wrapper" }
   ; ( ("adapter", "request_adapter_info")
     , Skipped { reason = "Deprecated, use get_info instead" } )
@@ -70,6 +54,13 @@ let method_config : (Method_key.t * method_handling) list =
   ; ( ("device", "create_compute_pipeline_async")
     , Skipped { reason = "Async version, use sync" } )
   ; ("surface", "get_preferred_format"), Skipped { reason = "Deprecated" }
+  ; ("device", "pop_error_scope"), Manual { reason = "Async callback" }
+  ; ("device", "get_lost_future"), Manual { reason = "Returns Future struct" }
+  ; ("device", "poll"), Manual { reason = "Custom polling logic" }
+  ; ( ("adapter", "request_device")
+    , Manual { reason = "Async method, we provide sync wrapper" } )
+  ; ( ("instance", "request_adapter")
+    , Manual { reason = "Async method, we provide sync wrapper" } )
   ]
 ;;
 
