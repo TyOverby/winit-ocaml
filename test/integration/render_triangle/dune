@@ -1,0 +1,12 @@
+(executable
+ (name render_triangle)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./render_triangle.exe))
+ (targets render_triangle.png)
+ (mode promote))

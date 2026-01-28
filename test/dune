@@ -1,12 +1,3 @@
-(executable
- (name test_compute)
- (libraries wgpu core core_unix)
- (preprocess
-  (pps ppx_jane)))
-
-(rule
- (alias runtest)
- (action
-  (run ./test_compute.exe))
- (targets render_clear.png render_triangle.png)
- (mode promote))
+; This directory now contains subdirectories for tests:
+; - util/        : Shared test utilities (test_util library)
+; - integration/ : Integration tests for wgpu functionality

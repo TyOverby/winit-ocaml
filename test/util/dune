@@ -1,0 +1,5 @@
+(library
+ (name test_util)
+ (libraries core core_unix)
+ (preprocess
+  (pps ppx_jane)))
