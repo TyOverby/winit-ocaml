@@ -595,8 +595,6 @@ end
 module Command_encoder = struct
   type t = { handle : Wgpu_low.command_encoder }
 
-  let release t = Wgpu_low.command_encoder_release t.handle
-
   let begin_compute_pass t ?(label = "") () =
     let desc = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
     Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc label;
@@ -629,6 +627,8 @@ module Command_encoder = struct
     in
     ({ Render_pass_encoder.handle = pass } : Render_pass_encoder.t)
   ;;
+
+  let release t = Wgpu_low.command_encoder_release t.handle
 
   let finish t ?(label = "") () =
     let desc_descriptor =
@@ -930,11 +930,11 @@ end
 module Queue = struct
   type t = { handle : Wgpu_low.queue }
 
-  let release t = Wgpu_low.queue_release t.handle
-
   let write_buffer t ~buffer ~offset ~data =
     Wgpu_low.queue_write_buffer_bigarray t.handle buffer.Buffer.handle offset data
   ;;
+
+  let release t = Wgpu_low.queue_release t.handle
 
   let submit t ~commands =
     Wgpu_low.queue_submit
@@ -1016,8 +1016,6 @@ end
 
 module Device = struct
   type t = { handle : Wgpu_low.device }
-
-  let release t = Wgpu_low.device_release t.handle
 
   let create_shader_module' t ?(label = "") ~wgsl () =
     (* Create the WGSL source extension struct *)
@@ -1146,6 +1144,8 @@ module Device = struct
     ; max_compute_workgroup_size_z : int
     ; max_compute_workgroups_per_dimension : int
     }
+
+  let release t = Wgpu_low.device_release t.handle
 
   let create_bind_group t ?(label = "") ~layout ?(entries = []) () =
     let desc_descriptor =
@@ -1689,7 +1689,6 @@ module Adapter = struct
   type t = { handle : Wgpu_low.adapter }
 
   let get_info t = Adapter_info.of_low (Wgpu_low.adapter_get_info t.handle)
-  let release t = Wgpu_low.adapter_release t.handle
 
   let request_device t =
     let device = Wgpu_low.adapter_request_device_sync t.handle in
@@ -1729,6 +1728,8 @@ module Adapter = struct
     ; max_compute_workgroup_size_z : int
     ; max_compute_workgroups_per_dimension : int
     }
+
+  let release t = Wgpu_low.adapter_release t.handle
 
   let get_limits t =
     let output = Wgpu_low.Limits.limits_create () in
@@ -1874,8 +1875,6 @@ module Surface = struct
     ; status : Surface_get_current_texture_status.t
     }
 
-  let release t = Wgpu_low.surface_release t.handle
-
   let get_current_texture t =
     let output = Wgpu_low.Surface_texture.surface_texture_create () in
     let _status = Wgpu_low.surface_get_current_texture t.handle output in
@@ -1895,6 +1894,8 @@ module Surface = struct
   (* get_capabilities not yet implemented - low-level array getters are stubs *)
 
   (* present, unconfigure, set_label, configure are auto-generated *)
+
+  let release t = Wgpu_low.surface_release t.handle
 
   let configure
     t
@@ -1943,7 +1944,6 @@ module Instance = struct
   type t = { handle : Wgpu_low.instance }
 
   let create () = { handle = Wgpu_low.create_instance () }
-  let release t = Wgpu_low.instance_release t.handle
 
   let request_adapter
     t
@@ -1959,6 +1959,8 @@ module Instance = struct
     in
     { Adapter.handle = adapter }
   ;;
+
+  let release t = Wgpu_low.instance_release t.handle
 
   let has_WGSL_language_feature t ~feature =
     Wgpu_low.instance_has_WGSL_language_feature

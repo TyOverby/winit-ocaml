@@ -6,7 +6,6 @@ module Adapter = struct
   type t = { handle : Wgpu_low.adapter }
 
   let get_info t = Adapter_info.of_low (Wgpu_low.adapter_get_info t.handle)
-  let release t = Wgpu_low.adapter_release t.handle
   let request_device t =
     let device = Wgpu_low.adapter_request_device_sync t.handle in
     { Device.handle = device }
@@ -28,8 +27,6 @@ module Surface = struct
     { texture : Texture.t
     ; status : Surface_get_current_texture_status.t
     }
-
-  let release t = Wgpu_low.surface_release t.handle
 
   let get_current_texture t =
     let output = Wgpu_low.Surface_texture.surface_texture_create () in

@@ -2,7 +2,6 @@ module Instance : sig
   type t
 
   val create : unit -> t
-  val release : t -> unit
 
   val request_adapter
     :  t

@@ -1328,12 +1328,17 @@ let gen_special_object_auto_methods
     |> List.dedup_and_sort ~compare:String.compare
     |> String.concat ~sep:"\n"
   in
+  (* Generate release method for the special object *)
+  let release_method =
+    {%string|  let release t = Wgpu_low.%{obj.name}_release t.handle
+|}
+  in
   let methods =
     List.filter_map methods_to_generate ~f:(fun method_ ->
       gen_ml_method config structs obj method_)
     |> String.concat ~sep:""
   in
-  output_struct_types, methods
+  output_struct_types, release_method ^ methods
 ;;
 
 let gen_special_object_auto_methods_mli
@@ -1364,12 +1369,14 @@ let gen_special_object_auto_methods_mli
     |> List.dedup_and_sort ~compare:String.compare
     |> String.concat ~sep:"\n"
   in
+  (* Generate release method signature for the special object *)
+  let release_method = "  val release : t -> unit\n" in
   let methods =
     List.filter_map methods_to_generate ~f:(fun method_ ->
       gen_mli_method config structs obj method_)
     |> String.concat ~sep:""
   in
-  output_struct_types, methods
+  output_struct_types, release_method ^ methods
 ;;
 
 let gen_ml (api : Ir.api) : string =

@@ -7,7 +7,6 @@ module Adapter : sig
   type t
 
   val get_info : t -> Adapter_info.t
-  val release : t -> unit
   val request_device : t -> Device.t
 
   (* AUTO-GENERATED ADAPTER METHOD SIGNATURES INJECTED HERE *)
@@ -31,7 +30,6 @@ module Surface : sig
     ; status : Surface_get_current_texture_status.t
     }
 
-  val release : t -> unit
   val get_current_texture : t -> surface_texture
 
   (* get_capabilities not yet implemented - low-level array getters are stubs *)

@@ -12,8 +12,6 @@ end
 module Command_encoder : sig
   type t
 
-  val release : t -> unit
-
   (** Begin a compute pass on this command encoder *)
   val begin_compute_pass : t -> ?label:string -> unit -> Compute_pass_encoder.t
 
@@ -34,7 +32,6 @@ end
 module Queue : sig
   type t
 
-  val release : t -> unit
   val write_buffer : t -> buffer:Buffer.t -> offset:int64 ->
     data:(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t -> unit
 
@@ -43,8 +40,6 @@ end
 
 module Device : sig
   type t
-
-  val release : t -> unit
 
   (** Create a shader module from WGSL source *)
   val create_shader_module' : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t

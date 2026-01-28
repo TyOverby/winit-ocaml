@@ -21,8 +21,6 @@ end
 module Command_encoder = struct
   type t = { handle : Wgpu_low.command_encoder }
 
-  let release t = Wgpu_low.command_encoder_release t.handle
-
   let begin_compute_pass t ?(label = "") () =
     let desc = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
     Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc label;
@@ -60,8 +58,6 @@ end
 module Queue = struct
   type t = { handle : Wgpu_low.queue }
 
-  let release t = Wgpu_low.queue_release t.handle
-
   let write_buffer t ~buffer ~offset ~data =
     Wgpu_low.queue_write_buffer_bigarray t.handle buffer.Buffer.handle offset data
 
@@ -70,8 +66,6 @@ end
 
 module Device = struct
   type t = { handle : Wgpu_low.device }
-
-  let release t = Wgpu_low.device_release t.handle
 
   let create_shader_module' t ?(label = "") ~wgsl () =
     (* Create the WGSL source extension struct *)

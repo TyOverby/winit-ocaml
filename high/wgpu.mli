@@ -430,8 +430,6 @@ end
 module Command_encoder : sig
   type t
 
-  val release : t -> unit
-
   (** Begin a compute pass on this command encoder *)
   val begin_compute_pass : t -> ?label:string -> unit -> Compute_pass_encoder.t
 
@@ -446,6 +444,7 @@ module Command_encoder : sig
     -> unit
     -> Render_pass_encoder.t
 
+  val release : t -> unit
   val finish : t -> ?label:string -> unit -> Command_buffer.t
 
   val copy_buffer_to_buffer
@@ -534,8 +533,6 @@ end
 module Queue : sig
   type t
 
-  val release : t -> unit
-
   val write_buffer
     :  t
     -> buffer:Buffer.t
@@ -543,6 +540,7 @@ module Queue : sig
     -> data:(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
     -> unit
 
+  val release : t -> unit
   val submit : t -> commands:Command_buffer.t list -> unit
 
   val write_texture
@@ -569,8 +567,6 @@ end
 
 module Device : sig
   type t
-
-  val release : t -> unit
 
   (** Create a shader module from WGSL source *)
   val create_shader_module' : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
@@ -644,6 +640,8 @@ module Device : sig
     ; max_compute_workgroup_size_z : int
     ; max_compute_workgroups_per_dimension : int
     }
+
+  val release : t -> unit
 
   val create_bind_group
     :  t
@@ -753,7 +751,6 @@ module Adapter : sig
   type t
 
   val get_info : t -> Adapter_info.t
-  val release : t -> unit
   val request_device : t -> Device.t
 
   type limits =
@@ -790,6 +787,7 @@ module Adapter : sig
     ; max_compute_workgroups_per_dimension : int
     }
 
+  val release : t -> unit
   val get_limits : t -> limits
   val has_feature : t -> feature:Feature_name.t -> bool
 end
@@ -812,12 +810,13 @@ module Surface : sig
     ; status : Surface_get_current_texture_status.t
     }
 
-  val release : t -> unit
   val get_current_texture : t -> surface_texture
 
   (* get_capabilities not yet implemented - low-level array getters are stubs *)
 
   (* present, unconfigure, set_label, configure are auto-generated *)
+
+  val release : t -> unit
 
   val configure
     :  t
@@ -841,7 +840,6 @@ module Instance : sig
   type t
 
   val create : unit -> t
-  val release : t -> unit
 
   val request_adapter
     :  t
@@ -850,6 +848,7 @@ module Instance : sig
     -> unit
     -> Adapter.t
 
+  val release : t -> unit
   val has_WGSL_language_feature : t -> feature:Wgsl_language_feature_name.t -> bool
   val process_events : t -> unit
 end

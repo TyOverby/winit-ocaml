@@ -34,10 +34,6 @@ let method_config : (Method_key.t * method_handling) list =
     , Manual { reason = "Uses descriptor struct with arrays" } )
   ; ( ("surface", "get_current_texture")
     , Manual { reason = "Manually implemented with custom surface_texture type" } )
-    (* custom release implementation *)
-  ; ("queue", "release"), Manual { reason = "Custom release logic" }
-  ; ("device", "release"), Manual { reason = "Custom release logic" }
-  ; ("adapter", "release"), Manual { reason = "Custom release logic" }
   ; ( ("surface", "get_capabilities")
     , Skipped { reason = "Low-level array getters not yet implemented" } )
     (* Intentionally skipped methods, usually for async reasons *)
