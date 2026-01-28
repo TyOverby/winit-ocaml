@@ -68,6 +68,12 @@ If the new version is better, run `dune promote test/path/to/image_file.expected
 
 ## Code Style Guidelines
 
+### Constants
+
+Primitive constants should be put at top level module scope, but other values
+e.g. wgpu devices and things where _technically_ only one of them exists, still 
+should be allocated in `init`.
+
 ### Structure Pattern
 Prefer separating initialization and cleanup into helper functions:
 
@@ -113,6 +119,50 @@ reverse order of creation to avoid use-after-free.
     print_endline "FAILURE: Some values incorrect.";
     exit 1)
   ```
+
+### Grouping and commenting
+
+Grouping and commenting can make a big impact on readability.  In the following
+examples, notice how there's a difference in the granularity of comments but also 
+how operations are grouped into a single binding.
+
+**BAD:**
+```
+  ... other code ...
+  (* map the readback_buffer *)
+  Wgpu.map_buffer readback_buffer ~mode:[ Wgpu.Map_mode.Item.Read ] ~offset:0L ~size:(Int64.of_int data_size);
+  (* poll for map_buffer to complete *)
+  Wgpu.Device.poll device ~wait:true ();
+  (* extract values from mapped readback buffer *)
+  let mapped_data = Wgpu.get_const_mapped_range readback_buffer ~offset:0L ~size:(Int64.of_int data_size) in
+  ... other code ...
+```
+
+**GOOD:**
+```
+  ... other code ...
+  let mapped_data =
+    (* map the readback buffer and read from it *)
+    Wgpu.map_buffer readback_buffer ~mode:[ Wgpu.Map_mode.Item.Read ] ~offset:0L ~size:(Int64.of_int data_size);
+    Wgpu.Device.poll device ~wait:true ();
+    Wgpu.get_const_mapped_range readback_buffer ~offset:0L ~size:(Int64.of_int data_size)
+  in
+  ... other code ...
+```
+
+If there's no value to add a binding to, you can use "unit smuggling" to group
+a small sequence of related operations under a descriptive comment. This makes
+it unambiguous which operations the comment applies to:
+
+```ocaml
+let ( (* submit and block *) ) =
+  Wgpu.Queue.submit queue ~commands:[ command_buffer ];
+  Wgpu.Device.poll device ~wait:true ()
+in
+```
+
+The `let ( (* comment *) ) = ... in` binds the unit result to an empty pattern, allowing
+you to group statements that belong together conceptually.
 
 ## Running Tests
 
