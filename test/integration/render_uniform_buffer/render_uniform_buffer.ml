@@ -19,8 +19,9 @@ let bytes_per_pixel = 4
 let bytes_per_row = ((width * bytes_per_pixel) + 255) / 256 * 256
 let buffer_size = bytes_per_row * height
 
-(* Uniform buffer size: 4 floats for RGBA color = 16 bytes *)
-let uniform_buffer_size = 16
+(* Uniform buffer: 4 floats for RGBA color *)
+let num_uniform_floats = 4
+let uniform_buffer_size = num_uniform_floats * 4
 
 let shader_code =
   {|
@@ -131,35 +132,14 @@ let () =
       ~mapped_at_creation:false
       ()
   in
-  (* Write magenta color (1.0, 0.0, 1.0, 1.0) to uniform buffer *)
+  (* Write magenta color (1.0, 0.0, 1.0, 1.0) to uniform buffer using float32 bigarray *)
   let uniform_data =
-    Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout uniform_buffer_size
+    Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout num_uniform_floats
   in
-  (* Pack floats as little-endian 32-bit IEEE 754 *)
-  let set_float32 data offset value =
-    let bits = Int32.bits_of_float value in
-    Bigarray.Array1.set data offset (Int32.to_int_exn (Int32.( land ) bits 0xFFl));
-    Bigarray.Array1.set
-      data
-      (offset + 1)
-      (Int32.to_int_exn (Int32.( land ) (Int32.shift_right_logical bits 8) 0xFFl));
-    Bigarray.Array1.set
-      data
-      (offset + 2)
-      (Int32.to_int_exn (Int32.( land ) (Int32.shift_right_logical bits 16) 0xFFl));
-    Bigarray.Array1.set
-      data
-      (offset + 3)
-      (Int32.to_int_exn (Int32.( land ) (Int32.shift_right_logical bits 24) 0xFFl))
-  in
-  set_float32 uniform_data 0 1.0;
-  (* R = 1.0 (magenta) *)
-  set_float32 uniform_data 4 0.0;
-  (* G = 0.0 *)
-  set_float32 uniform_data 8 1.0;
-  (* B = 1.0 (magenta) *)
-  set_float32 uniform_data 12 1.0;
-  (* A = 1.0 *)
+  Bigarray.Array1.set uniform_data 0 1.0;
+  Bigarray.Array1.set uniform_data 1 0.0;
+  Bigarray.Array1.set uniform_data 2 1.0;
+  Bigarray.Array1.set uniform_data 3 1.0;
   Wgpu.Queue.write_buffer queue ~buffer:uniform_buffer ~offset:0L ~data:uniform_data;
   (* Create bind group layout for uniform buffer *)
   let bind_group_layout =
