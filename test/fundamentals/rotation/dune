@@ -1,0 +1,52 @@
+(executable
+ (name rotation)
+ (libraries wgpu core core_unix test_util gg)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./rotation.exe))
+ (targets
+  rotation_0deg.png
+  rotation_45deg.png
+  rotation_90deg.png
+  rotation_180deg.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  rotation_0deg.expected.png
+  rotation_0deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  rotation_45deg.expected.png
+  rotation_45deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  rotation_90deg.expected.png
+  rotation_90deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  rotation_180deg.expected.png
+  rotation_180deg.png)
+ (action
+  (bash "%{deps}")))

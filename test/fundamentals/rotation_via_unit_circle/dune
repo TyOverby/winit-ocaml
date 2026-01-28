@@ -1,0 +1,52 @@
+(executable
+ (name rotation_via_unit_circle)
+ (libraries wgpu core core_unix test_util gg)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./rotation_via_unit_circle.exe))
+ (targets
+  rotation_unit_circle_0deg.png
+  rotation_unit_circle_30deg.png
+  rotation_unit_circle_60deg.png
+  rotation_unit_circle_90deg.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  rotation_unit_circle_0deg.expected.png
+  rotation_unit_circle_0deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  rotation_unit_circle_30deg.expected.png
+  rotation_unit_circle_30deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  rotation_unit_circle_60deg.expected.png
+  rotation_unit_circle_60deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  rotation_unit_circle_90deg.expected.png
+  rotation_unit_circle_90deg.png)
+ (action
+  (bash "%{deps}")))
