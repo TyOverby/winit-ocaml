@@ -1,0 +1,69 @@
+(executables
+ (names rotation rotation_via_unit_circle)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./rotation.exe))
+ (targets
+  rotation_0deg.png
+  rotation_45deg.png
+  rotation_90deg.png
+  rotation_180deg.png))
+
+(rule
+ (alias runtest)
+ (action
+  (diff rotation_0deg.expected.png rotation_0deg.png)))
+
+(rule
+ (alias runtest)
+ (action
+  (diff rotation_45deg.expected.png rotation_45deg.png)))
+
+(rule
+ (alias runtest)
+ (action
+  (diff rotation_90deg.expected.png rotation_90deg.png)))
+
+(rule
+ (alias runtest)
+ (action
+  (diff rotation_180deg.expected.png rotation_180deg.png)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./rotation_via_unit_circle.exe))
+ (targets
+  rotation_unit_circle_1_0.png
+  rotation_unit_circle_0707_0707.png
+  rotation_unit_circle_0_1.png
+  rotation_unit_circle_neg1_0.png))
+
+(rule
+ (alias runtest)
+ (action
+  (diff rotation_unit_circle_1_0.expected.png rotation_unit_circle_1_0.png)))
+
+(rule
+ (alias runtest)
+ (action
+  (diff
+   rotation_unit_circle_0707_0707.expected.png
+   rotation_unit_circle_0707_0707.png)))
+
+(rule
+ (alias runtest)
+ (action
+  (diff rotation_unit_circle_0_1.expected.png rotation_unit_circle_0_1.png)))
+
+(rule
+ (alias runtest)
+ (action
+  (diff
+   rotation_unit_circle_neg1_0.expected.png
+   rotation_unit_circle_neg1_0.png)))
