@@ -304,31 +304,6 @@ module Render_pass_encoder : sig
   val set_label : t -> label:string -> unit
 end
 
-module Surface : sig
-  (** An object used to continuously present image data to the user, see \@ref Surfaces
-      for more details. *)
-
-  type t
-
-  type surface_capabilities =
-    { usages : Texture_usage.Item.t list
-    ; formats : Texture_format.t list
-    ; present_modes : Present_mode.t list
-    ; alpha_modes : Composite_alpha_mode.t list
-    }
-
-  type surface_texture =
-    { texture : Texture.t
-    ; status : Surface_get_current_texture_status.t
-    }
-
-  val release : t -> unit
-  val get_current_texture : t -> surface_texture
-  val present : t -> Status.t
-  val unconfigure : t -> unit
-  val set_label : t -> label:string -> unit
-end
-
 module Command_encoder : sig
   type t
 
@@ -802,6 +777,49 @@ module Adapter : sig
 
   val get_limits : t -> limits
   val has_feature : t -> feature:Feature_name.t -> bool
+end
+
+module Surface : sig
+  (** An object used to continuously present image data to the user, see \@ref Surfaces
+      for more details. *)
+
+  type t
+
+  type surface_capabilities =
+    { usages : Texture_usage.Item.t list
+    ; formats : Texture_format.t list
+    ; present_modes : Present_mode.t list
+    ; alpha_modes : Composite_alpha_mode.t list
+    }
+
+  type surface_texture =
+    { texture : Texture.t
+    ; status : Surface_get_current_texture_status.t
+    }
+
+  val release : t -> unit
+  val get_current_texture : t -> surface_texture
+
+  (* get_capabilities not yet implemented - low-level array getters are stubs *)
+
+  (* present, unconfigure, set_label, configure are auto-generated *)
+
+  val configure
+    :  t
+    -> device:Device.t
+    -> format:Texture_format.t
+    -> usage:Texture_usage.Item.t list
+    -> width:int
+    -> height:int
+    -> ?view_formats:Texture_format.t list
+    -> alpha_mode:Composite_alpha_mode.t
+    -> present_mode:Present_mode.t
+    -> unit
+    -> unit
+
+  val present : t -> Status.t
+  val unconfigure : t -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Instance : sig

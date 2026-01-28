@@ -459,44 +459,6 @@ module Render_pass_encoder = struct
   let set_label t ~label = Wgpu_low.render_pass_encoder_set_label t.handle label
 end
 
-module Surface = struct
-  type t = { handle : Wgpu_low.surface }
-
-  type surface_capabilities =
-    { usages : Texture_usage.Item.t list
-    ; formats : Texture_format.t list
-    ; present_modes : Present_mode.t list
-    ; alpha_modes : Composite_alpha_mode.t list
-    }
-
-  type surface_texture =
-    { texture : Texture.t
-    ; status : Surface_get_current_texture_status.t
-    }
-
-  let release t = Wgpu_low.surface_release t.handle
-
-  let get_current_texture t =
-    let output = Wgpu_low.Surface_texture.surface_texture_create () in
-    let _status = Wgpu_low.surface_get_current_texture t.handle output in
-    let texture =
-      ({ Texture.handle = Wgpu_low.Surface_texture.surface_texture_get_texture output }
-       : Texture.t)
-    in
-    let status =
-      Surface_get_current_texture_status.of_int
-        (Wgpu_low.Surface_texture.surface_texture_get_status output)
-    in
-    let result = { texture; status } in
-    Wgpu_low.Surface_texture.surface_texture_free output;
-    result
-  ;;
-
-  let present t = Status.of_int (Wgpu_low.surface_present t.handle)
-  let unconfigure t = Wgpu_low.surface_unconfigure t.handle
-  let set_label t ~label = Wgpu_low.surface_set_label t.handle label
-end
-
 module Command_encoder = struct
   type t = { handle : Wgpu_low.command_encoder }
 
@@ -1862,6 +1824,86 @@ module Adapter = struct
   let has_feature t ~feature =
     Wgpu_low.adapter_has_feature t.handle (Feature_name.to_int feature)
   ;;
+end
+
+module Surface = struct
+  type t = { handle : Wgpu_low.surface }
+
+  type surface_capabilities =
+    { usages : Texture_usage.Item.t list
+    ; formats : Texture_format.t list
+    ; present_modes : Present_mode.t list
+    ; alpha_modes : Composite_alpha_mode.t list
+    }
+
+  type surface_texture =
+    { texture : Texture.t
+    ; status : Surface_get_current_texture_status.t
+    }
+
+  let release t = Wgpu_low.surface_release t.handle
+
+  let get_current_texture t =
+    let output = Wgpu_low.Surface_texture.surface_texture_create () in
+    let _status = Wgpu_low.surface_get_current_texture t.handle output in
+    let texture =
+      ({ Texture.handle = Wgpu_low.Surface_texture.surface_texture_get_texture output }
+       : Texture.t)
+    in
+    let status =
+      Surface_get_current_texture_status.of_int
+        (Wgpu_low.Surface_texture.surface_texture_get_status output)
+    in
+    let result = { texture; status } in
+    Wgpu_low.Surface_texture.surface_texture_free output;
+    result
+  ;;
+
+  (* get_capabilities not yet implemented - low-level array getters are stubs *)
+
+  (* present, unconfigure, set_label, configure are auto-generated *)
+
+  let configure
+    t
+    ~device
+    ~format
+    ~usage
+    ~width
+    ~height
+    ?(view_formats = [])
+    ~alpha_mode
+    ~present_mode
+    ()
+    =
+    let desc_config = Wgpu_low.Surface_configuration.surface_configuration_create () in
+    Wgpu_low.Surface_configuration.surface_configuration_set_device
+      desc_config
+      device.Device.handle;
+    Wgpu_low.Surface_configuration.surface_configuration_set_format
+      desc_config
+      (Texture_format.to_int format);
+    Wgpu_low.Surface_configuration.surface_configuration_set_usage
+      desc_config
+      (Texture_usage.list_to_int usage);
+    Wgpu_low.Surface_configuration.surface_configuration_set_width desc_config width;
+    Wgpu_low.Surface_configuration.surface_configuration_set_height desc_config height;
+    Wgpu_low.Surface_configuration.surface_configuration_set_view_formats
+      desc_config
+      (Array.of_list (List.map Texture_format.to_int view_formats));
+    Wgpu_low.Surface_configuration.surface_configuration_set_alpha_mode
+      desc_config
+      (Composite_alpha_mode.to_int alpha_mode);
+    Wgpu_low.Surface_configuration.surface_configuration_set_present_mode
+      desc_config
+      (Present_mode.to_int present_mode);
+    Wgpu_low.surface_configure t.handle desc_config;
+    Wgpu_low.Surface_configuration.surface_configuration_free desc_config;
+    ()
+  ;;
+
+  let present t = Status.of_int (Wgpu_low.surface_present t.handle)
+  let unconfigure t = Wgpu_low.surface_unconfigure t.handle
+  let set_label t ~label = Wgpu_low.surface_set_label t.handle label
 end
 
 module Instance = struct

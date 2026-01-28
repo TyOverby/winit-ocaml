@@ -52,9 +52,13 @@ let method_config : (Method_key.t * method_handling) list =
     (* Shader module methods *)
   ; ("shader_module", "get_compilation_info"), Manual { reason = "Async callback" }
     (* Surface methods - mostly for windowed rendering *)
-  ; ("surface", "configure"), Manual { reason = "Module ordering issue" }
-  ; ("surface", "get_capabilities"), Manual { reason = "Module ordering issue" }
+    (* Surface module is moved to after Device/Adapter in templates *)
+  ; ( ("surface", "get_current_texture")
+    , Manual { reason = "Manually implemented with custom surface_texture type" } )
+    (* surface.configure is now auto-generated (module moved after Device/Adapter) *)
     (* Intentionally skipped methods *)
+  ; ( ("surface", "get_capabilities")
+    , Skipped { reason = "Low-level array getters not yet implemented" } )
   ; ("buffer", "map_async"), Manual { reason = "Async method, we provide sync wrapper" }
   ; ( ("adapter", "request_adapter_info")
     , Skipped { reason = "Deprecated, use get_info instead" } )

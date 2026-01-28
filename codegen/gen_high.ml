@@ -1384,7 +1384,7 @@ let gen_ml (api : Ir.api) : string =
     |> String.concat ~sep:"\n"
   in
   (* Filter out objects we handle specially *)
-  let special_objects = [ "instance"; "adapter"; "device"; "queue" ] in
+  let special_objects = [ "instance"; "adapter"; "device"; "queue"; "surface" ] in
   let regular_objects =
     List.filter api.objects ~f:(fun obj ->
       not (List.mem special_objects obj.name ~equal:String.equal))
@@ -1419,6 +1419,12 @@ let gen_ml (api : Ir.api) : string =
     | Some instance_obj -> gen_special_object_auto_methods config api.structs instance_obj
     | None -> "", ""
   in
+  (* Generate auto-generated methods for Surface *)
+  let surface_output_types, surface_auto_methods =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "surface") with
+    | Some surface_obj -> gen_special_object_auto_methods config api.structs surface_obj
+    | None -> "", ""
+  in
   (* Adapter module *)
   let adapter_module_prefix = read_template "high/adapter_module_prefix.ml" in
   let adapter_module_suffix = read_template "high/adapter_module_suffix.ml" in
@@ -1442,6 +1448,19 @@ let gen_ml (api : Ir.api) : string =
       adapter_module_suffix
       ~pattern:adapter_marker
       ~with_:adapter_injection
+  in
+  (* Inject Surface output types and methods at the marker *)
+  let surface_marker = "(* AUTO-GENERATED SURFACE METHODS INJECTED HERE *)" in
+  let surface_injection =
+    if String.is_empty surface_output_types
+    then surface_auto_methods
+    else surface_output_types ^ "\n" ^ surface_auto_methods
+  in
+  let adapter_module_suffix =
+    String.substr_replace_first
+      adapter_module_suffix
+      ~pattern:surface_marker
+      ~with_:surface_injection
   in
   let adapter_module =
     adapter_module_prefix
@@ -1512,8 +1531,15 @@ let gen_mli (api : Ir.api) : string =
       gen_special_object_auto_methods_mli config api.structs instance_obj
     | None -> "", ""
   in
+  (* Generate auto-generated method signatures for Surface *)
+  let surface_output_types_mli, surface_auto_methods_mli =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "surface") with
+    | Some surface_obj ->
+      gen_special_object_auto_methods_mli config api.structs surface_obj
+    | None -> "", ""
+  in
   (* Filter out objects we handle specially *)
-  let special_objects = [ "instance"; "adapter"; "device"; "queue" ] in
+  let special_objects = [ "instance"; "adapter"; "device"; "queue"; "surface" ] in
   let regular_objects =
     List.filter api.objects ~f:(fun obj ->
       not (List.mem special_objects obj.name ~equal:String.equal))
@@ -1549,6 +1575,21 @@ let gen_mli (api : Ir.api) : string =
       adapter_module_suffix
       ~pattern:adapter_marker_mli
       ~with_:adapter_injection_mli
+  in
+  (* Inject Surface output types and method signatures at the marker *)
+  let surface_marker_mli =
+    "(* AUTO-GENERATED SURFACE METHOD SIGNATURES INJECTED HERE *)"
+  in
+  let surface_injection_mli =
+    if String.is_empty surface_output_types_mli
+    then surface_auto_methods_mli
+    else surface_output_types_mli ^ "\n" ^ surface_auto_methods_mli
+  in
+  let adapter_module_suffix =
+    String.substr_replace_first
+      adapter_module_suffix
+      ~pattern:surface_marker_mli
+      ~with_:surface_injection_mli
   in
   let adapter_module =
     adapter_module_prefix
