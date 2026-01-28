@@ -1,13 +1,22 @@
 open! Core
 
-let () =
-  print_endline "\n=== Testing Buffer Creation ===";
-  (* Create instance, adapter, device using high-level API *)
+let init () =
   let instance = Wgpu.Instance.create () in
   let adapter = Wgpu.Instance.request_adapter instance () in
   let device = Wgpu.Adapter.request_device adapter in
-  print_endline "Device obtained.";
-  (* Create buffer using high-level API *)
+  instance, adapter, device
+;;
+
+let cleanup ~instance ~adapter ~device ~buffer =
+  Wgpu.Buffer.release buffer;
+  Wgpu.Device.release device;
+  Wgpu.Adapter.release adapter;
+  Wgpu.Instance.release instance;
+  ()
+;;
+
+let () =
+  let instance, adapter, device = init () in
   let buffer =
     Wgpu.Device.create_buffer
       device
@@ -20,18 +29,9 @@ let () =
       ~mapped_at_creation:false
       ()
   in
-  print_endline "Buffer created!";
-  (* Get buffer info *)
   let buf_size = Wgpu.Buffer.get_size buffer in
   let buf_usage = Wgpu.Buffer.get_usage buffer in
-  printf "  Buffer size: %Ld\n" buf_size;
-  printf "  Buffer usage: 0x%04x\n" buf_usage;
+  print_s [%message "" ~buffer_size:(buf_size : int64) ~buffer_usage:(buf_usage : int)];
   assert (Int64.equal buf_size 256L);
-  print_endline "Buffer properties verified!";
-  (* Cleanup *)
-  Wgpu.Buffer.release buffer;
-  Wgpu.Device.release device;
-  Wgpu.Adapter.release adapter;
-  Wgpu.Instance.release instance;
-  print_endline "All resources released."
+  cleanup ~instance ~adapter ~device ~buffer
 ;;

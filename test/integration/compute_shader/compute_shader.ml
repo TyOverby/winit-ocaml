@@ -1,16 +1,9 @@
 open! Core
 
-let () =
-  print_endline "\n=== Testing Compute Shader (Full Pipeline) ===";
-  (* Create instance, adapter, device using high-level API *)
-  let instance = Wgpu.Instance.create () in
-  let adapter = Wgpu.Instance.request_adapter instance () in
-  let device = Wgpu.Adapter.request_device adapter in
-  let queue = Wgpu.Device.get_queue device in
-  print_endline "Device and queue obtained.";
-  (* Create shader module with WGSL code that doubles values *)
-  let shader_code =
-    {|
+(* TODO: split into `init` and `cleanup` functions *)
+
+let shader_code =
+  {|
 @group(0) @binding(0) var<storage, read_write> data: array<u32>;
 
 @compute @workgroup_size(64)
@@ -21,13 +14,22 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     }
 }
 |}
-  in
+;;
+
+let () =
+  (* Create instance, adapter, device using high-level API *)
+  let instance = Wgpu.Instance.create () in
+  let adapter = Wgpu.Instance.request_adapter instance () in
+  let device = Wgpu.Adapter.request_device adapter in
+  let queue = Wgpu.Device.get_queue device in
+  (* Create shader module with WGSL code that doubles values *)
   let shader = Wgpu.Device.create_shader_module device ~wgsl:shader_code () in
-  print_endline "Shader module created!";
   (* Create storage buffer (GPU only, not mappable) *)
   let num_elements = 64 in
-  let data_size = num_elements * 4 in
-  (* 64 uint32 values = 256 bytes *)
+  let data_size =
+    (* 64 uint32 values = 256 bytes *)
+    num_elements * 4
+  in
   let storage_buffer =
     Wgpu.Device.create_buffer
       device
@@ -40,7 +42,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       ~mapped_at_creation:false
       ()
   in
-  print_endline "Storage buffer created.";
   (* Create readback buffer (mappable for reading results) *)
   let readback_buffer =
     Wgpu.Device.create_buffer
@@ -50,7 +51,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       ~mapped_at_creation:false
       ()
   in
-  print_endline "Readback buffer created.";
   (* Write initial data [0, 1, 2, ..., 63] to storage buffer *)
   let input_bytes =
     Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout data_size
@@ -64,8 +64,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     Bigarray.Array1.set input_bytes (offset + 3) ((i lsr 24) land 0xFF)
   done;
   Wgpu.Queue.write_buffer queue ~buffer:storage_buffer ~offset:0L ~data:input_bytes;
-  print_endline "Initial data written to storage buffer.";
-  (* Create bind group layout for single storage buffer at binding 0 *)
   let bind_group_layout =
     Wgpu.Device.create_bind_group_layout_for_storage_buffer
       device
@@ -74,8 +72,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       ~read_only:false
       ()
   in
-  print_endline "Bind group layout created.";
-  (* Create bind group with storage buffer *)
   let bind_group =
     Wgpu.Device.create_bind_group
       device
@@ -92,8 +88,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         ]
       ()
   in
-  print_endline "Bind group created.";
-  (* Create pipeline layout *)
   let pipeline_layout =
     Wgpu.Device.create_pipeline_layout
       device
@@ -101,8 +95,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       ~bind_group_layouts:[ bind_group_layout ]
       ()
   in
-  print_endline "Pipeline layout created.";
-  (* Create compute pipeline *)
   let compute_pipeline =
     Wgpu.Device.create_compute_pipeline
       device
@@ -112,25 +104,18 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       ~compute_entry_point:"main"
       ()
   in
-  print_endline "Compute pipeline created.";
-  (* Create command encoder and record commands *)
   let encoder = Wgpu.Device.create_command_encoder device ~label:"compute_encoder" () in
-  (* Use Command_encoder.begin_compute_pass directly (module method) *)
   let compute_pass =
     Wgpu.Command_encoder.begin_compute_pass encoder ~label:"compute_pass" ()
   in
-  (* Set pipeline and bind group, then dispatch *)
   Wgpu.Compute_pass_encoder.set_pipeline compute_pass ~pipeline:compute_pipeline;
   Wgpu.set_bind_group compute_pass ~index:0 ~bind_group;
-  (* Dispatch 1 workgroup of 64 threads *)
   Wgpu.Compute_pass_encoder.dispatch_workgroups
     compute_pass
     ~workgroupCountX:1
     ~workgroupCountY:1
     ~workgroupCountZ:1;
   Wgpu.Compute_pass_encoder.end_ compute_pass;
-  print_endline "Compute pass recorded.";
-  (* Copy storage buffer to readback buffer *)
   Wgpu.Command_encoder.copy_buffer_to_buffer
     encoder
     ~source:storage_buffer
@@ -138,25 +123,20 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     ~destination:readback_buffer
     ~destination_offset:0L
     ~size:(Int64.of_int data_size);
-  print_endline "Copy command recorded.";
-  (* Finish and submit *)
   let command_buffer = Wgpu.finish encoder ~label:"compute_commands" () in
-  Wgpu.Queue.submit queue ~commands:[ command_buffer ];
-  print_endline "Commands submitted.";
-  (* Poll device to ensure work completes *)
-  Wgpu.Device.poll device ~wait:true ();
-  print_endline "Device polled.";
-  (* Map readback buffer and verify results *)
-  Wgpu.map_buffer
-    readback_buffer
-    ~mode:[ Wgpu.Map_mode.Item.Read ]
-    ~offset:0L
-    ~size:(Int64.of_int data_size);
-  Wgpu.Device.poll device ~wait:true ();
+  let ( (* submit and then wait for it to complete *) ) =
+    Wgpu.Queue.submit queue ~commands:[ command_buffer ];
+    Wgpu.Device.poll device ~wait:true ()
+  in
   let mapped_data =
+    Wgpu.map_buffer
+      readback_buffer
+      ~mode:[ Wgpu.Map_mode.Item.Read ]
+      ~offset:0L
+      ~size:(Int64.of_int data_size);
+    Wgpu.Device.poll device ~wait:true ();
     Wgpu.get_const_mapped_range readback_buffer ~offset:0L ~size:(Int64.of_int data_size)
   in
-  print_endline "Buffer mapped for reading.";
   (* Read back and verify: each value should be doubled *)
   let all_correct = ref true in
   for i = 0 to num_elements - 1 do
@@ -172,9 +152,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       printf "  ERROR: data[%d] = %d, expected %d\n" i value expected;
       all_correct := false)
   done;
-  if !all_correct
-  then print_endline "SUCCESS: All values correctly doubled by compute shader!"
-  else print_endline "FAILURE: Some values incorrect.";
   Wgpu.Buffer.unmap readback_buffer;
   (* Cleanup *)
   Wgpu.Command_buffer.release command_buffer;
@@ -191,5 +168,8 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
   Wgpu.Device.release device;
   Wgpu.Adapter.release adapter;
   Wgpu.Instance.release instance;
-  print_endline "All resources released."
+  if not !all_correct
+  then (
+    print_endline "FAILURE: Some values incorrect.";
+    exit 1)
 ;;
