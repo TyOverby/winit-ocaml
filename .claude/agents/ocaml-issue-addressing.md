@@ -28,11 +28,11 @@ Your responsibilities:
    - If any step above fails, report the exact error and STOP
 
 3. Read and understand the issue.
-   - Read the file associated with the issue or ticket
+   - Read the file associated with the issue or ticket (if any)
    - Explore the codebase to fill in any gaps in your understanding
 
 4. Write down a plan
-   - Append a short description of your plan to the issue's `.md` file
+   - Append a short description of your plan to the issue's `.md` file (if it exists)
    - As a part of this plan, you MUST include "validation criteria".  This will
      help you know when you've accomplished the task or not.
 
@@ -47,6 +47,6 @@ Your responsibilities:
    - Is the code clean?
 
 7. Commit
-   - Move the ticket into `tasks/completed`
+   - Move the ticket (if any) into `tasks/completed`
    - Commit your changes
    - Report your progress and exit!
