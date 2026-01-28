@@ -127,7 +127,8 @@ examples, notice how there's a difference in the granularity of comments but als
 how operations are grouped into a single binding.
 
 **BAD:**
-```
+```ocaml
+let my_function () = 
   ... other code ...
   (* map the readback_buffer *)
   Wgpu.map_buffer readback_buffer ~mode:[ Wgpu.Map_mode.Item.Read ] ~offset:0L ~size:(Int64.of_int data_size);
@@ -139,7 +140,8 @@ how operations are grouped into a single binding.
 ```
 
 **GOOD:**
-```
+```ocaml
+let my_function () = 
   ... other code ...
   let mapped_data =
     (* map the readback buffer and read from it *)
@@ -151,14 +153,21 @@ how operations are grouped into a single binding.
 ```
 
 If there's no value to add a binding to, you can use "unit smuggling" to group
-a small sequence of related operations under a descriptive comment. This makes
-it unambiguous which operations the comment applies to:
+a small sequence of related operations under a descriptive comment. This reduces the scope of 
+any intermediate variables and makes it unambiguous which operations the comment applies to:
 
+**GOOD:**
 ```ocaml
-let ( (* submit and block *) ) =
-  Wgpu.Queue.submit queue ~commands:[ command_buffer ];
-  Wgpu.Device.poll device ~wait:true ()
-in
+let my_function () = 
+  ... other code ...
+  let ( (* Write output *) ) =
+    let ppm_file = Test_util.output_path "render_triangle.ppm" in
+    let png_file = Test_util.output_path "render_triangle.png" in
+    Test_util.write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
+    Test_util.ppm_to_png ~ppm_file ~png_file;
+    ()
+  in
+  ...
 ```
 
 The `let ( (* comment *) ) = ... in` binds the unit result to an empty pattern, allowing

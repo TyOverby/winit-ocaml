@@ -128,11 +128,13 @@ let () =
         all_correct := false)
     done
   done;
-  (* Write output to PNG *)
-  let ppm_file = Test_util.output_path "render_clear.ppm" in
-  let png_file = Test_util.output_path "render_clear.png" in
-  Test_util.write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
-  if Test_util.ppm_to_png ~ppm_file ~png_file then Core_unix.unlink ppm_file;
+  let ( (* Write output to PNG *) ) =
+    let ppm_file = Test_util.output_path "render_clear.ppm" in
+    let png_file = Test_util.output_path "render_clear.png" in
+    Test_util.write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
+    Test_util.ppm_to_png ~ppm_file ~png_file;
+    ()
+  in
   Wgpu.Buffer.unmap readback_buffer;
   cleanup
     ~instance

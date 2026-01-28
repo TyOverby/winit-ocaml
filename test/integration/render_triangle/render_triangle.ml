@@ -156,11 +156,13 @@ let () =
   let ba = Bigarray.Array1.get mapped_data (corner_offset + 3) in
   let center_is_green = cr = 0 && cg = 255 && cb = 0 && ca = 255 in
   let corner_is_blue = br = 0 && bg = 0 && bb = 255 && ba = 255 in
-  (* Write output *)
-  let ppm_file = Test_util.output_path "render_triangle.ppm" in
-  let png_file = Test_util.output_path "render_triangle.png" in
-  Test_util.write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
-  if Test_util.ppm_to_png ~ppm_file ~png_file then Core_unix.unlink ppm_file;
+  let ( (* Write output *) ) =
+    let ppm_file = Test_util.output_path "render_triangle.ppm" in
+    let png_file = Test_util.output_path "render_triangle.png" in
+    Test_util.write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
+    Test_util.ppm_to_png ~ppm_file ~png_file;
+    ()
+  in
   Wgpu.Buffer.unmap readback_buffer;
   cleanup
     ~instance

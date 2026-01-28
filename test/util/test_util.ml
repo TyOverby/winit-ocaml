@@ -50,7 +50,7 @@ let ppm_to_png ~ppm_file ~png_file =
     sprintf "convert %s -define png:exclude-chunks=date,time %s" ppm_file png_file
   in
   match Core_unix.system cmd with
-  | Ok () -> true
+  | Ok () -> ()
   | Error e ->
     Error.raise_s
       [%message "Error: ImageMagick convert failed" (e : Core_unix.Exit_or_signal.error)]
