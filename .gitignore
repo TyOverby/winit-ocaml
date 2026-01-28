@@ -2,3 +2,7 @@ _opam
 _build
 ./opam
 
+# only allow .exepected.png files to be committed
+*.png
+!*.expected.png
+!test/resources/*.png
