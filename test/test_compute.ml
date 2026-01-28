@@ -196,8 +196,8 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
       device
       ~label:"double_pipeline"
       ~layout:pipeline_layout
-      ~module_:shader
-      ~entry_point:"main"
+      ~compute_module:shader
+      ~compute_entry_point:"main"
       ()
   in
   print_endline "Compute pipeline created.";

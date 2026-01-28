@@ -70,3 +70,35 @@ This fix would also affect any other methods with optional object parameters. Ch
 2. `dune build @check` reports no warnings
 3. Generated code for `create_compute_pipeline` has proper `?layout:Pipeline_layout.t option` handling
 4. If the codegen is fixed, consider removing `device.create_compute_pipeline` from the Manual list in config.ml
+
+## Implementation Plan
+
+The fix involves two main changes to `codegen/gen_high.ml`:
+
+1. **Modify `default_value_for_type`**: For `Optional (Object _)` types, we should NOT provide a default value. Instead, we need to generate `?param` without a default (meaning the parameter becomes `'a option`).
+
+2. **Modify `build_param_list`**: When detecting an optional object parameter, generate `?param_name` instead of `?(param_name = default)`.
+
+3. **Modify `generate_struct_sets`**: When setting fields for optional object parameters, wrap the setter call in a `match` statement that only calls the setter when `Some value` is provided.
+
+The key insight is that when the member type is `Optional (Object name)`, we need to:
+- In the signature (MLI): already generates `?layout:Pipeline_layout.t` (correct)
+- In the implementation (ML): generate `?layout` (no default) and wrap the setter in pattern matching
+
+### Implementation Steps
+
+1. Modify `default_value_for_type` to return a special marker or use a different approach for optional objects
+2. Update `build_param_list` to handle optional object parameters specially (no default value)
+3. Update `generate_struct_sets` to wrap optional object setters in `match` statements
+
+### Expected Output
+
+```ocaml
+let create_compute_pipeline t ?(label = "") ?layout ~compute_module ~compute_entry_point ?(compute_constants = []) () =
+  ...
+  (match layout with
+   | Some l -> Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_layout
+                 desc_descriptor l.Pipeline_layout.handle
+   | None -> ());
+  ...
+```

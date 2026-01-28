@@ -261,17 +261,31 @@ let member_to_low_level (member_name : string) (type_ref : Ir.type_ref) : string
   Type_mapping.convert_member_to_low ~var_name:member_name type_ref
 ;;
 
-let default_value_for_type (type_ref : Ir.type_ref) : string =
+(** Returns [Some default] if this type has a sensible default value, or [None] if it
+    should be a true optional parameter (no default). *)
+let default_value_for_type (type_ref : Ir.type_ref) : string option =
   match type_ref with
-  | Primitive String_with_default_empty -> {|""|}
-  | Primitive Bool -> "false"
-  | Primitive (Uint32 | Int32) -> "0"
-  | Primitive (Uint64 | Int64 | Usize) -> "0L"
-  | Primitive (Float32 | Float64) -> "0.0"
-  | Optional _ -> "None"
-  | Array _ -> "[]"
-  | Pointer { inner = Array _; _ } -> "[]"
-  | _ -> {|""|}
+  | Primitive String_with_default_empty -> Some {|""|}
+  | Primitive Bool -> Some "false"
+  | Primitive (Uint32 | Int32) -> Some "0"
+  | Primitive (Uint64 | Int64 | Usize) -> Some "0L"
+  | Primitive (Float32 | Float64) -> Some "0.0"
+  | Optional _ -> Some "None"
+  | Array _ -> Some "[]"
+  | Pointer { inner = Array _; _ } -> Some "[]"
+  (* Object types (when marked optional) should be true options with no default *)
+  | Object _ -> None
+  | _ -> Some {|""|}
+;;
+
+(** Returns true if this member is an optional object type (i.e., the member itself is
+    marked optional and the type is an Object). *)
+let is_optional_object_member (member : Ir.struct_member) : bool =
+  member.optional
+  &&
+  match member.type_ with
+  | Object _ -> true
+  | _ -> false
 ;;
 
 let build_param_list
@@ -283,8 +297,11 @@ let build_param_list
     List.filter_map struct_params ~f:(fun p ->
       if p.is_optional
       then (
-        let default_val = default_value_for_type p.member.type_ in
-        Some {%string|?(%{p.param_name} = %{default_val})|})
+        match default_value_for_type p.member.type_ with
+        | Some default_val -> Some {%string|?(%{p.param_name} = %{default_val})|}
+        | None ->
+          (* No default value - use bare optional syntax (e.g., for optional objects) *)
+          Some {%string|?%{p.param_name}|})
       else Some {%string|~%{p.param_name}|})
     @ List.filter_map non_struct_params ~f:(fun (name, _arg, is_opt) ->
       if is_opt then Some {%string|?%{name}|} else Some {%string|~%{name}|})
@@ -594,12 +611,30 @@ let rec generate_struct_sets
          | None ->
            (* Regular member - set the value *)
            let param_name = escape_keyword (prefix ^ member.name) in
-           let converted = member_to_low_level param_name member.type_ in
-           { code_lines =
-               [ {%string|Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} %{converted};|}
-               ]
-           ; structs_to_free = []
-           }))
+           (* Check if this is an optional object member - needs special handling *)
+           if is_optional_object_member member
+           then (
+             (* For optional object members, wrap in a match statement *)
+             let obj_name =
+               match member.type_ with
+               | Object name -> name
+               | _ -> failwith "is_optional_object_member returned true for non-object"
+             in
+             let obj_module = ocaml_module_name obj_name in
+             { code_lines =
+                 [ {%string|(match %{param_name} with|}
+                 ; {%string| | Some x -> Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} x.%{obj_module}.handle|}
+                 ; " | None -> ());"
+                 ]
+             ; structs_to_free = []
+             })
+           else (
+             let converted = member_to_low_level param_name member.type_ in
+             { code_lines =
+                 [ {%string|Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} %{converted};|}
+                 ]
+             ; structs_to_free = []
+             })))
   in
   let code = List.concat_map results ~f:(fun r -> r.code_lines) in
   let vars = List.concat_map results ~f:(fun r -> r.structs_to_free) in

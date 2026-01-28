@@ -27,9 +27,7 @@ module Device : sig
   (** Create a shader module from WGSL source *)
   val create_shader_module' : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
 
-  (** Create a compute pipeline *)
-  val create_compute_pipeline : t -> ?label:string -> layout:Pipeline_layout.t ->
-    module_:Shader_module.t -> entry_point:string -> unit -> Compute_pipeline.t
+  (* create_compute_pipeline is now auto-generated *)
 
   (** Create a render pipeline (uses single shader module for vertex and fragment).
       The [blend] parameter is a tuple of (color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op). *)

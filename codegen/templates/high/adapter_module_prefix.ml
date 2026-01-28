@@ -51,19 +51,7 @@ module Device = struct
     Wgpu_low.Shader_source_wgsl.shader_source_WGSL_free wgsl_source;
     ({ Shader_module.handle = shader } : Shader_module.t)
 
-  let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
-    let stage_desc = Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_create () in
-    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_module stage_desc module_.Shader_module.handle;
-    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_entry_point stage_desc entry_point;
-    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_constants stage_desc [||];
-    let desc = Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_create () in
-    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_label desc label;
-    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_layout desc layout.Pipeline_layout.handle;
-    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_compute desc stage_desc;
-    let pipeline = Wgpu_low.device_create_compute_pipeline t.handle desc in
-    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_free stage_desc;
-    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_free desc;
-    ({ Compute_pipeline.handle = pipeline } : Compute_pipeline.t)
+  (* create_compute_pipeline is now auto-generated *)
 
   let create_render_pipeline t ?(label = "") ~shader_module ~vertex_entry_point
       ~fragment_entry_point ~color_format

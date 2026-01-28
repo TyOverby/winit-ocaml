@@ -532,11 +532,13 @@ let%expect_test "manual: device.create_compute_pipeline" =
       val create_compute_pipeline : t -> ?label:string -> ?layout:Pipeline_layout.t -> compute_module:Shader_module.t -> compute_entry_point:string -> ?compute_constants:Constant_entry.t list -> unit -> Compute_pipeline.t
 
     === High-level ML ===
-      let create_compute_pipeline t ?(label = "") ?(layout = "") ~compute_module ~compute_entry_point ?(compute_constants = []) () =
+      let create_compute_pipeline t ?(label = "") ?layout ~compute_module ~compute_entry_point ?(compute_constants = []) () =
         let compute_nested = Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_create () in
         let desc_descriptor = Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_create () in
         Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_label desc_descriptor label;
-        Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_layout desc_descriptor layout.Pipeline_layout.handle;
+        (match layout with
+         | Some x -> Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_layout desc_descriptor x.Pipeline_layout.handle
+         | None -> ());
         Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_module compute_nested compute_module.Shader_module.handle;
         Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_entry_point compute_nested compute_entry_point;
         let compute_constants_structs = List.map (fun (entry : Constant_entry.t) ->

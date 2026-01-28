@@ -1046,34 +1046,7 @@ module Device = struct
     ({ Shader_module.handle = shader } : Shader_module.t)
   ;;
 
-  let create_compute_pipeline t ?(label = "") ~layout ~module_ ~entry_point () =
-    let stage_desc =
-      Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_create ()
-    in
-    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_module
-      stage_desc
-      module_.Shader_module.handle;
-    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_entry_point
-      stage_desc
-      entry_point;
-    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_constants
-      stage_desc
-      [||];
-    let desc =
-      Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_create ()
-    in
-    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_label desc label;
-    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_layout
-      desc
-      layout.Pipeline_layout.handle;
-    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_compute
-      desc
-      stage_desc;
-    let pipeline = Wgpu_low.device_create_compute_pipeline t.handle desc in
-    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_free stage_desc;
-    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_free desc;
-    ({ Compute_pipeline.handle = pipeline } : Compute_pipeline.t)
-  ;;
+  (* create_compute_pipeline is now auto-generated *)
 
   let create_render_pipeline
     t
@@ -1351,6 +1324,62 @@ module Device = struct
     let result = Wgpu_low.device_create_command_encoder t.handle desc_descriptor in
     Wgpu_low.Command_encoder_descriptor.command_encoder_descriptor_free desc_descriptor;
     ({ Command_encoder.handle = result } : Command_encoder.t)
+  ;;
+
+  let create_compute_pipeline
+    t
+    ?(label = "")
+    ?layout
+    ~compute_module
+    ~compute_entry_point
+    ?(compute_constants = [])
+    ()
+    =
+    let compute_nested =
+      Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_create ()
+    in
+    let desc_descriptor =
+      Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_create ()
+    in
+    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_label
+      desc_descriptor
+      label;
+    (match layout with
+     | Some x ->
+       Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_layout
+         desc_descriptor
+         x.Pipeline_layout.handle
+     | None -> ());
+    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_module
+      compute_nested
+      compute_module.Shader_module.handle;
+    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_entry_point
+      compute_nested
+      compute_entry_point;
+    let compute_constants_structs =
+      List.map
+        (fun (entry : Constant_entry.t) ->
+          let e = Wgpu_low.Constant_entry.constant_entry_create () in
+          Wgpu_low.Constant_entry.constant_entry_set_key e entry.key;
+          Wgpu_low.Constant_entry.constant_entry_set_value e entry.value;
+          e)
+        compute_constants
+    in
+    let compute_constants_array = Array.of_list compute_constants_structs in
+    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_set_constants
+      compute_nested
+      compute_constants_array;
+    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_set_compute
+      desc_descriptor
+      compute_nested;
+    let result = Wgpu_low.device_create_compute_pipeline t.handle desc_descriptor in
+    List.iter
+      (fun e -> Wgpu_low.Constant_entry.constant_entry_free e)
+      compute_constants_structs;
+    Wgpu_low.Programmable_stage_descriptor.programmable_stage_descriptor_free
+      compute_nested;
+    Wgpu_low.Compute_pipeline_descriptor.compute_pipeline_descriptor_free desc_descriptor;
+    ({ Compute_pipeline.handle = result } : Compute_pipeline.t)
   ;;
 
   let create_pipeline_layout t ?(label = "") ?(bind_group_layouts = []) () =
