@@ -4,10 +4,10 @@ module type S = sig
   module Item : sig
     type t
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t
+  type t = int
 
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
@@ -19,11 +19,12 @@ module type S = sig
   val diff : t -> t -> t
   val to_int : t -> int
   val to_list : t -> Item.t list
+  val list_to_int : Item.t list -> t
 end
 
 module Buffer_usage : sig
   module Item : sig
-    type t =
+    type t = Wgpu_low.Buffer_usage.t =
       | None
       | Map_read
       | Map_write
@@ -36,29 +37,15 @@ module Buffer_usage : sig
       | Indirect
       | Query_resolve
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t = int
-
-  val singleton : Item.t -> t
-  val of_list : Item.t list -> t
-  val is_member : t -> Item.t -> bool
-  val empty : t
-  val all : t
-  val union : t -> t -> t
-  val inter : t -> t -> t
-  val diff : t -> t -> t
-  val to_int : t -> int
-  val to_list : t -> Item.t list
-
-  (* Backwards compatibility alias *)
-  val list_to_int : Item.t list -> t
+  include S with module Item := Item
 end
 
 module Color_write_mask : sig
   module Item : sig
-    type t =
+    type t = Wgpu_low.Color_write_mask.t =
       | None
       | Red
       | Green
@@ -66,84 +53,42 @@ module Color_write_mask : sig
       | Alpha
       | All
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t = int
-
-  val singleton : Item.t -> t
-  val of_list : Item.t list -> t
-  val is_member : t -> Item.t -> bool
-  val empty : t
-  val all : t
-  val union : t -> t -> t
-  val inter : t -> t -> t
-  val diff : t -> t -> t
-  val to_int : t -> int
-  val to_list : t -> Item.t list
-
-  (* Backwards compatibility alias *)
-  val list_to_int : Item.t list -> t
+  include S with module Item := Item
 end
 
 module Map_mode : sig
   module Item : sig
-    type t =
+    type t = Wgpu_low.Map_mode.t =
       | None
       | Read
       | Write
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t = int
-
-  val singleton : Item.t -> t
-  val of_list : Item.t list -> t
-  val is_member : t -> Item.t -> bool
-  val empty : t
-  val all : t
-  val union : t -> t -> t
-  val inter : t -> t -> t
-  val diff : t -> t -> t
-  val to_int : t -> int
-  val to_list : t -> Item.t list
-
-  (* Backwards compatibility alias *)
-  val list_to_int : Item.t list -> t
+  include S with module Item := Item
 end
 
 module Shader_stage : sig
   module Item : sig
-    type t =
+    type t = Wgpu_low.Shader_stage.t =
       | None
       | Vertex
       | Fragment
       | Compute
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t = int
-
-  val singleton : Item.t -> t
-  val of_list : Item.t list -> t
-  val is_member : t -> Item.t -> bool
-  val empty : t
-  val all : t
-  val union : t -> t -> t
-  val inter : t -> t -> t
-  val diff : t -> t -> t
-  val to_int : t -> int
-  val to_list : t -> Item.t list
-
-  (* Backwards compatibility alias *)
-  val list_to_int : Item.t list -> t
+  include S with module Item := Item
 end
 
 module Texture_usage : sig
   module Item : sig
-    type t =
+    type t = Wgpu_low.Texture_usage.t =
       | None
       | Copy_src
       | Copy_dst
@@ -151,22 +96,8 @@ module Texture_usage : sig
       | Storage_binding
       | Render_attachment
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t = int
-
-  val singleton : Item.t -> t
-  val of_list : Item.t list -> t
-  val is_member : t -> Item.t -> bool
-  val empty : t
-  val all : t
-  val union : t -> t -> t
-  val inter : t -> t -> t
-  val diff : t -> t -> t
-  val to_int : t -> int
-  val to_list : t -> Item.t list
-
-  (* Backwards compatibility alias *)
-  val list_to_int : Item.t list -> t
+  include S with module Item := Item
 end

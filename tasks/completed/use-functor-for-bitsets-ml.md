@@ -138,3 +138,23 @@ Option A is cleaner - the functor logic doesn't change based on the YAML, so it 
 4. `high/bitset_functor.ml` contains the `Make` functor
 5. Generated `high/bitsets.ml` uses `Make(...)` for each bitset module
 6. All existing tests pass
+
+## Implementation Plan
+
+1. Create `high/bitset_functor.ml` with:
+   - `module type Item_intf` defining the required interface for bitset items
+   - `module Make(Item : Item_intf)` functor that produces all bitset operations
+
+2. Create `high/bitset_functor.mli` exposing:
+   - `module type Item_intf`
+   - `module Make` functor with its output signature
+
+3. Update `high/dune` to include `bitset_functor` in the library
+
+4. Modify `codegen/gen_high.ml` function `gen_bitset_with_helpers`:
+   - In Implementation mode: generate `Bitset_functor.Make(struct ... end)` applications
+   - In Interface mode: keep the existing interface signature (unchanged)
+
+5. Run `dune build` to regenerate `high/bitsets.ml` and verify
+
+6. Run tests to ensure everything still works

@@ -1483,54 +1483,49 @@ end
       | Some doc -> {%string|(** %{doc} *)
   |}
     in
+    let variants =
+      List.map enum.entries ~f:(fun entry ->
+        let entry_name = normalize_enum_entry_name entry.name in
+        {%string|    | %{entry_name}|})
+      |> String.concat ~sep:"\n"
+    in
     {%string|module %{module_name} : sig
-  %{doc_comment}include module type of Wgpu_low.%{module_name}
+  %{doc_comment}type t =
+%{variants}
 
-  val to_string : t -> string
+  include S with type t := t
 end
 |}
 ;;
 
 let gen_bitset_with_helpers (mode : output_mode) (bitflag : Ir.bitflag) : string =
   let module_name = ocaml_module_name bitflag.name in
+  let variants =
+    List.map bitflag.entries ~f:(fun entry ->
+      let entry_name = normalize_enum_entry_name entry.name in
+      {%string|    | %{entry_name}|})
+    |> String.concat ~sep:"\n"
+  in
+  let all_items =
+    List.map bitflag.entries ~f:(fun entry ->
+      let entry_name = normalize_enum_entry_name entry.name in
+      entry_name)
+    |> String.concat ~sep:"; "
+  in
   match mode with
   | Implementation ->
-    let variants =
-      List.map bitflag.entries ~f:(fun entry ->
-        let entry_name = normalize_enum_entry_name entry.name in
-        {%string|    | %{entry_name}|})
-      |> String.concat ~sep:"\n"
-    in
-    let all_items =
-      List.map bitflag.entries ~f:(fun entry ->
-        let entry_name = normalize_enum_entry_name entry.name in
-        entry_name)
-      |> String.concat ~sep:"; "
-    in
-    {%string|module %{module_name} = struct
-  module Item = struct
-    type t = Wgpu_low.%{module_name}.t =
+    (* Generate a named Item module, then apply functor with module constraint *)
+    {%string|module %{module_name}_item = struct
+  type t = Wgpu_low.%{module_name}.t =
 %{variants}
 
-    let to_int = Wgpu_low.%{module_name}.to_int
-    let all = [ %{all_items} ]
-  end
+  let to_int = Wgpu_low.%{module_name}.to_int
+  let all = [ %{all_items} ]
+end
 
-  type t = int
-
-  let singleton item = Item.to_int item
-  let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
-  let is_member t item = t land Item.to_int item <> 0
-  let empty = 0
-  let all = of_list Item.all
-  let union a b = a lor b
-  let inter a b = a land b
-  let diff a b = a land lnot b
-  let to_int t = t
-  let to_list t = List.filter (fun item -> is_member t item) Item.all
-
-  (* Backwards compatibility alias *)
-  let list_to_int = of_list
+module %{module_name} = struct
+  include Bitset_functor.Make (%{module_name}_item)
+  module Item = %{module_name}_item
 end
 |}
   | Interface ->
@@ -1540,35 +1535,15 @@ end
       | Some doc -> {%string|(** %{doc} *)
   |}
     in
-    let variants =
-      List.map bitflag.entries ~f:(fun entry ->
-        let entry_name = normalize_enum_entry_name entry.name in
-        {%string|    | %{entry_name}|})
-      |> String.concat ~sep:"\n"
-    in
     {%string|module %{module_name} : sig
   %{doc_comment}module Item : sig
-    type t =
+    type t = Wgpu_low.%{module_name}.t =
 %{variants}
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t = int
-
-  val singleton : Item.t -> t
-  val of_list : Item.t list -> t
-  val is_member : t -> Item.t -> bool
-  val empty : t
-  val all : t
-  val union : t -> t -> t
-  val inter : t -> t -> t
-  val diff : t -> t -> t
-  val to_int : t -> int
-  val to_list : t -> Item.t list
-
-  (* Backwards compatibility alias *)
-  val list_to_int : Item.t list -> t
+  include S with module Item := Item
 end
 |}
 ;;
@@ -1619,10 +1594,10 @@ let gen_bitsets_ml (api : Ir.api) : string =
   module Item : sig
     type t
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t
+  type t = int
 
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
@@ -1634,6 +1609,7 @@ let gen_bitsets_ml (api : Ir.api) : string =
   val diff : t -> t -> t
   val to_int : t -> int
   val to_list : t -> Item.t list
+  val list_to_int : Item.t list -> t
 end
 
 |}
@@ -1652,10 +1628,10 @@ let gen_bitsets_mli (api : Ir.api) : string =
   module Item : sig
     type t
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t
+  type t = int
 
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
@@ -1667,6 +1643,7 @@ let gen_bitsets_mli (api : Ir.api) : string =
   val diff : t -> t -> t
   val to_int : t -> int
   val to_list : t -> Item.t list
+  val list_to_int : Item.t list -> t
 end
 
 |}

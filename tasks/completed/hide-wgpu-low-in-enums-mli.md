@@ -96,3 +96,29 @@ Comments/docstrings (like those on `Callback_mode`, `Composite_alpha_mode`, etc.
 5. Each enum module has explicit type definition with variants
 6. Each enum module uses `include S with type t := t`
 7. All existing tests pass
+
+---
+
+## Implementation Plan
+
+The change needs to modify the `gen_enum_with_to_string` function in `codegen/gen_high.ml`.
+Currently in the `Interface` case, it generates:
+```ocaml
+  include module type of Wgpu_low.X
+  val to_string : t -> string
+```
+
+The fix:
+1. In the `Interface` case of `gen_enum_with_to_string`, generate the explicit type definition with all variants (the code already has access to `enum.entries`)
+2. Replace `include module type of Wgpu_low.X` + `val to_string` with `include S with type t := t`
+
+The `.ml` file generation remains unchanged - it can continue using `include Wgpu_low.X` as an implementation detail.
+
+### Validation Criteria
+1. `dune build` succeeds
+2. `dune fmt > /dev/null || true` runs without error
+3. `dune build @check` reports no warnings
+4. Generated `high/enums.mli` contains no references to `Wgpu_low`
+5. Each enum module has explicit type definition with variants
+6. Each enum module uses `include S with type t := t`
+7. All existing tests pass

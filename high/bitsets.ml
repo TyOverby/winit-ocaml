@@ -4,10 +4,10 @@ module type S = sig
   module Item : sig
     type t
 
-    val all : t list
+    val to_int : t -> int
   end
 
-  type t
+  type t = int
 
   val singleton : Item.t -> t
   val of_list : Item.t list -> t
@@ -19,176 +19,112 @@ module type S = sig
   val diff : t -> t -> t
   val to_int : t -> int
   val to_list : t -> Item.t list
+  val list_to_int : Item.t list -> t
+end
+
+module Buffer_usage_item = struct
+  type t = Wgpu_low.Buffer_usage.t =
+    | None
+    | Map_read
+    | Map_write
+    | Copy_src
+    | Copy_dst
+    | Index
+    | Vertex
+    | Uniform
+    | Storage
+    | Indirect
+    | Query_resolve
+
+  let to_int = Wgpu_low.Buffer_usage.to_int
+
+  let all =
+    [ None
+    ; Map_read
+    ; Map_write
+    ; Copy_src
+    ; Copy_dst
+    ; Index
+    ; Vertex
+    ; Uniform
+    ; Storage
+    ; Indirect
+    ; Query_resolve
+    ]
+  ;;
 end
 
 module Buffer_usage = struct
-  module Item = struct
-    type t = Wgpu_low.Buffer_usage.t =
-      | None
-      | Map_read
-      | Map_write
-      | Copy_src
-      | Copy_dst
-      | Index
-      | Vertex
-      | Uniform
-      | Storage
-      | Indirect
-      | Query_resolve
+  include Bitset_functor.Make (Buffer_usage_item)
+  module Item = Buffer_usage_item
+end
 
-    let to_int = Wgpu_low.Buffer_usage.to_int
+module Color_write_mask_item = struct
+  type t = Wgpu_low.Color_write_mask.t =
+    | None
+    | Red
+    | Green
+    | Blue
+    | Alpha
+    | All
 
-    let all =
-      [ None
-      ; Map_read
-      ; Map_write
-      ; Copy_src
-      ; Copy_dst
-      ; Index
-      ; Vertex
-      ; Uniform
-      ; Storage
-      ; Indirect
-      ; Query_resolve
-      ]
-    ;;
-  end
-
-  type t = int
-
-  let singleton item = Item.to_int item
-  let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
-  let is_member t item = t land Item.to_int item <> 0
-  let empty = 0
-  let all = of_list Item.all
-  let union a b = a lor b
-  let inter a b = a land b
-  let diff a b = a land lnot b
-  let to_int t = t
-  let to_list t = List.filter (fun item -> is_member t item) Item.all
-
-  (* Backwards compatibility alias *)
-  let list_to_int = of_list
+  let to_int = Wgpu_low.Color_write_mask.to_int
+  let all = [ None; Red; Green; Blue; Alpha; All ]
 end
 
 module Color_write_mask = struct
-  module Item = struct
-    type t = Wgpu_low.Color_write_mask.t =
-      | None
-      | Red
-      | Green
-      | Blue
-      | Alpha
-      | All
+  include Bitset_functor.Make (Color_write_mask_item)
+  module Item = Color_write_mask_item
+end
 
-    let to_int = Wgpu_low.Color_write_mask.to_int
-    let all = [ None; Red; Green; Blue; Alpha; All ]
-  end
+module Map_mode_item = struct
+  type t = Wgpu_low.Map_mode.t =
+    | None
+    | Read
+    | Write
 
-  type t = int
-
-  let singleton item = Item.to_int item
-  let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
-  let is_member t item = t land Item.to_int item <> 0
-  let empty = 0
-  let all = of_list Item.all
-  let union a b = a lor b
-  let inter a b = a land b
-  let diff a b = a land lnot b
-  let to_int t = t
-  let to_list t = List.filter (fun item -> is_member t item) Item.all
-
-  (* Backwards compatibility alias *)
-  let list_to_int = of_list
+  let to_int = Wgpu_low.Map_mode.to_int
+  let all = [ None; Read; Write ]
 end
 
 module Map_mode = struct
-  module Item = struct
-    type t = Wgpu_low.Map_mode.t =
-      | None
-      | Read
-      | Write
+  include Bitset_functor.Make (Map_mode_item)
+  module Item = Map_mode_item
+end
 
-    let to_int = Wgpu_low.Map_mode.to_int
-    let all = [ None; Read; Write ]
-  end
+module Shader_stage_item = struct
+  type t = Wgpu_low.Shader_stage.t =
+    | None
+    | Vertex
+    | Fragment
+    | Compute
 
-  type t = int
-
-  let singleton item = Item.to_int item
-  let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
-  let is_member t item = t land Item.to_int item <> 0
-  let empty = 0
-  let all = of_list Item.all
-  let union a b = a lor b
-  let inter a b = a land b
-  let diff a b = a land lnot b
-  let to_int t = t
-  let to_list t = List.filter (fun item -> is_member t item) Item.all
-
-  (* Backwards compatibility alias *)
-  let list_to_int = of_list
+  let to_int = Wgpu_low.Shader_stage.to_int
+  let all = [ None; Vertex; Fragment; Compute ]
 end
 
 module Shader_stage = struct
-  module Item = struct
-    type t = Wgpu_low.Shader_stage.t =
-      | None
-      | Vertex
-      | Fragment
-      | Compute
+  include Bitset_functor.Make (Shader_stage_item)
+  module Item = Shader_stage_item
+end
 
-    let to_int = Wgpu_low.Shader_stage.to_int
-    let all = [ None; Vertex; Fragment; Compute ]
-  end
+module Texture_usage_item = struct
+  type t = Wgpu_low.Texture_usage.t =
+    | None
+    | Copy_src
+    | Copy_dst
+    | Texture_binding
+    | Storage_binding
+    | Render_attachment
 
-  type t = int
+  let to_int = Wgpu_low.Texture_usage.to_int
 
-  let singleton item = Item.to_int item
-  let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
-  let is_member t item = t land Item.to_int item <> 0
-  let empty = 0
-  let all = of_list Item.all
-  let union a b = a lor b
-  let inter a b = a land b
-  let diff a b = a land lnot b
-  let to_int t = t
-  let to_list t = List.filter (fun item -> is_member t item) Item.all
-
-  (* Backwards compatibility alias *)
-  let list_to_int = of_list
+  let all =
+    [ None; Copy_src; Copy_dst; Texture_binding; Storage_binding; Render_attachment ]
+  ;;
 end
 
 module Texture_usage = struct
-  module Item = struct
-    type t = Wgpu_low.Texture_usage.t =
-      | None
-      | Copy_src
-      | Copy_dst
-      | Texture_binding
-      | Storage_binding
-      | Render_attachment
-
-    let to_int = Wgpu_low.Texture_usage.to_int
-
-    let all =
-      [ None; Copy_src; Copy_dst; Texture_binding; Storage_binding; Render_attachment ]
-    ;;
-  end
-
-  type t = int
-
-  let singleton item = Item.to_int item
-  let of_list items = List.fold_left (fun acc item -> acc lor Item.to_int item) 0 items
-  let is_member t item = t land Item.to_int item <> 0
-  let empty = 0
-  let all = of_list Item.all
-  let union a b = a lor b
-  let inter a b = a land b
-  let diff a b = a land lnot b
-  let to_int t = t
-  let to_list t = List.filter (fun item -> is_member t item) Item.all
-
-  (* Backwards compatibility alias *)
-  let list_to_int = of_list
+  include Bitset_functor.Make (Texture_usage_item)
+  module Item = Texture_usage_item
 end
