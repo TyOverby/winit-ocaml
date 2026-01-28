@@ -6,9 +6,11 @@ files are in `webgpu_fundamentals/<lesson-name>/`.
 
 ## Goals
 
-The primary goal is **technical validation**: demonstrating API coverage and
+The primary goal is **technical validation**: demonstrating coverage of the high level API and
 stress-testing the bindings. The code should also be **readable**, since users
 will reference these as examples of how to achieve things with the wgpu API.
+
+Familiarize yourself with (and only use) the high level bindings in `high/wgpu.mli`.
 
 These are not meant to be verbatim translations. Port the _spirit_ of the
 lesson, adapting to the APIs we have available.
