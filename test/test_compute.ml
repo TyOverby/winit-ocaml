@@ -226,7 +226,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
   print_endline "Copy command recorded.";
   (* Finish and submit *)
   let command_buffer = Wgpu.finish encoder ~label:"compute_commands" () in
-  Wgpu.Queue.submit queue ~command_buffers:[ command_buffer ];
+  Wgpu.Queue.submit queue ~commands:[ command_buffer ];
   print_endline "Commands submitted.";
   (* Poll device to ensure work completes *)
   Wgpu.Device.poll device ~wait:true ();
@@ -350,7 +350,7 @@ let test_render_clear () =
   print_endline "Copy texture to buffer command recorded.";
   (* Finish and submit *)
   let command_buffer = Wgpu.finish encoder ~label:"render_commands" () in
-  Wgpu.Queue.submit queue ~command_buffers:[ command_buffer ];
+  Wgpu.Queue.submit queue ~commands:[ command_buffer ];
   print_endline "Commands submitted.";
   (* Poll for completion *)
   Wgpu.Device.poll device ~wait:true ();
@@ -528,7 +528,7 @@ fn fs_main() -> @location(0) vec4<f32> {
   print_endline "Copy command recorded.";
   (* Submit *)
   let command_buffer = Wgpu.finish encoder ~label:"render_commands" () in
-  Wgpu.Queue.submit queue ~command_buffers:[ command_buffer ];
+  Wgpu.Queue.submit queue ~commands:[ command_buffer ];
   print_endline "Commands submitted.";
   (* Wait and read back *)
   Wgpu.Device.poll device ~wait:true ();

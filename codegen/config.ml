@@ -45,7 +45,6 @@ let method_config : (Method_key.t * method_handling) list =
   ; ("device", "get_adapter_info"), Manual { reason = "Returns struct" }
     (* Queue methods - some manually implemented in adapter_module_prefix *)
   ; ("queue", "release"), Manual { reason = "Custom release logic" }
-  ; ("queue", "set_label"), Manual { reason = "Custom label handling" }
   ; ("queue", "write_buffer"), Manual { reason = "Uses pointer + size" }
   ; ("queue", "on_submitted_work_done"), Manual { reason = "Async callback" }
     (* Command encoder methods - keep only complex ones *)

@@ -13,10 +13,10 @@ module Queue : sig
   type t
 
   val release : t -> unit
-  val set_label : t -> label:string -> unit
-  val submit : t -> command_buffers:Command_buffer.t list -> unit
   val write_buffer : t -> buffer:Buffer.t -> offset:int64 ->
     data:(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t -> unit
+
+  (* AUTO-GENERATED QUEUE METHOD SIGNATURES INJECTED HERE *)
 end
 
 module Device : sig

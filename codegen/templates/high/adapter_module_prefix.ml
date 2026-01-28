@@ -22,14 +22,11 @@ module Queue = struct
   type t = { handle : Wgpu_low.queue }
 
   let release t = Wgpu_low.queue_release t.handle
-  let set_label t ~label = Wgpu_low.queue_set_label t.handle label
-
-  let submit t ~command_buffers =
-    let handles = List.map (fun (cb : Command_buffer.t) -> cb.handle) command_buffers in
-    Wgpu_low.queue_submit t.handle (Array.of_list handles)
 
   let write_buffer t ~buffer ~offset ~data =
     Wgpu_low.queue_write_buffer_bigarray t.handle buffer.Buffer.handle offset data
+
+  (* AUTO-GENERATED QUEUE METHODS INJECTED HERE *)
 end
 
 module Device = struct

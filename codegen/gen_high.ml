@@ -1366,9 +1366,23 @@ let gen_ml (api : Ir.api) : string =
     | Some device_obj -> gen_special_object_auto_methods config api.structs device_obj
     | None -> "", ""
   in
+  (* Generate auto-generated methods for Queue *)
+  let _queue_output_types, queue_auto_methods =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "queue") with
+    | Some queue_obj -> gen_special_object_auto_methods config api.structs queue_obj
+    | None -> "", ""
+  in
   (* Adapter module *)
   let adapter_module_prefix = read_template "high/adapter_module_prefix.ml" in
   let adapter_module_suffix = read_template "high/adapter_module_suffix.ml" in
+  (* Inject Queue methods at the marker *)
+  let queue_marker = "(* AUTO-GENERATED QUEUE METHODS INJECTED HERE *)" in
+  let adapter_module_prefix =
+    String.substr_replace_first
+      adapter_module_prefix
+      ~pattern:queue_marker
+      ~with_:queue_auto_methods
+  in
   let adapter_module =
     adapter_module_prefix
     ^ device_output_types
@@ -1405,6 +1419,12 @@ let gen_mli (api : Ir.api) : string =
     | Some device_obj -> gen_special_object_auto_methods_mli config api.structs device_obj
     | None -> "", ""
   in
+  (* Generate auto-generated method signatures for Queue *)
+  let _queue_output_types_mli, queue_auto_methods_mli =
+    match List.find api.objects ~f:(fun obj -> String.equal obj.name "queue") with
+    | Some queue_obj -> gen_special_object_auto_methods_mli config api.structs queue_obj
+    | None -> "", ""
+  in
   (* Filter out objects we handle specially *)
   let special_objects = [ "instance"; "adapter"; "device"; "queue" ] in
   let regular_objects =
@@ -1420,6 +1440,14 @@ let gen_mli (api : Ir.api) : string =
   (* Adapter module *)
   let adapter_module_prefix = read_template "high/adapter_module_prefix.mli" in
   let adapter_module_suffix = read_template "high/adapter_module_suffix.mli" in
+  (* Inject Queue method signatures at the marker *)
+  let queue_marker_mli = "(* AUTO-GENERATED QUEUE METHOD SIGNATURES INJECTED HERE *)" in
+  let adapter_module_prefix =
+    String.substr_replace_first
+      adapter_module_prefix
+      ~pattern:queue_marker_mli
+      ~with_:queue_auto_methods_mli
+  in
   let adapter_module =
     adapter_module_prefix
     ^ device_output_types_mli

@@ -936,16 +936,87 @@ module Queue = struct
   type t = { handle : Wgpu_low.queue }
 
   let release t = Wgpu_low.queue_release t.handle
-  let set_label t ~label = Wgpu_low.queue_set_label t.handle label
-
-  let submit t ~command_buffers =
-    let handles = List.map (fun (cb : Command_buffer.t) -> cb.handle) command_buffers in
-    Wgpu_low.queue_submit t.handle (Array.of_list handles)
-  ;;
 
   let write_buffer t ~buffer ~offset ~data =
     Wgpu_low.queue_write_buffer_bigarray t.handle buffer.Buffer.handle offset data
   ;;
+
+  let submit t ~commands =
+    Wgpu_low.queue_submit
+      t.handle
+      (Array.of_list (List.map (fun x -> x.Command_buffer.handle) commands))
+  ;;
+
+  let write_texture
+    t
+    ~destination_texture
+    ~destination_mip_level
+    ~destination_origin_x
+    ~destination_origin_y
+    ~destination_origin_z
+    ~destination_aspect
+    ~data_layout_offset
+    ~data_layout_bytes_per_row
+    ~data_layout_rows_per_image
+    ~write_size_width
+    ~write_size_height
+    ~write_size_depth_or_array_layers
+    ~data
+    ~data_size
+    ()
+    =
+    let destination_origin_nested = Wgpu_low.Origin_3d.origin_3D_create () in
+    let desc_destination =
+      Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_create ()
+    in
+    let desc_data_layout =
+      Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_create ()
+    in
+    let desc_write_size = Wgpu_low.Extent_3d.extent_3D_create () in
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_texture
+      desc_destination
+      destination_texture.Texture.handle;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_mip_level
+      desc_destination
+      destination_mip_level;
+    Wgpu_low.Origin_3d.origin_3D_set_x destination_origin_nested destination_origin_x;
+    Wgpu_low.Origin_3d.origin_3D_set_y destination_origin_nested destination_origin_y;
+    Wgpu_low.Origin_3d.origin_3D_set_z destination_origin_nested destination_origin_z;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_origin
+      desc_destination
+      destination_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_set_aspect
+      desc_destination
+      (Texture_aspect.to_int destination_aspect);
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_set_offset
+      desc_data_layout
+      data_layout_offset;
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_set_bytes_per_row
+      desc_data_layout
+      data_layout_bytes_per_row;
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_set_rows_per_image
+      desc_data_layout
+      data_layout_rows_per_image;
+    Wgpu_low.Extent_3d.extent_3D_set_width desc_write_size write_size_width;
+    Wgpu_low.Extent_3d.extent_3D_set_height desc_write_size write_size_height;
+    Wgpu_low.Extent_3d.extent_3D_set_depth_or_array_layers
+      desc_write_size
+      write_size_depth_or_array_layers;
+    Wgpu_low.queue_write_texture
+      t.handle
+      desc_destination
+      data
+      data_size
+      desc_data_layout
+      desc_write_size;
+    Wgpu_low.Extent_3d.extent_3D_free desc_write_size;
+    Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_free desc_data_layout;
+    Wgpu_low.Origin_3d.origin_3D_free destination_origin_nested;
+    Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_free desc_destination;
+    ()
+  ;;
+
+  let set_label t ~label = Wgpu_low.queue_set_label t.handle label
 end
 
 module Device = struct

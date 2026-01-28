@@ -545,8 +545,6 @@ module Queue : sig
   type t
 
   val release : t -> unit
-  val set_label : t -> label:string -> unit
-  val submit : t -> command_buffers:Command_buffer.t list -> unit
 
   val write_buffer
     :  t
@@ -554,6 +552,29 @@ module Queue : sig
     -> offset:int64
     -> data:(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
     -> unit
+
+  val submit : t -> commands:Command_buffer.t list -> unit
+
+  val write_texture
+    :  t
+    -> destination_texture:Texture.t
+    -> destination_mip_level:int
+    -> destination_origin_x:int
+    -> destination_origin_y:int
+    -> destination_origin_z:int
+    -> destination_aspect:Texture_aspect.t
+    -> data_layout_offset:int64
+    -> data_layout_bytes_per_row:int
+    -> data_layout_rows_per_image:int
+    -> write_size_width:int
+    -> write_size_height:int
+    -> write_size_depth_or_array_layers:int
+    -> data:nativeint
+    -> data_size:int64
+    -> unit
+    -> unit
+
+  val set_label : t -> label:string -> unit
 end
 
 module Device : sig
