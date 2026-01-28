@@ -9,6 +9,28 @@ module Adapter_info : sig
     }
 end
 
+module Command_encoder : sig
+  type t
+
+  val release : t -> unit
+
+  (** Begin a compute pass on this command encoder *)
+  val begin_compute_pass : t -> ?label:string -> unit -> Compute_pass_encoder.t
+
+  (** Begin a render pass on this command encoder with a single color attachment *)
+  val begin_render_pass
+    :  t
+    -> ?label:string
+    -> color_view:Texture_view.t
+    -> ?load_op:Load_op.t
+    -> ?store_op:Store_op.t
+    -> clear_color:float * float * float * float
+    -> unit
+    -> Render_pass_encoder.t
+
+  (* AUTO-GENERATED COMMAND_ENCODER METHOD SIGNATURES INJECTED HERE *)
+end
+
 module Queue : sig
   type t
 

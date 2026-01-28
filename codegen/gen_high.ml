@@ -1384,7 +1384,9 @@ let gen_ml (api : Ir.api) : string =
     |> String.concat ~sep:"\n"
   in
   (* Filter out objects we handle specially *)
-  let special_objects = [ "instance"; "adapter"; "device"; "queue"; "surface" ] in
+  let special_objects =
+    [ "instance"; "adapter"; "device"; "queue"; "surface"; "command_encoder" ]
+  in
   let regular_objects =
     List.filter api.objects ~f:(fun obj ->
       not (List.mem special_objects obj.name ~equal:String.equal))
@@ -1394,6 +1396,15 @@ let gen_ml (api : Ir.api) : string =
     |> sort_objects api.structs
     |> List.map ~f:(gen_ml_object config api.structs)
     |> String.concat ~sep:"\n"
+  in
+  (* Generate auto-generated methods for Command_encoder *)
+  let command_encoder_output_types, command_encoder_auto_methods =
+    match
+      List.find api.objects ~f:(fun obj -> String.equal obj.name "command_encoder")
+    with
+    | Some command_encoder_obj ->
+      gen_special_object_auto_methods config api.structs command_encoder_obj
+    | None -> "", ""
   in
   (* Generate auto-generated methods for Device *)
   let device_output_types, device_auto_methods =
@@ -1428,6 +1439,21 @@ let gen_ml (api : Ir.api) : string =
   (* Adapter module *)
   let adapter_module_prefix = read_template "high/adapter_module_prefix.ml" in
   let adapter_module_suffix = read_template "high/adapter_module_suffix.ml" in
+  (* Inject Command_encoder output types and methods at the marker *)
+  let command_encoder_marker =
+    "(* AUTO-GENERATED COMMAND_ENCODER METHODS INJECTED HERE *)"
+  in
+  let command_encoder_injection =
+    if String.is_empty command_encoder_output_types
+    then command_encoder_auto_methods
+    else command_encoder_output_types ^ "\n" ^ command_encoder_auto_methods
+  in
+  let adapter_module_prefix =
+    String.substr_replace_first
+      adapter_module_prefix
+      ~pattern:command_encoder_marker
+      ~with_:command_encoder_injection
+  in
   (* Inject Queue methods at the marker *)
   let queue_marker = "(* AUTO-GENERATED QUEUE METHODS INJECTED HERE *)" in
   let adapter_module_prefix =
@@ -1505,6 +1531,15 @@ let gen_mli (api : Ir.api) : string =
       gen_array_element_struct_module_mli api.structs array_element_struct)
     |> String.concat ~sep:"\n"
   in
+  (* Generate auto-generated method signatures for Command_encoder *)
+  let command_encoder_output_types_mli, command_encoder_auto_methods_mli =
+    match
+      List.find api.objects ~f:(fun obj -> String.equal obj.name "command_encoder")
+    with
+    | Some command_encoder_obj ->
+      gen_special_object_auto_methods_mli config api.structs command_encoder_obj
+    | None -> "", ""
+  in
   (* Generate auto-generated method signatures for Device *)
   let device_output_types_mli, device_auto_methods_mli =
     match List.find api.objects ~f:(fun obj -> String.equal obj.name "device") with
@@ -1539,7 +1574,9 @@ let gen_mli (api : Ir.api) : string =
     | None -> "", ""
   in
   (* Filter out objects we handle specially *)
-  let special_objects = [ "instance"; "adapter"; "device"; "queue"; "surface" ] in
+  let special_objects =
+    [ "instance"; "adapter"; "device"; "queue"; "surface"; "command_encoder" ]
+  in
   let regular_objects =
     List.filter api.objects ~f:(fun obj ->
       not (List.mem special_objects obj.name ~equal:String.equal))
@@ -1553,6 +1590,21 @@ let gen_mli (api : Ir.api) : string =
   (* Adapter module *)
   let adapter_module_prefix = read_template "high/adapter_module_prefix.mli" in
   let adapter_module_suffix = read_template "high/adapter_module_suffix.mli" in
+  (* Inject Command_encoder output types and method signatures at the marker *)
+  let command_encoder_marker_mli =
+    "(* AUTO-GENERATED COMMAND_ENCODER METHOD SIGNATURES INJECTED HERE *)"
+  in
+  let command_encoder_injection_mli =
+    if String.is_empty command_encoder_output_types_mli
+    then command_encoder_auto_methods_mli
+    else command_encoder_output_types_mli ^ "\n" ^ command_encoder_auto_methods_mli
+  in
+  let adapter_module_prefix =
+    String.substr_replace_first
+      adapter_module_prefix
+      ~pattern:command_encoder_marker_mli
+      ~with_:command_encoder_injection_mli
+  in
   (* Inject Queue method signatures at the marker *)
   let queue_marker_mli = "(* AUTO-GENERATED QUEUE METHOD SIGNATURES INJECTED HERE *)" in
   let adapter_module_prefix =

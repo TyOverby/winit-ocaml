@@ -91,3 +91,30 @@ This works but is inconsistent with how other modules handle manual methods.
 ## Priority
 
 Low - the current structure works fine. This is more about consistency than functionality.
+
+---
+
+## Implementation Plan
+
+### Approach
+Since Command_encoder is currently fully auto-generated, I will:
+
+1. Add "command_encoder" to the `special_objects` list in `gen_high.ml` (like device, queue, adapter, instance, surface)
+2. Create a Command_encoder module prefix template in `adapter_module_prefix.ml` (before Queue) with:
+   - The type `t = { handle : Wgpu_low.command_encoder }`
+   - The `release` function
+   - Manual implementations for `begin_compute_pass` and `begin_render_pass`
+   - An injection point marker: `(* AUTO-GENERATED COMMAND_ENCODER METHODS INJECTED HERE *)`
+3. Update `gen_high.ml` to generate and inject Command_encoder auto-generated methods at the marker
+4. Update the corresponding `.mli` template
+5. Keep the top-level convenience functions in `instance_module.ml` that delegate to `Command_encoder.begin_compute_pass` etc. (for backward compatibility)
+
+### Validation Criteria
+1. `dune build` succeeds (regenerates code)
+2. `dune fmt > /dev/null || true` runs without issues
+3. `dune build @check` shows no warnings
+4. `dune exec test/test_compute.exe` passes all tests
+5. The generated `wgpu.ml` has Command_encoder module with both:
+   - Manual methods: `begin_compute_pass`, `begin_render_pass`
+   - Auto-generated methods: `finish`, `copy_buffer_to_buffer`, etc.
+6. Tests can use either `Wgpu.begin_compute_pass encoder` (convenience) or `Wgpu.Command_encoder.begin_compute_pass encoder` (module method)

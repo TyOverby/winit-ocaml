@@ -459,10 +459,176 @@ module Render_pass_encoder = struct
   let set_label t ~label = Wgpu_low.render_pass_encoder_set_label t.handle label
 end
 
+module Bind_group_entry = struct
+  type t =
+    { binding : int
+    ; buffer : Buffer.t option
+    ; offset : int64
+    ; size : int64
+    ; sampler : Sampler.t option
+    ; texture_view : Texture_view.t option
+    }
+end
+
+module Bind_group_layout_entry = struct
+  module Buffer_binding_layout = struct
+    type t =
+      { type_ : Buffer_binding_type.t
+      ; has_dynamic_offset : bool
+      ; min_binding_size : int64
+      }
+  end
+
+  module Sampler_binding_layout = struct
+    type t = { type_ : Sampler_binding_type.t }
+  end
+
+  module Storage_texture_binding_layout = struct
+    type t =
+      { access : Storage_texture_access.t
+      ; format : Texture_format.t
+      ; view_dimension : Texture_view_dimension.t
+      }
+  end
+
+  module Texture_binding_layout = struct
+    type t =
+      { sample_type : Texture_sample_type.t
+      ; view_dimension : Texture_view_dimension.t
+      ; multisampled : bool
+      }
+  end
+
+  type t =
+    { binding : int
+    ; visibility : Shader_stage.Item.t list
+    ; buffer : Buffer_binding_layout.t option
+    ; sampler : Sampler_binding_layout.t option
+    ; texture : Texture_binding_layout.t option
+    ; storage_texture : Storage_texture_binding_layout.t option
+    }
+end
+
+module Color_target_state = struct
+  type t =
+    { format : Texture_format.t
+    ; blend : nativeint
+    ; write_mask : Color_write_mask.Item.t list
+    }
+end
+
+module Compilation_message = struct
+  type t =
+    { message : string
+    ; type_ : Compilation_message_type.t
+    ; line_num : int64
+    ; line_pos : int64
+    ; offset : int64
+    ; length : int64
+    }
+end
+
+module Constant_entry = struct
+  type t =
+    { key : string
+    ; value : float
+    }
+end
+
+module Render_pass_color_attachment = struct
+  module Color = struct
+    type t =
+      { r : float
+      ; g : float
+      ; b : float
+      ; a : float
+      }
+  end
+
+  type t =
+    { view : Texture_view.t option
+    ; depth_slice : int
+    ; resolve_target : Texture_view.t option
+    ; load_op : Load_op.t
+    ; store_op : Store_op.t
+    ; clear_value : Color.t option
+    }
+end
+
+module Vertex_attribute = struct
+  type t =
+    { format : Vertex_format.t
+    ; offset : int64
+    ; shader_location : int
+    }
+end
+
+module Vertex_buffer_layout = struct
+  type t =
+    { step_mode : Vertex_step_mode.t
+    ; array_stride : int64
+    ; attributes : Vertex_attribute.t list
+    }
+end
+
+module Adapter_info = struct
+  type t =
+    { vendor : string
+    ; architecture : string
+    ; device : string
+    ; description : string
+    ; backend_type : Backend_type.t
+    ; adapter_type : Adapter_type.t
+    }
+
+  let of_low (info : Wgpu_low.adapter_info) : t =
+    { vendor = info.vendor
+    ; architecture = info.architecture
+    ; device = info.device
+    ; description = info.description
+    ; backend_type = Backend_type.of_int info.backend_type
+    ; adapter_type = Adapter_type.of_int info.adapter_type
+    }
+  ;;
+end
+
 module Command_encoder = struct
   type t = { handle : Wgpu_low.command_encoder }
 
   let release t = Wgpu_low.command_encoder_release t.handle
+
+  let begin_compute_pass t ?(label = "") () =
+    let desc = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
+    Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc label;
+    let pass = Wgpu_low.command_encoder_begin_compute_pass t.handle desc in
+    Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_free desc;
+    ({ Compute_pass_encoder.handle = pass } : Compute_pass_encoder.t)
+  ;;
+
+  let begin_render_pass
+    t
+    ?(label = "")
+    ~color_view
+    ?(load_op = Load_op.Clear)
+    ?(store_op = Store_op.Store)
+    ~clear_color
+    ()
+    =
+    let r, g, b, a = clear_color in
+    let pass =
+      Wgpu_low.command_encoder_begin_render_pass_configurable
+        t.handle
+        label
+        color_view.Texture_view.handle
+        (Load_op.to_int load_op)
+        (Store_op.to_int store_op)
+        r
+        g
+        b
+        a
+    in
+    ({ Render_pass_encoder.handle = pass } : Render_pass_encoder.t)
+  ;;
 
   let finish t ?(label = "") () =
     let desc_descriptor =
@@ -759,139 +925,6 @@ module Command_encoder = struct
   ;;
 
   let set_label t ~label = Wgpu_low.command_encoder_set_label t.handle label
-end
-
-module Bind_group_entry = struct
-  type t =
-    { binding : int
-    ; buffer : Buffer.t option
-    ; offset : int64
-    ; size : int64
-    ; sampler : Sampler.t option
-    ; texture_view : Texture_view.t option
-    }
-end
-
-module Bind_group_layout_entry = struct
-  module Buffer_binding_layout = struct
-    type t =
-      { type_ : Buffer_binding_type.t
-      ; has_dynamic_offset : bool
-      ; min_binding_size : int64
-      }
-  end
-
-  module Sampler_binding_layout = struct
-    type t = { type_ : Sampler_binding_type.t }
-  end
-
-  module Storage_texture_binding_layout = struct
-    type t =
-      { access : Storage_texture_access.t
-      ; format : Texture_format.t
-      ; view_dimension : Texture_view_dimension.t
-      }
-  end
-
-  module Texture_binding_layout = struct
-    type t =
-      { sample_type : Texture_sample_type.t
-      ; view_dimension : Texture_view_dimension.t
-      ; multisampled : bool
-      }
-  end
-
-  type t =
-    { binding : int
-    ; visibility : Shader_stage.Item.t list
-    ; buffer : Buffer_binding_layout.t option
-    ; sampler : Sampler_binding_layout.t option
-    ; texture : Texture_binding_layout.t option
-    ; storage_texture : Storage_texture_binding_layout.t option
-    }
-end
-
-module Color_target_state = struct
-  type t =
-    { format : Texture_format.t
-    ; blend : nativeint
-    ; write_mask : Color_write_mask.Item.t list
-    }
-end
-
-module Compilation_message = struct
-  type t =
-    { message : string
-    ; type_ : Compilation_message_type.t
-    ; line_num : int64
-    ; line_pos : int64
-    ; offset : int64
-    ; length : int64
-    }
-end
-
-module Constant_entry = struct
-  type t =
-    { key : string
-    ; value : float
-    }
-end
-
-module Render_pass_color_attachment = struct
-  module Color = struct
-    type t =
-      { r : float
-      ; g : float
-      ; b : float
-      ; a : float
-      }
-  end
-
-  type t =
-    { view : Texture_view.t option
-    ; depth_slice : int
-    ; resolve_target : Texture_view.t option
-    ; load_op : Load_op.t
-    ; store_op : Store_op.t
-    ; clear_value : Color.t option
-    }
-end
-
-module Vertex_attribute = struct
-  type t =
-    { format : Vertex_format.t
-    ; offset : int64
-    ; shader_location : int
-    }
-end
-
-module Vertex_buffer_layout = struct
-  type t =
-    { step_mode : Vertex_step_mode.t
-    ; array_stride : int64
-    ; attributes : Vertex_attribute.t list
-    }
-end
-
-module Adapter_info = struct
-  type t =
-    { vendor : string
-    ; architecture : string
-    ; device : string
-    ; description : string
-    ; backend_type : Backend_type.t
-    ; adapter_type : Adapter_type.t
-    }
-
-  let of_low (info : Wgpu_low.adapter_info) : t =
-    { vendor = info.vendor
-    ; architecture = info.architecture
-    ; device = info.device
-    ; description = info.description
-    ; backend_type = Backend_type.of_int info.backend_type
-    ; adapter_type = Adapter_type.of_int info.adapter_type
-    }
-  ;;
 end
 
 module Queue = struct
@@ -1936,14 +1969,10 @@ module Instance = struct
   let process_events t = Wgpu_low.instance_process_events t.handle
 end
 
-(* Convenience functions for methods that take complex descriptors *)
+(* Convenience functions that delegate to module methods *)
 
 let begin_compute_pass (encoder : Command_encoder.t) ?(label = "") () =
-  let desc = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
-  Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc label;
-  let pass = Wgpu_low.command_encoder_begin_compute_pass encoder.handle desc in
-  Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_free desc;
-  ({ Compute_pass_encoder.handle = pass } : Compute_pass_encoder.t)
+  Command_encoder.begin_compute_pass encoder ~label ()
 ;;
 
 let begin_render_pass
@@ -1955,20 +1984,14 @@ let begin_render_pass
   ~clear_color
   ()
   =
-  let r, g, b, a = clear_color in
-  let pass =
-    Wgpu_low.command_encoder_begin_render_pass_configurable
-      encoder.handle
-      label
-      color_view.Texture_view.handle
-      (Load_op.to_int load_op)
-      (Store_op.to_int store_op)
-      r
-      g
-      b
-      a
-  in
-  ({ Render_pass_encoder.handle = pass } : Render_pass_encoder.t)
+  Command_encoder.begin_render_pass
+    encoder
+    ~label
+    ~color_view
+    ~load_op
+    ~store_op
+    ~clear_color
+    ()
 ;;
 
 let finish (encoder : Command_encoder.t) ?(label = "") () =

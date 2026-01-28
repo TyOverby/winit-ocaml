@@ -18,6 +18,45 @@ module Adapter_info = struct
     }
 end
 
+module Command_encoder = struct
+  type t = { handle : Wgpu_low.command_encoder }
+
+  let release t = Wgpu_low.command_encoder_release t.handle
+
+  let begin_compute_pass t ?(label = "") () =
+    let desc = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
+    Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc label;
+    let pass = Wgpu_low.command_encoder_begin_compute_pass t.handle desc in
+    Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_free desc;
+    ({ Compute_pass_encoder.handle = pass } : Compute_pass_encoder.t)
+
+  let begin_render_pass
+    t
+    ?(label = "")
+    ~color_view
+    ?(load_op = Load_op.Clear)
+    ?(store_op = Store_op.Store)
+    ~clear_color
+    ()
+    =
+    let r, g, b, a = clear_color in
+    let pass =
+      Wgpu_low.command_encoder_begin_render_pass_configurable
+        t.handle
+        label
+        color_view.Texture_view.handle
+        (Load_op.to_int load_op)
+        (Store_op.to_int store_op)
+        r
+        g
+        b
+        a
+    in
+    ({ Render_pass_encoder.handle = pass } : Render_pass_encoder.t)
+
+  (* AUTO-GENERATED COMMAND_ENCODER METHODS INJECTED HERE *)
+end
+
 module Queue = struct
   type t = { handle : Wgpu_low.queue }
 

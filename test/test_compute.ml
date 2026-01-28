@@ -203,7 +203,10 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
   print_endline "Compute pipeline created.";
   (* Create command encoder and record commands *)
   let encoder = Wgpu.Device.create_command_encoder device ~label:"compute_encoder" () in
-  let compute_pass = Wgpu.begin_compute_pass encoder ~label:"compute_pass" () in
+  (* Use Command_encoder.begin_compute_pass directly (module method) *)
+  let compute_pass =
+    Wgpu.Command_encoder.begin_compute_pass encoder ~label:"compute_pass" ()
+  in
   (* Set pipeline and bind group, then dispatch *)
   Wgpu.Compute_pass_encoder.set_pipeline compute_pass ~pipeline:compute_pipeline;
   Wgpu.set_bind_group compute_pass ~index:0 ~bind_group;
@@ -327,8 +330,9 @@ let test_render_clear () =
   (* Create command encoder *)
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   (* Begin render pass that clears to red (R=1, G=0, B=0, A=1) *)
+  (* Use Command_encoder.begin_render_pass directly (module method) *)
   let render_pass =
-    Wgpu.begin_render_pass
+    Wgpu.Command_encoder.begin_render_pass
       encoder
       ~label:"clear_pass"
       ~color_view:texture_view

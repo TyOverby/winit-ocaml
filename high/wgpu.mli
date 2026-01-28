@@ -304,95 +304,6 @@ module Render_pass_encoder : sig
   val set_label : t -> label:string -> unit
 end
 
-module Command_encoder : sig
-  type t
-
-  val release : t -> unit
-  val finish : t -> ?label:string -> unit -> Command_buffer.t
-
-  val copy_buffer_to_buffer
-    :  t
-    -> source:Buffer.t
-    -> source_offset:int64
-    -> destination:Buffer.t
-    -> destination_offset:int64
-    -> size:int64
-    -> unit
-
-  val copy_buffer_to_texture
-    :  t
-    -> source_layout_offset:int64
-    -> source_layout_bytes_per_row:int
-    -> source_layout_rows_per_image:int
-    -> source_buffer:Buffer.t
-    -> destination_texture:Texture.t
-    -> destination_mip_level:int
-    -> destination_origin_x:int
-    -> destination_origin_y:int
-    -> destination_origin_z:int
-    -> destination_aspect:Texture_aspect.t
-    -> copy_size_width:int
-    -> copy_size_height:int
-    -> copy_size_depth_or_array_layers:int
-    -> unit
-    -> unit
-
-  val copy_texture_to_buffer
-    :  t
-    -> source_texture:Texture.t
-    -> source_mip_level:int
-    -> source_origin_x:int
-    -> source_origin_y:int
-    -> source_origin_z:int
-    -> source_aspect:Texture_aspect.t
-    -> destination_layout_offset:int64
-    -> destination_layout_bytes_per_row:int
-    -> destination_layout_rows_per_image:int
-    -> destination_buffer:Buffer.t
-    -> copy_size_width:int
-    -> copy_size_height:int
-    -> copy_size_depth_or_array_layers:int
-    -> unit
-    -> unit
-
-  val copy_texture_to_texture
-    :  t
-    -> source_texture:Texture.t
-    -> source_mip_level:int
-    -> source_origin_x:int
-    -> source_origin_y:int
-    -> source_origin_z:int
-    -> source_aspect:Texture_aspect.t
-    -> destination_texture:Texture.t
-    -> destination_mip_level:int
-    -> destination_origin_x:int
-    -> destination_origin_y:int
-    -> destination_origin_z:int
-    -> destination_aspect:Texture_aspect.t
-    -> copy_size_width:int
-    -> copy_size_height:int
-    -> copy_size_depth_or_array_layers:int
-    -> unit
-    -> unit
-
-  val clear_buffer : t -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
-  val insert_debug_marker : t -> marker_label:string -> unit
-  val pop_debug_group : t -> unit
-  val push_debug_group : t -> group_label:string -> unit
-
-  val resolve_query_set
-    :  t
-    -> query_set:Query_set.t
-    -> first_query:int
-    -> query_count:int
-    -> destination:Buffer.t
-    -> destination_offset:int64
-    -> unit
-
-  val write_timestamp : t -> query_set:Query_set.t -> query_index:int -> unit
-  val set_label : t -> label:string -> unit
-end
-
 module Bind_group_entry : sig
   type t =
     { binding : int
@@ -514,6 +425,110 @@ module Adapter_info : sig
     ; backend_type : Backend_type.t
     ; adapter_type : Adapter_type.t
     }
+end
+
+module Command_encoder : sig
+  type t
+
+  val release : t -> unit
+
+  (** Begin a compute pass on this command encoder *)
+  val begin_compute_pass : t -> ?label:string -> unit -> Compute_pass_encoder.t
+
+  (** Begin a render pass on this command encoder with a single color attachment *)
+  val begin_render_pass
+    :  t
+    -> ?label:string
+    -> color_view:Texture_view.t
+    -> ?load_op:Load_op.t
+    -> ?store_op:Store_op.t
+    -> clear_color:float * float * float * float
+    -> unit
+    -> Render_pass_encoder.t
+
+  val finish : t -> ?label:string -> unit -> Command_buffer.t
+
+  val copy_buffer_to_buffer
+    :  t
+    -> source:Buffer.t
+    -> source_offset:int64
+    -> destination:Buffer.t
+    -> destination_offset:int64
+    -> size:int64
+    -> unit
+
+  val copy_buffer_to_texture
+    :  t
+    -> source_layout_offset:int64
+    -> source_layout_bytes_per_row:int
+    -> source_layout_rows_per_image:int
+    -> source_buffer:Buffer.t
+    -> destination_texture:Texture.t
+    -> destination_mip_level:int
+    -> destination_origin_x:int
+    -> destination_origin_y:int
+    -> destination_origin_z:int
+    -> destination_aspect:Texture_aspect.t
+    -> copy_size_width:int
+    -> copy_size_height:int
+    -> copy_size_depth_or_array_layers:int
+    -> unit
+    -> unit
+
+  val copy_texture_to_buffer
+    :  t
+    -> source_texture:Texture.t
+    -> source_mip_level:int
+    -> source_origin_x:int
+    -> source_origin_y:int
+    -> source_origin_z:int
+    -> source_aspect:Texture_aspect.t
+    -> destination_layout_offset:int64
+    -> destination_layout_bytes_per_row:int
+    -> destination_layout_rows_per_image:int
+    -> destination_buffer:Buffer.t
+    -> copy_size_width:int
+    -> copy_size_height:int
+    -> copy_size_depth_or_array_layers:int
+    -> unit
+    -> unit
+
+  val copy_texture_to_texture
+    :  t
+    -> source_texture:Texture.t
+    -> source_mip_level:int
+    -> source_origin_x:int
+    -> source_origin_y:int
+    -> source_origin_z:int
+    -> source_aspect:Texture_aspect.t
+    -> destination_texture:Texture.t
+    -> destination_mip_level:int
+    -> destination_origin_x:int
+    -> destination_origin_y:int
+    -> destination_origin_z:int
+    -> destination_aspect:Texture_aspect.t
+    -> copy_size_width:int
+    -> copy_size_height:int
+    -> copy_size_depth_or_array_layers:int
+    -> unit
+    -> unit
+
+  val clear_buffer : t -> buffer:Buffer.t -> offset:int64 -> size:int64 -> unit
+  val insert_debug_marker : t -> marker_label:string -> unit
+  val pop_debug_group : t -> unit
+  val push_debug_group : t -> group_label:string -> unit
+
+  val resolve_query_set
+    :  t
+    -> query_set:Query_set.t
+    -> first_query:int
+    -> query_count:int
+    -> destination:Buffer.t
+    -> destination_offset:int64
+    -> unit
+
+  val write_timestamp : t -> query_set:Query_set.t -> query_index:int -> unit
+  val set_label : t -> label:string -> unit
 end
 
 module Queue : sig

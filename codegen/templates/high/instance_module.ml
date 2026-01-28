@@ -22,14 +22,10 @@ module Instance = struct
   (* AUTO-GENERATED INSTANCE METHODS INJECTED HERE *)
 end
 
-(* Convenience functions for methods that take complex descriptors *)
+(* Convenience functions that delegate to module methods *)
 
 let begin_compute_pass (encoder : Command_encoder.t) ?(label = "") () =
-  let desc = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
-  Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc label;
-  let pass = Wgpu_low.command_encoder_begin_compute_pass encoder.handle desc in
-  Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_free desc;
-  ({ Compute_pass_encoder.handle = pass } : Compute_pass_encoder.t)
+  Command_encoder.begin_compute_pass encoder ~label ()
 ;;
 
 let begin_render_pass
@@ -41,20 +37,14 @@ let begin_render_pass
   ~clear_color
   ()
   =
-  let r, g, b, a = clear_color in
-  let pass =
-    Wgpu_low.command_encoder_begin_render_pass_configurable
-      encoder.handle
-      label
-      color_view.Texture_view.handle
-      (Load_op.to_int load_op)
-      (Store_op.to_int store_op)
-      r
-      g
-      b
-      a
-  in
-  ({ Render_pass_encoder.handle = pass } : Render_pass_encoder.t)
+  Command_encoder.begin_render_pass
+    encoder
+    ~label
+    ~color_view
+    ~load_op
+    ~store_op
+    ~clear_color
+    ()
 ;;
 
 let finish (encoder : Command_encoder.t) ?(label = "") () =
