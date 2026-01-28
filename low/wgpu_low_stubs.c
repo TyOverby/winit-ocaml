@@ -10896,3 +10896,190 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_with_layout_bytecode(
       argv[8], argv[9], argv[10], argv[11], argv[12], argv[13], argv[14],
       argv[15], argv[16], argv[17]);
 }
+
+/*
+ * Create a render pipeline with vertex buffer layouts.
+ *
+ * vertex_buffer_layouts_val is an OCaml array where each element is a tuple:
+ *   (step_mode: int, array_stride: int64, attributes: array)
+ * and each attribute is a tuple:
+ *   (format: int, offset: int64, shader_location: int)
+ */
+CAMLprim value caml_wgpu_device_create_render_pipeline_with_vertex_buffers(
+    value device_val, value label_val, value shader_val, value vs_entry_val,
+    value fs_entry_val, value format_val, value topology_val,
+    value front_face_val, value cull_mode_val, value blend_enabled_val,
+    value color_src_factor_val, value color_dst_factor_val,
+    value color_operation_val, value alpha_src_factor_val,
+    value alpha_dst_factor_val, value alpha_operation_val, value write_mask_val,
+    value layout_opt_val, value vertex_buffer_layouts_val) {
+  CAMLparam5(device_val, label_val, shader_val, vs_entry_val, fs_entry_val);
+  CAMLxparam5(format_val, topology_val, front_face_val, cull_mode_val,
+              blend_enabled_val);
+  CAMLxparam5(color_src_factor_val, color_dst_factor_val, color_operation_val,
+              alpha_src_factor_val, alpha_dst_factor_val);
+  CAMLxparam4(alpha_operation_val, write_mask_val, layout_opt_val,
+              vertex_buffer_layouts_val);
+
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char *label = String_val(label_val);
+  WGPUShaderModule shader = (WGPUShaderModule)Nativeint_val(shader_val);
+  const char *vs_entry = String_val(vs_entry_val);
+  const char *fs_entry = String_val(fs_entry_val);
+  WGPUTextureFormat format = Int_val(format_val);
+  WGPUPrimitiveTopology topology = Int_val(topology_val);
+  WGPUFrontFace front_face = Int_val(front_face_val);
+  WGPUCullMode cull_mode = Int_val(cull_mode_val);
+  bool blend_enabled = Bool_val(blend_enabled_val);
+  WGPUBlendFactor color_src_factor = Int_val(color_src_factor_val);
+  WGPUBlendFactor color_dst_factor = Int_val(color_dst_factor_val);
+  WGPUBlendOperation color_operation = Int_val(color_operation_val);
+  WGPUBlendFactor alpha_src_factor = Int_val(alpha_src_factor_val);
+  WGPUBlendFactor alpha_dst_factor = Int_val(alpha_dst_factor_val);
+  WGPUBlendOperation alpha_operation = Int_val(alpha_operation_val);
+  WGPUColorWriteMask write_mask = Int_val(write_mask_val);
+
+  /* Parse vertex buffer layouts from OCaml array */
+  size_t buffer_count = Wosize_val(vertex_buffer_layouts_val);
+  WGPUVertexBufferLayout *vertex_buffers = NULL;
+  WGPUVertexAttribute **all_attributes = NULL;
+
+  if (buffer_count > 0) {
+    vertex_buffers = malloc(buffer_count * sizeof(WGPUVertexBufferLayout));
+    all_attributes = malloc(buffer_count * sizeof(WGPUVertexAttribute *));
+
+    for (size_t i = 0; i < buffer_count; i++) {
+      value layout = Field(vertex_buffer_layouts_val, i);
+      /* layout is (step_mode: int, array_stride: int64, attributes: array) */
+      int step_mode = Int_val(Field(layout, 0));
+      uint64_t array_stride = Int64_val(Field(layout, 1));
+      value attributes_arr = Field(layout, 2);
+
+      size_t attr_count = Wosize_val(attributes_arr);
+      WGPUVertexAttribute *attributes =
+          malloc(attr_count * sizeof(WGPUVertexAttribute));
+      all_attributes[i] = attributes;
+
+      for (size_t j = 0; j < attr_count; j++) {
+        value attr = Field(attributes_arr, j);
+        /* attr is (format: int, offset: int64, shader_location: int) */
+        attributes[j].format = Int_val(Field(attr, 0));
+        attributes[j].offset = Int64_val(Field(attr, 1));
+        attributes[j].shaderLocation = Int_val(Field(attr, 2));
+      }
+
+      vertex_buffers[i].stepMode = step_mode;
+      vertex_buffers[i].arrayStride = array_stride;
+      vertex_buffers[i].attributeCount = attr_count;
+      vertex_buffers[i].attributes = attributes;
+    }
+  }
+
+  /* Handle optional pipeline layout */
+  WGPUPipelineLayout layout;
+  bool layout_created = false;
+  if (Is_block(layout_opt_val) && Tag_val(layout_opt_val) == 0) {
+    /* Some layout */
+    layout = (WGPUPipelineLayout)Nativeint_val(Field(layout_opt_val, 0));
+  } else {
+    /* None - create empty layout */
+    WGPUPipelineLayoutDescriptor layout_desc = {
+        .label = {.data = "empty_layout", .length = 12},
+        .bindGroupLayoutCount = 0,
+        .bindGroupLayouts = NULL,
+    };
+    layout = wgpuDeviceCreatePipelineLayout(device, &layout_desc);
+    layout_created = true;
+  }
+
+  /* Blend state (only used if blend_enabled) */
+  WGPUBlendState blend_state = {
+      .color =
+          {
+              .srcFactor = color_src_factor,
+              .dstFactor = color_dst_factor,
+              .operation = color_operation,
+          },
+      .alpha =
+          {
+              .srcFactor = alpha_src_factor,
+              .dstFactor = alpha_dst_factor,
+              .operation = alpha_operation,
+          },
+  };
+
+  /* Color target state */
+  WGPUColorTargetState color_target = {
+      .format = format,
+      .blend = blend_enabled ? &blend_state : NULL,
+      .writeMask = write_mask,
+  };
+
+  /* Fragment state */
+  WGPUFragmentState fragment = {
+      .module = shader,
+      .entryPoint = {.data = fs_entry, .length = strlen(fs_entry)},
+      .constantCount = 0,
+      .constants = NULL,
+      .targetCount = 1,
+      .targets = &color_target,
+  };
+
+  /* Render pipeline descriptor */
+  WGPURenderPipelineDescriptor desc = {
+      .label = {.data = label, .length = caml_string_length(label_val)},
+      .layout = layout,
+      .vertex =
+          {
+              .module = shader,
+              .entryPoint = {.data = vs_entry, .length = strlen(vs_entry)},
+              .constantCount = 0,
+              .constants = NULL,
+              .bufferCount = buffer_count,
+              .buffers = vertex_buffers,
+          },
+      .primitive =
+          {
+              .topology = topology,
+              .stripIndexFormat = WGPUIndexFormat_Undefined,
+              .frontFace = front_face,
+              .cullMode = cull_mode,
+          },
+      .depthStencil = NULL,
+      .multisample =
+          {
+              .count = 1,
+              .mask = 0xFFFFFFFF,
+              .alphaToCoverageEnabled = false,
+          },
+      .fragment = &fragment,
+  };
+
+  WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(device, &desc);
+
+  /* Cleanup */
+  if (layout_created) {
+    wgpuPipelineLayoutRelease(layout);
+  }
+  if (all_attributes != NULL) {
+    for (size_t i = 0; i < buffer_count; i++) {
+      free(all_attributes[i]);
+    }
+    free(all_attributes);
+  }
+  if (vertex_buffers != NULL) {
+    free(vertex_buffers);
+  }
+
+  CAMLreturn(caml_copy_nativeint((intnat)pipeline));
+}
+
+CAMLprim value
+caml_wgpu_device_create_render_pipeline_with_vertex_buffers_bytecode(
+    value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_device_create_render_pipeline_with_vertex_buffers(
+      argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7],
+      argv[8], argv[9], argv[10], argv[11], argv[12], argv[13], argv[14],
+      argv[15], argv[16], argv[17], argv[18]);
+}

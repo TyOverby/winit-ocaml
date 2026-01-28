@@ -1,0 +1,16 @@
+(executable
+ (name vertex_buffer_layout)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./vertex_buffer_layout.exe))
+ (targets vertex_buffer_layout.png))
+
+(rule
+ (alias runtest)
+ (action
+  (cmp vertex_buffer_layout.expected.png vertex_buffer_layout.png)))

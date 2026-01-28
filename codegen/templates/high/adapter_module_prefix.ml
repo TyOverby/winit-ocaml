@@ -95,6 +95,7 @@ module Device = struct
                  Blend_factor.t * Blend_factor.t * Blend_operation.t) option)
       ?(write_mask = [ Color_write_mask.Item.All ])
       ?layout
+      ?(vertex_buffer_layouts : Vertex_buffer_layout.t list = [])
       () =
     let blend_enabled, color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op =
       match blend with
@@ -102,9 +103,49 @@ module Device = struct
                        Blend_factor.One, Blend_factor.Zero, Blend_operation.Add
       | Some (cs, cd, co, as_, ad, ao) -> true, cs, cd, co, as_, ad, ao
     in
-    let pipeline = match layout with
-      | None ->
-        Wgpu_low.device_create_render_pipeline_full t.handle
+    let pipeline = match vertex_buffer_layouts with
+      | [] ->
+        (* No vertex buffer layouts - use the old functions for backwards compat *)
+        (match layout with
+         | None ->
+           Wgpu_low.device_create_render_pipeline_full t.handle
+             label shader_module.Shader_module.handle vertex_entry_point
+             fragment_entry_point (Texture_format.to_int color_format)
+             (Primitive_topology.to_int topology)
+             (Front_face.to_int front_face)
+             (Cull_mode.to_int cull_mode)
+             blend_enabled
+             (Blend_factor.to_int color_src) (Blend_factor.to_int color_dst)
+             (Blend_operation.to_int color_op)
+             (Blend_factor.to_int alpha_src) (Blend_factor.to_int alpha_dst)
+             (Blend_operation.to_int alpha_op)
+             (Color_write_mask.list_to_int write_mask)
+         | Some layout ->
+           Wgpu_low.device_create_render_pipeline_with_layout t.handle
+             label shader_module.Shader_module.handle vertex_entry_point
+             fragment_entry_point (Texture_format.to_int color_format)
+             (Primitive_topology.to_int topology)
+             (Front_face.to_int front_face)
+             (Cull_mode.to_int cull_mode)
+             blend_enabled
+             (Blend_factor.to_int color_src) (Blend_factor.to_int color_dst)
+             (Blend_operation.to_int color_op)
+             (Blend_factor.to_int alpha_src) (Blend_factor.to_int alpha_dst)
+             (Blend_operation.to_int alpha_op)
+             (Color_write_mask.list_to_int write_mask)
+             layout.Pipeline_layout.handle)
+      | _ ->
+        (* Has vertex buffer layouts - use the new function *)
+        let vbl_array = Array.of_list (List.map (fun vbl ->
+          let attrs = Array.of_list (List.map (fun attr ->
+            (Vertex_format.to_int attr.Vertex_attribute.format,
+             attr.Vertex_attribute.offset,
+             attr.Vertex_attribute.shader_location)) vbl.Vertex_buffer_layout.attributes) in
+          (Vertex_step_mode.to_int vbl.Vertex_buffer_layout.step_mode,
+           vbl.Vertex_buffer_layout.array_stride,
+           attrs)) vertex_buffer_layouts) in
+        let layout_opt = Option.map (fun l -> l.Pipeline_layout.handle) layout in
+        Wgpu_low.device_create_render_pipeline_with_vertex_buffers t.handle
           label shader_module.Shader_module.handle vertex_entry_point
           fragment_entry_point (Texture_format.to_int color_format)
           (Primitive_topology.to_int topology)
@@ -116,20 +157,8 @@ module Device = struct
           (Blend_factor.to_int alpha_src) (Blend_factor.to_int alpha_dst)
           (Blend_operation.to_int alpha_op)
           (Color_write_mask.list_to_int write_mask)
-      | Some layout ->
-        Wgpu_low.device_create_render_pipeline_with_layout t.handle
-          label shader_module.Shader_module.handle vertex_entry_point
-          fragment_entry_point (Texture_format.to_int color_format)
-          (Primitive_topology.to_int topology)
-          (Front_face.to_int front_face)
-          (Cull_mode.to_int cull_mode)
-          blend_enabled
-          (Blend_factor.to_int color_src) (Blend_factor.to_int color_dst)
-          (Blend_operation.to_int color_op)
-          (Blend_factor.to_int alpha_src) (Blend_factor.to_int alpha_dst)
-          (Blend_operation.to_int alpha_op)
-          (Color_write_mask.list_to_int write_mask)
-          layout.Pipeline_layout.handle
+          layout_opt
+          vbl_array
     in
     ({ Render_pipeline.handle = pipeline } : Render_pipeline.t)
 

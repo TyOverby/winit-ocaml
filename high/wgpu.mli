@@ -576,7 +576,9 @@ module Device : sig
   (** Create a render pipeline (uses single shader module for vertex and fragment). The
       [blend] parameter is a tuple of (color_src, color_dst, color_op, alpha_src,
       alpha_dst, alpha_op). The optional [layout] parameter specifies the pipeline layout;
-      if omitted, an empty layout is used. *)
+      if omitted, an empty layout is used. The optional [vertex_buffer_layouts] parameter
+      specifies vertex buffer layouts for vertex attributes accessible via [@location(N)]
+      in shaders. *)
   val create_render_pipeline
     :  t
     -> ?label:string
@@ -596,6 +598,7 @@ module Device : sig
          * Blend_operation.t
     -> ?write_mask:Color_write_mask.Item.t list
     -> ?layout:Pipeline_layout.t
+    -> ?vertex_buffer_layouts:Vertex_buffer_layout.t list
     -> unit
     -> Render_pipeline.t
 

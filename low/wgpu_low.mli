@@ -2382,3 +2382,28 @@ val device_create_render_pipeline_with_layout
   -> int
   -> pipeline_layout
   -> render_pipeline
+
+(** Create a render pipeline with vertex buffer layouts. Vertex buffer layout tuple:
+    (step_mode, array_stride, attributes) Vertex attribute tuple: (format, offset,
+    shader_location) *)
+val device_create_render_pipeline_with_vertex_buffers
+  :  device
+  -> string
+  -> shader_module
+  -> string
+  -> string
+  -> int
+  -> int
+  -> int
+  -> int
+  -> bool
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> pipeline_layout option
+  -> (int * int64 * (int * int64 * int) array) array
+  -> render_pipeline

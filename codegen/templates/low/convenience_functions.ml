@@ -210,3 +210,29 @@ external device_create_render_pipeline_with_layout
   -> render_pipeline
   = "caml_wgpu_device_create_render_pipeline_with_layout_bytecode"
     "caml_wgpu_device_create_render_pipeline_with_layout"
+
+(* Vertex buffer layout tuple: (step_mode, array_stride, attributes) *)
+(* Vertex attribute tuple: (format, offset, shader_location) *)
+external device_create_render_pipeline_with_vertex_buffers
+  :  device
+  -> string
+  -> shader_module
+  -> string
+  -> string
+  -> int
+  -> int
+  -> int
+  -> int
+  -> bool
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> pipeline_layout option
+  -> (int * int64 * (int * int64 * int) array) array
+  -> render_pipeline
+  = "caml_wgpu_device_create_render_pipeline_with_vertex_buffers_bytecode"
+    "caml_wgpu_device_create_render_pipeline_with_vertex_buffers"

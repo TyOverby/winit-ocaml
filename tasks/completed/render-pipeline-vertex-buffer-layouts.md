@@ -70,3 +70,45 @@ Add a new integration test under `test/integration/` (e.g.,
 
 - WebGPU spec: https://www.w3.org/TR/webgpu/#dictdef-gpuvertexbufferlayout
 - Affected port: `test/fundamentals/rotation/rotation.ml`
+
+## Implementation Plan
+
+### Analysis
+
+The types `Vertex_attribute`, `Vertex_buffer_layout`, `Vertex_step_mode`, and `Vertex_format`
+already exist in the high-level bindings (wgpu.ml/wgpu.mli). The low-level C stubs for
+`device_create_render_pipeline_full` and `device_create_render_pipeline_with_layout` currently
+hard-code `.bufferCount = 0` and `.buffers = NULL` in the vertex state.
+
+### Approach
+
+Since the low-level bindings are auto-generated and should not be modified directly, I will:
+
+1. Add new convenience C stubs that accept vertex buffer layout data as OCaml arrays
+2. Add OCaml external declarations for these new stubs
+3. Update `Device.create_render_pipeline` to use the new stubs when `vertex_buffer_layouts` is provided
+
+### Steps
+
+1. Add C stub `caml_wgpu_device_create_render_pipeline_with_vertex_buffers` that:
+   - Takes additional parameters for vertex buffer layouts (as OCaml values)
+   - Iterates over the OCaml list to build C `WGPUVertexBufferLayout` array
+   - Sets `.bufferCount` and `.buffers` in the vertex state
+
+2. Add corresponding OCaml external declaration in `low/wgpu_low.ml` and `.mli`
+
+3. Update `Device.create_render_pipeline` in `high/wgpu.ml` and `.mli` to:
+   - Accept optional `?vertex_buffer_layouts:Vertex_buffer_layout.t list`
+   - Call the new low-level function when vertex buffer layouts are provided
+
+4. Create integration test `test/integration/vertex_buffer_layout/` that:
+   - Creates a vertex buffer with Float32x2 position data for a triangle
+   - Uses `@location(0)` in the vertex shader
+   - Renders and verifies the result
+
+### Validation Criteria
+
+1. `dune build` succeeds
+2. `dune build @check` has no warnings
+3. `dune runtest` passes (including new integration test)
+4. The new integration test renders a triangle using vertex buffer data with `@location` attributes
