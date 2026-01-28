@@ -184,4 +184,6 @@ dune build @check
 ## Report experience back to the user
 
 Your feedback is important to us!  If some APIs were hard to use or hard to
-find, please mention this as you finish up your work.
+find, please mention this as you finish up your work.  
+
+If you learned something that you think should be added to the docs, please mention that as well!
