@@ -1,6 +1,6 @@
 (library
  (name codegen_test)
  (inline_tests)
- (libraries core yaml codegen_lib)
+ (libraries core yaml codegen_lib expect_test_helpers_core)
  (preprocess
   (pps ppx_jane)))
