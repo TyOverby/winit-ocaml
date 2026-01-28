@@ -8,11 +8,9 @@
  (alias runtest)
  (action
   (run ./render_clear.exe))
- (targets render_clear.png)
- )
+ (targets render_clear.png))
 
 (rule
  (alias runtest)
  (action
   (cmp render_clear.expected.png render_clear.png)))
- 

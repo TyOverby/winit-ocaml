@@ -1,3 +1,0 @@
-; This directory now contains subdirectories for tests:
-; - util/        : Shared test utilities (test_util library)
-; - integration/ : Integration tests for wgpu functionality

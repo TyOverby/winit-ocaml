@@ -14,4 +14,3 @@
  (alias runtest)
  (action
   (cmp render_triangle.expected.png render_triangle.png)))
- 
