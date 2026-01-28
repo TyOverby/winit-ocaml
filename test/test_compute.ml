@@ -1,5 +1,29 @@
 open! Core
 
+(* Get output path for test artifacts. When running via dune runtest (cwd is in _build),
+   write next to the executable. When running via dune exec (cwd is not in _build),
+   write to the source directory. *)
+let output_path filename =
+  let cwd = Stdlib.Sys.getcwd () in
+  let in_build = String.is_substring cwd ~substring:"_build" in
+  if in_build
+  then (
+    (* Running in _build (e.g., dune runtest) - write next to executable *)
+    let exe_dir = Filename.dirname Stdlib.Sys.executable_name in
+    Filename.concat exe_dir filename)
+  else (
+    (* Running outside _build (e.g., dune exec) - write to source directory *)
+    let exe_path = Stdlib.Sys.executable_name in
+    (* exe_path is like _build/default/test/test_compute.exe *)
+    (* Strip _build/default/ prefix to get test/test_compute.exe, then take dirname *)
+    let relative =
+      match String.substr_replace_first exe_path ~pattern:"_build/default/" ~with_:"" with
+      | s when not (String.equal s exe_path) -> Filename.dirname s
+      | _ -> Filename.dirname exe_path
+    in
+    Filename.concat relative filename)
+;;
+
 (* Write RGBA pixel data to a PPM file (P6 binary format) *)
 let write_ppm ~filename ~width ~height ~data ~bytes_per_row =
   Out_channel.with_file filename ~f:(fun oc ->
@@ -27,9 +51,9 @@ let ppm_to_png ~ppm_file ~png_file =
   in
   match Core_unix.system cmd with
   | Ok () -> true
-  | Error _ ->
-    eprintf "Warning: ImageMagick convert failed. PPM file saved as %s\n" ppm_file;
-    false
+  | Error e ->
+    Error.raise_s
+      [%message "Error: ImageMagick convert failed" (e : Core_unix.Exit_or_signal.error)]
 ;;
 
 let test_instance_and_adapter () =
@@ -399,8 +423,8 @@ let test_render_clear () =
   then print_endline "SUCCESS: All pixels correctly cleared to red!"
   else print_endline "FAILURE: Some pixels incorrect.";
   (* Write output to PPM and convert to PNG *)
-  let ppm_file = "render_clear.ppm" in
-  let png_file = "render_clear.png" in
+  let ppm_file = output_path "render_clear.ppm" in
+  let png_file = output_path "render_clear.png" in
   write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
   printf "  Written to %s\n" ppm_file;
   if ppm_to_png ~ppm_file ~png_file
@@ -573,8 +597,8 @@ fn fs_main() -> @location(0) vec4<f32> {
   else
     print_endline "Note: Triangle rendered (check output image for visual verification)";
   (* Write output *)
-  let ppm_file = "render_triangle.ppm" in
-  let png_file = "render_triangle.png" in
+  let ppm_file = output_path "render_triangle.ppm" in
+  let png_file = output_path "render_triangle.png" in
   write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
   printf "  Written to %s\n" ppm_file;
   if ppm_to_png ~ppm_file ~png_file

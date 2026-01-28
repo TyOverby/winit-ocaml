@@ -1,3 +1,12 @@
 (executable
  (name test_compute)
- (libraries wgpu core core_unix))
+ (libraries wgpu core core_unix)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./test_compute.exe))
+ (targets render_clear.png render_triangle.png)
+ (mode promote))
