@@ -160,3 +160,15 @@ This task depends on `thread-config-through-codegen.md` being completed first. W
 3. Each manual method from `config.ml` has a corresponding expect test
 4. Tests that raise exceptions use `require_does_raise`
 5. Tests that succeed document what the current codegen produces (even if it returns `(none)`)
+
+## Implementation Plan
+
+1. Extract all manual methods from config.ml - there are 38 manual methods across 9 object types
+2. Add a test for each manual method in test_regression.ml using the `print_method_outputs` helper
+3. Initially, wrap all tests in `require_does_raise` since we don't know which ones will raise vs return None
+4. Run `dune runtest` to see which tests actually raise and which succeed
+5. Unwrap the ones that don't raise exceptions
+6. Run `dune promote` to accept the generated output
+7. Format and check for warnings
+
+The tests will use the existing pattern from test_regression.ml with naming like "manual: object.method".
