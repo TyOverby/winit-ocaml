@@ -34,6 +34,10 @@ let begin_render_pass
   ?(load_op = Load_op.Clear)
   ?(store_op = Store_op.Store)
   ~clear_color
+  ?depth_view
+  ?(depth_load_op = Load_op.Clear)
+  ?(depth_store_op = Store_op.Discard)
+  ?(depth_clear_value = 1.0)
   ()
   =
   Command_encoder.begin_render_pass
@@ -43,6 +47,10 @@ let begin_render_pass
     ~load_op
     ~store_op
     ~clear_color
+    ?depth_view
+    ~depth_load_op
+    ~depth_store_op
+    ~depth_clear_value
     ()
 ;;
 

@@ -20,7 +20,8 @@ val begin_compute_pass
   -> unit
   -> Compute_pass_encoder.t
 
-(** Begin a render pass on a command encoder with a single color attachment *)
+(** Begin a render pass on a command encoder with a single color attachment and optional
+    depth attachment. If [depth_view] is provided, depth testing will be enabled. *)
 val begin_render_pass
   :  Command_encoder.t
   -> ?label:string
@@ -28,6 +29,10 @@ val begin_render_pass
   -> ?load_op:Load_op.t
   -> ?store_op:Store_op.t
   -> clear_color:float * float * float * float
+  -> ?depth_view:Texture_view.t
+  -> ?depth_load_op:Load_op.t
+  -> ?depth_store_op:Store_op.t
+  -> ?depth_clear_value:float
   -> unit
   -> Render_pass_encoder.t
 

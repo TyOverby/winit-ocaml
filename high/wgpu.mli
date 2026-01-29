@@ -433,7 +433,9 @@ module Command_encoder : sig
   (** Begin a compute pass on this command encoder *)
   val begin_compute_pass : t -> ?label:string -> unit -> Compute_pass_encoder.t
 
-  (** Begin a render pass on this command encoder with a single color attachment *)
+  (** Begin a render pass on this command encoder with a single color attachment and
+      optional depth attachment. If [depth_view] is provided, depth testing will be
+      enabled. *)
   val begin_render_pass
     :  t
     -> ?label:string
@@ -441,6 +443,10 @@ module Command_encoder : sig
     -> ?load_op:Load_op.t
     -> ?store_op:Store_op.t
     -> clear_color:float * float * float * float
+    -> ?depth_view:Texture_view.t
+    -> ?depth_load_op:Load_op.t
+    -> ?depth_store_op:Store_op.t
+    -> ?depth_clear_value:float
     -> unit
     -> Render_pass_encoder.t
 
@@ -576,7 +582,9 @@ module Device : sig
       alpha_dst, alpha_op). The optional [layout] parameter specifies the pipeline layout;
       if omitted, an empty layout is used. The optional [vertex_buffer_layouts] parameter
       specifies vertex buffer layouts for vertex attributes accessible via [@location(N)]
-      in shaders. *)
+      in shaders. If [depth_format] is provided, depth testing will be enabled with
+      [depth_write_enabled] (default: true) and [depth_compare] (default: Less)
+      controlling the depth test behavior. *)
   val create_render_pipeline
     :  t
     -> ?label:string
@@ -597,6 +605,9 @@ module Device : sig
     -> ?write_mask:Color_write_mask.Item.t list
     -> ?layout:Pipeline_layout.t
     -> ?vertex_buffer_layouts:Vertex_buffer_layout.t list
+    -> ?depth_format:Texture_format.t
+    -> ?depth_write_enabled:bool
+    -> ?depth_compare:Compare_function.t
     -> unit
     -> Render_pipeline.t
 
@@ -872,7 +883,8 @@ val begin_compute_pass
   -> unit
   -> Compute_pass_encoder.t
 
-(** Begin a render pass on a command encoder with a single color attachment *)
+(** Begin a render pass on a command encoder with a single color attachment and optional
+    depth attachment. If [depth_view] is provided, depth testing will be enabled. *)
 val begin_render_pass
   :  Command_encoder.t
   -> ?label:string
@@ -880,6 +892,10 @@ val begin_render_pass
   -> ?load_op:Load_op.t
   -> ?store_op:Store_op.t
   -> clear_color:float * float * float * float
+  -> ?depth_view:Texture_view.t
+  -> ?depth_load_op:Load_op.t
+  -> ?depth_store_op:Store_op.t
+  -> ?depth_clear_value:float
   -> unit
   -> Render_pass_encoder.t
 

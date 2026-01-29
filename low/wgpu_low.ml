@@ -8878,3 +8878,52 @@ external device_create_render_pipeline_with_vertex_buffers
   -> render_pipeline
   = "caml_wgpu_device_create_render_pipeline_with_vertex_buffers_bytecode"
     "caml_wgpu_device_create_render_pipeline_with_vertex_buffers"
+
+(* Create render pipeline with vertex buffer layouts and depth-stencil state *)
+(* depth_format_opt: int option, depth_write_enabled: bool, depth_compare: int *)
+external device_create_render_pipeline_with_depth
+  :  device
+  -> string
+  -> shader_module
+  -> string
+  -> string
+  -> int
+  -> int
+  -> int
+  -> int
+  -> bool
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> int
+  -> pipeline_layout option
+  -> (int * int64 * (int * int64 * int) array) array
+  -> int option
+  -> bool
+  -> int
+  -> render_pipeline
+  = "caml_wgpu_device_create_render_pipeline_with_depth_bytecode"
+    "caml_wgpu_device_create_render_pipeline_with_depth"
+
+(* Begin render pass with optional depth attachment *)
+(* depth_view_opt: texture_view option, depth_load_op: int, depth_store_op: int, depth_clear_value: float *)
+external command_encoder_begin_render_pass_with_depth
+  :  command_encoder
+  -> string
+  -> texture_view
+  -> int
+  -> int
+  -> float
+  -> float
+  -> float
+  -> float
+  -> texture_view option
+  -> int
+  -> int
+  -> float
+  -> render_pass_encoder
+  = "caml_wgpu_command_encoder_begin_render_pass_with_depth_bytecode"
+    "caml_wgpu_command_encoder_begin_render_pass_with_depth"

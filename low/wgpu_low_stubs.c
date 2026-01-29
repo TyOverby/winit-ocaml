@@ -11084,6 +11084,314 @@ caml_wgpu_device_create_render_pipeline_with_vertex_buffers_bytecode(
       argv[15], argv[16], argv[17], argv[18]);
 }
 
+/*
+ * Create a render pipeline with vertex buffer layouts and depth-stencil state.
+ *
+ * Same as device_create_render_pipeline_with_vertex_buffers but adds:
+ * - depth_format_opt_val: int option (texture format for depth buffer)
+ * - depth_write_enabled_val: bool (whether to write to depth buffer)
+ * - depth_compare_val: int (comparison function)
+ */
+CAMLprim value caml_wgpu_device_create_render_pipeline_with_depth(
+    value device_val, value label_val, value shader_val, value vs_entry_val,
+    value fs_entry_val, value format_val, value topology_val,
+    value front_face_val, value cull_mode_val, value blend_enabled_val,
+    value color_src_factor_val, value color_dst_factor_val,
+    value color_operation_val, value alpha_src_factor_val,
+    value alpha_dst_factor_val, value alpha_operation_val, value write_mask_val,
+    value layout_opt_val, value vertex_buffer_layouts_val,
+    value depth_format_opt_val, value depth_write_enabled_val,
+    value depth_compare_val) {
+  CAMLparam5(device_val, label_val, shader_val, vs_entry_val, fs_entry_val);
+  CAMLxparam5(format_val, topology_val, front_face_val, cull_mode_val,
+              blend_enabled_val);
+  CAMLxparam5(color_src_factor_val, color_dst_factor_val, color_operation_val,
+              alpha_src_factor_val, alpha_dst_factor_val);
+  CAMLxparam5(alpha_operation_val, write_mask_val, layout_opt_val,
+              vertex_buffer_layouts_val, depth_format_opt_val);
+  CAMLxparam2(depth_write_enabled_val, depth_compare_val);
+
+  WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
+  const char *label = String_val(label_val);
+  WGPUShaderModule shader = (WGPUShaderModule)Nativeint_val(shader_val);
+  const char *vs_entry = String_val(vs_entry_val);
+  const char *fs_entry = String_val(fs_entry_val);
+  WGPUTextureFormat format = Int_val(format_val);
+  WGPUPrimitiveTopology topology = Int_val(topology_val);
+  WGPUFrontFace front_face = Int_val(front_face_val);
+  WGPUCullMode cull_mode = Int_val(cull_mode_val);
+  bool blend_enabled = Bool_val(blend_enabled_val);
+  WGPUBlendFactor color_src_factor = Int_val(color_src_factor_val);
+  WGPUBlendFactor color_dst_factor = Int_val(color_dst_factor_val);
+  WGPUBlendOperation color_operation = Int_val(color_operation_val);
+  WGPUBlendFactor alpha_src_factor = Int_val(alpha_src_factor_val);
+  WGPUBlendFactor alpha_dst_factor = Int_val(alpha_dst_factor_val);
+  WGPUBlendOperation alpha_operation = Int_val(alpha_operation_val);
+  WGPUColorWriteMask write_mask = Int_val(write_mask_val);
+
+  /* Parse vertex buffer layouts from OCaml array */
+  size_t buffer_count = Wosize_val(vertex_buffer_layouts_val);
+  WGPUVertexBufferLayout *vertex_buffers = NULL;
+  WGPUVertexAttribute **all_attributes = NULL;
+
+  if (buffer_count > 0) {
+    vertex_buffers = malloc(buffer_count * sizeof(WGPUVertexBufferLayout));
+    all_attributes = malloc(buffer_count * sizeof(WGPUVertexAttribute *));
+
+    for (size_t i = 0; i < buffer_count; i++) {
+      value layout = Field(vertex_buffer_layouts_val, i);
+      int step_mode = Int_val(Field(layout, 0));
+      uint64_t array_stride = Int64_val(Field(layout, 1));
+      value attributes_arr = Field(layout, 2);
+
+      size_t attr_count = Wosize_val(attributes_arr);
+      WGPUVertexAttribute *attributes =
+          malloc(attr_count * sizeof(WGPUVertexAttribute));
+      all_attributes[i] = attributes;
+
+      for (size_t j = 0; j < attr_count; j++) {
+        value attr = Field(attributes_arr, j);
+        attributes[j].format = Int_val(Field(attr, 0));
+        attributes[j].offset = Int64_val(Field(attr, 1));
+        attributes[j].shaderLocation = Int_val(Field(attr, 2));
+      }
+
+      vertex_buffers[i].stepMode = step_mode;
+      vertex_buffers[i].arrayStride = array_stride;
+      vertex_buffers[i].attributeCount = attr_count;
+      vertex_buffers[i].attributes = attributes;
+    }
+  }
+
+  /* Handle optional pipeline layout */
+  WGPUPipelineLayout layout;
+  bool layout_created = false;
+  if (Is_block(layout_opt_val) && Tag_val(layout_opt_val) == 0) {
+    layout = (WGPUPipelineLayout)Nativeint_val(Field(layout_opt_val, 0));
+  } else {
+    WGPUPipelineLayoutDescriptor layout_desc = {
+        .label = {.data = "empty_layout", .length = 12},
+        .bindGroupLayoutCount = 0,
+        .bindGroupLayouts = NULL,
+    };
+    layout = wgpuDeviceCreatePipelineLayout(device, &layout_desc);
+    layout_created = true;
+  }
+
+  /* Blend state */
+  WGPUBlendState blend_state = {
+      .color =
+          {
+              .srcFactor = color_src_factor,
+              .dstFactor = color_dst_factor,
+              .operation = color_operation,
+          },
+      .alpha =
+          {
+              .srcFactor = alpha_src_factor,
+              .dstFactor = alpha_dst_factor,
+              .operation = alpha_operation,
+          },
+  };
+
+  /* Color target state */
+  WGPUColorTargetState color_target = {
+      .format = format,
+      .blend = blend_enabled ? &blend_state : NULL,
+      .writeMask = write_mask,
+  };
+
+  /* Fragment state */
+  WGPUFragmentState fragment = {
+      .module = shader,
+      .entryPoint = {.data = fs_entry, .length = strlen(fs_entry)},
+      .constantCount = 0,
+      .constants = NULL,
+      .targetCount = 1,
+      .targets = &color_target,
+  };
+
+  /* Depth-stencil state (optional) */
+  WGPUDepthStencilState depth_stencil_state;
+  WGPUDepthStencilState *depth_stencil_ptr = NULL;
+
+  if (Is_block(depth_format_opt_val) && Tag_val(depth_format_opt_val) == 0) {
+    /* Some depth_format */
+    WGPUTextureFormat depth_format = Int_val(Field(depth_format_opt_val, 0));
+    bool depth_write_enabled = Bool_val(depth_write_enabled_val);
+    WGPUCompareFunction depth_compare = Int_val(depth_compare_val);
+
+    depth_stencil_state = (WGPUDepthStencilState){
+        .format = depth_format,
+        .depthWriteEnabled = depth_write_enabled ? WGPUOptionalBool_True
+                                                 : WGPUOptionalBool_False,
+        .depthCompare = depth_compare,
+        .stencilFront =
+            {
+                .compare = WGPUCompareFunction_Always,
+                .failOp = WGPUStencilOperation_Keep,
+                .depthFailOp = WGPUStencilOperation_Keep,
+                .passOp = WGPUStencilOperation_Keep,
+            },
+        .stencilBack =
+            {
+                .compare = WGPUCompareFunction_Always,
+                .failOp = WGPUStencilOperation_Keep,
+                .depthFailOp = WGPUStencilOperation_Keep,
+                .passOp = WGPUStencilOperation_Keep,
+            },
+        .stencilReadMask = 0xFFFFFFFF,
+        .stencilWriteMask = 0xFFFFFFFF,
+        .depthBias = 0,
+        .depthBiasSlopeScale = 0.0f,
+        .depthBiasClamp = 0.0f,
+    };
+    depth_stencil_ptr = &depth_stencil_state;
+  }
+
+  /* Render pipeline descriptor */
+  WGPURenderPipelineDescriptor desc = {
+      .label = {.data = label, .length = caml_string_length(label_val)},
+      .layout = layout,
+      .vertex =
+          {
+              .module = shader,
+              .entryPoint = {.data = vs_entry, .length = strlen(vs_entry)},
+              .constantCount = 0,
+              .constants = NULL,
+              .bufferCount = buffer_count,
+              .buffers = vertex_buffers,
+          },
+      .primitive =
+          {
+              .topology = topology,
+              .stripIndexFormat = WGPUIndexFormat_Undefined,
+              .frontFace = front_face,
+              .cullMode = cull_mode,
+          },
+      .depthStencil = depth_stencil_ptr,
+      .multisample =
+          {
+              .count = 1,
+              .mask = 0xFFFFFFFF,
+              .alphaToCoverageEnabled = false,
+          },
+      .fragment = &fragment,
+  };
+
+  WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(device, &desc);
+
+  /* Cleanup */
+  if (layout_created) {
+    wgpuPipelineLayoutRelease(layout);
+  }
+  if (all_attributes != NULL) {
+    for (size_t i = 0; i < buffer_count; i++) {
+      free(all_attributes[i]);
+    }
+    free(all_attributes);
+  }
+  if (vertex_buffers != NULL) {
+    free(vertex_buffers);
+  }
+
+  CAMLreturn(caml_copy_nativeint((intnat)pipeline));
+}
+
+CAMLprim value caml_wgpu_device_create_render_pipeline_with_depth_bytecode(
+    value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_device_create_render_pipeline_with_depth(
+      argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7],
+      argv[8], argv[9], argv[10], argv[11], argv[12], argv[13], argv[14],
+      argv[15], argv[16], argv[17], argv[18], argv[19], argv[20], argv[21]);
+}
+
+/*
+ * Begin a render pass with a single color attachment and optional depth
+ * attachment.
+ *
+ * depth_view_opt_val: nativeint option (texture view for depth buffer)
+ * depth_load_op_val: int (load op for depth)
+ * depth_store_op_val: int (store op for depth)
+ * depth_clear_value_val: float (clear value for depth)
+ */
+CAMLprim value caml_wgpu_command_encoder_begin_render_pass_with_depth(
+    value encoder_val, value label_val, value view_val, value load_op_val,
+    value store_op_val, value r_val, value g_val, value b_val, value a_val,
+    value depth_view_opt_val, value depth_load_op_val, value depth_store_op_val,
+    value depth_clear_value_val) {
+  CAMLparam5(encoder_val, label_val, view_val, load_op_val, store_op_val);
+  CAMLxparam5(r_val, g_val, b_val, a_val, depth_view_opt_val);
+  CAMLxparam3(depth_load_op_val, depth_store_op_val, depth_clear_value_val);
+
+  WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
+  const char *label = String_val(label_val);
+  WGPUTextureView view = (WGPUTextureView)Nativeint_val(view_val);
+  WGPULoadOp load_op = Int_val(load_op_val);
+  WGPUStoreOp store_op = Int_val(store_op_val);
+  double r = Double_val(r_val);
+  double g = Double_val(g_val);
+  double b = Double_val(b_val);
+  double a = Double_val(a_val);
+
+  WGPURenderPassColorAttachment color_attachment = {
+      .view = view,
+      .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED,
+      .resolveTarget = NULL,
+      .loadOp = load_op,
+      .storeOp = store_op,
+      .clearValue = {.r = r, .g = g, .b = b, .a = a},
+  };
+
+  /* Depth-stencil attachment (optional) */
+  WGPURenderPassDepthStencilAttachment depth_attachment;
+  WGPURenderPassDepthStencilAttachment *depth_attachment_ptr = NULL;
+
+  if (Is_block(depth_view_opt_val) && Tag_val(depth_view_opt_val) == 0) {
+    /* Some depth_view */
+    WGPUTextureView depth_view =
+        (WGPUTextureView)Nativeint_val(Field(depth_view_opt_val, 0));
+    WGPULoadOp depth_load_op = Int_val(depth_load_op_val);
+    WGPUStoreOp depth_store_op = Int_val(depth_store_op_val);
+    double depth_clear_value = Double_val(depth_clear_value_val);
+
+    depth_attachment = (WGPURenderPassDepthStencilAttachment){
+        .view = depth_view,
+        .depthLoadOp = depth_load_op,
+        .depthStoreOp = depth_store_op,
+        .depthClearValue = (float)depth_clear_value,
+        .depthReadOnly = false,
+        .stencilLoadOp = WGPULoadOp_Undefined,
+        .stencilStoreOp = WGPUStoreOp_Undefined,
+        .stencilClearValue = 0,
+        .stencilReadOnly = true,
+    };
+    depth_attachment_ptr = &depth_attachment;
+  }
+
+  WGPURenderPassDescriptor desc = {
+      .label = {.data = label, .length = caml_string_length(label_val)},
+      .colorAttachmentCount = 1,
+      .colorAttachments = &color_attachment,
+      .depthStencilAttachment = depth_attachment_ptr,
+      .occlusionQuerySet = NULL,
+      .timestampWrites = NULL,
+  };
+
+  WGPURenderPassEncoder pass =
+      wgpuCommandEncoderBeginRenderPass(encoder, &desc);
+  CAMLreturn(caml_copy_nativeint((intnat)pass));
+}
+
+CAMLprim value caml_wgpu_command_encoder_begin_render_pass_with_depth_bytecode(
+    value *argv, int argn) {
+  (void)argn;
+  return caml_wgpu_command_encoder_begin_render_pass_with_depth(
+      argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7],
+      argv[8], argv[9], argv[10], argv[11], argv[12]);
+}
+
 /* Write texture from bigarray */
 CAMLprim value caml_wgpu_queue_write_texture_bigarray(value queue_val,
                                                       value destination_val,

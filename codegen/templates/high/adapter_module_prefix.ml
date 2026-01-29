@@ -37,11 +37,16 @@ module Command_encoder = struct
     ?(load_op = Load_op.Clear)
     ?(store_op = Store_op.Store)
     ~clear_color
+    ?depth_view
+    ?(depth_load_op = Load_op.Clear)
+    ?(depth_store_op = Store_op.Discard)
+    ?(depth_clear_value = 1.0)
     ()
     =
     let r, g, b, a = clear_color in
+    let depth_view_opt = Option.map (fun v -> v.Texture_view.handle) depth_view in
     let pass =
-      Wgpu_low.command_encoder_begin_render_pass_configurable
+      Wgpu_low.command_encoder_begin_render_pass_with_depth
         t.handle
         label
         color_view.Texture_view.handle
@@ -51,6 +56,10 @@ module Command_encoder = struct
         g
         b
         a
+        depth_view_opt
+        (Load_op.to_int depth_load_op)
+        (Store_op.to_int depth_store_op)
+        depth_clear_value
     in
     ({ Render_pass_encoder.handle = pass } : Render_pass_encoder.t)
   ;;
@@ -183,6 +192,9 @@ module Device = struct
     ?(write_mask = [ Color_write_mask.Item.All ])
     ?layout
     ?(vertex_buffer_layouts : Vertex_buffer_layout.t list = [])
+    ?depth_format
+    ?(depth_write_enabled = true)
+    ?(depth_compare = Compare_function.Less)
     ()
     =
     let blend_enabled, color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op =
@@ -198,7 +210,6 @@ module Device = struct
       | Some (cs, cd, co, as_, ad, ao) -> true, cs, cd, co, as_, ad, ao
     in
     let pipeline =
-      (* Has vertex buffer layouts - use the new function *)
       let vbl_array =
         Array.of_list
           (List.map
@@ -218,7 +229,8 @@ module Device = struct
              vertex_buffer_layouts)
       in
       let layout_opt = Option.map (fun l -> l.Pipeline_layout.handle) layout in
-      Wgpu_low.device_create_render_pipeline_with_vertex_buffers
+      let depth_format_opt = Option.map Texture_format.to_int depth_format in
+      Wgpu_low.device_create_render_pipeline_with_depth
         t.handle
         label
         shader_module.Shader_module.handle
@@ -238,6 +250,9 @@ module Device = struct
         (Color_write_mask.list_to_int write_mask)
         layout_opt
         vbl_array
+        depth_format_opt
+        depth_write_enabled
+        (Compare_function.to_int depth_compare)
     in
     ({ Render_pipeline.handle = pipeline } : Render_pipeline.t)
   ;;
