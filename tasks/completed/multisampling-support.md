@@ -93,3 +93,46 @@ and pass it through to the descriptor.
 - wgpu-native wiki getting started
 - Existing multisampled texture creation is supported via `Device.create_texture`
   with `~sample_count:4`
+
+---
+
+## Implementation Plan
+
+### Summary
+
+Add multisampling (MSAA) support to the bindings by:
+1. Adding `?multisample_count:int` parameter to `create_render_pipeline`
+2. Adding `?resolve_target:Texture_view.t` parameter to `begin_render_pass`
+
+### Steps
+
+1. **Modify C helper for render pipeline** (`sync_helpers.c`):
+   - Add `sample_count_val` parameter to `caml_wgpu_device_create_render_pipeline_with_depth`
+   - Use the parameter value instead of hardcoded `1` for `.multisample.count`
+   - Update bytecode wrapper with new argument count
+
+2. **Modify C helper for render pass** (`sync_helpers.c`):
+   - Add `resolve_target_opt_val` parameter to `caml_wgpu_command_encoder_begin_render_pass_with_depth`
+   - Parse the option and set `.resolveTarget` appropriately
+   - Update bytecode wrapper with new argument count
+
+3. **Update low-level OCaml bindings** (`convenience_functions.ml` and `.mli`):
+   - Add `int` parameter for sample count to `device_create_render_pipeline_with_depth`
+   - Add `texture_view option` parameter for resolve target to `command_encoder_begin_render_pass_with_depth`
+
+4. **Update high-level OCaml API** (`wgpu.ml` and `wgpu.mli`):
+   - Add `?multisample_count:int` to `Device.create_render_pipeline` and the top-level `create_render_pipeline` (defaults to 1)
+   - Add `?resolve_target:Texture_view.t` to `Command_encoder.begin_render_pass` and top-level `begin_render_pass`
+
+5. **Create integration test** (`test/integration/multisampling/`):
+   - Create a 4x MSAA texture
+   - Create a render pipeline with `~multisample_count:4`
+   - Render a triangle to the MSAA texture with a resolve target
+   - Verify anti-aliased edges appear in output
+
+### Validation Criteria
+
+1. `dune build` succeeds
+2. `dune build @check` has no warnings
+3. `dune runtest` passes (including the new multisampling test)
+4. The multisampling test produces a PNG with visibly anti-aliased edges (compared to non-MSAA rendering)

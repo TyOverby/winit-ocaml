@@ -2418,7 +2418,7 @@ val device_create_render_pipeline_with_vertex_buffers
 
 (** Create a render pipeline with vertex buffer layouts and depth-stencil state.
     Additional parameters: depth_format_opt (int option), depth_write_enabled (bool),
-    depth_compare (int). *)
+    depth_compare (int), sample_count (int, 1 or 4 for MSAA). *)
 val device_create_render_pipeline_with_depth
   :  device
   -> string
@@ -2442,11 +2442,13 @@ val device_create_render_pipeline_with_depth
   -> int option
   -> bool
   -> int
+  -> int
   -> render_pipeline
 
 (** Begin a render pass with a single color attachment and optional depth attachment.
     Additional parameters: depth_view_opt (texture_view option), depth_load_op (int),
-    depth_store_op (int), depth_clear_value (float). *)
+    depth_store_op (int), depth_clear_value (float), resolve_target_opt (texture_view
+    option). *)
 val command_encoder_begin_render_pass_with_depth
   :  command_encoder
   -> string
@@ -2461,4 +2463,5 @@ val command_encoder_begin_render_pass_with_depth
   -> int
   -> int
   -> float
+  -> texture_view option
   -> render_pass_encoder

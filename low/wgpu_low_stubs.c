@@ -11091,6 +11091,7 @@ caml_wgpu_device_create_render_pipeline_with_vertex_buffers_bytecode(
  * - depth_format_opt_val: int option (texture format for depth buffer)
  * - depth_write_enabled_val: bool (whether to write to depth buffer)
  * - depth_compare_val: int (comparison function)
+ * - sample_count_val: int (multisampling sample count, 1 or 4)
  */
 CAMLprim value caml_wgpu_device_create_render_pipeline_with_depth(
     value device_val, value label_val, value shader_val, value vs_entry_val,
@@ -11101,7 +11102,7 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_with_depth(
     value alpha_dst_factor_val, value alpha_operation_val, value write_mask_val,
     value layout_opt_val, value vertex_buffer_layouts_val,
     value depth_format_opt_val, value depth_write_enabled_val,
-    value depth_compare_val) {
+    value depth_compare_val, value sample_count_val) {
   CAMLparam5(device_val, label_val, shader_val, vs_entry_val, fs_entry_val);
   CAMLxparam5(format_val, topology_val, front_face_val, cull_mode_val,
               blend_enabled_val);
@@ -11109,7 +11110,7 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_with_depth(
               alpha_src_factor_val, alpha_dst_factor_val);
   CAMLxparam5(alpha_operation_val, write_mask_val, layout_opt_val,
               vertex_buffer_layouts_val, depth_format_opt_val);
-  CAMLxparam2(depth_write_enabled_val, depth_compare_val);
+  CAMLxparam3(depth_write_enabled_val, depth_compare_val, sample_count_val);
 
   WGPUDevice device = (WGPUDevice)Nativeint_val(device_val);
   const char *label = String_val(label_val);
@@ -11128,6 +11129,7 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_with_depth(
   WGPUBlendFactor alpha_dst_factor = Int_val(alpha_dst_factor_val);
   WGPUBlendOperation alpha_operation = Int_val(alpha_operation_val);
   WGPUColorWriteMask write_mask = Int_val(write_mask_val);
+  uint32_t sample_count = Int_val(sample_count_val);
 
   /* Parse vertex buffer layouts from OCaml array */
   size_t buffer_count = Wosize_val(vertex_buffer_layouts_val);
@@ -11272,7 +11274,7 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_with_depth(
       .depthStencil = depth_stencil_ptr,
       .multisample =
           {
-              .count = 1,
+              .count = sample_count,
               .mask = 0xFFFFFFFF,
               .alphaToCoverageEnabled = false,
           },
@@ -11304,7 +11306,8 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_with_depth_bytecode(
   return caml_wgpu_device_create_render_pipeline_with_depth(
       argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7],
       argv[8], argv[9], argv[10], argv[11], argv[12], argv[13], argv[14],
-      argv[15], argv[16], argv[17], argv[18], argv[19], argv[20], argv[21]);
+      argv[15], argv[16], argv[17], argv[18], argv[19], argv[20], argv[21],
+      argv[22]);
 }
 
 /*
@@ -11315,15 +11318,17 @@ CAMLprim value caml_wgpu_device_create_render_pipeline_with_depth_bytecode(
  * depth_load_op_val: int (load op for depth)
  * depth_store_op_val: int (store op for depth)
  * depth_clear_value_val: float (clear value for depth)
+ * resolve_target_opt_val: nativeint option (texture view for MSAA resolve)
  */
 CAMLprim value caml_wgpu_command_encoder_begin_render_pass_with_depth(
     value encoder_val, value label_val, value view_val, value load_op_val,
     value store_op_val, value r_val, value g_val, value b_val, value a_val,
     value depth_view_opt_val, value depth_load_op_val, value depth_store_op_val,
-    value depth_clear_value_val) {
+    value depth_clear_value_val, value resolve_target_opt_val) {
   CAMLparam5(encoder_val, label_val, view_val, load_op_val, store_op_val);
   CAMLxparam5(r_val, g_val, b_val, a_val, depth_view_opt_val);
-  CAMLxparam3(depth_load_op_val, depth_store_op_val, depth_clear_value_val);
+  CAMLxparam4(depth_load_op_val, depth_store_op_val, depth_clear_value_val,
+              resolve_target_opt_val);
 
   WGPUCommandEncoder encoder = (WGPUCommandEncoder)Nativeint_val(encoder_val);
   const char *label = String_val(label_val);
@@ -11335,10 +11340,18 @@ CAMLprim value caml_wgpu_command_encoder_begin_render_pass_with_depth(
   double b = Double_val(b_val);
   double a = Double_val(a_val);
 
+  /* Parse optional resolve target */
+  WGPUTextureView resolve_target = NULL;
+  if (Is_block(resolve_target_opt_val) &&
+      Tag_val(resolve_target_opt_val) == 0) {
+    resolve_target =
+        (WGPUTextureView)Nativeint_val(Field(resolve_target_opt_val, 0));
+  }
+
   WGPURenderPassColorAttachment color_attachment = {
       .view = view,
       .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED,
-      .resolveTarget = NULL,
+      .resolveTarget = resolve_target,
       .loadOp = load_op,
       .storeOp = store_op,
       .clearValue = {.r = r, .g = g, .b = b, .a = a},
@@ -11389,7 +11402,7 @@ CAMLprim value caml_wgpu_command_encoder_begin_render_pass_with_depth_bytecode(
   (void)argn;
   return caml_wgpu_command_encoder_begin_render_pass_with_depth(
       argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7],
-      argv[8], argv[9], argv[10], argv[11], argv[12]);
+      argv[8], argv[9], argv[10], argv[11], argv[12], argv[13]);
 }
 
 /* Write texture from bigarray */

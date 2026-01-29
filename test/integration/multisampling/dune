@@ -1,0 +1,23 @@
+(executable
+ (name multisampling)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (deps
+  (glob_files *.expected.png))
+ (action
+  (run ./multisampling.exe))
+ (targets multisampling.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  multisampling.expected.png
+  multisampling.png)
+ (action
+  (bash "%{deps}")))

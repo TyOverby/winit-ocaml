@@ -614,10 +614,12 @@ module Command_encoder = struct
     ?(depth_load_op = Load_op.Clear)
     ?(depth_store_op = Store_op.Discard)
     ?(depth_clear_value = 1.0)
+    ?resolve_target
     ()
     =
     let r, g, b, a = clear_color in
     let depth_view_opt = Option.map (fun v -> v.Texture_view.handle) depth_view in
+    let resolve_target_opt = Option.map (fun v -> v.Texture_view.handle) resolve_target in
     let pass =
       Wgpu_low.command_encoder_begin_render_pass_with_depth
         t.handle
@@ -633,6 +635,7 @@ module Command_encoder = struct
         (Load_op.to_int depth_load_op)
         (Store_op.to_int depth_store_op)
         depth_clear_value
+        resolve_target_opt
     in
     ({ Render_pass_encoder.handle = pass } : Render_pass_encoder.t)
   ;;
@@ -1072,6 +1075,7 @@ module Device = struct
     ?depth_format
     ?(depth_write_enabled = true)
     ?(depth_compare = Compare_function.Less)
+    ?(multisample_count = 1)
     ()
     =
     let blend_enabled, color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op =
@@ -1130,6 +1134,7 @@ module Device = struct
         depth_format_opt
         depth_write_enabled
         (Compare_function.to_int depth_compare)
+        multisample_count
     in
     ({ Render_pipeline.handle = pipeline } : Render_pipeline.t)
   ;;
@@ -2037,6 +2042,7 @@ let begin_render_pass
   ?(depth_load_op = Load_op.Clear)
   ?(depth_store_op = Store_op.Discard)
   ?(depth_clear_value = 1.0)
+  ?resolve_target
   ()
   =
   Command_encoder.begin_render_pass
@@ -2050,6 +2056,7 @@ let begin_render_pass
     ~depth_load_op
     ~depth_store_op
     ~depth_clear_value
+    ?resolve_target
     ()
 ;;
 

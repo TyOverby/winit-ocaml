@@ -248,6 +248,7 @@ external device_create_render_pipeline_with_vertex_buffers
 
 (* Create render pipeline with vertex buffer layouts and depth-stencil state *)
 (* depth_format_opt: int option, depth_write_enabled: bool, depth_compare: int *)
+(* sample_count: int (1 or 4 for MSAA) *)
 external device_create_render_pipeline_with_depth
   :  device
   -> string
@@ -271,12 +272,14 @@ external device_create_render_pipeline_with_depth
   -> int option
   -> bool
   -> int
+  -> int
   -> render_pipeline
   = "caml_wgpu_device_create_render_pipeline_with_depth_bytecode"
     "caml_wgpu_device_create_render_pipeline_with_depth"
 
-(* Begin render pass with optional depth attachment *)
+(* Begin render pass with optional depth attachment and optional resolve target *)
 (* depth_view_opt: texture_view option, depth_load_op: int, depth_store_op: int, depth_clear_value: float *)
+(* resolve_target_opt: texture_view option (for MSAA resolve) *)
 external command_encoder_begin_render_pass_with_depth
   :  command_encoder
   -> string
@@ -291,6 +294,7 @@ external command_encoder_begin_render_pass_with_depth
   -> int
   -> int
   -> float
+  -> texture_view option
   -> render_pass_encoder
   = "caml_wgpu_command_encoder_begin_render_pass_with_depth_bytecode"
     "caml_wgpu_command_encoder_begin_render_pass_with_depth"

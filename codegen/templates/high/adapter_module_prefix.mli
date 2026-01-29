@@ -17,7 +17,7 @@ module Command_encoder : sig
 
   (** Begin a render pass on this command encoder with a single color attachment
       and optional depth attachment. If [depth_view] is provided, depth testing
-      will be enabled. *)
+      will be enabled. If [resolve_target] is provided, MSAA resolve will be performed. *)
   val begin_render_pass
     :  t
     -> ?label:string
@@ -29,6 +29,7 @@ module Command_encoder : sig
     -> ?depth_load_op:Load_op.t
     -> ?depth_store_op:Store_op.t
     -> ?depth_clear_value:float
+    -> ?resolve_target:Texture_view.t
     -> unit
     -> Render_pass_encoder.t
 
@@ -76,7 +77,8 @@ module Device : sig
       The optional [vertex_buffer_layouts] parameter specifies vertex buffer layouts for
       vertex attributes accessible via [@location(N)] in shaders.
       If [depth_format] is provided, depth testing will be enabled with [depth_write_enabled]
-      (default: true) and [depth_compare] (default: Less) controlling the depth test behavior. *)
+      (default: true) and [depth_compare] (default: Less) controlling the depth test behavior.
+      The [multisample_count] parameter controls MSAA (default: 1, use 4 for 4x MSAA). *)
   val create_render_pipeline : t -> ?label:string -> shader_module:Shader_module.t ->
     vertex_entry_point:string -> fragment_entry_point:string ->
     color_format:Texture_format.t ->
@@ -90,6 +92,7 @@ module Device : sig
     ?depth_format:Texture_format.t ->
     ?depth_write_enabled:bool ->
     ?depth_compare:Compare_function.t ->
+    ?multisample_count:int ->
     unit -> Render_pipeline.t
 
   (** Create a bind group layout for a single storage buffer *)

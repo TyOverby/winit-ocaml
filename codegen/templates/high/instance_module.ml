@@ -38,6 +38,7 @@ let begin_render_pass
   ?(depth_load_op = Load_op.Clear)
   ?(depth_store_op = Store_op.Discard)
   ?(depth_clear_value = 1.0)
+  ?resolve_target
   ()
   =
   Command_encoder.begin_render_pass
@@ -51,6 +52,7 @@ let begin_render_pass
     ~depth_load_op
     ~depth_store_op
     ~depth_clear_value
+    ?resolve_target
     ()
 ;;
 
