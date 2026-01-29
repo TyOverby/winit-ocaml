@@ -228,7 +228,9 @@ let () =
   let instance, adapter, device, queue, shader = init () in
   (* Load cubemap face images: +X, -X, +Y, -Y, +Z, -Z *)
   let face_files =
-    [ "pos-x.png"; "neg-x.png"; "pos-y.png"; "neg-y.png"; "pos-z.png"; "neg-z.png" ]
+    List.map
+      [ "pos-x.png"; "neg-x.png"; "pos-y.png"; "neg-y.png"; "pos-z.png"; "neg-z.png" ]
+      ~f:(fun file -> [%string {|../../assets/skybox/%{file}|}])
   in
   let faces =
     List.map face_files ~f:(fun filename ->
@@ -447,6 +449,7 @@ let () =
   (* Render looking in different directions *)
   render_at_angle 0.0 "_front";
   render_at_angle (Float.pi /. 2.0) "_right";
+  render_at_angle (Float.pi /. 4.0) "_front_right";
   render_at_angle Float.pi "_back";
   render_at_angle (Float.pi *. 1.5) "_left";
   (* Cleanup *)

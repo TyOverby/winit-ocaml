@@ -4,32 +4,13 @@
  (preprocess
   (pps ppx_jane)))
 
-; Copy the skybox assets into the build directory
-
-(rule
- (targets pos-x.png neg-x.png pos-y.png neg-y.png pos-z.png neg-z.png)
- (deps
-  %{workspace_root}/test/assets/skybox/pos-x.png
-  %{workspace_root}/test/assets/skybox/neg-x.png
-  %{workspace_root}/test/assets/skybox/pos-y.png
-  %{workspace_root}/test/assets/skybox/neg-y.png
-  %{workspace_root}/test/assets/skybox/pos-z.png
-  %{workspace_root}/test/assets/skybox/neg-z.png)
- (action
-  (progn
-   (copy %{workspace_root}/test/assets/skybox/pos-x.png pos-x.png)
-   (copy %{workspace_root}/test/assets/skybox/neg-x.png neg-x.png)
-   (copy %{workspace_root}/test/assets/skybox/pos-y.png pos-y.png)
-   (copy %{workspace_root}/test/assets/skybox/neg-y.png neg-y.png)
-   (copy %{workspace_root}/test/assets/skybox/pos-z.png pos-z.png)
-   (copy %{workspace_root}/test/assets/skybox/neg-z.png neg-z.png))))
-
 (rule
  (alias runtest)
- (deps pos-x.png neg-x.png pos-y.png neg-y.png pos-z.png neg-z.png)
+ (deps
+  (glob_files %{workspace_root}/test/assets/skybox/*.png))
  (action
   (run ./skybox.exe))
- (targets skybox_front.png skybox_right.png skybox_back.png skybox_left.png)
+ (targets skybox_front_right.png skybox_front.png skybox_right.png skybox_back.png skybox_left.png)
  (mode promote))
 
 (rule
@@ -47,6 +28,15 @@
   "%{workspace_root}/imgdiff.sh"
   skybox_right.expected.png
   skybox_right.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  skybox_front_right.expected.png
+  skybox_front_right.png)
  (action
   (bash "%{deps}")))
 
