@@ -934,14 +934,6 @@ module Queue = struct
     Wgpu_low.queue_write_buffer_bigarray t.handle buffer.Buffer.handle offset data
   ;;
 
-  let release t = Wgpu_low.queue_release t.handle
-
-  let submit t ~commands =
-    Wgpu_low.queue_submit
-      t.handle
-      (Array.of_list (List.map (fun x -> x.Command_buffer.handle) commands))
-  ;;
-
   let write_texture
     t
     ~destination_texture
@@ -957,7 +949,6 @@ module Queue = struct
     ~write_size_height
     ~write_size_depth_or_array_layers
     ~data
-    ~data_size
     ()
     =
     let destination_origin_nested = Wgpu_low.Origin_3d.origin_3D_create () in
@@ -997,18 +988,25 @@ module Queue = struct
     Wgpu_low.Extent_3d.extent_3D_set_depth_or_array_layers
       desc_write_size
       write_size_depth_or_array_layers;
-    Wgpu_low.queue_write_texture
+    Wgpu_low.queue_write_texture_bigarray
       t.handle
       desc_destination
-      data
-      data_size
       desc_data_layout
-      desc_write_size;
+      desc_write_size
+      data;
     Wgpu_low.Extent_3d.extent_3D_free desc_write_size;
     Wgpu_low.Texel_copy_buffer_layout.texel_copy_buffer_layout_free desc_data_layout;
     Wgpu_low.Origin_3d.origin_3D_free destination_origin_nested;
     Wgpu_low.Texel_copy_texture_info.texel_copy_texture_info_free desc_destination;
     ()
+  ;;
+
+  let release t = Wgpu_low.queue_release t.handle
+
+  let submit t ~commands =
+    Wgpu_low.queue_submit
+      t.handle
+      (Array.of_list (List.map (fun x -> x.Command_buffer.handle) commands))
   ;;
 
   let set_label t ~label = Wgpu_low.queue_set_label t.handle label

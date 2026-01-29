@@ -35,6 +35,24 @@ module Queue : sig
   val write_buffer : t -> buffer:Buffer.t -> offset:int64 ->
     data:(_, _, Bigarray.c_layout) Bigarray.Array1.t -> unit
 
+  val write_texture
+    :  t
+    -> destination_texture:Texture.t
+    -> destination_mip_level:int
+    -> destination_origin_x:int
+    -> destination_origin_y:int
+    -> destination_origin_z:int
+    -> destination_aspect:Texture_aspect.t
+    -> data_layout_offset:int64
+    -> data_layout_bytes_per_row:int
+    -> data_layout_rows_per_image:int
+    -> write_size_width:int
+    -> write_size_height:int
+    -> write_size_depth_or_array_layers:int
+    -> data:(_, _, Bigarray.c_layout) Bigarray.Array1.t
+    -> unit
+    -> unit
+
   (* AUTO-GENERATED QUEUE METHOD SIGNATURES INJECTED HERE *)
 end
 

@@ -540,9 +540,6 @@ module Queue : sig
     -> data:(_, _, Bigarray.c_layout) Bigarray.Array1.t
     -> unit
 
-  val release : t -> unit
-  val submit : t -> commands:Command_buffer.t list -> unit
-
   val write_texture
     :  t
     -> destination_texture:Texture.t
@@ -557,11 +554,12 @@ module Queue : sig
     -> write_size_width:int
     -> write_size_height:int
     -> write_size_depth_or_array_layers:int
-    -> data:nativeint
-    -> data_size:int64
+    -> data:(_, _, Bigarray.c_layout) Bigarray.Array1.t
     -> unit
     -> unit
 
+  val release : t -> unit
+  val submit : t -> commands:Command_buffer.t list -> unit
   val set_label : t -> label:string -> unit
 end
 

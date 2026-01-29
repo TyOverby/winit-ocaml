@@ -8733,6 +8733,15 @@ external queue_write_buffer_bigarray
   -> unit
   = "caml_wgpu_queue_write_buffer_bigarray"
 
+external queue_write_texture_bigarray
+  :  queue
+  -> nativeint
+  -> nativeint
+  -> nativeint
+  -> (_, _, Bigarray.c_layout) Bigarray.Array1.t
+  -> unit
+  = "caml_wgpu_queue_write_texture_bigarray"
+
 external device_create_bind_group_layout_storage
   :  device
   -> string

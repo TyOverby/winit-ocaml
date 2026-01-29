@@ -37,6 +37,14 @@ val queue_write_buffer_bigarray
   -> (_, _, Bigarray.c_layout) Bigarray.Array1.t
   -> unit
 
+val queue_write_texture_bigarray
+  :  queue
+  -> nativeint
+  -> nativeint
+  -> nativeint
+  -> (_, _, Bigarray.c_layout) Bigarray.Array1.t
+  -> unit
+
 val device_create_bind_group_layout_storage
   :  device
   -> string

@@ -28,6 +28,8 @@ let method_config : (Method_key.t * method_handling) list =
   ; ("device", "create_render_pipeline"), Manual { reason = "Deeply nested descriptors" }
   ; ("device", "get_adapter_info"), Manual { reason = "Returns struct" }
   ; ("queue", "write_buffer"), Manual { reason = "Uses pointer + size" }
+  ; ( ("queue", "write_texture")
+    , Manual { reason = "Uses pointer + size, bigarray wrapper" } )
   ; ( ("command_encoder", "begin_compute_pass")
     , Manual { reason = "Uses descriptor struct with arrays" } )
   ; ( ("command_encoder", "begin_render_pass")

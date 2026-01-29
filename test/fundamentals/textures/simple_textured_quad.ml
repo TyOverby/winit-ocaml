@@ -135,59 +135,23 @@ let () =
       ~usage:[ Wgpu.Texture_usage.Item.Texture_binding; Wgpu.Texture_usage.Item.Copy_dst ]
       ()
   in
-  (* Write texture data via staging buffer with 256-byte row alignment *)
-  let src_bytes_per_row = texture_width * 4 in
-  let aligned_bytes_per_row = (src_bytes_per_row + 255) / 256 * 256 in
-  let staging_buffer_size = aligned_bytes_per_row * texture_height in
-  let staging_buffer =
-    Wgpu.Device.create_buffer
-      device
-      ~label:"texture_staging_buffer"
-      ~size:(Int64.of_int staging_buffer_size)
-      ~usage:[ Wgpu.Buffer_usage.Item.Copy_src; Wgpu.Buffer_usage.Item.Copy_dst ]
-      ~mapped_at_creation:false
-      ()
-  in
-  (* Create aligned data with padding *)
-  let aligned_data =
-    Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout staging_buffer_size
-  in
-  for y = 0 to texture_height - 1 do
-    for x = 0 to (texture_width * 4) - 1 do
-      let src_offset = (y * src_bytes_per_row) + x in
-      let dst_offset = (y * aligned_bytes_per_row) + x in
-      Bigarray.Array1.set
-        aligned_data
-        dst_offset
-        (Bigarray.Array1.get texture_data src_offset)
-    done
-  done;
-  Wgpu.Queue.write_buffer queue ~buffer:staging_buffer ~offset:0L ~data:aligned_data;
-  let copy_encoder =
-    Wgpu.Device.create_command_encoder device ~label:"texture_copy_encoder" ()
-  in
-  Wgpu.Command_encoder.copy_buffer_to_texture
-    copy_encoder
-    ~source_layout_offset:0L
-    ~source_layout_bytes_per_row:aligned_bytes_per_row
-    ~source_layout_rows_per_image:texture_height
-    ~source_buffer:staging_buffer
+  (* Write texture data directly using Queue.write_texture *)
+  Wgpu.Queue.write_texture
+    queue
     ~destination_texture:texture
     ~destination_mip_level:0
     ~destination_origin_x:0
     ~destination_origin_y:0
     ~destination_origin_z:0
     ~destination_aspect:Wgpu.Texture_aspect.All
-    ~copy_size_width:texture_width
-    ~copy_size_height:texture_height
-    ~copy_size_depth_or_array_layers:1
+    ~data_layout_offset:0L
+    ~data_layout_bytes_per_row:(texture_width * 4)
+    ~data_layout_rows_per_image:texture_height
+    ~write_size_width:texture_width
+    ~write_size_height:texture_height
+    ~write_size_depth_or_array_layers:1
+    ~data:texture_data
     ();
-  let copy_commands = Wgpu.finish copy_encoder ~label:"texture_copy_commands" () in
-  Wgpu.Queue.submit queue ~commands:[ copy_commands ];
-  Wgpu.Device.poll device ~wait:true ();
-  Wgpu.Command_buffer.release copy_commands;
-  Wgpu.Command_encoder.release copy_encoder;
-  Wgpu.Buffer.release staging_buffer;
   let f_texture_view = Wgpu.create_texture_view texture ~label:"f_texture_view" () in
   (* Create sampler with default (nearest) filtering *)
   let sampler =

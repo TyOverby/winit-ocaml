@@ -828,3 +828,23 @@ caml_wgpu_device_create_render_pipeline_with_vertex_buffers_bytecode(
       argv[15], argv[16], argv[17], argv[18]);
 }
 
+/* Write texture from bigarray */
+CAMLprim value caml_wgpu_queue_write_texture_bigarray(
+    value queue_val, value destination_val, value data_layout_val,
+    value write_size_val, value data_val) {
+  CAMLparam5(queue_val, destination_val, data_layout_val, write_size_val, data_val);
+  WGPUQueue queue = (WGPUQueue)Nativeint_val(queue_val);
+  WGPUTexelCopyTextureInfo *destination =
+      (WGPUTexelCopyTextureInfo *)Nativeint_val(destination_val);
+  WGPUTexelCopyBufferLayout *data_layout =
+      (WGPUTexelCopyBufferLayout *)Nativeint_val(data_layout_val);
+  WGPUExtent3D *write_size = (WGPUExtent3D *)Nativeint_val(write_size_val);
+
+  void *data = Caml_ba_data_val(data_val);
+  size_t data_size = caml_ba_byte_size(Caml_ba_array_val(data_val));
+
+  wgpuQueueWriteTexture(queue, destination, data, data_size, data_layout,
+                        write_size);
+  CAMLreturn(Val_unit);
+}
+
