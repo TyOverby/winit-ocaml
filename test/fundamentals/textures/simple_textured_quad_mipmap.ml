@@ -7,7 +7,7 @@
    - Using mipmapFilter for smooth mip level transitions
 
    We display a texture mapped onto a quad that recedes into the distance
-   to show how different mip levels are selected.
+   to show how different mip levels are selected based on screen coverage.
 *)
 
 open! Core
@@ -212,61 +212,40 @@ let upload_mip_levels ~device:_ ~queue ~texture ~mips =
       ())
 ;;
 
-(* 4x4 matrix multiplication helpers using Gg *)
-let create_perspective_matrix ~fov_radians ~aspect ~z_near ~z_far =
-  let f = 1.0 /. Float.tan (fov_radians /. 2.0) in
-  let range_inv = 1.0 /. (z_near -. z_far) in
+(* Create a simple 2D scale+offset matrix that stretches and positions the quad *)
+let create_2d_transform_matrix ~scale_x ~scale_y ~offset_x ~offset_y =
+  (* This creates a matrix that transforms the unit quad [0,1]x[0,1] to
+     screen clip space [-1,1]x[-1,1], with optional scale and offset *)
   Gg.M4.v
-    (f /. aspect)
+    scale_x
+    0.0
+    0.0
+    offset_x
+    (* col 0 *)
+    0.0
+    scale_y
+    0.0
+    offset_y
+    (* col 1 *)
+    0.0
+    0.0
+    1.0
+    0.0
+    (* col 2 *)
     0.0
     0.0
     0.0
-    0.0
-    f
-    0.0
-    0.0
-    0.0
-    0.0
-    ((z_near +. z_far) *. range_inv)
-    (-1.0)
-    0.0
-    0.0
-    (2.0 *. z_near *. z_far *. range_inv)
-    0.0
-;;
-
-let create_look_at_matrix ~eye ~target ~up =
-  let z = Gg.V3.unit (Gg.V3.sub eye target) in
-  let x = Gg.V3.unit (Gg.V3.cross up z) in
-  let y = Gg.V3.cross z x in
-  let ex = -.Gg.V3.dot x eye in
-  let ey = -.Gg.V3.dot y eye in
-  let ez = -.Gg.V3.dot z eye in
-  Gg.M4.v
-    (Gg.V3.x x)
-    (Gg.V3.x y)
-    (Gg.V3.x z)
-    0.0
-    (Gg.V3.y x)
-    (Gg.V3.y y)
-    (Gg.V3.y z)
-    0.0
-    (Gg.V3.z x)
-    (Gg.V3.z y)
-    (Gg.V3.z z)
-    0.0
-    ex
-    ey
-    ez
     1.0
 ;;
 
 let matrix_to_bigarray m =
   let data = Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout 16 in
-  (* Column-major order for WebGPU *)
+  (* Gg stores matrices transposed relative to WebGPU's expected column-major format.
+     We transpose when uploading to WebGPU. *)
   for col = 0 to 3 do
     for row = 0 to 3 do
-      let value = Gg.M4.el col row m in
+      let value = Gg.M4.el row col m in
+      (* Note: swapped row and col to transpose *)
       Bigarray.Array1.set data ((col * 4) + row) value
     done
   done;
@@ -461,27 +440,13 @@ let () =
       ~mapped_at_creation:false
       ()
   in
-  (* Compute view-projection matrix *)
-  let aspect = Float.of_int width /. Float.of_int height in
-  let fov = 60.0 *. Float.pi /. 180.0 in
-  let projection =
-    create_perspective_matrix ~fov_radians:fov ~aspect ~z_near:1.0 ~z_far:2000.0
+  (* Create a simple 2D transform that fills most of the screen.
+     The shader stretches texture coordinates by 50 in Y, which will cause
+     different mip levels to be selected across the quad. *)
+  let matrix =
+    create_2d_transform_matrix ~scale_x:1.8 ~scale_y:1.8 ~offset_x:(-0.9) ~offset_y:(-0.9)
   in
-  let eye = Gg.V3.v 0.0 0.0 2.0 in
-  let target = Gg.V3.v 0.0 0.0 0.0 in
-  let up = Gg.V3.v 0.0 1.0 0.0 in
-  let view = create_look_at_matrix ~eye ~target ~up in
-  let view_projection = Gg.M4.mul projection view in
-  (* Transform the quad to recede into the distance *)
-  let z_depth = 50.0 in
-  let translation = Gg.M4.move3 (Gg.V3.v 0.0 0.0 (-.z_depth *. 0.5)) in
-  let rotation = Gg.M4.rot3_axis (Gg.V3.v 1.0 0.0 0.0) (0.5 *. Float.pi) in
-  let scale = Gg.M4.scale3 (Gg.V3.v 1.0 (z_depth *. 2.0) 1.0) in
-  let center_offset = Gg.M4.move3 (Gg.V3.v (-0.5) (-0.5) 0.0) in
-  (* Combine: view_projection * translation * rotation * scale * center_offset *)
-  let model = Gg.M4.(mul translation (mul rotation (mul scale center_offset))) in
-  let mvp = Gg.M4.mul view_projection model in
-  let matrix_data = matrix_to_bigarray mvp in
+  let matrix_data = matrix_to_bigarray matrix in
   Wgpu.Queue.write_buffer queue ~buffer:uniform_buffer ~offset:0L ~data:matrix_data;
   (* Render *)
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
