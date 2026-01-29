@@ -2,19 +2,11 @@
    WebGPU Fundamentals: Skybox
 
    This test demonstrates cubemap textures and skybox rendering:
-   - Creating a 6-layer texture for the cubemap faces
+   - Loading 6 images for the cubemap faces (Leadenhall Market environment)
+   - Creating a 6-layer texture and uploading the face images
    - Using texture_cube in the shader to sample from the cubemap
    - Computing view direction from inverse view-projection matrix
    - Rendering a fullscreen triangle at far z to show the "environment"
-
-   The skybox uses procedurally generated colors per face so we can
-   easily verify the cubemap is working correctly:
-   - +X (right): Red
-   - -X (left): Cyan
-   - +Y (up): Green
-   - -Y (down): Magenta
-   - +Z (front): Blue
-   - -Z (back): Yellow
 *)
 
 open! Core
@@ -25,8 +17,8 @@ let bytes_per_pixel = 4
 let bytes_per_row = ((width * bytes_per_pixel) + 255) / 256 * 256
 let buffer_size = bytes_per_row * height
 
-(* Cubemap face size - a small size is fine for solid colors *)
-let cubemap_face_size = 64
+(* Path to skybox assets - loaded from current directory when running via dune *)
+let assets_dir = "."
 
 let shader_code =
   {|
@@ -65,22 +57,6 @@ struct VSOutput {
   return textureSample(ourTexture, ourSampler, normalize(t.xyz / t.w) * vec3f(1, 1, -1));
 }
 |}
-;;
-
-(* Create a solid-color face for the cubemap *)
-let create_face_data ~r ~g ~b =
-  let size = cubemap_face_size * cubemap_face_size * 4 in
-  let data = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout size in
-  for y = 0 to cubemap_face_size - 1 do
-    for x = 0 to cubemap_face_size - 1 do
-      let offset = ((y * cubemap_face_size) + x) * 4 in
-      Bigarray.Array1.set data offset r;
-      Bigarray.Array1.set data (offset + 1) g;
-      Bigarray.Array1.set data (offset + 2) b;
-      Bigarray.Array1.set data (offset + 3) 255
-    done
-  done;
-  data
 ;;
 
 (* Perspective projection matrix *)
@@ -250,6 +226,18 @@ let render_frame ~device ~queue ~pipeline ~bind_group ~angle ~output_name =
 
 let () =
   let instance, adapter, device, queue, shader = init () in
+  (* Load cubemap face images: +X, -X, +Y, -Y, +Z, -Z *)
+  let face_files =
+    [ "pos-x.png"; "neg-x.png"; "pos-y.png"; "neg-y.png"; "pos-z.png"; "neg-z.png" ]
+  in
+  let faces =
+    List.map face_files ~f:(fun filename ->
+      let path = Filename.concat assets_dir filename in
+      let face_width, face_height, data = Test_util.load_png ~filename:path in
+      face_width, face_height, data)
+  in
+  (* All faces should be the same size *)
+  let cubemap_face_size, _, _ = List.hd_exn faces in
   (* Create cubemap texture with 6 layers, one per face *)
   let cubemap_texture =
     Wgpu.Device.create_texture
@@ -265,18 +253,8 @@ let () =
       ~usage:[ Wgpu.Texture_usage.Item.Texture_binding; Wgpu.Texture_usage.Item.Copy_dst ]
       ()
   in
-  (* Upload face data: +X, -X, +Y, -Y, +Z, -Z *)
-  let faces =
-    [ 255, 0, 0 (* +X: Red *)
-    ; 0, 255, 255 (* -X: Cyan *)
-    ; 0, 255, 0 (* +Y: Green *)
-    ; 255, 0, 255 (* -Y: Magenta *)
-    ; 0, 0, 255 (* +Z: Blue *)
-    ; 255, 255, 0 (* -Z: Yellow *)
-    ]
-  in
-  List.iteri faces ~f:(fun layer (r, g, b) ->
-    let face_data = create_face_data ~r ~g ~b in
+  (* Upload each face to the appropriate layer *)
+  List.iteri faces ~f:(fun layer (face_width, face_height, data) ->
     Wgpu.Queue.write_texture
       queue
       ~destination_texture:cubemap_texture
@@ -286,12 +264,12 @@ let () =
       ~destination_origin_z:layer
       ~destination_aspect:Wgpu.Texture_aspect.All
       ~data_layout_offset:0L
-      ~data_layout_bytes_per_row:(cubemap_face_size * 4)
-      ~data_layout_rows_per_image:cubemap_face_size
-      ~write_size_width:cubemap_face_size
-      ~write_size_height:cubemap_face_size
+      ~data_layout_bytes_per_row:(face_width * 4)
+      ~data_layout_rows_per_image:face_height
+      ~write_size_width:face_width
+      ~write_size_height:face_height
       ~write_size_depth_or_array_layers:1
-      ~data:face_data
+      ~data
       ());
   (* Create cube texture view *)
   let cubemap_view =
@@ -301,7 +279,7 @@ let () =
       ~dimension:Wgpu.Texture_view_dimension.Cube
       ()
   in
-  (* Create sampler *)
+  (* Create sampler with linear filtering for smooth skybox *)
   let sampler =
     Wgpu.Device.create_sampler
       device
@@ -311,9 +289,9 @@ let () =
       ~address_mode_w:Wgpu.Address_mode.Clamp_to_edge
       ~mag_filter:Wgpu.Filter_mode.Linear
       ~min_filter:Wgpu.Filter_mode.Linear
-      ~mipmap_filter:Wgpu.Mipmap_filter_mode.Nearest
+      ~mipmap_filter:Wgpu.Mipmap_filter_mode.Linear
       ~lod_min_clamp:0.0
-      ~lod_max_clamp:1.0
+      ~lod_max_clamp:32.0
       ~compare:Wgpu.Compare_function.Undefined
       ~max_anisotropy:1
       ()
@@ -426,7 +404,7 @@ let () =
       ~layout:pipeline_layout
       ()
   in
-  (* Render at different camera angles to show different faces *)
+  (* Render at different camera angles to show different views of the environment *)
   let aspect = Float.of_int width /. Float.of_int height in
   let fov_y = 60.0 *. Float.pi /. 180.0 in
   let z_near = 0.1 in
