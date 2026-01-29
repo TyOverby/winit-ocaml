@@ -1,0 +1,59 @@
+(executables
+ (names multisample_simple multisample_center_issue multisample_centroid)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+; multisample_simple.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./multisample_simple.exe))
+ (targets multisample_simple.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  multisample_simple.expected.png
+  multisample_simple.png)
+ (action
+  (bash "%{deps}")))
+
+; multisample_center_issue.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./multisample_center_issue.exe))
+ (targets multisample_center_issue.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  multisample_center_issue.expected.png
+  multisample_center_issue.png)
+ (action
+  (bash "%{deps}")))
+
+; multisample_centroid.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./multisample_centroid.exe))
+ (targets multisample_centroid.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  multisample_centroid.expected.png
+  multisample_centroid.png)
+ (action
+  (bash "%{deps}")))
