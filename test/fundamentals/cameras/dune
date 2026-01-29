@@ -1,0 +1,205 @@
+(executables
+ (names
+  cameras_direct_math
+  cameras_camera_aim
+  cameras_look_at
+  cameras_aim_fs)
+ (libraries wgpu core core_unix test_util gg)
+ (preprocess
+  (pps ppx_jane)))
+
+; cameras_direct_math.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./cameras_direct_math.exe))
+ (targets
+  cameras_direct_math_0deg.png
+  cameras_direct_math_45deg.png
+  cameras_direct_math_90deg.png
+  cameras_direct_math_180deg.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_direct_math_0deg.expected.png
+  cameras_direct_math_0deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_direct_math_45deg.expected.png
+  cameras_direct_math_45deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_direct_math_90deg.expected.png
+  cameras_direct_math_90deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_direct_math_180deg.expected.png
+  cameras_direct_math_180deg.png)
+ (action
+  (bash "%{deps}")))
+
+; cameras_camera_aim.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./cameras_camera_aim.exe))
+ (targets
+  cameras_camera_aim_0deg.png
+  cameras_camera_aim_45deg.png
+  cameras_camera_aim_90deg.png
+  cameras_camera_aim_180deg.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_camera_aim_0deg.expected.png
+  cameras_camera_aim_0deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_camera_aim_45deg.expected.png
+  cameras_camera_aim_45deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_camera_aim_90deg.expected.png
+  cameras_camera_aim_90deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_camera_aim_180deg.expected.png
+  cameras_camera_aim_180deg.png)
+ (action
+  (bash "%{deps}")))
+
+; cameras_look_at.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./cameras_look_at.exe))
+ (targets
+  cameras_look_at_0deg.png
+  cameras_look_at_45deg.png
+  cameras_look_at_90deg.png
+  cameras_look_at_180deg.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_look_at_0deg.expected.png
+  cameras_look_at_0deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_look_at_45deg.expected.png
+  cameras_look_at_45deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_look_at_90deg.expected.png
+  cameras_look_at_90deg.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_look_at_180deg.expected.png
+  cameras_look_at_180deg.png)
+ (action
+  (bash "%{deps}")))
+
+; cameras_aim_fs.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./cameras_aim_fs.exe))
+ (targets
+  cameras_aim_fs_center.png
+  cameras_aim_fs_corner.png
+  cameras_aim_fs_side.png
+  cameras_aim_fs_back.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_aim_fs_center.expected.png
+  cameras_aim_fs_center.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_aim_fs_corner.expected.png
+  cameras_aim_fs_corner.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_aim_fs_side.expected.png
+  cameras_aim_fs_side.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  cameras_aim_fs_back.expected.png
+  cameras_aim_fs_back.png)
+ (action
+  (bash "%{deps}")))
