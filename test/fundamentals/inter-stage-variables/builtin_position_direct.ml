@@ -1,0 +1,183 @@
+(*
+   WebGPU Fundamentals: Fragment Shader @builtin(position) - Direct Parameter
+
+   This test demonstrates that the fragment shader can receive @builtin(position)
+   directly as a function parameter, without needing a struct that matches
+   the vertex shader output.
+
+   This reinforces that:
+   1. @builtin(position) means different things in VS vs FS
+   2. The vertex and fragment shaders are independent - they don't need
+      matching structs for builtins
+   3. Each shader entry point is compiled separately and only looks at
+      what it actually references
+
+   The checkerboard pattern is the same as the previous example, just
+   demonstrating a different way to declare the fragment shader input.
+*)
+
+open! Core
+
+let width = 600
+let height = 400
+let bytes_per_pixel = 4
+let bytes_per_row = ((width * bytes_per_pixel) + 255) / 256 * 256
+let buffer_size = bytes_per_row * height
+
+(* Note: The vertex shader has a struct output, but the fragment shader
+   receives @builtin(position) directly - no struct needed *)
+let shader_code =
+  {|
+struct OurVertexShaderOutput {
+  @builtin(position) position: vec4f,
+};
+
+@vertex fn vs(
+  @builtin(vertex_index) vertexIndex : u32
+) -> OurVertexShaderOutput {
+  let pos = array(
+    vec2f( 0.0,  0.5),  // top center
+    vec2f(-0.5, -0.5),  // bottom left
+    vec2f( 0.5, -0.5)   // bottom right
+  );
+
+  var vsOutput: OurVertexShaderOutput;
+  vsOutput.position = vec4f(pos[vertexIndex], 0.0, 1.0);
+  return vsOutput;
+}
+
+// Fragment shader receives @builtin(position) directly as a parameter
+@fragment fn fs(@builtin(position) pixelPosition: vec4f) -> @location(0) vec4f {
+  let red = vec4f(1, 0, 0, 1);
+  let cyan = vec4f(0, 1, 1, 1);
+
+  let grid = vec2u(pixelPosition.xy) / 8;
+  let checker = (grid.x + grid.y) % 2 == 1;
+
+  return select(red, cyan, checker);
+}
+|}
+;;
+
+let init () =
+  let instance = Wgpu.Instance.create () in
+  let adapter = Wgpu.Instance.request_adapter instance () in
+  let device = Wgpu.Adapter.request_device adapter in
+  let queue = Wgpu.Device.get_queue device in
+  let shader =
+    Wgpu.Device.create_shader_module
+      device
+      ~label:"builtin_position_direct_shader"
+      ~wgsl:shader_code
+      ()
+  in
+  instance, adapter, device, queue, shader
+;;
+
+let render ~device ~queue ~pipeline ~output_name =
+  (* Create render target texture *)
+  let texture =
+    Wgpu.Device.create_texture
+      device
+      ~label:"render_target"
+      ~size_width:width
+      ~size_height:height
+      ~size_depth_or_array_layers:1
+      ~dimension:N2d
+      ~mip_level_count:1
+      ~sample_count:1
+      ~format:Wgpu.Texture_format.Rgba8_unorm
+      ~usage:
+        [ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]
+      ()
+  in
+  let texture_view = Wgpu.create_texture_view texture ~label:"render_target_view" () in
+  let readback_buffer =
+    Wgpu.Device.create_buffer
+      device
+      ~label:"readback_buffer"
+      ~size:(Int64.of_int buffer_size)
+      ~usage:[ Wgpu.Buffer_usage.Item.Map_read; Wgpu.Buffer_usage.Item.Copy_dst ]
+      ~mapped_at_creation:false
+      ()
+  in
+  (* Render the triangle *)
+  let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
+  let render_pass =
+    Wgpu.begin_render_pass
+      encoder
+      ~label:"builtin_position_direct_pass"
+      ~color_view:texture_view
+      ~clear_color:(0.3, 0.3, 0.3, 1.0)
+      ()
+  in
+  Wgpu.Render_pass_encoder.set_pipeline render_pass ~pipeline;
+  Wgpu.Render_pass_encoder.draw
+    render_pass
+    ~vertex_count:3
+    ~instance_count:1
+    ~first_vertex:0
+    ~first_instance:0;
+  Wgpu.Render_pass_encoder.end_ render_pass;
+  Wgpu.copy_texture_to_buffer
+    encoder
+    ~texture
+    ~buffer:readback_buffer
+    ~size:(width, height)
+    ~bytes_per_row
+    ();
+  let command_buffer = Wgpu.finish encoder ~label:"render_commands" () in
+  Wgpu.Queue.submit queue ~commands:[ command_buffer ];
+  Wgpu.Device.poll device ~wait:true ();
+  let mapped_data =
+    Wgpu.map_buffer
+      readback_buffer
+      ~mode:[ Wgpu.Map_mode.Item.Read ]
+      ~offset:0L
+      ~size:(Int64.of_int buffer_size);
+    Wgpu.Device.poll device ~wait:true ();
+    Wgpu.get_const_mapped_range
+      readback_buffer
+      ~offset:0L
+      ~size:(Int64.of_int buffer_size)
+      ~kind:Bigarray.int8_unsigned
+  in
+  let ( (* Write output *) ) =
+    let ppm_file = Test_util.output_path (output_name ^ ".ppm") in
+    let png_file = Test_util.output_path (output_name ^ ".png") in
+    Test_util.write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
+    Test_util.ppm_to_png ~ppm_file ~png_file;
+    ()
+  in
+  Wgpu.Buffer.unmap readback_buffer;
+  (* Cleanup frame-specific resources *)
+  Wgpu.Command_buffer.release command_buffer;
+  Wgpu.Render_pass_encoder.release render_pass;
+  Wgpu.Command_encoder.release encoder;
+  Wgpu.Buffer.release readback_buffer;
+  Wgpu.Texture_view.release texture_view;
+  Wgpu.Texture.release texture
+;;
+
+let () =
+  let instance, adapter, device, queue, shader = init () in
+  (* Create render pipeline *)
+  let pipeline =
+    Wgpu.Device.create_render_pipeline
+      device
+      ~label:"builtin_position_direct_pipeline"
+      ~shader_module:shader
+      ~vertex_entry_point:"vs"
+      ~fragment_entry_point:"fs"
+      ~color_format:Wgpu.Texture_format.Rgba8_unorm
+      ()
+  in
+  render ~device ~queue ~pipeline ~output_name:"builtin_position_direct";
+  (* Cleanup *)
+  Wgpu.Render_pipeline.release pipeline;
+  Wgpu.Shader_module.release shader;
+  Wgpu.Queue.release queue;
+  Wgpu.Device.release device;
+  Wgpu.Adapter.release adapter;
+  Wgpu.Instance.release instance
+;;

@@ -1,0 +1,81 @@
+(executables
+ (names
+  inter_stage_variables_triangle
+  inter_stage_variables_by_fn_param
+  builtin_position_checkerboard
+  builtin_position_direct)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+; inter_stage_variables_triangle.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./inter_stage_variables_triangle.exe))
+ (targets inter_stage_variables_triangle.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  inter_stage_variables_triangle.expected.png
+  inter_stage_variables_triangle.png)
+ (action
+  (bash "%{deps}")))
+
+; inter_stage_variables_by_fn_param.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./inter_stage_variables_by_fn_param.exe))
+ (targets inter_stage_variables_by_fn_param.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  inter_stage_variables_by_fn_param.expected.png
+  inter_stage_variables_by_fn_param.png)
+ (action
+  (bash "%{deps}")))
+
+; builtin_position_checkerboard.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./builtin_position_checkerboard.exe))
+ (targets builtin_position_checkerboard.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  builtin_position_checkerboard.expected.png
+  builtin_position_checkerboard.png)
+ (action
+  (bash "%{deps}")))
+
+; builtin_position_direct.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./builtin_position_direct.exe))
+ (targets builtin_position_direct.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  builtin_position_direct.expected.png
+  builtin_position_direct.png)
+ (action
+  (bash "%{deps}")))
