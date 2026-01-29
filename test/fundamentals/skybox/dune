@@ -1,0 +1,48 @@
+(executable
+ (name skybox)
+ (libraries wgpu core core_unix test_util gg)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./skybox.exe))
+ (targets skybox_front.png skybox_right.png skybox_back.png skybox_left.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  skybox_front.expected.png
+  skybox_front.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  skybox_right.expected.png
+  skybox_right.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  skybox_back.expected.png
+  skybox_back.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "%{workspace_root}/imgdiff.sh"
+  skybox_left.expected.png
+  skybox_left.png)
+ (action
+  (bash "%{deps}")))
