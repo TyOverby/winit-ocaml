@@ -18,7 +18,9 @@ let bytes_per_pixel = 4
 let bytes_per_row = ((width * bytes_per_pixel) + 255) / 256 * 256
 let buffer_size = bytes_per_row * height
 
-(* Shader that draws a thin diagonal line *)
+(* Shader that draws a thin diagonal line 
+   TODO: this doesn't actually demonstrate antialising because MSAA doesn't
+   multisample the interior of triangles. *)
 let shader_code =
   {|
 struct VertexOutput {
