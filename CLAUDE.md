@@ -50,6 +50,7 @@ The project vendors two Rust dependencies as git submodules in `rust/vendor/`:
 
 - **winit**: Window creation and event handling library
 - **softbuffer**: Software rendering to window surfaces
+- **wgpu-ocaml**: Bindings to the webgpu-native library
 
 ## Why vendored?
 
