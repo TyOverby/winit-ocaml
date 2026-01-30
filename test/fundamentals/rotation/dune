@@ -20,7 +20,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   rotation_0deg.expected.png
   rotation_0deg.png)
  (action
@@ -29,7 +29,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   rotation_45deg.expected.png
   rotation_45deg.png)
  (action
@@ -38,7 +38,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   rotation_90deg.expected.png
   rotation_90deg.png)
  (action
@@ -47,7 +47,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   rotation_180deg.expected.png
   rotation_180deg.png)
  (action
@@ -69,7 +69,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   rotation_unit_circle_0deg.expected.png
   rotation_unit_circle_0deg.png)
  (action
@@ -78,7 +78,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   rotation_unit_circle_30deg.expected.png
   rotation_unit_circle_30deg.png)
  (action
@@ -87,7 +87,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   rotation_unit_circle_60deg.expected.png
   rotation_unit_circle_60deg.png)
  (action
@@ -96,7 +96,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   rotation_unit_circle_90deg.expected.png
   rotation_unit_circle_90deg.png)
  (action

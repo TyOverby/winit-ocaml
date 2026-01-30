@@ -14,7 +14,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   render_uniform_buffer.expected.png
   render_uniform_buffer.png)
  (action

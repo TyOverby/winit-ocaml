@@ -16,7 +16,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   multisample_simple.expected.png
   multisample_simple.png)
  (action
@@ -34,7 +34,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   multisample_center_issue.expected.png
   multisample_center_issue.png)
  (action
@@ -52,7 +52,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   multisample_centroid.expected.png
   multisample_centroid.png)
  (action

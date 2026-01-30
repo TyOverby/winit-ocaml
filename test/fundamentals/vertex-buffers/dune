@@ -20,7 +20,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   vertex_buffers.expected.png
   vertex_buffers.png)
  (action
@@ -38,7 +38,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   vertex_buffers_instanced_colors.expected.png
   vertex_buffers_instanced_colors.png)
  (action
@@ -56,7 +56,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   vertex_buffers_per_vertex_colors.expected.png
   vertex_buffers_per_vertex_colors.png)
  (action
@@ -74,7 +74,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   vertex_buffers_index_buffer.expected.png
   vertex_buffers_index_buffer.png)
  (action

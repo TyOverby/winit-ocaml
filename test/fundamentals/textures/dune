@@ -19,7 +19,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   simple_textured_quad.expected.png
   simple_textured_quad.png)
  (action
@@ -37,7 +37,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   simple_textured_quad_linear.expected.png
   simple_textured_quad_linear.png)
  (action
@@ -55,7 +55,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   simple_textured_quad_mipmap.expected.png
   simple_textured_quad_mipmap.png)
  (action

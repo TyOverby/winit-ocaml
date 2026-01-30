@@ -14,7 +14,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   vertex_buffer_layout.expected.png
   vertex_buffer_layout.png)
  (action

@@ -20,7 +20,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   inter_stage_variables_triangle.expected.png
   inter_stage_variables_triangle.png)
  (action
@@ -38,7 +38,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   inter_stage_variables_by_fn_param.expected.png
   inter_stage_variables_by_fn_param.png)
  (action
@@ -56,7 +56,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   builtin_position_checkerboard.expected.png
   builtin_position_checkerboard.png)
  (action
@@ -74,7 +74,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   builtin_position_direct.expected.png
   builtin_position_direct.png)
  (action

@@ -20,7 +20,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   orthographic_3d_f_default.expected.png
   orthographic_3d_f_default.png)
  (action
@@ -29,7 +29,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   orthographic_3d_f_front.expected.png
   orthographic_3d_f_front.png)
  (action
@@ -38,7 +38,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   orthographic_3d_f_rotated1.expected.png
   orthographic_3d_f_rotated1.png)
  (action
@@ -47,7 +47,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   orthographic_3d_f_rotated2.expected.png
   orthographic_3d_f_rotated2.png)
  (action
@@ -69,7 +69,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   orthographic_ortho_default.expected.png
   orthographic_ortho_default.png)
  (action
@@ -78,7 +78,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   orthographic_ortho_front.expected.png
   orthographic_ortho_front.png)
  (action
@@ -87,7 +87,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   orthographic_ortho_rotated1.expected.png
   orthographic_ortho_rotated1.png)
  (action
@@ -96,7 +96,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   orthographic_ortho_rotated2.expected.png
   orthographic_ortho_rotated2.png)
  (action
