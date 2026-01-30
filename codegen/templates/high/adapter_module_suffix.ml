@@ -16,6 +16,8 @@ end
 module Surface = struct
   type t = { handle : Wgpu_low.surface }
 
+  let of_low_level handle = { handle }
+
   type surface_capabilities =
     { usages : Texture_usage.Item.t list
     ; formats : Texture_format.t list

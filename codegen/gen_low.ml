@@ -310,6 +310,7 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
        | Struct name ->
          let c_type = c_type_name name in
          {%string|  s->%{c_field} = (%{c_type}*)Nativeint_val(val);|}
+       | Primitive C_void -> {%string|  s->%{c_field} = (void*)Nativeint_val(val);|}
        | Array { elem; _ } ->
          (* Pointer to array - same as array but with pointer indirection *)
          let elem_c_type = c_type_of_type_ref elem in

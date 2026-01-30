@@ -2,6 +2,7 @@ module Instance = struct
   type t = { handle : Wgpu_low.instance }
 
   let create () = { handle = Wgpu_low.create_instance () }
+  let to_low_level t = t.handle
 
   let request_adapter
     t

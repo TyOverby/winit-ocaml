@@ -18,6 +18,9 @@ module Surface : sig
 
   type t
 
+  (** Create a Surface from a low-level surface handle (for platform-specific surface creation) *)
+  val of_low_level : Wgpu_low.surface -> t
+
   type surface_capabilities =
     { usages : Texture_usage.Item.t list
     ; formats : Texture_format.t list

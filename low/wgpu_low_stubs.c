@@ -7305,7 +7305,7 @@ CAMLprim value caml_wgpu_surface_source_android_native_window_set_window(
   CAMLparam2(handle, val);
   WGPUSurfaceSourceAndroidNativeWindow *s =
       (WGPUSurfaceSourceAndroidNativeWindow *)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field window */
+  s->window = (void *)Nativeint_val(val);
   CAMLreturn(Val_unit);
 }
 
@@ -7360,7 +7360,7 @@ CAMLprim value caml_wgpu_surface_source_metal_layer_set_layer(value handle,
   CAMLparam2(handle, val);
   WGPUSurfaceSourceMetalLayer *s =
       (WGPUSurfaceSourceMetalLayer *)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field layer */
+  s->layer = (void *)Nativeint_val(val);
   CAMLreturn(Val_unit);
 }
 
@@ -7414,7 +7414,7 @@ caml_wgpu_surface_source_wayland_surface_set_display(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSurfaceSourceWaylandSurface *s =
       (WGPUSurfaceSourceWaylandSurface *)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field display */
+  s->display = (void *)Nativeint_val(val);
   CAMLreturn(Val_unit);
 }
 
@@ -7423,7 +7423,7 @@ caml_wgpu_surface_source_wayland_surface_set_surface(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSurfaceSourceWaylandSurface *s =
       (WGPUSurfaceSourceWaylandSurface *)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field surface */
+  s->surface = (void *)Nativeint_val(val);
   CAMLreturn(Val_unit);
 }
 
@@ -7487,7 +7487,7 @@ CAMLprim value caml_wgpu_surface_source_windows_hwnd_set_hinstance(value handle,
   CAMLparam2(handle, val);
   WGPUSurfaceSourceWindowsHWND *s =
       (WGPUSurfaceSourceWindowsHWND *)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field hinstance */
+  s->hinstance = (void *)Nativeint_val(val);
   CAMLreturn(Val_unit);
 }
 
@@ -7496,7 +7496,7 @@ CAMLprim value caml_wgpu_surface_source_windows_hwnd_set_hwnd(value handle,
   CAMLparam2(handle, val);
   WGPUSurfaceSourceWindowsHWND *s =
       (WGPUSurfaceSourceWindowsHWND *)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field hwnd */
+  s->hwnd = (void *)Nativeint_val(val);
   CAMLreturn(Val_unit);
 }
 
@@ -7558,7 +7558,7 @@ CAMLprim value caml_wgpu_surface_source_xcb_window_set_connection(value handle,
   CAMLparam2(handle, val);
   WGPUSurfaceSourceXCBWindow *s =
       (WGPUSurfaceSourceXCBWindow *)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field connection */
+  s->connection = (void *)Nativeint_val(val);
   CAMLreturn(Val_unit);
 }
 
@@ -7628,7 +7628,7 @@ CAMLprim value caml_wgpu_surface_source_xlib_window_set_display(value handle,
   CAMLparam2(handle, val);
   WGPUSurfaceSourceXlibWindow *s =
       (WGPUSurfaceSourceXlibWindow *)Nativeint_val(handle);
-  (void)s; /* TODO: pointer field display */
+  s->display = (void *)Nativeint_val(val);
   CAMLreturn(Val_unit);
 }
 

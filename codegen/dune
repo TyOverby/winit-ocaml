@@ -3,6 +3,8 @@
  (wrapped false)
  (modules ir parse_yml names type_mapping predicates gen_low gen_high config)
  (libraries yaml core)
+ (flags
+  (:standard -w -69))
  (preprocess
   (pps ppx_jane)))
 

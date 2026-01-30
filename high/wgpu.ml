@@ -1917,6 +1917,8 @@ end
 module Surface = struct
   type t = { handle : Wgpu_low.surface }
 
+  let of_low_level handle = { handle }
+
   type surface_capabilities =
     { usages : Texture_usage.Item.t list
     ; formats : Texture_format.t list
@@ -1998,6 +2000,7 @@ module Instance = struct
   type t = { handle : Wgpu_low.instance }
 
   let create () = { handle = Wgpu_low.create_instance () }
+  let to_low_level t = t.handle
 
   let request_adapter
     t

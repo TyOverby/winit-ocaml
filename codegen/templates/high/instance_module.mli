@@ -3,6 +3,9 @@ module Instance : sig
 
   val create : unit -> t
 
+  (** Get the low-level instance handle for use with platform-specific surface creation *)
+  val to_low_level : t -> Wgpu_low.instance
+
   val request_adapter
     :  t
     -> ?power_preference:Power_preference.t
