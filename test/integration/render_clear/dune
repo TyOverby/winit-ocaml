@@ -13,9 +13,6 @@
 
 (rule
  (alias runtest)
- (deps
-  "../../../imgdiff.sh"
-  render_clear.expected.png
-  render_clear.png)
+ (deps "../../../imgdiff.sh" render_clear.expected.png render_clear.png)
  (action
   (bash "%{deps}")))

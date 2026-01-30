@@ -15,9 +15,6 @@
 
 (rule
  (alias runtest)
- (deps
-  "../../../imgdiff.sh"
-  multisampling.expected.png
-  multisampling.png)
+ (deps "../../../imgdiff.sh" multisampling.expected.png multisampling.png)
  (action
   (bash "%{deps}")))
