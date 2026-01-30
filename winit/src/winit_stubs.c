@@ -13,6 +13,54 @@ extern void winit_window_handle_release(const void* handle);
 extern void winit_window_destroy(void* window);
 extern int winit_test_version(void);
 
+// Raw window handle backend types (must match Rust)
+typedef enum {
+    RAW_HANDLE_BACKEND_X11 = 0,
+    RAW_HANDLE_BACKEND_WAYLAND = 1,
+    RAW_HANDLE_BACKEND_WIN32 = 2,
+    RAW_HANDLE_BACKEND_APPKIT = 3,
+    RAW_HANDLE_BACKEND_UNKNOWN = 255
+} RawHandleBackend;
+
+// Raw X11 handle (must match Rust)
+typedef struct {
+    const void* display;
+    uint64_t window;
+} RawX11Handle;
+
+// Raw Wayland handle (must match Rust)
+typedef struct {
+    const void* display;
+    const void* surface;
+} RawWaylandHandle;
+
+// Raw Win32 handle (must match Rust)
+typedef struct {
+    const void* hwnd;
+    const void* hinstance;
+} RawWin32Handle;
+
+// Raw AppKit handle (must match Rust)
+typedef struct {
+    const void* ns_view;
+} RawAppKitHandle;
+
+// Union of raw handle data (must match Rust)
+typedef union {
+    RawX11Handle x11;
+    RawWaylandHandle wayland;
+    RawWin32Handle win32;
+    RawAppKitHandle appkit;
+} RawHandleData;
+
+// Raw window handle info (must match Rust)
+typedef struct {
+    RawHandleBackend backend;
+    RawHandleData data;
+} RawWindowHandleInfo;
+
+extern int winit_window_get_raw_handle(const void* window, RawWindowHandleInfo* out);
+
 // Event type enum (must match Rust)
 typedef enum {
     EVENT_NO_EVENT = 0,
@@ -169,4 +217,56 @@ CAMLprim value caml_winit_test_version(value unit) {
     CAMLparam1(unit);
     int version = winit_test_version();
     CAMLreturn(Val_int(version));
+}
+
+// OCaml: external get_raw_handle : window -> raw_window_handle = "caml_winit_window_get_raw_handle"
+// Returns a record with backend type and platform-specific data
+CAMLprim value caml_winit_window_get_raw_handle(value window_val) {
+    CAMLparam1(window_val);
+    CAMLlocal2(result, handle_data);
+
+    void* window = winit_window_val(window_val);
+    RawWindowHandleInfo info;
+
+    int status = winit_window_get_raw_handle(window, &info);
+    if (status != 0) {
+        caml_failwith("Failed to get raw window handle");
+    }
+
+    // Allocate the result record
+    // OCaml type: { backend: int; x11_display: nativeint; x11_window: int64;
+    //               wayland_display: nativeint; wayland_surface: nativeint; ... }
+    result = caml_alloc(7, 0);
+
+    // Store backend type (as int)
+    Store_field(result, 0, Val_int((int)info.backend));
+
+    // Store X11 data (fields 1-2)
+    if (info.backend == RAW_HANDLE_BACKEND_X11) {
+        Store_field(result, 1, caml_copy_nativeint((intptr_t)info.data.x11.display));
+        Store_field(result, 2, caml_copy_int64(info.data.x11.window));
+    } else {
+        Store_field(result, 1, caml_copy_nativeint(0));
+        Store_field(result, 2, caml_copy_int64(0));
+    }
+
+    // Store Wayland data (fields 3-4)
+    if (info.backend == RAW_HANDLE_BACKEND_WAYLAND) {
+        Store_field(result, 3, caml_copy_nativeint((intptr_t)info.data.wayland.display));
+        Store_field(result, 4, caml_copy_nativeint((intptr_t)info.data.wayland.surface));
+    } else {
+        Store_field(result, 3, caml_copy_nativeint(0));
+        Store_field(result, 4, caml_copy_nativeint(0));
+    }
+
+    // Store Win32 data (fields 5-6)
+    if (info.backend == RAW_HANDLE_BACKEND_WIN32) {
+        Store_field(result, 5, caml_copy_nativeint((intptr_t)info.data.win32.hwnd));
+        Store_field(result, 6, caml_copy_nativeint((intptr_t)info.data.win32.hinstance));
+    } else {
+        Store_field(result, 5, caml_copy_nativeint(0));
+        Store_field(result, 6, caml_copy_nativeint(0));
+    }
+
+    CAMLreturn(result);
 }

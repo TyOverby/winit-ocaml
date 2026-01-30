@@ -305,3 +305,61 @@ let pump_events window =
   let raw_events = pump_events_raw window in
   Array.to_list (Array.map (fun (et, data) -> event_of_raw et data) raw_events)
 ;;
+
+(** Raw window handle backend type *)
+type raw_handle_backend =
+  | X11
+  | Wayland
+  | Win32
+  | AppKit
+  | Unknown_backend
+
+(** Raw window handle containing platform-specific data for wgpu surface creation *)
+type raw_window_handle =
+  { backend : raw_handle_backend
+  ; x11_display : nativeint (** X11 Display pointer (only valid when backend = X11) *)
+  ; x11_window : int64 (** X11 Window ID (only valid when backend = X11) *)
+  ; wayland_display : nativeint
+  (** Wayland wl_display pointer (only valid when backend = Wayland) *)
+  ; wayland_surface : nativeint
+  (** Wayland wl_surface pointer (only valid when backend = Wayland) *)
+  ; win32_hwnd : nativeint (** Win32 HWND (only valid when backend = Win32) *)
+  ; win32_hinstance : nativeint (** Win32 HINSTANCE (only valid when backend = Win32) *)
+  }
+
+(* Raw C stub for getting raw handle *)
+external get_raw_handle_raw
+  :  window
+  -> int * nativeint * int64 * nativeint * nativeint * nativeint * nativeint
+  = "caml_winit_window_get_raw_handle"
+
+let raw_handle_backend_of_int = function
+  | 0 -> X11
+  | 1 -> Wayland
+  | 2 -> Win32
+  | 3 -> AppKit
+  | _ -> Unknown_backend
+;;
+
+(** Get the raw window handle for creating wgpu surfaces. The returned handle contains
+    platform-specific data (X11, Wayland, Win32, etc.) *)
+let get_raw_handle window =
+  let ( backend_int
+      , x11_display
+      , x11_window
+      , wayland_display
+      , wayland_surface
+      , win32_hwnd
+      , win32_hinstance )
+    =
+    get_raw_handle_raw window
+  in
+  { backend = raw_handle_backend_of_int backend_int
+  ; x11_display
+  ; x11_window
+  ; wayland_display
+  ; wayland_surface
+  ; win32_hwnd
+  ; win32_hinstance
+  }
+;;
