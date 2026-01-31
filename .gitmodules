@@ -4,6 +4,3 @@
 [submodule "vendor/softbuffer"]
 	path = vendor/softbuffer
 	url = git@github.com:TyOverby/softbuffer.git
-[submodule "vendor/wgpu-ocaml"]
-	path = vendor/wgpu-ocaml
-	url = git@github.com:TyOverby/wgpu-ocaml.git
