@@ -1,6 +1,7 @@
 ; Rule to build wgpu-native as a static library using Cargo
 
 (rule
+ (alias default)
  (targets libwgpu_native.a dllwgpu_native.so)
  (deps
   (source_tree ../../vendor/wgpu-native/src)
@@ -29,6 +30,7 @@
 ; Generate platform-specific C library flags
 
 (rule
+ (alias default)
  (targets c_library_flags.sexp)
  (deps gen_c_library_flags.sh)
  (action
@@ -37,6 +39,7 @@
 ; Code generation rules
 
 (rule
+ (alias default)
  (deps
   (source_tree ../codegen/templates))
  (action
@@ -49,6 +52,7 @@
  (target wgpu_low_stubs.c))
 
 (rule
+ (alias default)
  (action
   (with-stdout-to
    wgpu_low.ml
@@ -59,6 +63,7 @@
  (target wgpu_low.ml))
 
 (rule
+ (alias default)
  (action
   (with-stdout-to
    wgpu_low.mli
