@@ -15,20 +15,23 @@ OUT_DIR=$(pwd)
 # then into vendor/wgpu-native
 SOURCE_ROOT=$(cd ../../../.. && pwd)/vendor/wgpu-native
 
+# The project root (where .cargo/config.toml lives)
+PROJECT_ROOT=$(cd ../../../.. && pwd)
+
 if [ "$PROFILE" = "release" ]; then
   cargo build --release --manifest-path $SOURCE_ROOT/Cargo.toml
-  cp $SOURCE_ROOT/target/release/libwgpu_native.a $OUT_DIR/libwgpu_native.a
-  if [ -f $SOURCE_ROOT/target/release/libwgpu_native.$DYLIB_EXT ]; then
-    cp $SOURCE_ROOT/target/release/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so
+  cp $PROJECT_ROOT/_build/rust/release/libwgpu_native.a $OUT_DIR/libwgpu_native.a
+  if [ -f $PROJECT_ROOT/_build/rust/release/libwgpu_native.$DYLIB_EXT ]; then
+    cp $PROJECT_ROOT/_build/rust/release/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so
   else
     # Create empty placeholder if no dylib (static-only build)
     touch $OUT_DIR/dllwgpu_native.so
   fi
 else
   cargo build --manifest-path $SOURCE_ROOT/Cargo.toml
-  cp $SOURCE_ROOT/target/debug/libwgpu_native.a $OUT_DIR/libwgpu_native.a
-  if [ -f $SOURCE_ROOT/target/debug/libwgpu_native.$DYLIB_EXT ]; then
-    cp $SOURCE_ROOT/target/debug/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so
+  cp $PROJECT_ROOT/_build/rust/debug/libwgpu_native.a $OUT_DIR/libwgpu_native.a
+  if [ -f $PROJECT_ROOT/_build/rust/debug/libwgpu_native.$DYLIB_EXT ]; then
+    cp $PROJECT_ROOT/_build/rust/debug/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so
   else
     touch $OUT_DIR/dllwgpu_native.so
   fi

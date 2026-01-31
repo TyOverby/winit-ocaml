@@ -9,11 +9,11 @@
   (source_tree ../../vendor)
   ../ffi/Cargo.toml
   ../../winit/ffi/Cargo.toml
-  ../../Cargo.toml)
+  ../../Cargo.toml
+  build_softbuffer_ffi.sh)
  (action
   (no-infer
-   (bash
-    "\n# Determine dynamic library extension based on OS\ncase \"$(uname)\" in\n  Darwin) DYLIB_EXT=dylib ;;\n  *)      DYLIB_EXT=so ;;\nesac\n\nOUT_DIR=$(pwd)\n\n# Find the actual source root by going up from _build/default/softbuffer/src\nSOURCE_ROOT=$(cd ../../../.. && pwd)\n\nif [ \"%{profile}\" = \"release\" ]; then\n  cargo build --release -p softbuffer_ffi --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/release/libsoftbuffer_ffi.a $OUT_DIR/libsoftbuffer_ffi.a\n  cp $SOURCE_ROOT/target/release/libsoftbuffer_ffi.$DYLIB_EXT $OUT_DIR/dllsoftbuffer_ffi.so\nelse\n  cargo build -p softbuffer_ffi --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/debug/libsoftbuffer_ffi.a $OUT_DIR/libsoftbuffer_ffi.a\n  cp $SOURCE_ROOT/target/debug/libsoftbuffer_ffi.$DYLIB_EXT $OUT_DIR/dllsoftbuffer_ffi.so\nfi\n"))))
+   (bash "./%{dep:build_softbuffer_ffi.sh} %{profile}"))))
 
 (library
  (name softbuffer)
