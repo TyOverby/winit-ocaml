@@ -8,7 +8,7 @@ on:
 
 # Cache version: bump this to invalidate all caches (e.g., when adding new opam packages)
 env:
-  CACHE_VERSION: v1
+  CACHE_VERSION: v2
 
 jobs:
   build-linux:
@@ -49,7 +49,7 @@ jobs:
             opam-${{ runner.os }}-${{ env.CACHE_VERSION }}-
 
       - name: Install OCaml dependencies
-        run: opam install dune ppx_jane base stdio --yes
+        run: opam install dune ppx_jane base stdio core core_unix yaml gg --yes
 
       - name: Build project
         run: opam exec -- dune build
@@ -96,7 +96,7 @@ jobs:
             opam-${{ runner.os }}-${{ env.CACHE_VERSION }}-
 
       - name: Install OCaml dependencies
-        run: opam install dune ppx_jane base stdio --yes
+        run: opam install dune ppx_jane base stdio core core_unix yaml gg --yes
 
       - name: Build project
         run: opam exec -- dune build
