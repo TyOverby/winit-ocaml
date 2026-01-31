@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawWindowHandle};
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawWindowHandle, RawDisplayHandle};
 use winit::application::ApplicationHandler;
 use winit::event::{ButtonSource, MouseButton, MouseScrollDelta, TouchPhase, WindowEvent};
 use winit::event_loop::pump_events::{EventLoopExtPumpEvents, PumpStatus};
