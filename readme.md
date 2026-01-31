@@ -1,20 +1,10 @@
 # winit-ocaml
 
-Safe, ergonomic OCaml bindings for pixel-based graphics programming using the
-Rust [winit](https://github.com/rust-windowing/winit) and
-[softbuffer](https://github.com/rust-windowing/softbuffer) libraries.
-
-## What is this?
-
-winit-ocaml provides a simple, cross-platform way to create windows and draw pixels directly from OCaml. Perfect for:
-
-- Games and simulations
-- Pixel art tools and visualizations
-- Educational graphics projects
-- Custom rendering engines
-- Creative coding
-
-The library gives you direct access to a pixel buffer where every frame, you can set individual pixel colors. No scene graphs, no retained mode rendering—just raw, immediate-mode pixel manipulation with OCaml's functional elegance.
+Safe, ergonomic OCaml bindings for  graphics programming using the
+Rust [winit](https://github.com/rust-windowing/winit),
+[softbuffer](https://github.com/rust-windowing/softbuffer),
+and [wgpu-native](https://github.com/gfx-rs/wgpu-native)
+libraries.
 
 ## Features
 
@@ -25,7 +15,7 @@ The library gives you direct access to a pixel buffer where every frame, you can
 - **Tablet support**: Full support for graphics tablets (Wacom, etc.) with pressure and tilt data on X11
 - **Type-safe**: Rust's safety guarantees at the FFI boundary, OCaml's type safety in your code
 - **Modern**: Built on the excellent Rust windowing ecosystem
-- **Modular**: Separate `winit` and `softbuffer` libraries for flexibility
+- **Modular**: Separate `winit`, `softbuffer`, and `wgpu` libraries for flexibility
 
 ## Quick Example
 
@@ -63,15 +53,10 @@ let () =
 
 ## Libraries
 
-This project provides two OCaml libraries:
+This project provides three OCaml libraries:
 
 - **`winit`**: Window creation and event handling
 - **`softbuffer`**: Pixel buffer rendering (depends on winit)
+- `wgpu`: Bindings to the webgpu API
+- `wgpu_winit`: For attaching `wgpu` to a `winit` window
 
-Add them to your `dune` file:
-
-```scheme
-(executable
- (name my_app)
- (libraries winit softbuffer unix bigarray))
-```
