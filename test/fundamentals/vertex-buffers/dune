@@ -19,7 +19,10 @@
 
 (rule
  (alias runtest)
- (deps "../../../imgdiff.sh" vertex_buffers.expected.png vertex_buffers.png)
+ (deps
+  "../../../imgdiff.sh"
+  vertex_buffers.expected.png
+  vertex_buffers.png)
  (action
   (bash "%{deps}")))
 
