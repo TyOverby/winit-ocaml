@@ -1,0 +1,3 @@
+(library
+ (name winit_wgpu)
+ (libraries winit wgpu wgpu_low))

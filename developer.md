@@ -33,14 +33,16 @@ games, visualizations, pixel art tools, and educational graphics applications.
 
 ### Library Split
 
-The project provides **two separate OCaml libraries**:
+The project provides **multiple OCaml libraries**:
 
 - **`winit`**: Window creation and event handling
 - **`softbuffer`**: Pixel buffer rendering (depends on winit)
+- **`winit_wgpu`**: Bridge library for creating wgpu surfaces from winit windows
+- **`wgpu`** and **`wgpu_low`**: WebGPU bindings (vendored from wgpu-ocaml)
 
-This separation allows applications to use just the windowing functionality
-without the softbuffer dependency, and enables future alternative rendering
-backends.
+This separation allows applications to choose their rendering approach:
+- Use `softbuffer` for simple pixel buffer rendering
+- Use `winit_wgpu` + `wgpu` for GPU-accelerated rendering via WebGPU
 
 ## Architecture
 
@@ -377,6 +379,45 @@ redrawing changed regions of the buffer.
 - ✅ **Web**: Supported
 - ⚠️ Other platforms fall back to full present
 
+### 8. wgpu Integration
+
+**Implementation:** Support for GPU-accelerated rendering via the wgpu (WebGPU) API.
+
+**Architecture:**
+- `winit_wgpu` library bridges winit windows and wgpu surfaces
+- Uses raw window handles to create platform-specific wgpu surfaces
+- Supports X11 (Xlib), Wayland, and Win32 backends
+
+**How it works:**
+
+1. **Raw handle extraction**: The winit library exposes `get_raw_handle` which returns
+   platform-specific window data (X11 Display/Window, Wayland display/surface, etc.)
+
+2. **Surface creation**: The `winit_wgpu` library uses the low-level wgpu-ocaml bindings
+   to create appropriate surface source structs and chain them to a surface descriptor
+
+3. **API bridging**: Helper functions `Instance.to_low_level` and `Surface.of_low_level`
+   allow bridging between wgpu-ocaml's high-level and low-level APIs
+
+**Usage:**
+
+```ocaml
+(* Create window and wgpu instance *)
+let window = Winit.create () in
+let instance = Wgpu.Instance.create () in
+
+(* Create wgpu surface from window *)
+let surface = Winit_wgpu.create_surface ~instance ~window in
+
+(* Now use surface with wgpu for rendering... *)
+```
+
+**Platform support:**
+- ✅ **X11/Linux**: Full support via Xlib
+- ✅ **Wayland/Linux**: Full support
+- ✅ **Win32**: Support (untested)
+- ⚠️ **macOS**: Not yet implemented (needs AppKit support)
+
 ## Build System
 
 ### Overview
@@ -653,12 +694,22 @@ winit-ocaml/
 │       ├── softbuffer.ml    # OCaml implementation
 │       ├── softbuffer.mli   # Public API interface
 │       └── softbuffer_stubs.c # C FFI bridge
+├── winit_wgpu/              # Bridge library for wgpu surface creation
+│   └── src/
+│       ├── dune             # Build config
+│       ├── winit_wgpu.ml    # Creates wgpu surfaces from winit windows
+│       └── winit_wgpu.mli   # Public API interface
 ├── vendor/                  # Vendored dependencies (git submodules)
 │   ├── winit/               # Vendored winit library
-│   └── softbuffer/          # Vendored softbuffer library
+│   ├── softbuffer/          # Vendored softbuffer library
+│   └── wgpu-ocaml/          # Vendored wgpu-ocaml bindings
+│       ├── low/             # Low-level wgpu-native bindings (generated)
+│       ├── high/            # High-level OCaml API (generated)
+│       └── codegen/         # Code generator
 ├── examples/                # Example applications
 │   ├── dune                 # Example build config
-│   ├── hello_window.ml      # Graphical demo
+│   ├── hello_window.ml      # Softbuffer graphical demo
+│   ├── hello_triangle_wgpu.ml # wgpu GPU-accelerated triangle demo
 │   ├── paint.ml             # Tablet painting demo
 │   ├── test_ffi.ml          # FFI test
 │   └── prototype/           # Rust prototypes

@@ -155,3 +155,32 @@ val get_handle : window -> window_handle
 
 (** Test function to verify FFI is working. Returns 100 if the FFI is working correctly. *)
 val test_version : unit -> int
+
+(** {1 Raw Window Handles for wgpu} *)
+
+(** Raw window handle backend type - indicates which windowing system is in use *)
+type raw_handle_backend =
+  | X11 (** X11 (Xlib) on Linux *)
+  | Wayland (** Wayland on Linux *)
+  | Win32 (** Windows *)
+  | AppKit (** macOS *)
+  | Unknown_backend (** Unknown or unsupported backend *)
+
+(** Raw window handle containing platform-specific data for wgpu surface creation. Only
+    the fields corresponding to the backend type contain valid data. *)
+type raw_window_handle =
+  { backend : raw_handle_backend (** The windowing backend in use *)
+  ; x11_display : nativeint (** X11 Display pointer (only valid when backend = X11) *)
+  ; x11_window : int64 (** X11 Window ID (only valid when backend = X11) *)
+  ; wayland_display : nativeint
+  (** Wayland wl_display pointer (only valid when backend = Wayland) *)
+  ; wayland_surface : nativeint
+  (** Wayland wl_surface pointer (only valid when backend = Wayland) *)
+  ; win32_hwnd : nativeint (** Win32 HWND (only valid when backend = Win32) *)
+  ; win32_hinstance : nativeint (** Win32 HINSTANCE (only valid when backend = Win32) *)
+  }
+
+(** Get the raw window handle for creating wgpu surfaces. This returns platform-specific
+    window handle data that can be used to create a wgpu Surface via the low-level
+    wgpu-ocaml bindings. *)
+val get_raw_handle : window -> raw_window_handle

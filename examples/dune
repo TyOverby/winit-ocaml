@@ -9,3 +9,7 @@
 (executable
  (name paint)
  (libraries winit softbuffer unix bigarray))
+
+(executable
+ (name hello_triangle_wgpu)
+ (libraries winit winit_wgpu wgpu unix))

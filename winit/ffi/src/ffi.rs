@@ -3,6 +3,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle};
 use winit::application::ApplicationHandler;
 use winit::event::{ButtonSource, MouseButton, MouseScrollDelta, TouchPhase, WindowEvent};
 use winit::event_loop::pump_events::{EventLoopExtPumpEvents, PumpStatus};
@@ -11,6 +12,18 @@ use winit::keyboard::{ModifiersKeyState, PhysicalKey};
 use winit::window::{Theme, Window, WindowAttributes, WindowId};
 
 use crate::{encode_f32, encode_f64, Event, EventType};
+
+#[cfg(target_os = "linux")]
+use crate::{RawHandleBackend, RawHandleData, RawWaylandHandle, RawWindowHandleInfo, RawX11Handle};
+
+#[cfg(target_os = "windows")]
+use crate::{RawHandleBackend, RawHandleData, RawWin32Handle, RawWindowHandleInfo};
+
+#[cfg(target_os = "macos")]
+use crate::{RawAppKitHandle, RawHandleBackend, RawHandleData, RawWindowHandleInfo};
+
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
+use crate::{RawHandleBackend, RawHandleData, RawWindowHandleInfo, RawX11Handle};
 
 /// Event collector for winit - handles window events
 pub struct EventCollector {
@@ -581,4 +594,105 @@ pub extern "C" fn winit_window_request_redraw(window: *const WinitWindow) {
         let window = unsafe { &*window };
         window.request_redraw();
     }
+}
+
+/// Get the raw window handle information for creating wgpu surfaces
+/// Returns a RawWindowHandleInfo struct with backend type and handle data
+/// Writes the result to the provided output pointer
+/// Returns 0 on success, -1 on failure
+#[no_mangle]
+pub extern "C" fn winit_window_get_raw_handle(
+    window: *const WinitWindow,
+    out: *mut RawWindowHandleInfo,
+) -> i32 {
+    if window.is_null() || out.is_null() {
+        return -1;
+    }
+
+    let window_ref = unsafe { &*window };
+    let window_arc = match window_ref.get_window() {
+        Some(w) => w,
+        None => return -1,
+    };
+
+    // Get raw window handle
+    let raw_window_handle = match window_arc.window_handle() {
+        Ok(handle) => handle.as_raw(),
+        Err(_) => return -1,
+    };
+
+    // Get raw display handle
+    let raw_display_handle = match window_arc.display_handle() {
+        Ok(handle) => handle.as_raw(),
+        Err(_) => return -1,
+    };
+
+    let result = match (raw_window_handle, raw_display_handle) {
+        #[cfg(target_os = "linux")]
+        (RawWindowHandle::Xlib(xlib_window), RawDisplayHandle::Xlib(xlib_display)) => {
+            RawWindowHandleInfo {
+                backend: RawHandleBackend::X11,
+                data: RawHandleData {
+                    x11: RawX11Handle {
+                        display: xlib_display
+                            .display
+                            .map_or(std::ptr::null(), |d| d.as_ptr() as *const std::ffi::c_void),
+                        window: xlib_window.window,
+                    },
+                },
+            }
+        }
+
+        #[cfg(target_os = "linux")]
+        (RawWindowHandle::Wayland(wayland_surface), RawDisplayHandle::Wayland(wayland_display)) => {
+            RawWindowHandleInfo {
+                backend: RawHandleBackend::Wayland,
+                data: RawHandleData {
+                    wayland: RawWaylandHandle {
+                        display: wayland_display.display.as_ptr() as *const std::ffi::c_void,
+                        surface: wayland_surface.surface.as_ptr() as *const std::ffi::c_void,
+                    },
+                },
+            }
+        }
+
+        #[cfg(target_os = "windows")]
+        (RawWindowHandle::Win32(win32_handle), _) => RawWindowHandleInfo {
+            backend: RawHandleBackend::Win32,
+            data: RawHandleData {
+                win32: RawWin32Handle {
+                    hwnd: win32_handle.hwnd.get() as *const std::ffi::c_void,
+                    hinstance: win32_handle
+                        .hinstance
+                        .map_or(std::ptr::null(), |h| h.get() as *const std::ffi::c_void),
+                },
+            },
+        },
+
+        #[cfg(target_os = "macos")]
+        (RawWindowHandle::AppKit(appkit_handle), _) => RawWindowHandleInfo {
+            backend: RawHandleBackend::AppKit,
+            data: RawHandleData {
+                appkit: RawAppKitHandle {
+                    ns_view: appkit_handle.ns_view.as_ptr() as *const std::ffi::c_void,
+                },
+            },
+        },
+
+        _ => RawWindowHandleInfo {
+            backend: RawHandleBackend::Unknown,
+            data: RawHandleData {
+                x11: RawX11Handle {
+                    display: std::ptr::null(),
+                    window: 0,
+                },
+            },
+        },
+    };
+
+    unsafe {
+        *out = result;
+    }
+
+    0
 }

@@ -157,6 +157,83 @@ pub fn encode_f32(value: f32) -> i32 {
 }
 
 // ============================================================================
+// Raw Window Handle Types (for wgpu surface creation)
+// ============================================================================
+
+/// Backend type for raw window handles
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RawHandleBackend {
+    /// X11 (Xlib) backend
+    X11 = 0,
+    /// Wayland backend
+    Wayland = 1,
+    /// Win32 (Windows) backend
+    Win32 = 2,
+    /// AppKit (macOS) backend
+    AppKit = 3,
+    /// Unknown or unsupported backend
+    Unknown = 255,
+}
+
+/// Raw window handle data for X11 (Xlib)
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct RawX11Handle {
+    /// Pointer to X11 Display (void*)
+    pub display: *const std::ffi::c_void,
+    /// X11 Window ID (XID, usually u64)
+    pub window: u64,
+}
+
+/// Raw window handle data for Wayland
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct RawWaylandHandle {
+    /// Pointer to wl_display (void*)
+    pub display: *const std::ffi::c_void,
+    /// Pointer to wl_surface (void*)
+    pub surface: *const std::ffi::c_void,
+}
+
+/// Raw window handle data for Win32
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct RawWin32Handle {
+    /// HWND (window handle)
+    pub hwnd: *const std::ffi::c_void,
+    /// HINSTANCE (module instance)
+    pub hinstance: *const std::ffi::c_void,
+}
+
+/// Raw window handle data for AppKit (macOS)
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct RawAppKitHandle {
+    /// Pointer to NSView
+    pub ns_view: *const std::ffi::c_void,
+}
+
+/// Union of raw window handle data - use backend to determine which field is valid
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union RawHandleData {
+    pub x11: RawX11Handle,
+    pub wayland: RawWaylandHandle,
+    pub win32: RawWin32Handle,
+    pub appkit: RawAppKitHandle,
+}
+
+/// Combined raw window handle with backend discriminant
+#[repr(C)]
+pub struct RawWindowHandleInfo {
+    /// The backend type (determines which union field to use)
+    pub backend: RawHandleBackend,
+    /// The handle data (union, interpret based on backend)
+    pub data: RawHandleData,
+}
+
+// ============================================================================
 // Test Function
 // ============================================================================
 
