@@ -467,8 +467,11 @@ impl WinitWindow {
             None => return -1,
         };
 
-        // Pump events
-        let status = event_loop.pump_app_events(Some(Duration::ZERO), &mut self.collector);
+        // TODO: make the timeout configurable
+        let timeout =
+            // None;
+            Some(Duration::ZERO); 
+        let status = event_loop.pump_app_events(timeout, &mut self.collector);
 
         if let PumpStatus::Exit(_) = status {
             return -1;

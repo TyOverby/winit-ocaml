@@ -1,3 +1,5 @@
+open! Core
+
 (** Hello Triangle example using wgpu for GPU-accelerated rendering to a winit window *)
 
 let shader_code =
@@ -59,12 +61,12 @@ let () =
     Wgpu.Surface.configure
       surface
       ~device
-      ~format:Wgpu.Texture_format.Bgra8_unorm
-      ~usage:[ Wgpu.Texture_usage.Item.Render_attachment ]
+      ~format:Bgra8_unorm
+      ~usage:[ Render_attachment ]
       ~width:!width
       ~height:!height
-      ~alpha_mode:Wgpu.Composite_alpha_mode.Auto
-      ~present_mode:Wgpu.Present_mode.Fifo
+      ~alpha_mode:Auto
+      ~present_mode:Fifo
       ()
   in
   configure_surface ();
@@ -76,23 +78,23 @@ let () =
       ~shader_module:shader
       ~vertex_entry_point:"vs_main"
       ~fragment_entry_point:"fs_main"
-      ~color_format:Wgpu.Texture_format.Bgra8_unorm
+      ~color_format:Bgra8_unorm
       ()
   in
   (* Main loop *)
   let running = ref true in
   while !running do
     (* Handle events *)
-    List.iter
-      (fun event ->
-        match event with
-        | Winit.CloseRequested -> running := false
-        | Winit.SurfaceResized { width = w; height = h } ->
-          width := w;
-          height := h;
-          if w > 0 && h > 0 then configure_surface ()
-        | _ -> ())
-      (Winit.pump_events window);
+    let events = Winit.pump_events window in
+    print_s [%message (List.length events : int)];
+    List.iter events ~f:(fun event ->
+      match event with
+      | Winit.CloseRequested -> running := false
+      | Winit.SurfaceResized { width = w; height = h } ->
+        width := w;
+        height := h;
+        if w > 0 && h > 0 then configure_surface ()
+      | _ -> ());
     (* Skip rendering if window is minimized *)
     if !width > 0 && !height > 0
     then (
@@ -133,9 +135,7 @@ let () =
       Wgpu.Render_pass_encoder.release render_pass;
       Wgpu.Command_encoder.release encoder;
       Wgpu.Texture_view.release texture_view;
-      Wgpu.Texture.release surface_texture.texture);
-    (* Small delay to avoid busy-waiting *)
-    Unix.sleepf 0.016
+      Wgpu.Texture.release surface_texture.texture)
   done;
   (* Cleanup *)
   Wgpu.Render_pipeline.release pipeline;

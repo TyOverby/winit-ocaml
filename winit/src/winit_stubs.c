@@ -171,6 +171,8 @@ CAMLprim value caml_winit_window_pump_events(value window_val) {
 
     int count = winit_window_pump_events(window, events, 32);
 
+    // TODO: this isn't really a failure, it just indicates that the window was
+    // closed.  This function should return a Result.t.
     if (count < 0) {
         caml_failwith("winit_window_pump_events failed");
     }
