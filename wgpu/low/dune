@@ -26,12 +26,13 @@
  (c_library_flags
   (:include c_library_flags.sexp)))
 
-; Generate C library flags based on OS
+; Generate platform-specific C library flags
 
 (rule
- (target c_library_flags.sexp)
+ (targets c_library_flags.sexp)
+ (deps gen_c_library_flags.sh)
  (action
-  (write-file %{target} "(:standard -lpthread -ldl -lm)")))
+  (bash "./%{dep:gen_c_library_flags.sh}")))
 
 ; Code generation rules
 

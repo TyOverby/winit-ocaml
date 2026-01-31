@@ -7,6 +7,7 @@
 #include <caml/bigarray.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "webgpu.h"
 #include "wgpu.h"

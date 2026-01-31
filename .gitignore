@@ -2,3 +2,7 @@ opam
 _opam
 target
 _build
+
+*.png
+!*.expected.png
+!wgpu/test/assets/**/*.png
