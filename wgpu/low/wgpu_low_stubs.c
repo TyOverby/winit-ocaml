@@ -10225,7 +10225,12 @@ CAMLprim value caml_wgpu_instance_request_adapter_sync(
       .userdata2 = NULL,
   };
 
-  wgpuInstanceRequestAdapter(instance, &options, callback_info);
+  (void)wgpuInstanceRequestAdapter(instance, &options, callback_info);
+
+  /* Poll until the callback completes */
+  while (adapter == NULL) {
+    wgpuInstanceProcessEvents(instance);
+  }
 
   CAMLreturn(caml_copy_nativeint((intnat)adapter));
 }
@@ -10241,8 +10246,10 @@ static void handle_request_device_sync(WGPURequestDeviceStatus status,
   *(WGPUDevice *)userdata1 = device;
 }
 
-CAMLprim value caml_wgpu_adapter_request_device_sync(value adapter_val) {
-  CAMLparam1(adapter_val);
+CAMLprim value caml_wgpu_adapter_request_device_sync(value instance_val,
+                                                     value adapter_val) {
+  CAMLparam2(instance_val, adapter_val);
+  WGPUInstance instance = (WGPUInstance)Nativeint_val(instance_val);
   WGPUAdapter adapter = (WGPUAdapter)Nativeint_val(adapter_val);
   WGPUDevice device = NULL;
 
@@ -10252,7 +10259,12 @@ CAMLprim value caml_wgpu_adapter_request_device_sync(value adapter_val) {
       .userdata2 = NULL,
   };
 
-  wgpuAdapterRequestDevice(adapter, NULL, callback_info);
+  (void)wgpuAdapterRequestDevice(adapter, NULL, callback_info);
+
+  /* Poll until the callback completes */
+  while (device == NULL) {
+    wgpuInstanceProcessEvents(instance);
+  }
 
   CAMLreturn(caml_copy_nativeint((intnat)device));
 }
@@ -10260,25 +10272,43 @@ CAMLprim value caml_wgpu_adapter_request_device_sync(value adapter_val) {
 /* Get adapter info */
 CAMLprim value caml_wgpu_adapter_get_info(value adapter_val) {
   CAMLparam1(adapter_val);
-  CAMLlocal1(result);
+  CAMLlocal5(result, vendor_str, arch_str, device_str, desc_str);
 
   WGPUAdapter adapter = (WGPUAdapter)Nativeint_val(adapter_val);
   WGPUAdapterInfo info = {0};
   wgpuAdapterGetInfo(adapter, &info);
 
+  /* Copy strings safely, handling NULL/invalid data pointers.
+   * WGPUStringView may have non-NULL data with length=0, which means invalid.
+   * We must check both data != NULL and length > 0. */
+  const char *empty = "";
+  const char *vendor_ptr = (info.vendor.data != NULL && info.vendor.length > 0)
+                               ? info.vendor.data
+                               : empty;
+  const char *arch_ptr =
+      (info.architecture.data != NULL && info.architecture.length > 0)
+          ? info.architecture.data
+          : empty;
+  const char *device_ptr = (info.device.data != NULL && info.device.length > 0)
+                               ? info.device.data
+                               : empty;
+  const char *desc_ptr =
+      (info.description.data != NULL && info.description.length > 0)
+          ? info.description.data
+          : empty;
+
+  vendor_str = caml_copy_string(vendor_ptr);
+  arch_str = caml_copy_string(arch_ptr);
+  device_str = caml_copy_string(device_ptr);
+  desc_str = caml_copy_string(desc_ptr);
+
   /* Return as a tuple: (vendor, architecture, device, description,
    * backend_type, adapter_type) */
   result = caml_alloc_tuple(6);
-  Store_field(result, 0,
-              caml_copy_string(info.vendor.data ? info.vendor.data : ""));
-  Store_field(
-      result, 1,
-      caml_copy_string(info.architecture.data ? info.architecture.data : ""));
-  Store_field(result, 2,
-              caml_copy_string(info.device.data ? info.device.data : ""));
-  Store_field(
-      result, 3,
-      caml_copy_string(info.description.data ? info.description.data : ""));
+  Store_field(result, 0, vendor_str);
+  Store_field(result, 1, arch_str);
+  Store_field(result, 2, device_str);
+  Store_field(result, 3, desc_str);
   Store_field(result, 4, Val_int(info.backendType));
   Store_field(result, 5, Val_int(info.adapterType));
 

@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawWindowHandle, RawDisplayHandle};
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle};
 use winit::application::ApplicationHandler;
 use winit::event::{ButtonSource, MouseButton, MouseScrollDelta, TouchPhase, WindowEvent};
 use winit::event_loop::pump_events::{EventLoopExtPumpEvents, PumpStatus};
@@ -608,7 +608,8 @@ fn create_metal_layer_for_view(ns_view_ptr: *const std::ffi::c_void) -> *const s
         let ns_view = ns_view_ptr as id;
 
         // Create a new CAMetalLayer
-        let ca_metal_layer_class = Class::get("CAMetalLayer").expect("CAMetalLayer class not found");
+        let ca_metal_layer_class =
+            Class::get("CAMetalLayer").expect("CAMetalLayer class not found");
         let layer: id = msg_send![ca_metal_layer_class, layer];
 
         // Enable layer backing on the view

@@ -8641,7 +8641,8 @@ external instance_request_adapter_sync
   = "caml_wgpu_instance_request_adapter_sync"
 
 external adapter_request_device_sync
-  :  adapter
+  :  instance
+  -> adapter
   -> device
   = "caml_wgpu_adapter_request_device_sync"
 

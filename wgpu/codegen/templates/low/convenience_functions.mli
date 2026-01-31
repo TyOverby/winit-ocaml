@@ -1,6 +1,6 @@
 val create_instance : unit -> instance
 val instance_request_adapter_sync : instance -> int -> int -> adapter
-val adapter_request_device_sync : adapter -> device
+val adapter_request_device_sync : instance -> adapter -> device
 
 type adapter_info =
   { vendor : string

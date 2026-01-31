@@ -3,11 +3,14 @@
 end
 
 module Adapter = struct
-  type t = { handle : Wgpu_low.adapter }
+  type t =
+    { handle : Wgpu_low.adapter
+    ; instance : Wgpu_low.instance
+    }
 
   let get_info t = Adapter_info.of_low (Wgpu_low.adapter_get_info t.handle)
   let request_device t =
-    let device = Wgpu_low.adapter_request_device_sync t.handle in
+    let device = Wgpu_low.adapter_request_device_sync t.instance t.handle in
     { Device.handle = device }
 
   (* AUTO-GENERATED ADAPTER METHODS INJECTED HERE *)

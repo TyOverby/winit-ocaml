@@ -16,7 +16,7 @@ module Instance = struct
         (Power_preference.to_int power_preference)
         (Backend_type.to_int backend_type)
     in
-    { Adapter.handle = adapter }
+    { Adapter.handle = adapter; instance = t.handle }
   ;;
 
   (* AUTO-GENERATED INSTANCE METHODS INJECTED HERE *)
