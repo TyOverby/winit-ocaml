@@ -2,7 +2,7 @@
 ; We use --manifest-path to point to the source Cargo.toml to avoid workspace issues
 
 (rule
- (targets libwinit_ffi.a dllwinit_ffi.so)
+ (targets libwinit_ffi.a dllwinit_ffi.so libwinit_ffi.so)
  (deps
   (source_tree ../ffi/src)
   (source_tree ../../vendor)
@@ -21,6 +21,14 @@
  (action
   (bash "./%{dep:gen_c_library_flags.sh}")))
 
+; Generate profile-dependent linking flags (static for release, dynamic for debug)
+
+(rule
+ (targets link_mode_flags.sexp)
+ (deps gen_link_mode_flags.sh libwinit_ffi.a dllwinit_ffi.so libwinit_ffi.so)
+ (action
+  (bash "./%{dep:gen_link_mode_flags.sh} %{profile}")))
+
 (library
  (name winit)
  (public_name winit)
@@ -29,7 +37,7 @@
   (language c)
   (names winit_stubs)
   (flags :standard))
- (foreign_archives winit_ffi)
  (c_library_flags
   (:standard
-   (:include c_library_flags.sexp))))
+   (:include c_library_flags.sexp)
+   (:include link_mode_flags.sexp))))

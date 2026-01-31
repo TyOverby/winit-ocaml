@@ -1,4 +1,4 @@
-open! Core
+open! Base
 
 (** Hello Triangle example using wgpu for GPU-accelerated rendering to a winit window *)
 
@@ -86,7 +86,6 @@ let () =
   while !running do
     (* Handle events *)
     let events = Winit.pump_events window in
-    print_s [%message (List.length events : int)];
     List.iter events ~f:(fun event ->
       match event with
       | Winit.CloseRequested -> running := false

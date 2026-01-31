@@ -2,7 +2,7 @@
 ; We use --manifest-path to point to the source Cargo.toml to avoid workspace issues
 
 (rule
- (targets libsoftbuffer_ffi.a dllsoftbuffer_ffi.so)
+ (targets libsoftbuffer_ffi.a dllsoftbuffer_ffi.so libsoftbuffer_ffi.so)
  (deps
   (source_tree ../ffi/src)
   (source_tree ../../winit/ffi/src)
@@ -15,6 +15,14 @@
   (no-infer
    (bash "./%{dep:build_softbuffer_ffi.sh} %{profile}"))))
 
+; Generate profile-dependent linking flags (static for release, dynamic for debug)
+
+(rule
+ (targets link_mode_flags.sexp)
+ (deps gen_link_mode_flags.sh libsoftbuffer_ffi.a dllsoftbuffer_ffi.so libsoftbuffer_ffi.so)
+ (action
+  (bash "./%{dep:gen_link_mode_flags.sh} %{profile}")))
+
 (library
  (name softbuffer)
  (public_name softbuffer)
@@ -23,4 +31,6 @@
   (language c)
   (names softbuffer_stubs)
   (flags :standard))
- (foreign_archives softbuffer_ffi))
+ (c_library_flags
+  (:standard
+   (:include link_mode_flags.sexp))))

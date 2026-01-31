@@ -2,7 +2,7 @@
 
 (rule
  (alias default)
- (targets libwgpu_native.a dllwgpu_native.so)
+ (targets libwgpu_native.a dllwgpu_native.so libwgpu_native.so)
  (deps
   (source_tree ../../vendor/wgpu-native/src)
   (source_tree ../../vendor/wgpu-native/ffi)
@@ -12,6 +12,15 @@
  (action
   (no-infer
    (run bash build_wgpu_native.sh %{profile}))))
+
+; Generate profile-dependent linking flags (static for release, dynamic for debug)
+
+(rule
+ (alias default)
+ (targets link_mode_flags.sexp)
+ (deps gen_link_mode_flags.sh libwgpu_native.a dllwgpu_native.so libwgpu_native.so)
+ (action
+  (bash "./%{dep:gen_link_mode_flags.sh} %{profile}")))
 
 (library
  (name wgpu_low)
@@ -23,9 +32,10 @@
    ../../vendor/wgpu-native/ffi
    ../../vendor/wgpu-native/ffi/webgpu-headers)
   (flags :standard))
- (foreign_archives wgpu_native)
  (c_library_flags
-  (:include c_library_flags.sexp)))
+  (:standard
+   (:include c_library_flags.sexp)
+   (:include link_mode_flags.sexp))))
 
 ; Generate platform-specific C library flags
 

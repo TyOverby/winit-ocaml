@@ -12,6 +12,6 @@
 
 (executable
  (name hello_triangle_wgpu)
- (libraries winit winit_wgpu wgpu core)
+ (libraries winit winit_wgpu wgpu base)
  (preprocess
   (pps ppx_jane)))

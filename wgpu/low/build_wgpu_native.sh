@@ -23,16 +23,22 @@ if [ "$PROFILE" = "release" ]; then
   cp $PROJECT_ROOT/_build/rust/release/libwgpu_native.a $OUT_DIR/libwgpu_native.a
   if [ -f $PROJECT_ROOT/_build/rust/release/libwgpu_native.$DYLIB_EXT ]; then
     cp $PROJECT_ROOT/_build/rust/release/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so
+    # Also copy with lib prefix for native dynamic linking
+    cp $PROJECT_ROOT/_build/rust/release/libwgpu_native.$DYLIB_EXT $OUT_DIR/libwgpu_native.so
   else
     # Create empty placeholder if no dylib (static-only build)
     touch $OUT_DIR/dllwgpu_native.so
+    touch $OUT_DIR/libwgpu_native.so
   fi
 else
   cargo build --manifest-path $SOURCE_ROOT/Cargo.toml
   cp $PROJECT_ROOT/_build/rust/debug/libwgpu_native.a $OUT_DIR/libwgpu_native.a
   if [ -f $PROJECT_ROOT/_build/rust/debug/libwgpu_native.$DYLIB_EXT ]; then
     cp $PROJECT_ROOT/_build/rust/debug/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so
+    # Also copy with lib prefix for native dynamic linking
+    cp $PROJECT_ROOT/_build/rust/debug/libwgpu_native.$DYLIB_EXT $OUT_DIR/libwgpu_native.so
   else
     touch $OUT_DIR/dllwgpu_native.so
+    touch $OUT_DIR/libwgpu_native.so
   fi
 fi
