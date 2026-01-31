@@ -623,6 +623,49 @@ fn create_metal_layer_for_view(ns_view_ptr: *const std::ffi::c_void) -> *const s
     }
 }
 
+/// Get the surface size in physical pixels
+/// Writes width and height to the provided output pointers
+/// Returns 0 on success, -1 on failure
+#[no_mangle]
+pub extern "C" fn winit_window_surface_size(
+    window: *const WinitWindow,
+    width_out: *mut u32,
+    height_out: *mut u32,
+) -> i32 {
+    if window.is_null() || width_out.is_null() || height_out.is_null() {
+        return -1;
+    }
+
+    let window_ref = unsafe { &*window };
+    let window_arc = match window_ref.get_window() {
+        Some(w) => w,
+        None => return -1,
+    };
+
+    let size = window_arc.surface_size();
+    unsafe {
+        *width_out = size.width;
+        *height_out = size.height;
+    }
+
+    0
+}
+
+/// Get the window's scale factor (DPI scaling)
+/// Returns the scale factor, or -1.0 on failure
+#[no_mangle]
+pub extern "C" fn winit_window_scale_factor(window: *const WinitWindow) -> f64 {
+    if window.is_null() {
+        return -1.0;
+    }
+
+    let window_ref = unsafe { &*window };
+    match window_ref.get_window() {
+        Some(w) => w.scale_factor(),
+        None => -1.0,
+    }
+}
+
 /// Get the raw window handle information for creating wgpu surfaces
 /// Returns a RawWindowHandleInfo struct with backend type and handle data
 /// Writes the result to the provided output pointer

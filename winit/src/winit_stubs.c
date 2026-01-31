@@ -220,6 +220,44 @@ CAMLprim value caml_winit_test_version(value unit) {
     CAMLreturn(Val_int(version));
 }
 
+// Forward declarations for new functions
+extern int winit_window_surface_size(const void* window, uint32_t* width_out, uint32_t* height_out);
+extern double winit_window_scale_factor(const void* window);
+
+// OCaml: external surface_size : window -> int * int = "caml_winit_window_surface_size"
+CAMLprim value caml_winit_window_surface_size(value window_val) {
+    CAMLparam1(window_val);
+    CAMLlocal1(result);
+
+    void* window = winit_window_val(window_val);
+    uint32_t width = 0, height = 0;
+
+    int status = winit_window_surface_size(window, &width, &height);
+    if (status != 0) {
+        caml_failwith("Failed to get surface size");
+    }
+
+    result = caml_alloc_tuple(2);
+    Store_field(result, 0, Val_int(width));
+    Store_field(result, 1, Val_int(height));
+
+    CAMLreturn(result);
+}
+
+// OCaml: external scale_factor : window -> float = "caml_winit_window_scale_factor"
+CAMLprim value caml_winit_window_scale_factor(value window_val) {
+    CAMLparam1(window_val);
+
+    void* window = winit_window_val(window_val);
+    double factor = winit_window_scale_factor(window);
+
+    if (factor < 0.0) {
+        caml_failwith("Failed to get scale factor");
+    }
+
+    CAMLreturn(caml_copy_double(factor));
+}
+
 // OCaml: external get_raw_handle : window -> raw_window_handle = "caml_winit_window_get_raw_handle"
 // Returns a record with backend type and platform-specific data
 CAMLprim value caml_winit_window_get_raw_handle(value window_val) {

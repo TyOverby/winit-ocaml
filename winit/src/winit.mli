@@ -156,6 +156,23 @@ val get_handle : window -> window_handle
 (** Test function to verify FFI is working. Returns 100 if the FFI is working correctly. *)
 val test_version : unit -> int
 
+(** {1 Window Size and Scaling} *)
+
+(** Get the current surface size in physical pixels. This returns the actual framebuffer
+    dimensions, accounting for DPI scaling. Use this for configuring rendering surfaces
+    (wgpu, etc.) that need physical pixel dimensions.
+
+    On HiDPI displays, this will be larger than the logical window size. For example, an
+    800x600 logical window at 2x scale factor returns (1600, 1200). *)
+val surface_size : window -> int * int
+
+(** Get the window's DPI scale factor. This is the ratio between physical pixels and
+    logical pixels (points). Common values:
+    - 1.0 for standard displays
+    - 2.0 for Retina/HiDPI displays
+    - 1.25, 1.5, etc. for Windows display scaling *)
+val scale_factor : window -> float
+
 (** {1 Raw Window Handles for wgpu} *)
 
 (** Raw window handle backend type - indicates which windowing system is in use *)

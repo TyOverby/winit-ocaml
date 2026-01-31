@@ -146,6 +146,8 @@ external pump_events_raw
 
 external get_handle : window -> window_handle = "caml_winit_window_get_handle"
 external test_version : unit -> int = "caml_winit_test_version"
+external surface_size : window -> int * int = "caml_winit_window_surface_size"
+external scale_factor : window -> float = "caml_winit_window_scale_factor"
 
 (* Helper to decode f64 from two i32s *)
 let decode_f64 low high =

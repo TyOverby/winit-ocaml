@@ -31,9 +31,10 @@ let () =
   let shader =
     Wgpu.Device.create_shader_module device ~label:"triangle_shader" ~wgsl:shader_code ()
   in
-  (* Initial window size *)
-  let width = ref 800 in
-  let height = ref 600 in
+  (* Get initial surface size in physical pixels (not logical) *)
+  let initial_width, initial_height = Winit.surface_size window in
+  let width = ref initial_width in
+  let height = ref initial_height in
   (* Configure surface *)
   let configure_surface () =
     Wgpu.Surface.configure
