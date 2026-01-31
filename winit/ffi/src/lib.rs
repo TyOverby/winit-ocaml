@@ -212,6 +212,8 @@ pub struct RawWin32Handle {
 pub struct RawAppKitHandle {
     /// Pointer to NSView
     pub ns_view: *const std::ffi::c_void,
+    /// Pointer to CAMetalLayer (created from the NSView)
+    pub metal_layer: *const std::ffi::c_void,
 }
 
 /// Union of raw window handle data - use backend to determine which field is valid

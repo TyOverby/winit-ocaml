@@ -75,7 +75,26 @@ let create_surface ~instance ~window =
       Wgpu_low.Surface_descriptor.surface_descriptor_free desc;
       Wgpu_low.Surface_source_windows_hwnd.surface_source_windows_HWND_free source;
       surface
-    | Winit.AppKit | Winit.Unknown_backend ->
+    | Winit.AppKit ->
+      let source =
+        Wgpu_low.Surface_source_metal_layer.surface_source_metal_layer_create ()
+      in
+      Wgpu_low.Surface_source_metal_layer.surface_source_metal_layer_set_chain_stype
+        source
+        (Wgpu_low.S_type.to_int Wgpu_low.S_type.Surface_source_metal_layer);
+      Wgpu_low.Surface_source_metal_layer.surface_source_metal_layer_set_layer
+        source
+        raw_handle.metal_layer;
+      let chained =
+        Wgpu_low.Surface_source_metal_layer.surface_source_metal_layer_as_chained source
+      in
+      let desc = Wgpu_low.Surface_descriptor.surface_descriptor_create () in
+      Wgpu_low.Surface_descriptor.surface_descriptor_set_next_in_chain desc chained;
+      let surface = Wgpu_low.instance_create_surface instance_handle desc in
+      Wgpu_low.Surface_descriptor.surface_descriptor_free desc;
+      Wgpu_low.Surface_source_metal_layer.surface_source_metal_layer_free source;
+      surface
+    | Winit.Unknown_backend ->
       failwith "Unsupported window backend for wgpu surface creation"
   in
   Wgpu.Surface.of_low_level surface_handle

@@ -325,12 +325,13 @@ type raw_window_handle =
   (** Wayland wl_surface pointer (only valid when backend = Wayland) *)
   ; win32_hwnd : nativeint (** Win32 HWND (only valid when backend = Win32) *)
   ; win32_hinstance : nativeint (** Win32 HINSTANCE (only valid when backend = Win32) *)
+  ; metal_layer : nativeint (** CAMetalLayer pointer (only valid when backend = AppKit) *)
   }
 
 (* Raw C stub for getting raw handle *)
 external get_raw_handle_raw
   :  window
-  -> int * nativeint * int64 * nativeint * nativeint * nativeint * nativeint
+  -> int * nativeint * int64 * nativeint * nativeint * nativeint * nativeint * nativeint
   = "caml_winit_window_get_raw_handle"
 
 let raw_handle_backend_of_int = function
@@ -350,7 +351,8 @@ let get_raw_handle window =
       , wayland_display
       , wayland_surface
       , win32_hwnd
-      , win32_hinstance )
+      , win32_hinstance
+      , metal_layer )
     =
     get_raw_handle_raw window
   in
@@ -361,5 +363,6 @@ let get_raw_handle window =
   ; wayland_surface
   ; win32_hwnd
   ; win32_hinstance
+  ; metal_layer
   }
 ;;

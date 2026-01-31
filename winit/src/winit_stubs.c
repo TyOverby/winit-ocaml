@@ -43,6 +43,7 @@ typedef struct {
 // Raw AppKit handle (must match Rust)
 typedef struct {
     const void* ns_view;
+    const void* metal_layer;
 } RawAppKitHandle;
 
 // Union of raw handle data (must match Rust)
@@ -235,8 +236,10 @@ CAMLprim value caml_winit_window_get_raw_handle(value window_val) {
 
     // Allocate the result record
     // OCaml type: { backend: int; x11_display: nativeint; x11_window: int64;
-    //               wayland_display: nativeint; wayland_surface: nativeint; ... }
-    result = caml_alloc(7, 0);
+    //               wayland_display: nativeint; wayland_surface: nativeint;
+    //               win32_hwnd: nativeint; win32_hinstance: nativeint;
+    //               metal_layer: nativeint }
+    result = caml_alloc(8, 0);
 
     // Store backend type (as int)
     Store_field(result, 0, Val_int((int)info.backend));
@@ -266,6 +269,13 @@ CAMLprim value caml_winit_window_get_raw_handle(value window_val) {
     } else {
         Store_field(result, 5, caml_copy_nativeint(0));
         Store_field(result, 6, caml_copy_nativeint(0));
+    }
+
+    // Store AppKit/Metal data (field 7)
+    if (info.backend == RAW_HANDLE_BACKEND_APPKIT) {
+        Store_field(result, 7, caml_copy_nativeint((intptr_t)info.data.appkit.metal_layer));
+    } else {
+        Store_field(result, 7, caml_copy_nativeint(0));
     }
 
     CAMLreturn(result);

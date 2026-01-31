@@ -178,6 +178,7 @@ type raw_window_handle =
   (** Wayland wl_surface pointer (only valid when backend = Wayland) *)
   ; win32_hwnd : nativeint (** Win32 HWND (only valid when backend = Win32) *)
   ; win32_hinstance : nativeint (** Win32 HINSTANCE (only valid when backend = Win32) *)
+  ; metal_layer : nativeint (** CAMetalLayer pointer (only valid when backend = AppKit) *)
   }
 
 (** Get the raw window handle for creating wgpu surfaces. This returns platform-specific

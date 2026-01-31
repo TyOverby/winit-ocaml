@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle};
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawWindowHandle};
 use winit::application::ApplicationHandler;
 use winit::event::{ButtonSource, MouseButton, MouseScrollDelta, TouchPhase, WindowEvent};
 use winit::event_loop::pump_events::{EventLoopExtPumpEvents, PumpStatus};
@@ -596,6 +596,32 @@ pub extern "C" fn winit_window_request_redraw(window: *const WinitWindow) {
     }
 }
 
+/// Create a CAMetalLayer for an NSView and set it as the view's layer
+/// Returns the layer pointer for use with wgpu
+#[cfg(target_os = "macos")]
+fn create_metal_layer_for_view(ns_view_ptr: *const std::ffi::c_void) -> *const std::ffi::c_void {
+    use cocoa::base::{id, YES};
+    use objc::runtime::Class;
+    use objc::{msg_send, sel, sel_impl};
+
+    unsafe {
+        let ns_view = ns_view_ptr as id;
+
+        // Create a new CAMetalLayer
+        let ca_metal_layer_class = Class::get("CAMetalLayer").expect("CAMetalLayer class not found");
+        let layer: id = msg_send![ca_metal_layer_class, layer];
+
+        // Enable layer backing on the view
+        let _: () = msg_send![ns_view, setWantsLayer: YES];
+
+        // Set the metal layer as the view's layer
+        let _: () = msg_send![ns_view, setLayer: layer];
+
+        // Return the layer pointer
+        layer as *const std::ffi::c_void
+    }
+}
+
 /// Get the raw window handle information for creating wgpu surfaces
 /// Returns a RawWindowHandleInfo struct with backend type and handle data
 /// Writes the result to the provided output pointer
@@ -670,14 +696,19 @@ pub extern "C" fn winit_window_get_raw_handle(
         },
 
         #[cfg(target_os = "macos")]
-        (RawWindowHandle::AppKit(appkit_handle), _) => RawWindowHandleInfo {
-            backend: RawHandleBackend::AppKit,
-            data: RawHandleData {
-                appkit: RawAppKitHandle {
-                    ns_view: appkit_handle.ns_view.as_ptr() as *const std::ffi::c_void,
+        (RawWindowHandle::AppKit(appkit_handle), _) => {
+            let ns_view_ptr = appkit_handle.ns_view.as_ptr() as *const std::ffi::c_void;
+            let metal_layer = create_metal_layer_for_view(ns_view_ptr);
+            RawWindowHandleInfo {
+                backend: RawHandleBackend::AppKit,
+                data: RawHandleData {
+                    appkit: RawAppKitHandle {
+                        ns_view: ns_view_ptr,
+                        metal_layer,
+                    },
                 },
-            },
-        },
+            }
+        }
 
         _ => RawWindowHandleInfo {
             backend: RawHandleBackend::Unknown,
