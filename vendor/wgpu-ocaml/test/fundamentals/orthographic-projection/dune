@@ -1,0 +1,103 @@
+(executables
+ (names orthographic_3d_f orthographic_ortho_matrix)
+ (libraries wgpu core core_unix test_util gg)
+ (preprocess
+  (pps ppx_jane)))
+
+; orthographic_3d_f.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./orthographic_3d_f.exe))
+ (targets
+  orthographic_3d_f_default.png
+  orthographic_3d_f_front.png
+  orthographic_3d_f_rotated1.png
+  orthographic_3d_f_rotated2.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  orthographic_3d_f_default.expected.png
+  orthographic_3d_f_default.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  orthographic_3d_f_front.expected.png
+  orthographic_3d_f_front.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  orthographic_3d_f_rotated1.expected.png
+  orthographic_3d_f_rotated1.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  orthographic_3d_f_rotated2.expected.png
+  orthographic_3d_f_rotated2.png)
+ (action
+  (bash "%{deps}")))
+
+; orthographic_ortho_matrix.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./orthographic_ortho_matrix.exe))
+ (targets
+  orthographic_ortho_default.png
+  orthographic_ortho_front.png
+  orthographic_ortho_rotated1.png
+  orthographic_ortho_rotated2.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  orthographic_ortho_default.expected.png
+  orthographic_ortho_default.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  orthographic_ortho_front.expected.png
+  orthographic_ortho_front.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  orthographic_ortho_rotated1.expected.png
+  orthographic_ortho_rotated1.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  orthographic_ortho_rotated2.expected.png
+  orthographic_ortho_rotated2.png)
+ (action
+  (bash "%{deps}")))

@@ -1,0 +1,80 @@
+(library
+ (name wgpu)
+ (public_name wgpu)
+ (libraries wgpu_low))
+
+(rule
+ (deps
+  (source_tree ../codegen/templates))
+ (action
+  (with-stdout-to
+   enums.ml
+   (pipe-stdout
+    (run ../codegen/gen_bindings.exe High Enums_ml)
+    (run ocamlformat --impl -))))
+ (mode promote)
+ (target enums.ml))
+
+(rule
+ (deps
+  (source_tree ../codegen/templates))
+ (action
+  (with-stdout-to
+   enums.mli
+   (pipe-stdout
+    (run ../codegen/gen_bindings.exe High Enums_mli)
+    (run ocamlformat --intf -))))
+ (mode promote)
+ (target enums.mli))
+
+(rule
+ (deps
+  (source_tree ../codegen/templates))
+ (action
+  (with-stdout-to
+   bitsets.ml
+   (pipe-stdout
+    (run ../codegen/gen_bindings.exe High Bitsets_ml)
+    (run ocamlformat --impl -))))
+ (mode promote)
+ (target bitsets.ml))
+
+(rule
+ (deps
+  (source_tree ../codegen/templates))
+ (action
+  (with-stdout-to
+   bitsets.mli
+   (pipe-stdout
+    (run ../codegen/gen_bindings.exe High Bitsets_mli)
+    (run ocamlformat --intf -))))
+ (mode promote)
+ (target bitsets.mli))
+
+(rule
+ (deps
+  (source_tree ../codegen/templates)
+  enums.ml
+  bitsets.ml)
+ (action
+  (with-stdout-to
+   wgpu.ml
+   (pipe-stdout
+    (run ../codegen/gen_bindings.exe High Ml)
+    (run ocamlformat --impl -))))
+ (mode promote)
+ (target wgpu.ml))
+
+(rule
+ (deps
+  (source_tree ../codegen/templates)
+  enums.mli
+  bitsets.mli)
+ (action
+  (with-stdout-to
+   wgpu.mli
+   (pipe-stdout
+    (run ../codegen/gen_bindings.exe High Mli)
+    (run ocamlformat --intf -))))
+ (mode promote)
+ (target wgpu.mli))

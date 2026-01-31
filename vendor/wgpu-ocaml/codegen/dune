@@ -1,0 +1,16 @@
+(library
+ (name codegen_lib)
+ (wrapped false)
+ (modules ir parse_yml names type_mapping predicates gen_low gen_high config)
+ (libraries yaml core)
+ (flags
+  (:standard -w -69))
+ (preprocess
+  (pps ppx_jane)))
+
+(executable
+ (name gen_bindings)
+ (modules gen_bindings)
+ (libraries yaml core core_unix.command_unix codegen_lib)
+ (preprocess
+  (pps ppx_jane)))

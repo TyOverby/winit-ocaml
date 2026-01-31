@@ -1,0 +1,178 @@
+(*
+   WebGPU Fundamentals: Multisampling (Simple)
+
+   This test demonstrates basic MSAA (Multi-Sample Anti-Aliasing) in WebGPU.
+   A simple red triangle is rendered using 4x MSAA to show smooth anti-aliased
+   edges.
+
+   Key concepts:
+   1. Create a multisample texture with sample_count:4
+   2. Create a render pipeline with multisample_count:4
+   3. Render to the MSAA texture with a resolve_target to get the final image
+*)
+
+open! Core
+
+let width = 600
+let height = 400
+let bytes_per_pixel = 4
+let bytes_per_row = ((width * bytes_per_pixel) + 255) / 256 * 256
+let buffer_size = bytes_per_row * height
+
+let shader_code =
+  {|
+@vertex fn vs(
+  @builtin(vertex_index) vertexIndex : u32
+) -> @builtin(position) vec4f {
+  let pos = array(
+    vec2f( 0.0,  0.5),  // top center
+    vec2f(-0.5, -0.5),  // bottom left
+    vec2f( 0.5, -0.5)   // bottom right
+  );
+
+  return vec4f(pos[vertexIndex], 0.0, 1.0);
+}
+
+@fragment fn fs() -> @location(0) vec4f {
+  return vec4f(1, 0, 0, 1);
+}
+|}
+;;
+
+let init () =
+  let instance = Wgpu.Instance.create () in
+  let adapter = Wgpu.Instance.request_adapter instance () in
+  let device = Wgpu.Adapter.request_device adapter in
+  let queue = Wgpu.Device.get_queue device in
+  let shader =
+    Wgpu.Device.create_shader_module device ~label:"msaa_shader" ~wgsl:shader_code ()
+  in
+  instance, adapter, device, queue, shader
+;;
+
+let () =
+  let instance, adapter, device, queue, shader = init () in
+  (* Create 4x MSAA texture (render target) *)
+  let msaa_texture =
+    Wgpu.Device.create_texture
+      device
+      ~label:"msaa_target"
+      ~size_width:width
+      ~size_height:height
+      ~size_depth_or_array_layers:1
+      ~dimension:N2d
+      ~mip_level_count:1
+      ~sample_count:4
+      ~format:Wgpu.Texture_format.Rgba8_unorm
+      ~usage:[ Wgpu.Texture_usage.Item.Render_attachment ]
+      ()
+  in
+  let msaa_view = Wgpu.create_texture_view msaa_texture ~label:"msaa_view" () in
+  (* Create resolve target texture (non-MSAA, this is what we read back) *)
+  let resolve_texture =
+    Wgpu.Device.create_texture
+      device
+      ~label:"resolve_target"
+      ~size_width:width
+      ~size_height:height
+      ~size_depth_or_array_layers:1
+      ~dimension:N2d
+      ~mip_level_count:1
+      ~sample_count:1
+      ~format:Wgpu.Texture_format.Rgba8_unorm
+      ~usage:
+        [ Wgpu.Texture_usage.Item.Render_attachment; Wgpu.Texture_usage.Item.Copy_src ]
+      ()
+  in
+  let resolve_view = Wgpu.create_texture_view resolve_texture ~label:"resolve_view" () in
+  (* Create readback buffer *)
+  let readback_buffer =
+    Wgpu.Device.create_buffer
+      device
+      ~label:"readback_buffer"
+      ~size:(Int64.of_int buffer_size)
+      ~usage:[ Wgpu.Buffer_usage.Item.Map_read; Wgpu.Buffer_usage.Item.Copy_dst ]
+      ~mapped_at_creation:false
+      ()
+  in
+  (* Create render pipeline with 4x MSAA *)
+  let pipeline =
+    Wgpu.Device.create_render_pipeline
+      device
+      ~label:"msaa_pipeline"
+      ~shader_module:shader
+      ~vertex_entry_point:"vs"
+      ~fragment_entry_point:"fs"
+      ~color_format:Wgpu.Texture_format.Rgba8_unorm
+      ~multisample_count:4
+      ()
+  in
+  let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
+  (* Begin render pass with MSAA texture and resolve target *)
+  let render_pass =
+    Wgpu.begin_render_pass
+      encoder
+      ~label:"msaa_pass"
+      ~color_view:msaa_view
+      ~load_op:Wgpu.Load_op.Clear
+      ~store_op:Wgpu.Store_op.Discard
+      ~clear_color:(0.3, 0.3, 0.3, 1.0)
+      ~resolve_target:resolve_view
+      ()
+  in
+  Wgpu.Render_pass_encoder.set_pipeline render_pass ~pipeline;
+  Wgpu.Render_pass_encoder.draw
+    render_pass
+    ~vertex_count:3
+    ~instance_count:1
+    ~first_vertex:0
+    ~first_instance:0;
+  Wgpu.Render_pass_encoder.end_ render_pass;
+  (* Copy resolve target to readback buffer *)
+  Wgpu.copy_texture_to_buffer
+    encoder
+    ~texture:resolve_texture
+    ~buffer:readback_buffer
+    ~size:(width, height)
+    ~bytes_per_row
+    ();
+  let command_buffer = Wgpu.finish encoder ~label:"render_commands" () in
+  Wgpu.Queue.submit queue ~commands:[ command_buffer ];
+  Wgpu.Device.poll device ~wait:true ();
+  let mapped_data =
+    Wgpu.map_buffer
+      readback_buffer
+      ~mode:[ Wgpu.Map_mode.Item.Read ]
+      ~offset:0L
+      ~size:(Int64.of_int buffer_size);
+    Wgpu.Device.poll device ~wait:true ();
+    Wgpu.get_const_mapped_range
+      readback_buffer
+      ~offset:0L
+      ~size:(Int64.of_int buffer_size)
+      ~kind:Bigarray.int8_unsigned
+  in
+  let ( (* Write output *) ) =
+    let ppm_file = Test_util.output_path "multisample_simple.ppm" in
+    let png_file = Test_util.output_path "multisample_simple.png" in
+    Test_util.write_ppm ~filename:ppm_file ~width ~height ~data:mapped_data ~bytes_per_row;
+    Test_util.ppm_to_png ~ppm_file ~png_file;
+    ()
+  in
+  Wgpu.Buffer.unmap readback_buffer;
+  (* Cleanup *)
+  Wgpu.Command_buffer.release command_buffer;
+  Wgpu.Render_pass_encoder.release render_pass;
+  Wgpu.Command_encoder.release encoder;
+  Wgpu.Render_pipeline.release pipeline;
+  Wgpu.Buffer.release readback_buffer;
+  Wgpu.Texture_view.release resolve_view;
+  Wgpu.Texture.release resolve_texture;
+  Wgpu.Texture_view.release msaa_view;
+  Wgpu.Texture.release msaa_texture;
+  Wgpu.Shader_module.release shader;
+  Wgpu.Queue.release queue;
+  Wgpu.Device.release device;
+  Wgpu.Adapter.release adapter;
+  Wgpu.Instance.release instance
+;;

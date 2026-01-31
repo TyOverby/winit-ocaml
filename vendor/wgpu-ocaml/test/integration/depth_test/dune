@@ -1,0 +1,20 @@
+(executable
+ (name depth_test)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (deps
+  (glob_files *.expected.png))
+ (action
+  (run ./depth_test.exe))
+ (targets depth_test.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps "../../../imgdiff.sh" depth_test.expected.png depth_test.png)
+ (action
+  (bash "%{deps}")))

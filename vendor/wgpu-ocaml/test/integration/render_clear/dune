@@ -1,0 +1,18 @@
+(executable
+ (name render_clear)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (action
+  (run ./render_clear.exe))
+ (targets render_clear.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps "../../../imgdiff.sh" render_clear.expected.png render_clear.png)
+ (action
+  (bash "%{deps}")))

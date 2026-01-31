@@ -1,0 +1,62 @@
+(executables
+ (names
+  simple_triangle_uniforms
+  simple_triangle_uniforms_multiple
+  simple_triangle_uniforms_split)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+; simple_triangle_uniforms.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./simple_triangle_uniforms.exe))
+ (targets simple_triangle_uniforms.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  simple_triangle_uniforms.expected.png
+  simple_triangle_uniforms.png)
+ (action
+  (bash "%{deps}")))
+
+; simple_triangle_uniforms_multiple.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./simple_triangle_uniforms_multiple.exe))
+ (targets simple_triangle_uniforms_multiple.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  simple_triangle_uniforms_multiple.expected.png
+  simple_triangle_uniforms_multiple.png)
+ (action
+  (bash "%{deps}")))
+
+; simple_triangle_uniforms_split.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./simple_triangle_uniforms_split.exe))
+ (targets simple_triangle_uniforms_split.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  simple_triangle_uniforms_split.expected.png
+  simple_triangle_uniforms_split.png)
+ (action
+  (bash "%{deps}")))

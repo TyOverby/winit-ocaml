@@ -1,0 +1,78 @@
+(executables
+ (names
+  vertex_buffers
+  vertex_buffers_instanced_colors
+  vertex_buffers_per_vertex_colors
+  vertex_buffers_index_buffer)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+; vertex_buffers.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./vertex_buffers.exe))
+ (targets vertex_buffers.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps "../../../imgdiff.sh" vertex_buffers.expected.png vertex_buffers.png)
+ (action
+  (bash "%{deps}")))
+
+; vertex_buffers_instanced_colors.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./vertex_buffers_instanced_colors.exe))
+ (targets vertex_buffers_instanced_colors.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  vertex_buffers_instanced_colors.expected.png
+  vertex_buffers_instanced_colors.png)
+ (action
+  (bash "%{deps}")))
+
+; vertex_buffers_per_vertex_colors.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./vertex_buffers_per_vertex_colors.exe))
+ (targets vertex_buffers_per_vertex_colors.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  vertex_buffers_per_vertex_colors.expected.png
+  vertex_buffers_per_vertex_colors.png)
+ (action
+  (bash "%{deps}")))
+
+; vertex_buffers_index_buffer.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./vertex_buffers_index_buffer.exe))
+ (targets vertex_buffers_index_buffer.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  vertex_buffers_index_buffer.expected.png
+  vertex_buffers_index_buffer.png)
+ (action
+  (bash "%{deps}")))

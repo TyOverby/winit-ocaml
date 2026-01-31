@@ -1,0 +1,62 @@
+(executables
+ (names
+  simple_textured_quad
+  simple_textured_quad_linear
+  simple_textured_quad_mipmap)
+ (libraries wgpu core core_unix test_util gg)
+ (preprocess
+  (pps ppx_jane)))
+
+; simple_textured_quad.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./simple_textured_quad.exe))
+ (targets simple_textured_quad.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  simple_textured_quad.expected.png
+  simple_textured_quad.png)
+ (action
+  (bash "%{deps}")))
+
+; simple_textured_quad_linear.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./simple_textured_quad_linear.exe))
+ (targets simple_textured_quad_linear.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  simple_textured_quad_linear.expected.png
+  simple_textured_quad_linear.png)
+ (action
+  (bash "%{deps}")))
+
+; simple_textured_quad_mipmap.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./simple_textured_quad_mipmap.exe))
+ (targets simple_textured_quad_mipmap.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  simple_textured_quad_mipmap.expected.png
+  simple_textured_quad_mipmap.png)
+ (action
+  (bash "%{deps}")))

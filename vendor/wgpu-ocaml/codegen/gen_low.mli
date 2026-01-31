@@ -1,0 +1,113 @@
+(** Low-level code generator for C stubs and OCaml external bindings.
+
+    This module generates:
+    - C stubs ({!gen_c_stubs}) that implement the FFI layer between OCaml and wgpu-native
+    - OCaml external declarations ({!gen_ml}) that bind to the C stubs
+    - OCaml interface ({!gen_mli}) that declares the external bindings
+
+    The generated code provides direct access to the WebGPU C API with minimal
+    abstraction. Types are represented as raw values (nativeint for handles, int for
+    enums) and require manual memory management. *)
+
+(** {2 Main Generation Functions} *)
+
+(** Generate all C stubs for the WebGPU API.
+
+    Returns C source code that includes:
+    - Enum constant accessors
+    - Bitflag constant accessors
+    - Struct allocation, field setters/getters, and deallocation
+    - Object method wrappers
+    - Standalone function wrappers
+    - Synchronous helper functions *)
+val gen_c_stubs : Ir.api -> string
+
+(** Generate all OCaml external bindings (.ml).
+
+    Returns OCaml source code with:
+    - Enum modules with to_int/of_int converters
+    - Bitflag modules with to_int/list_to_int converters
+    - Struct modules with create/free and field accessors
+    - Object type aliases and method externals
+    - Convenience functions from templates *)
+val gen_ml : Ir.api -> string
+
+(** Generate all OCaml interface declarations (.mli).
+
+    Returns OCaml interface code with type signatures for all the declarations in the
+    implementation. *)
+val gen_mli : Ir.api -> string
+
+(** {2 Functions Exposed for Testing}
+
+    These functions are implementation details exposed only for unit testing. *)
+module For_testing : sig
+  (** Output mode for code generation. *)
+  type output_mode =
+    | Implementation (** Generate .ml implementation *)
+    | Interface (** Generate .mli interface *)
+
+  (** {3 Individual Generators} *)
+
+  (** Generate C code for enum constant accessors. *)
+  val gen_c_enum_constants : Ir.enum -> string
+
+  (** Generate C code for bitflag constant accessors. *)
+  val gen_c_bitflag_constants : Ir.bitflag -> string
+
+  (** Generate C code for a struct (allocation, setters, getters, deallocation). *)
+  val gen_c_struct_stubs : Ir.struct_ -> string
+
+  (** Generate C stub for a single method. Uses [Config.for_testing] by default unless a
+      different config is provided. *)
+  val gen_c_method_stub : Ir.object_ -> Ir.method_ -> string
+
+  (** Generate OCaml enum module implementation. *)
+  val gen_ml_enum : Ir.enum -> string
+
+  (** Generate OCaml enum module interface. *)
+  val gen_mli_enum : Ir.enum -> string
+
+  (** Generate OCaml struct module implementation. *)
+  val gen_ml_struct : Ir.struct_ -> string
+
+  (** Generate OCaml struct module interface. *)
+  val gen_mli_struct : Ir.struct_ -> string
+
+  (** Generate OCaml external declaration for a method. Uses [Config.for_testing] by
+      default unless a different config is provided. *)
+  val gen_ml_method : Ir.object_ -> Ir.method_ -> string
+
+  (** Generate MLI declaration for a method. Uses [Config.for_testing] by default unless a
+      different config is provided. *)
+  val gen_mli_method : Ir.object_ -> Ir.method_ -> string
+
+  (** {3 Type Mapping Utilities} *)
+
+  (** Map IR type to C type string. *)
+  val c_type_of_type_ref : Ir.type_ref -> string
+
+  (** Get OCaml type string for a type_ref (low-level). *)
+  val ml_type_of_type_ref : Ir.type_ref -> string
+
+  (** {3 Naming Utilities} *)
+
+  (** Get the C type name for a WGPU type (e.g., "texture_format" -> "WGPUTextureFormat"). *)
+  val c_type_name : string -> string
+
+  (** Get the C function name for a standalone function (e.g., "create_instance" ->
+      "wgpuCreateInstance"). *)
+  val c_function_name : string -> string
+
+  (** Get the OCaml module name for a type (e.g., "texture_format" -> "Texture_format"). *)
+  val ocaml_module_name : string -> string
+
+  (** Convert snake_case to PascalCase. *)
+  val to_pascal_case : string -> string
+
+  (** Convert snake_case to camelCase. *)
+  val to_camel_case : string -> string
+
+  (** Normalize enum entry name for OCaml variant. *)
+  val normalize_enum_entry_name : string -> string
+end

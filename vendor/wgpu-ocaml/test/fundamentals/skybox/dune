@@ -1,0 +1,103 @@
+(executables
+ (names skybox skybox_envmap)
+ (libraries wgpu core core_unix test_util gg)
+ (preprocess
+  (pps ppx_jane)))
+
+(rule
+ (alias runtest)
+ (deps
+  (glob_files ../../assets/skybox/*.png))
+ (action
+  (run ./skybox.exe))
+ (targets
+  skybox_front_right.png
+  skybox_front.png
+  skybox_right.png
+  skybox_back.png
+  skybox_left.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps "../../../imgdiff.sh" skybox_front.expected.png skybox_front.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps "../../../imgdiff.sh" skybox_right.expected.png skybox_right.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  skybox_front_right.expected.png
+  skybox_front_right.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps "../../../imgdiff.sh" skybox_back.expected.png skybox_back.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps "../../../imgdiff.sh" skybox_left.expected.png skybox_left.png)
+ (action
+  (bash "%{deps}")))
+
+; skybox_envmap rules
+
+(rule
+ (alias runtest)
+ (deps
+  (glob_files ../../assets/skybox/*.png))
+ (action
+  (run ./skybox_envmap.exe))
+ (targets
+  skybox_envmap_t0.png
+  skybox_envmap_t5.png
+  skybox_envmap_t10.png
+  skybox_envmap_t15.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  skybox_envmap_t0.expected.png
+  skybox_envmap_t0.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  skybox_envmap_t5.expected.png
+  skybox_envmap_t5.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  skybox_envmap_t10.expected.png
+  skybox_envmap_t10.png)
+ (action
+  (bash "%{deps}")))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  skybox_envmap_t15.expected.png
+  skybox_envmap_t15.png)
+ (action
+  (bash "%{deps}")))

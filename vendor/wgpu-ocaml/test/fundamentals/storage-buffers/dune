@@ -1,0 +1,62 @@
+(executables
+ (names
+  simple_triangle_storage_minimal
+  simple_triangle_storage_split
+  storage_buffer_vertices)
+ (libraries wgpu core core_unix test_util)
+ (preprocess
+  (pps ppx_jane)))
+
+; simple_triangle_storage_minimal.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./simple_triangle_storage_minimal.exe))
+ (targets simple_triangle_storage_minimal.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  simple_triangle_storage_minimal.expected.png
+  simple_triangle_storage_minimal.png)
+ (action
+  (bash "%{deps}")))
+
+; simple_triangle_storage_split.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./simple_triangle_storage_split.exe))
+ (targets simple_triangle_storage_split.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  simple_triangle_storage_split.expected.png
+  simple_triangle_storage_split.png)
+ (action
+  (bash "%{deps}")))
+
+; storage_buffer_vertices.exe rules
+
+(rule
+ (alias runtest)
+ (action
+  (run ./storage_buffer_vertices.exe))
+ (targets storage_buffer_vertices.png)
+ (mode promote))
+
+(rule
+ (alias runtest)
+ (deps
+  "../../../imgdiff.sh"
+  storage_buffer_vertices.expected.png
+  storage_buffer_vertices.png)
+ (action
+  (bash "%{deps}")))
