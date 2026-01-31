@@ -1,4 +1,5 @@
 # Methods with Complex Descriptor Structs
+subproject: `winit` code generator
 
 ## Problem
 Several methods take descriptor structs that are too complex for the current generator to handle automatically. These structs may have:
@@ -19,7 +20,8 @@ Several methods take descriptor structs that are too complex for the current gen
 ## Current Workaround
 Manual implementations that carefully handle struct allocation/deallocation.
 
-## Possible Solutions
-1. Extend generator to handle more complex struct patterns
-2. Create simplified helper functions for common use cases
-3. Keep manual implementations for complex pipelines
+## Solution
+Extend generator to handle more complex struct patterns.
+
+## Task completion
+This task will be considered "done" when at minimum, `create_render_pipeline` is fully autogenenerated.
