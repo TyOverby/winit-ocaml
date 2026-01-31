@@ -4,9 +4,9 @@
 [submodule "vendor/softbuffer"]
 	path = vendor/softbuffer
 	url = git@github.com:TyOverby/softbuffer.git
-[submodule "vendor/wgpu-ocaml/vendor/wgpu-native"]
-	path = vendor/wgpu-ocaml/vendor/wgpu-native
+[submodule "vendor/wgpu-native"]
+	path = vendor/wgpu-native
 	url = git@github.com:gfx-rs/wgpu-native.git
-[submodule "vendor/wgpu-ocaml/vendor/wgpu-native-wiki"]
-	path = vendor/wgpu-ocaml/vendor/wgpu-native-wiki
+[submodule "vendor/wgpu-native-wiki"]
+	path = vendor/wgpu-native-wiki
 	url = git@github.com:gfx-rs/wgpu-native.wiki.git
