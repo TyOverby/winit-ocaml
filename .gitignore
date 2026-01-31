@@ -5,5 +5,4 @@ _build
 
 *.png
 !*.expected.png
-!wgpu/test/resources/*.png
 !wgpu/test/assets/**/*.png
