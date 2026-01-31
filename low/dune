@@ -6,11 +6,11 @@
   (source_tree ../vendor/wgpu-native/src)
   (source_tree ../vendor/wgpu-native/ffi)
   ../vendor/wgpu-native/Cargo.toml
-  ../vendor/wgpu-native/Cargo.lock)
+  ../vendor/wgpu-native/Cargo.lock
+  build_wgpu_native.sh)
  (action
   (no-infer
-   (bash
-    "\n# Determine dynamic library extension based on OS\ncase \"$(uname)\" in\n  Darwin) DYLIB_EXT=dylib ;;\n  *)      DYLIB_EXT=so ;;\nesac\n\nOUT_DIR=$(pwd)\n\n# Navigate from _build/default/vendor/wgpu-ocaml/low to wgpu-ocaml root\n# then into vendor/wgpu-native\nSOURCE_ROOT=$(cd .. && pwd)/vendor/wgpu-native\n\nif [ \"%{profile}\" = \"release\" ]; then\n  cargo build --release --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/release/libwgpu_native.a $OUT_DIR/libwgpu_native.a\n  if [ -f $SOURCE_ROOT/target/release/libwgpu_native.$DYLIB_EXT ]; then\n    cp $SOURCE_ROOT/target/release/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so\n  else\n    # Create empty placeholder if no dylib (static-only build)\n    touch $OUT_DIR/dllwgpu_native.so\n  fi\nelse\n  cargo build --manifest-path $SOURCE_ROOT/Cargo.toml\n  cp $SOURCE_ROOT/target/debug/libwgpu_native.a $OUT_DIR/libwgpu_native.a\n  if [ -f $SOURCE_ROOT/target/debug/libwgpu_native.$DYLIB_EXT ]; then\n    cp $SOURCE_ROOT/target/debug/libwgpu_native.$DYLIB_EXT $OUT_DIR/dllwgpu_native.so\n  else\n    touch $OUT_DIR/dllwgpu_native.so\n  fi\nfi\n"))))
+   (run bash build_wgpu_native.sh %{profile}))))
 
 (library
  (name wgpu_low)
