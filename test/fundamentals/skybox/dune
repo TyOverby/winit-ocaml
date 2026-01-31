@@ -7,7 +7,7 @@
 (rule
  (alias runtest)
  (deps
-  (glob_files %{workspace_root}/test/assets/skybox/*.png))
+  (glob_files ../../assets/skybox/*.png))
  (action
   (run ./skybox.exe))
  (targets
@@ -21,7 +21,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   skybox_front.expected.png
   skybox_front.png)
  (action
@@ -30,7 +30,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   skybox_right.expected.png
   skybox_right.png)
  (action
@@ -39,7 +39,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   skybox_front_right.expected.png
   skybox_front_right.png)
  (action
@@ -48,7 +48,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   skybox_back.expected.png
   skybox_back.png)
  (action
@@ -57,7 +57,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   skybox_left.expected.png
   skybox_left.png)
  (action
@@ -68,7 +68,7 @@
 (rule
  (alias runtest)
  (deps
-  (glob_files %{workspace_root}/test/assets/skybox/*.png))
+  (glob_files ../../assets/skybox/*.png))
  (action
   (run ./skybox_envmap.exe))
  (targets
@@ -81,7 +81,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   skybox_envmap_t0.expected.png
   skybox_envmap_t0.png)
  (action
@@ -90,7 +90,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   skybox_envmap_t5.expected.png
   skybox_envmap_t5.png)
  (action
@@ -99,7 +99,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   skybox_envmap_t10.expected.png
   skybox_envmap_t10.png)
  (action
@@ -108,7 +108,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   skybox_envmap_t15.expected.png
   skybox_envmap_t15.png)
  (action

@@ -15,6 +15,6 @@
 
 (rule
  (alias runtest)
- (deps "%{workspace_root}/imgdiff.sh" depth_test.expected.png depth_test.png)
+ (deps "../../../imgdiff.sh" depth_test.expected.png depth_test.png)
  (action
   (bash "%{deps}")))

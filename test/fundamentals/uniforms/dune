@@ -19,7 +19,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   simple_triangle_uniforms.expected.png
   simple_triangle_uniforms.png)
  (action
@@ -37,7 +37,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   simple_triangle_uniforms_multiple.expected.png
   simple_triangle_uniforms_multiple.png)
  (action
@@ -55,7 +55,7 @@
 (rule
  (alias runtest)
  (deps
-  "%{workspace_root}/imgdiff.sh"
+  "../../../imgdiff.sh"
   simple_triangle_uniforms_split.expected.png
   simple_triangle_uniforms_split.png)
  (action
