@@ -19,7 +19,11 @@
 
 (rule
  (targets link_mode_flags.sexp)
- (deps gen_link_mode_flags.sh libsoftbuffer_ffi.a dllsoftbuffer_ffi.so libsoftbuffer_ffi.so)
+ (deps
+  gen_link_mode_flags.sh
+  libsoftbuffer_ffi.a
+  dllsoftbuffer_ffi.so
+  libsoftbuffer_ffi.so)
  (action
   (bash "./%{dep:gen_link_mode_flags.sh} %{profile}")))
 
