@@ -20,19 +20,13 @@
 
 (rule
  (alias runtest)
- (deps
-  "../../../imgdiff.sh"
-  skybox_front.expected.png
-  skybox_front.png)
+ (deps "../../../imgdiff.sh" skybox_front.expected.png skybox_front.png)
  (action
   (bash "%{deps}")))
 
 (rule
  (alias runtest)
- (deps
-  "../../../imgdiff.sh"
-  skybox_right.expected.png
-  skybox_right.png)
+ (deps "../../../imgdiff.sh" skybox_right.expected.png skybox_right.png)
  (action
   (bash "%{deps}")))
 
@@ -47,19 +41,13 @@
 
 (rule
  (alias runtest)
- (deps
-  "../../../imgdiff.sh"
-  skybox_back.expected.png
-  skybox_back.png)
+ (deps "../../../imgdiff.sh" skybox_back.expected.png skybox_back.png)
  (action
   (bash "%{deps}")))
 
 (rule
  (alias runtest)
- (deps
-  "../../../imgdiff.sh"
-  skybox_left.expected.png
-  skybox_left.png)
+ (deps "../../../imgdiff.sh" skybox_left.expected.png skybox_left.png)
  (action
   (bash "%{deps}")))
 
