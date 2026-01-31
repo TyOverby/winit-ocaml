@@ -1,3 +1,3 @@
 #!/bin/bash
-dune fmt
-cargo fmt
+dune fmt > /dev/null
+cargo fmt > /dev/null

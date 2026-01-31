@@ -3,7 +3,9 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawDisplayHandle, RawWindowHandle};
+#[cfg(target_os = "linux")]
+use raw_window_handle::RawDisplayHandle;
+use raw_window_handle::{HasDisplayHandle, HasWindowHandle, RawWindowHandle};
 use winit::application::ApplicationHandler;
 use winit::event::{ButtonSource, MouseButton, MouseScrollDelta, TouchPhase, WindowEvent};
 use winit::event_loop::pump_events::{EventLoopExtPumpEvents, PumpStatus};
@@ -470,7 +472,7 @@ impl WinitWindow {
         // TODO: make the timeout configurable
         let timeout =
             // None;
-            Some(Duration::ZERO); 
+            Some(Duration::ZERO);
         let status = event_loop.pump_app_events(timeout, &mut self.collector);
 
         if let PumpStatus::Exit(_) = status {
@@ -603,26 +605,25 @@ pub extern "C" fn winit_window_request_redraw(window: *const WinitWindow) {
 /// Returns the layer pointer for use with wgpu
 #[cfg(target_os = "macos")]
 fn create_metal_layer_for_view(ns_view_ptr: *const std::ffi::c_void) -> *const std::ffi::c_void {
-    use cocoa::base::{id, YES};
-    use objc::runtime::Class;
-    use objc::{msg_send, sel, sel_impl};
+    use objc2::rc::Retained;
+    use objc2_app_kit::NSView;
+    use objc2_quartz_core::CAMetalLayer;
 
     unsafe {
-        let ns_view = ns_view_ptr as id;
+        // Convert the raw pointer to an NSView reference
+        let ns_view: &NSView = &*(ns_view_ptr as *const NSView);
 
         // Create a new CAMetalLayer
-        let ca_metal_layer_class =
-            Class::get("CAMetalLayer").expect("CAMetalLayer class not found");
-        let layer: id = msg_send![ca_metal_layer_class, layer];
+        let layer: Retained<CAMetalLayer> = CAMetalLayer::new();
 
         // Enable layer backing on the view
-        let _: () = msg_send![ns_view, setWantsLayer: YES];
+        ns_view.setWantsLayer(true);
 
         // Set the metal layer as the view's layer
-        let _: () = msg_send![ns_view, setLayer: layer];
+        ns_view.setLayer(Some(&layer));
 
-        // Return the layer pointer
-        layer as *const std::ffi::c_void
+        // Return the layer pointer (Retained will keep it alive as the view now holds a reference)
+        Retained::as_ptr(&layer) as *const std::ffi::c_void
     }
 }
 
