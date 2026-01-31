@@ -470,17 +470,19 @@ impl WinitWindow {
         };
 
         // TODO: make the timeout configurable
-        let timeout =
-            // None;
-            Some(Duration::ZERO);
+        let timeout = Some(Duration::ZERO);
         let status = event_loop.pump_app_events(timeout, &mut self.collector);
 
-        if let PumpStatus::Exit(_) = status {
-            return -1;
-        }
+        let events = if let PumpStatus::Exit(_) = status {
+            vec![Event {
+                event_type: EventType::CloseRequested,
+                data: [0; 16],
+            }]
+        } else {
+            self.collector.take_events()
+        };
 
         // Get events and copy to output buffer
-        let events = self.collector.take_events();
         let count = events.len().min(events_out.len());
         events_out[..count].copy_from_slice(&events[..count]);
 
