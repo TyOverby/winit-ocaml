@@ -9,18 +9,25 @@ open! Core
 (** Find the webgpu.yml file relative to the test directory. Tests can run from various
     directories depending on the build system. *)
 let find_yml_path () : string =
+  (* Generate paths going up 0-10 levels, checking both direct submodule location
+     and nested location after unvendoring wgpu-ocaml *)
+  let make_paths prefix =
+    let bases =
+      [ "vendor/wgpu-native/ffi/webgpu-headers/webgpu.yml"
+      ; "vendor/wgpu-ocaml/vendor/wgpu-native/ffi/webgpu-headers/webgpu.yml"
+      ]
+    in
+    List.map bases ~f:(fun base -> prefix ^ base)
+  in
   let candidates =
-    [ "webgpu.yml"
-    ; "vendor/wgpu-native/ffi/webgpu-headers/webgpu.yml"
-    ; "../vendor/wgpu-native/ffi/webgpu-headers/webgpu.yml"
-    ; "../../vendor/wgpu-native/ffi/webgpu-headers/webgpu.yml"
-    ; "../../../vendor/wgpu-native/ffi/webgpu-headers/webgpu.yml"
-    ; "../../../../vendor/wgpu-native/ffi/webgpu-headers/webgpu.yml"
-    ]
+    "webgpu.yml"
+    :: List.concat_map (List.init 11 ~f:Fun.id) ~f:(fun n ->
+      make_paths (String.concat ~sep:"" (List.init n ~f:(fun _ -> "../"))))
   in
   match List.find candidates ~f:Stdlib.Sys.file_exists with
   | Some path -> path
-  | None -> failwith "Could not find webgpu.yml"
+  | None ->
+    failwith (Printf.sprintf "Could not find webgpu.yml (cwd=%s)" (Stdlib.Sys.getcwd ()))
 ;;
 
 let webgpu_yml_path = find_yml_path ()

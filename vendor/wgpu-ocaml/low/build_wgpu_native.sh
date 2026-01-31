@@ -11,9 +11,9 @@ esac
 
 OUT_DIR=$(pwd)
 
-# Navigate from _build/default/low to the real project root
-# then into vendor/wgpu-native
-SOURCE_ROOT=$(cd ../../.. && pwd)/vendor/wgpu-native
+# Navigate from _build/default/vendor/wgpu-ocaml/low to the real project root
+# then into vendor/wgpu-ocaml/vendor/wgpu-native
+SOURCE_ROOT=$(cd ../../../../.. && pwd)/vendor/wgpu-ocaml/vendor/wgpu-native
 
 if [ "$PROFILE" = "release" ]; then
   cargo build --release --manifest-path $SOURCE_ROOT/Cargo.toml
