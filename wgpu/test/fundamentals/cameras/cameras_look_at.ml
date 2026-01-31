@@ -459,16 +459,51 @@ let () =
     Wgpu.Device.create_render_pipeline
       device
       ~label:"f_pipeline"
-      ~shader_module:shader
-      ~vertex_entry_point:"vs"
-      ~fragment_entry_point:"fs"
-      ~color_format:Wgpu.Texture_format.Rgba8_unorm
       ~layout:pipeline_layout
-      ~vertex_buffer_layouts:[ vertex_buffer_layout ]
-      ~depth_format:Wgpu.Texture_format.Depth24_plus
-      ~depth_write_enabled:true
-      ~depth_compare:Wgpu.Compare_function.Less
-      ~cull_mode:Wgpu.Cull_mode.Back
+      ~vertex_module:shader
+      ~vertex_entry_point:"vs"
+      ~vertex_buffers:[ vertex_buffer_layout ]
+      ~primitive_topology:Wgpu.Primitive_topology.Triangle_list
+      ~primitive_strip_index_format:Wgpu.Index_format.Undefined
+      ~primitive_front_face:Wgpu.Front_face.Ccw
+      ~primitive_cull_mode:Wgpu.Cull_mode.Back
+      ~primitive_unclipped_depth:false
+      ~depth_stencil:
+        { format = Wgpu.Texture_format.Depth24_plus
+        ; depth_write_enabled = True
+        ; depth_compare = Wgpu.Compare_function.Less
+        ; stencil_front =
+            { compare = Wgpu.Compare_function.Always
+            ; fail_op = Wgpu.Stencil_operation.Keep
+            ; depth_fail_op = Wgpu.Stencil_operation.Keep
+            ; pass_op = Wgpu.Stencil_operation.Keep
+            }
+        ; stencil_back =
+            { compare = Wgpu.Compare_function.Always
+            ; fail_op = Wgpu.Stencil_operation.Keep
+            ; depth_fail_op = Wgpu.Stencil_operation.Keep
+            ; pass_op = Wgpu.Stencil_operation.Keep
+            }
+        ; stencil_read_mask = 0xFFFFFFFF
+        ; stencil_write_mask = 0xFFFFFFFF
+        ; depth_bias = 0
+        ; depth_bias_slope_scale = 0.0
+        ; depth_bias_clamp = 0.0
+        }
+      ~multisample_count:1
+      ~multisample_mask:0xFFFFFFFF
+      ~multisample_alpha_to_coverage_enabled:false
+      ~fragment:
+        { module_ = shader
+        ; entry_point = "fs"
+        ; constants = []
+        ; targets =
+            [ { format = Wgpu.Texture_format.Rgba8_unorm
+              ; blend = None
+              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
+              }
+            ]
+        }
       ()
   in
   let object_infos =

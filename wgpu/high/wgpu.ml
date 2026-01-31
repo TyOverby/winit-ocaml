@@ -510,9 +510,24 @@ module Bind_group_layout_entry = struct
 end
 
 module Color_target_state = struct
+  module Blend_state = struct
+    module Blend_component = struct
+      type t =
+        { operation : Blend_operation.t
+        ; src_factor : Blend_factor.t
+        ; dst_factor : Blend_factor.t
+        }
+    end
+
+    type t =
+      { color : Blend_component.t
+      ; alpha : Blend_component.t
+      }
+  end
+
   type t =
     { format : Texture_format.t
-    ; blend : nativeint
+    ; blend : Blend_state.t option
     ; write_mask : Color_write_mask.Item.t list
     }
 end
@@ -568,6 +583,120 @@ module Vertex_buffer_layout = struct
     { step_mode : Vertex_step_mode.t
     ; array_stride : int64
     ; attributes : Vertex_attribute.t list
+    }
+end
+
+module Blend_state = struct
+  module Blend_component = struct
+    type t =
+      { operation : Blend_operation.t
+      ; src_factor : Blend_factor.t
+      ; dst_factor : Blend_factor.t
+      }
+  end
+
+  type t =
+    { color : Blend_component.t
+    ; alpha : Blend_component.t
+    }
+end
+
+module Compute_pass_timestamp_writes = struct
+  type t =
+    { query_set : Query_set.t
+    ; beginning_of_pass_write_index : int
+    ; end_of_pass_write_index : int
+    }
+end
+
+module Depth_stencil_state = struct
+  module Stencil_face_state = struct
+    type t =
+      { compare : Compare_function.t
+      ; fail_op : Stencil_operation.t
+      ; depth_fail_op : Stencil_operation.t
+      ; pass_op : Stencil_operation.t
+      }
+  end
+
+  type t =
+    { format : Texture_format.t
+    ; depth_write_enabled : Optional_bool.t
+    ; depth_compare : Compare_function.t
+    ; stencil_front : Stencil_face_state.t
+    ; stencil_back : Stencil_face_state.t
+    ; stencil_read_mask : int
+    ; stencil_write_mask : int
+    ; depth_bias : int
+    ; depth_bias_slope_scale : float
+    ; depth_bias_clamp : float
+    }
+end
+
+module Fragment_state = struct
+  type t =
+    { module_ : Shader_module.t
+    ; entry_point : string
+    ; constants : Constant_entry.t list
+    ; targets : Color_target_state.t list
+    }
+end
+
+module Limits = struct
+  type t =
+    { max_texture_dimension_1D : int
+    ; max_texture_dimension_2D : int
+    ; max_texture_dimension_3D : int
+    ; max_texture_array_layers : int
+    ; max_bind_groups : int
+    ; max_bind_groups_plus_vertex_buffers : int
+    ; max_bindings_per_bind_group : int
+    ; max_dynamic_uniform_buffers_per_pipeline_layout : int
+    ; max_dynamic_storage_buffers_per_pipeline_layout : int
+    ; max_sampled_textures_per_shader_stage : int
+    ; max_samplers_per_shader_stage : int
+    ; max_storage_buffers_per_shader_stage : int
+    ; max_storage_textures_per_shader_stage : int
+    ; max_uniform_buffers_per_shader_stage : int
+    ; max_uniform_buffer_binding_size : int64
+    ; max_storage_buffer_binding_size : int64
+    ; min_uniform_buffer_offset_alignment : int
+    ; min_storage_buffer_offset_alignment : int
+    ; max_vertex_buffers : int
+    ; max_buffer_size : int64
+    ; max_vertex_attributes : int
+    ; max_vertex_buffer_array_stride : int
+    ; max_inter_stage_shader_variables : int
+    ; max_color_attachments : int
+    ; max_color_attachment_bytes_per_sample : int
+    ; max_compute_workgroup_storage_size : int
+    ; max_compute_invocations_per_workgroup : int
+    ; max_compute_workgroup_size_x : int
+    ; max_compute_workgroup_size_y : int
+    ; max_compute_workgroup_size_z : int
+    ; max_compute_workgroups_per_dimension : int
+    }
+end
+
+module Render_pass_depth_stencil_attachment = struct
+  type t =
+    { view : Texture_view.t
+    ; depth_load_op : Load_op.t
+    ; depth_store_op : Store_op.t
+    ; depth_clear_value : float
+    ; depth_read_only : bool
+    ; stencil_load_op : Load_op.t
+    ; stencil_store_op : Store_op.t
+    ; stencil_clear_value : int
+    ; stencil_read_only : bool
+    }
+end
+
+module Render_pass_timestamp_writes = struct
+  type t =
+    { query_set : Query_set.t
+    ; beginning_of_pass_write_index : int
+    ; end_of_pass_write_index : int
     }
 end
 
@@ -1049,95 +1178,7 @@ module Device = struct
     ({ Shader_module.handle = shader } : Shader_module.t)
   ;;
 
-  (* create_compute_pipeline is now auto-generated *)
-
-  let create_render_pipeline
-    t
-    ?(label = "")
-    ~shader_module
-    ~vertex_entry_point
-    ~fragment_entry_point
-    ~color_format
-    ?(topology = Primitive_topology.Triangle_list)
-    ?(front_face = Front_face.Ccw)
-    ?(cull_mode = Cull_mode.None)
-    ?(blend :
-        (Blend_factor.t
-        * Blend_factor.t
-        * Blend_operation.t
-        * Blend_factor.t
-        * Blend_factor.t
-        * Blend_operation.t)
-          option)
-    ?(write_mask = [ Color_write_mask.Item.All ])
-    ?layout
-    ?(vertex_buffer_layouts : Vertex_buffer_layout.t list = [])
-    ?depth_format
-    ?(depth_write_enabled = true)
-    ?(depth_compare = Compare_function.Less)
-    ?(multisample_count = 1)
-    ()
-    =
-    let blend_enabled, color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op =
-      match blend with
-      | None ->
-        ( false
-        , Blend_factor.One
-        , Blend_factor.Zero
-        , Blend_operation.Add
-        , Blend_factor.One
-        , Blend_factor.Zero
-        , Blend_operation.Add )
-      | Some (cs, cd, co, as_, ad, ao) -> true, cs, cd, co, as_, ad, ao
-    in
-    let pipeline =
-      let vbl_array =
-        Array.of_list
-          (List.map
-             (fun vbl ->
-               let attrs =
-                 Array.of_list
-                   (List.map
-                      (fun attr ->
-                        ( Vertex_format.to_int attr.Vertex_attribute.format
-                        , attr.Vertex_attribute.offset
-                        , attr.Vertex_attribute.shader_location ))
-                      vbl.Vertex_buffer_layout.attributes)
-               in
-               ( Vertex_step_mode.to_int vbl.Vertex_buffer_layout.step_mode
-               , vbl.Vertex_buffer_layout.array_stride
-               , attrs ))
-             vertex_buffer_layouts)
-      in
-      let layout_opt = Option.map (fun l -> l.Pipeline_layout.handle) layout in
-      let depth_format_opt = Option.map Texture_format.to_int depth_format in
-      Wgpu_low.device_create_render_pipeline_with_depth
-        t.handle
-        label
-        shader_module.Shader_module.handle
-        vertex_entry_point
-        fragment_entry_point
-        (Texture_format.to_int color_format)
-        (Primitive_topology.to_int topology)
-        (Front_face.to_int front_face)
-        (Cull_mode.to_int cull_mode)
-        blend_enabled
-        (Blend_factor.to_int color_src)
-        (Blend_factor.to_int color_dst)
-        (Blend_operation.to_int color_op)
-        (Blend_factor.to_int alpha_src)
-        (Blend_factor.to_int alpha_dst)
-        (Blend_operation.to_int alpha_op)
-        (Color_write_mask.list_to_int write_mask)
-        layout_opt
-        vbl_array
-        depth_format_opt
-        depth_write_enabled
-        (Compare_function.to_int depth_compare)
-        multisample_count
-    in
-    ({ Render_pipeline.handle = pipeline } : Render_pipeline.t)
-  ;;
+  (* create_compute_pipeline and create_render_pipeline are now auto-generated *)
 
   let create_bind_group_layout_for_storage_buffer
     t
@@ -1498,6 +1539,275 @@ module Device = struct
     Wgpu_low.Render_bundle_encoder_descriptor.render_bundle_encoder_descriptor_free
       desc_descriptor;
     ({ Render_bundle_encoder.handle = result } : Render_bundle_encoder.t)
+  ;;
+
+  let create_render_pipeline
+    t
+    ?(label = "")
+    ?layout
+    ~vertex_module
+    ~vertex_entry_point
+    ?(vertex_constants = [])
+    ?(vertex_buffers = [])
+    ~primitive_topology
+    ~primitive_strip_index_format
+    ~primitive_front_face
+    ~primitive_cull_mode
+    ~primitive_unclipped_depth
+    ?depth_stencil
+    ~multisample_count
+    ~multisample_mask
+    ~multisample_alpha_to_coverage_enabled
+    ?fragment
+    ()
+    =
+    let vertex_nested = Wgpu_low.Vertex_state.vertex_state_create () in
+    let primitive_nested = Wgpu_low.Primitive_state.primitive_state_create () in
+    let multisample_nested = Wgpu_low.Multisample_state.multisample_state_create () in
+    let desc_descriptor =
+      Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_create ()
+    in
+    Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_label
+      desc_descriptor
+      label;
+    (match layout with
+     | Some x ->
+       Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_layout
+         desc_descriptor
+         x.Pipeline_layout.handle
+     | None -> ());
+    Wgpu_low.Vertex_state.vertex_state_set_module
+      vertex_nested
+      vertex_module.Shader_module.handle;
+    Wgpu_low.Vertex_state.vertex_state_set_entry_point vertex_nested vertex_entry_point;
+    let vertex_constants_structs =
+      List.map
+        (fun (entry : Constant_entry.t) ->
+          let e = Wgpu_low.Constant_entry.constant_entry_create () in
+          Wgpu_low.Constant_entry.constant_entry_set_key e entry.key;
+          Wgpu_low.Constant_entry.constant_entry_set_value e entry.value;
+          e)
+        vertex_constants
+    in
+    let vertex_constants_array = Array.of_list vertex_constants_structs in
+    Wgpu_low.Vertex_state.vertex_state_set_constants vertex_nested vertex_constants_array;
+    let vertex_buffers_structs =
+      List.map
+        (fun (entry : Vertex_buffer_layout.t) ->
+          let e = Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_create () in
+          Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_set_step_mode
+            e
+            (Vertex_step_mode.to_int entry.step_mode);
+          Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_set_array_stride
+            e
+            entry.array_stride;
+          let attributes_low_structs =
+            List.map
+              (fun (attr : Vertex_attribute.t) ->
+                let a = Wgpu_low.Vertex_attribute.vertex_attribute_create () in
+                Wgpu_low.Vertex_attribute.vertex_attribute_set_format
+                  a
+                  (Vertex_format.to_int attr.format);
+                Wgpu_low.Vertex_attribute.vertex_attribute_set_offset a attr.offset;
+                Wgpu_low.Vertex_attribute.vertex_attribute_set_shader_location
+                  a
+                  attr.shader_location;
+                a)
+              entry.attributes
+          in
+          let attributes_low_array = Array.of_list attributes_low_structs in
+          Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_set_attributes
+            e
+            attributes_low_array;
+          e)
+        vertex_buffers
+    in
+    let vertex_buffers_array = Array.of_list vertex_buffers_structs in
+    Wgpu_low.Vertex_state.vertex_state_set_buffers vertex_nested vertex_buffers_array;
+    Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_vertex
+      desc_descriptor
+      vertex_nested;
+    Wgpu_low.Primitive_state.primitive_state_set_topology
+      primitive_nested
+      (Primitive_topology.to_int primitive_topology);
+    Wgpu_low.Primitive_state.primitive_state_set_strip_index_format
+      primitive_nested
+      (Index_format.to_int primitive_strip_index_format);
+    Wgpu_low.Primitive_state.primitive_state_set_front_face
+      primitive_nested
+      (Front_face.to_int primitive_front_face);
+    Wgpu_low.Primitive_state.primitive_state_set_cull_mode
+      primitive_nested
+      (Cull_mode.to_int primitive_cull_mode);
+    Wgpu_low.Primitive_state.primitive_state_set_unclipped_depth
+      primitive_nested
+      primitive_unclipped_depth;
+    Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_primitive
+      desc_descriptor
+      primitive_nested;
+    (match depth_stencil with
+     | Some (depth_stencil_rec : Depth_stencil_state.t) ->
+       let depth_stencil_ptr_struct =
+         Wgpu_low.Depth_stencil_state.depth_stencil_state_create ()
+       in
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_format
+         depth_stencil_ptr_struct
+         (Texture_format.to_int depth_stencil_rec.format);
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_write_enabled
+         depth_stencil_ptr_struct
+         (Optional_bool.to_int depth_stencil_rec.depth_write_enabled);
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_compare
+         depth_stencil_ptr_struct
+         (Compare_function.to_int depth_stencil_rec.depth_compare);
+       let depth_stencil_ptr_struct_stencil_front_nested =
+         Wgpu_low.Stencil_face_state.stencil_face_state_create ()
+       in
+       Wgpu_low.Stencil_face_state.stencil_face_state_set_compare
+         depth_stencil_ptr_struct_stencil_front_nested
+         (Compare_function.to_int depth_stencil_rec.stencil_front.compare);
+       Wgpu_low.Stencil_face_state.stencil_face_state_set_fail_op
+         depth_stencil_ptr_struct_stencil_front_nested
+         (Stencil_operation.to_int depth_stencil_rec.stencil_front.fail_op);
+       Wgpu_low.Stencil_face_state.stencil_face_state_set_depth_fail_op
+         depth_stencil_ptr_struct_stencil_front_nested
+         (Stencil_operation.to_int depth_stencil_rec.stencil_front.depth_fail_op);
+       Wgpu_low.Stencil_face_state.stencil_face_state_set_pass_op
+         depth_stencil_ptr_struct_stencil_front_nested
+         (Stencil_operation.to_int depth_stencil_rec.stencil_front.pass_op);
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_stencil_front
+         depth_stencil_ptr_struct
+         depth_stencil_ptr_struct_stencil_front_nested;
+       let depth_stencil_ptr_struct_stencil_back_nested =
+         Wgpu_low.Stencil_face_state.stencil_face_state_create ()
+       in
+       Wgpu_low.Stencil_face_state.stencil_face_state_set_compare
+         depth_stencil_ptr_struct_stencil_back_nested
+         (Compare_function.to_int depth_stencil_rec.stencil_back.compare);
+       Wgpu_low.Stencil_face_state.stencil_face_state_set_fail_op
+         depth_stencil_ptr_struct_stencil_back_nested
+         (Stencil_operation.to_int depth_stencil_rec.stencil_back.fail_op);
+       Wgpu_low.Stencil_face_state.stencil_face_state_set_depth_fail_op
+         depth_stencil_ptr_struct_stencil_back_nested
+         (Stencil_operation.to_int depth_stencil_rec.stencil_back.depth_fail_op);
+       Wgpu_low.Stencil_face_state.stencil_face_state_set_pass_op
+         depth_stencil_ptr_struct_stencil_back_nested
+         (Stencil_operation.to_int depth_stencil_rec.stencil_back.pass_op);
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_stencil_back
+         depth_stencil_ptr_struct
+         depth_stencil_ptr_struct_stencil_back_nested;
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_stencil_read_mask
+         depth_stencil_ptr_struct
+         depth_stencil_rec.stencil_read_mask;
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_stencil_write_mask
+         depth_stencil_ptr_struct
+         depth_stencil_rec.stencil_write_mask;
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_bias
+         depth_stencil_ptr_struct
+         depth_stencil_rec.depth_bias;
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_bias_slope_scale
+         depth_stencil_ptr_struct
+         depth_stencil_rec.depth_bias_slope_scale;
+       Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_bias_clamp
+         depth_stencil_ptr_struct
+         depth_stencil_rec.depth_bias_clamp;
+       Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_depth_stencil
+         desc_descriptor
+         depth_stencil_ptr_struct
+     | None -> ());
+    Wgpu_low.Multisample_state.multisample_state_set_count
+      multisample_nested
+      multisample_count;
+    Wgpu_low.Multisample_state.multisample_state_set_mask
+      multisample_nested
+      multisample_mask;
+    Wgpu_low.Multisample_state.multisample_state_set_alpha_to_coverage_enabled
+      multisample_nested
+      multisample_alpha_to_coverage_enabled;
+    Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_multisample
+      desc_descriptor
+      multisample_nested;
+    (match fragment with
+     | Some (fragment_rec : Fragment_state.t) ->
+       let fragment_ptr_struct = Wgpu_low.Fragment_state.fragment_state_create () in
+       Wgpu_low.Fragment_state.fragment_state_set_module
+         fragment_ptr_struct
+         fragment_rec.module_.Shader_module.handle;
+       Wgpu_low.Fragment_state.fragment_state_set_entry_point
+         fragment_ptr_struct
+         fragment_rec.entry_point;
+       let constants_low_structs =
+         List.map
+           (fun (elem : Constant_entry.t) ->
+             let s = Wgpu_low.Constant_entry.constant_entry_create () in
+             Wgpu_low.Constant_entry.constant_entry_set_key s elem.key;
+             Wgpu_low.Constant_entry.constant_entry_set_value s elem.value;
+             s)
+           fragment_rec.constants
+       in
+       let constants_low_array = Array.of_list constants_low_structs in
+       Wgpu_low.Fragment_state.fragment_state_set_constants
+         fragment_ptr_struct
+         constants_low_array;
+       let targets_low_structs =
+         List.map
+           (fun (elem : Color_target_state.t) ->
+             let s = Wgpu_low.Color_target_state.color_target_state_create () in
+             Wgpu_low.Color_target_state.color_target_state_set_format
+               s
+               (Texture_format.to_int elem.format);
+             (match elem.blend with
+              | Some blend_rec ->
+                let inline_blend = Wgpu_low.Blend_state.blend_state_create () in
+                let deep_color = Wgpu_low.Blend_component.blend_component_create () in
+                Wgpu_low.Blend_component.blend_component_set_operation
+                  deep_color
+                  (Blend_operation.to_int blend_rec.color.operation);
+                Wgpu_low.Blend_component.blend_component_set_src_factor
+                  deep_color
+                  (Blend_factor.to_int blend_rec.color.src_factor);
+                Wgpu_low.Blend_component.blend_component_set_dst_factor
+                  deep_color
+                  (Blend_factor.to_int blend_rec.color.dst_factor);
+                Wgpu_low.Blend_state.blend_state_set_color inline_blend deep_color;
+                let deep_alpha = Wgpu_low.Blend_component.blend_component_create () in
+                Wgpu_low.Blend_component.blend_component_set_operation
+                  deep_alpha
+                  (Blend_operation.to_int blend_rec.alpha.operation);
+                Wgpu_low.Blend_component.blend_component_set_src_factor
+                  deep_alpha
+                  (Blend_factor.to_int blend_rec.alpha.src_factor);
+                Wgpu_low.Blend_component.blend_component_set_dst_factor
+                  deep_alpha
+                  (Blend_factor.to_int blend_rec.alpha.dst_factor);
+                Wgpu_low.Blend_state.blend_state_set_alpha inline_blend deep_alpha;
+                Wgpu_low.Color_target_state.color_target_state_set_blend s inline_blend
+              | None -> ());
+             Wgpu_low.Color_target_state.color_target_state_set_write_mask
+               s
+               (Color_write_mask.list_to_int elem.write_mask);
+             s)
+           fragment_rec.targets
+       in
+       let targets_low_array = Array.of_list targets_low_structs in
+       Wgpu_low.Fragment_state.fragment_state_set_targets
+         fragment_ptr_struct
+         targets_low_array;
+       Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_fragment
+         desc_descriptor
+         fragment_ptr_struct
+     | None -> ());
+    let result = Wgpu_low.device_create_render_pipeline t.handle desc_descriptor in
+    List.iter
+      (fun e -> Wgpu_low.Constant_entry.constant_entry_free e)
+      vertex_constants_structs;
+    List.iter
+      (fun e -> Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_free e)
+      vertex_buffers_structs;
+    Wgpu_low.Multisample_state.multisample_state_free multisample_nested;
+    Wgpu_low.Primitive_state.primitive_state_free primitive_nested;
+    Wgpu_low.Vertex_state.vertex_state_free vertex_nested;
+    Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_free desc_descriptor;
+    ({ Render_pipeline.handle = result } : Render_pipeline.t)
   ;;
 
   let create_sampler

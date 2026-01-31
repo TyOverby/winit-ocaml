@@ -170,11 +170,28 @@ let () =
     Wgpu.Device.create_render_pipeline
       device
       ~label:"vertex_buffer_pipeline"
-      ~shader_module:shader
+      ~vertex_module:shader
       ~vertex_entry_point:"vs_main"
-      ~fragment_entry_point:"fs_main"
-      ~color_format:Wgpu.Texture_format.Rgba8_unorm
-      ~vertex_buffer_layouts:[ vertex_buffer_layout ]
+      ~vertex_buffers:[ vertex_buffer_layout ]
+      ~primitive_topology:Wgpu.Primitive_topology.Triangle_list
+      ~primitive_strip_index_format:Wgpu.Index_format.Undefined
+      ~primitive_front_face:Wgpu.Front_face.Ccw
+      ~primitive_cull_mode:Wgpu.Cull_mode.None
+      ~primitive_unclipped_depth:false
+      ~multisample_count:1
+      ~multisample_mask:0xFFFFFFFF
+      ~multisample_alpha_to_coverage_enabled:false
+      ~fragment:
+        { module_ = shader
+        ; entry_point = "fs_main"
+        ; constants = []
+        ; targets =
+            [ { format = Wgpu.Texture_format.Rgba8_unorm
+              ; blend = None
+              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
+              }
+            ]
+        }
       ()
   in
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in

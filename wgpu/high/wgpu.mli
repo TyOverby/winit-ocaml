@@ -355,9 +355,24 @@ module Bind_group_layout_entry : sig
 end
 
 module Color_target_state : sig
+  module Blend_state : sig
+    module Blend_component : sig
+      type t =
+        { operation : Blend_operation.t
+        ; src_factor : Blend_factor.t
+        ; dst_factor : Blend_factor.t
+        }
+    end
+
+    type t =
+      { color : Blend_component.t
+      ; alpha : Blend_component.t
+      }
+  end
+
   type t =
     { format : Texture_format.t
-    ; blend : nativeint
+    ; blend : Blend_state.t option
     ; write_mask : Color_write_mask.Item.t list
     }
 end
@@ -413,6 +428,120 @@ module Vertex_buffer_layout : sig
     { step_mode : Vertex_step_mode.t
     ; array_stride : int64
     ; attributes : Vertex_attribute.t list
+    }
+end
+
+module Blend_state : sig
+  module Blend_component : sig
+    type t =
+      { operation : Blend_operation.t
+      ; src_factor : Blend_factor.t
+      ; dst_factor : Blend_factor.t
+      }
+  end
+
+  type t =
+    { color : Blend_component.t
+    ; alpha : Blend_component.t
+    }
+end
+
+module Compute_pass_timestamp_writes : sig
+  type t =
+    { query_set : Query_set.t
+    ; beginning_of_pass_write_index : int
+    ; end_of_pass_write_index : int
+    }
+end
+
+module Depth_stencil_state : sig
+  module Stencil_face_state : sig
+    type t =
+      { compare : Compare_function.t
+      ; fail_op : Stencil_operation.t
+      ; depth_fail_op : Stencil_operation.t
+      ; pass_op : Stencil_operation.t
+      }
+  end
+
+  type t =
+    { format : Texture_format.t
+    ; depth_write_enabled : Optional_bool.t
+    ; depth_compare : Compare_function.t
+    ; stencil_front : Stencil_face_state.t
+    ; stencil_back : Stencil_face_state.t
+    ; stencil_read_mask : int
+    ; stencil_write_mask : int
+    ; depth_bias : int
+    ; depth_bias_slope_scale : float
+    ; depth_bias_clamp : float
+    }
+end
+
+module Fragment_state : sig
+  type t =
+    { module_ : Shader_module.t
+    ; entry_point : string
+    ; constants : Constant_entry.t list
+    ; targets : Color_target_state.t list
+    }
+end
+
+module Limits : sig
+  type t =
+    { max_texture_dimension_1D : int
+    ; max_texture_dimension_2D : int
+    ; max_texture_dimension_3D : int
+    ; max_texture_array_layers : int
+    ; max_bind_groups : int
+    ; max_bind_groups_plus_vertex_buffers : int
+    ; max_bindings_per_bind_group : int
+    ; max_dynamic_uniform_buffers_per_pipeline_layout : int
+    ; max_dynamic_storage_buffers_per_pipeline_layout : int
+    ; max_sampled_textures_per_shader_stage : int
+    ; max_samplers_per_shader_stage : int
+    ; max_storage_buffers_per_shader_stage : int
+    ; max_storage_textures_per_shader_stage : int
+    ; max_uniform_buffers_per_shader_stage : int
+    ; max_uniform_buffer_binding_size : int64
+    ; max_storage_buffer_binding_size : int64
+    ; min_uniform_buffer_offset_alignment : int
+    ; min_storage_buffer_offset_alignment : int
+    ; max_vertex_buffers : int
+    ; max_buffer_size : int64
+    ; max_vertex_attributes : int
+    ; max_vertex_buffer_array_stride : int
+    ; max_inter_stage_shader_variables : int
+    ; max_color_attachments : int
+    ; max_color_attachment_bytes_per_sample : int
+    ; max_compute_workgroup_storage_size : int
+    ; max_compute_invocations_per_workgroup : int
+    ; max_compute_workgroup_size_x : int
+    ; max_compute_workgroup_size_y : int
+    ; max_compute_workgroup_size_z : int
+    ; max_compute_workgroups_per_dimension : int
+    }
+end
+
+module Render_pass_depth_stencil_attachment : sig
+  type t =
+    { view : Texture_view.t
+    ; depth_load_op : Load_op.t
+    ; depth_store_op : Store_op.t
+    ; depth_clear_value : float
+    ; depth_read_only : bool
+    ; stencil_load_op : Load_op.t
+    ; stencil_store_op : Store_op.t
+    ; stencil_clear_value : int
+    ; stencil_read_only : bool
+    }
+end
+
+module Render_pass_timestamp_writes : sig
+  type t =
+    { query_set : Query_set.t
+    ; beginning_of_pass_write_index : int
+    ; end_of_pass_write_index : int
     }
 end
 
@@ -576,43 +705,7 @@ module Device : sig
   (** Create a shader module from WGSL source code *)
   val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
 
-  (* create_compute_pipeline is now auto-generated *)
-
-  (** Create a render pipeline (uses single shader module for vertex and fragment). The
-      [blend] parameter is a tuple of (color_src, color_dst, color_op, alpha_src,
-      alpha_dst, alpha_op). The optional [layout] parameter specifies the pipeline layout;
-      if omitted, an empty layout is used. The optional [vertex_buffer_layouts] parameter
-      specifies vertex buffer layouts for vertex attributes accessible via [@location(N)]
-      in shaders. If [depth_format] is provided, depth testing will be enabled with
-      [depth_write_enabled] (default: true) and [depth_compare] (default: Less)
-      controlling the depth test behavior. The [multisample_count] parameter controls MSAA
-      (default: 1, use 4 for 4x MSAA). *)
-  val create_render_pipeline
-    :  t
-    -> ?label:string
-    -> shader_module:Shader_module.t
-    -> vertex_entry_point:string
-    -> fragment_entry_point:string
-    -> color_format:Texture_format.t
-    -> ?topology:Primitive_topology.t
-    -> ?front_face:Front_face.t
-    -> ?cull_mode:Cull_mode.t
-    -> ?blend:
-         Blend_factor.t
-         * Blend_factor.t
-         * Blend_operation.t
-         * Blend_factor.t
-         * Blend_factor.t
-         * Blend_operation.t
-    -> ?write_mask:Color_write_mask.Item.t list
-    -> ?layout:Pipeline_layout.t
-    -> ?vertex_buffer_layouts:Vertex_buffer_layout.t list
-    -> ?depth_format:Texture_format.t
-    -> ?depth_write_enabled:bool
-    -> ?depth_compare:Compare_function.t
-    -> ?multisample_count:int
-    -> unit
-    -> Render_pipeline.t
+  (* create_compute_pipeline and create_render_pipeline are now auto-generated *)
 
   (** Create a bind group layout for a single storage buffer *)
   val create_bind_group_layout_for_storage_buffer
@@ -730,6 +823,27 @@ module Device : sig
     -> stencil_read_only:bool
     -> unit
     -> Render_bundle_encoder.t
+
+  val create_render_pipeline
+    :  t
+    -> ?label:string
+    -> ?layout:Pipeline_layout.t
+    -> vertex_module:Shader_module.t
+    -> vertex_entry_point:string
+    -> ?vertex_constants:Constant_entry.t list
+    -> ?vertex_buffers:Vertex_buffer_layout.t list
+    -> primitive_topology:Primitive_topology.t
+    -> primitive_strip_index_format:Index_format.t
+    -> primitive_front_face:Front_face.t
+    -> primitive_cull_mode:Cull_mode.t
+    -> primitive_unclipped_depth:bool
+    -> ?depth_stencil:Depth_stencil_state.t
+    -> multisample_count:int
+    -> multisample_mask:int
+    -> multisample_alpha_to_coverage_enabled:bool
+    -> ?fragment:Fragment_state.t
+    -> unit
+    -> Render_pipeline.t
 
   val create_sampler
     :  t

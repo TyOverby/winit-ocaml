@@ -105,6 +105,9 @@ let rec type_string ~context (type_ref : Ir.type_ref) : string =
   | Ocaml_high_level_member, Pointer { inner = Array { elem; _ }; _ } ->
     (* Other array types passed by pointer *)
     type_string ~context:Ocaml_high_level_member (Array { elem; pointer = None })
+  | Ocaml_high_level_member, Pointer { inner = Struct name; _ } ->
+    (* Optional pointer to struct - used for members like depth_stencil, fragment *)
+    ocaml_module_name name ^ ".t option"
   | Ocaml_high_level_member, Pointer _ -> "nativeint"
 ;;
 

@@ -158,10 +158,27 @@ let () =
     Wgpu.Device.create_render_pipeline
       device
       ~label:"inter_stage_triangle_pipeline"
-      ~shader_module:shader
+      ~vertex_module:shader
       ~vertex_entry_point:"vs"
-      ~fragment_entry_point:"fs"
-      ~color_format:Wgpu.Texture_format.Rgba8_unorm
+      ~primitive_topology:Wgpu.Primitive_topology.Triangle_list
+      ~primitive_strip_index_format:Wgpu.Index_format.Undefined
+      ~primitive_front_face:Wgpu.Front_face.Ccw
+      ~primitive_cull_mode:Wgpu.Cull_mode.None
+      ~primitive_unclipped_depth:false
+      ~multisample_count:1
+      ~multisample_mask:0xFFFFFFFF
+      ~multisample_alpha_to_coverage_enabled:false
+      ~fragment:
+        { module_ = shader
+        ; entry_point = "fs"
+        ; constants = []
+        ; targets =
+            [ { format = Wgpu.Texture_format.Rgba8_unorm
+              ; blend = None
+              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
+              }
+            ]
+        }
       ()
   in
   render ~device ~queue ~pipeline ~output_name:"inter_stage_variables_triangle";

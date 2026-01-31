@@ -72,6 +72,28 @@ let rec is_flat_member_type_with_nested
     is_flat_member_type_with_nested structs visited elem
   | Pointer _ -> false
 
+(** Check if a member is auto-generable, including:
+    - Regular flat member types
+    - Optional pointer-to-struct members (where the pointed-to struct is also
+      auto-generable) *)
+and is_auto_generable_member
+  (structs : Ir.struct_ list)
+  (visited : Set.M(String).t)
+  (member : Ir.struct_member)
+  : bool
+  =
+  (* First check for optional pointer-to-struct *)
+  if member.optional
+  then (
+    match member.type_ with
+    | Pointer { inner = Struct nested_name; _ } ->
+      (* Optional pointer to struct - check if the nested struct is auto-generable *)
+      if Set.mem visited nested_name
+      then false (* Circular reference *)
+      else is_auto_generable_struct_aux structs (Set.add visited nested_name) nested_name
+    | _ -> is_flat_member_type_with_nested structs visited member.type_)
+  else is_flat_member_type_with_nested structs visited member.type_
+
 and is_auto_generable_struct_aux
   (structs : Ir.struct_ list)
   (visited : Set.M(String).t)
@@ -89,7 +111,7 @@ and is_auto_generable_struct_aux
     in
     is_input_struct
     && List.for_all struct_.members ~f:(fun member ->
-      is_flat_member_type_with_nested structs visited member.type_)
+      is_auto_generable_member structs visited member)
 ;;
 
 let is_auto_generable_struct (structs : Ir.struct_ list) (struct_name : string) : bool =
@@ -100,6 +122,18 @@ let get_inline_struct_name (type_ref : Ir.type_ref) : string option =
   match type_ref with
   | Struct name -> Some name
   | _ -> None
+;;
+
+(** Get struct name from an optional pointer-to-struct type (e.g., for depth_stencil which
+    is Pointer [{ inner = Struct "depth_stencil_state"; ... }] with member.optional =
+    true). *)
+let get_optional_pointer_struct_name (member : Ir.struct_member) : string option =
+  if member.optional
+  then (
+    match member.type_ with
+    | Pointer { inner = Struct name; _ } -> Some name
+    | _ -> None)
+  else None
 ;;
 
 let member_is_array_of_structs (type_ref : Ir.type_ref) : string option =
@@ -249,6 +283,18 @@ let high_level_member_type (member : Ir.struct_member) : string =
   Type_mapping.type_string ~context:Ocaml_high_level_member member.type_
 ;;
 
+(** Get the type for a struct parameter, handling optional pointer-to-struct specially.
+    For optional pointer-to-struct members (like depth_stencil), we return just the base
+    type (e.g., Depth_stencil_state.t) because the `?` in the parameter declaration
+    already makes it optional. Without this, we'd get double-option wrapping. *)
+let high_level_param_type (member : Ir.struct_member) : string =
+  match get_optional_pointer_struct_name member with
+  | Some nested_name ->
+    (* Optional pointer to struct - return base type without option *)
+    ocaml_module_name nested_name ^ ".t"
+  | None -> high_level_member_type member
+;;
+
 let arg_to_low_level (arg_name : string) (type_ref : Ir.type_ref) : string =
   Type_mapping.convert_arg_to_low ~var_name:arg_name type_ref
 ;;
@@ -275,6 +321,8 @@ let default_value_for_type (type_ref : Ir.type_ref) : string option =
   | Pointer { inner = Array _; _ } -> Some "[]"
   (* Object types (when marked optional) should be true options with no default *)
   | Object _ -> None
+  (* Pointer to struct (optional pointer-to-struct) should be None *)
+  | Pointer { inner = Struct _; _ } -> Some "None"
   | _ -> Some {|""|}
 ;;
 
@@ -297,11 +345,17 @@ let build_param_list
     List.filter_map struct_params ~f:(fun p ->
       if p.is_optional
       then (
-        match default_value_for_type p.member.type_ with
-        | Some default_val -> Some {%string|?(%{p.param_name} = %{default_val})|}
+        (* Check if this is an optional pointer-to-struct - use bare optional syntax *)
+        match get_optional_pointer_struct_name p.member with
+        | Some _ ->
+          (* Optional pointer to struct - bare optional, no default value *)
+          Some {%string|?%{p.param_name}|}
         | None ->
-          (* No default value - use bare optional syntax (e.g., for optional objects) *)
-          Some {%string|?%{p.param_name}|})
+          (match default_value_for_type p.member.type_ with
+           | Some default_val -> Some {%string|?(%{p.param_name} = %{default_val})|}
+           | None ->
+             (* No default value - use bare optional syntax (e.g., for optional objects) *)
+             Some {%string|?%{p.param_name}|}))
       else Some {%string|~%{p.param_name}|})
     @ List.filter_map non_struct_params ~f:(fun (name, _arg, is_opt) ->
       if is_opt then Some {%string|?%{name}|} else Some {%string|~%{name}|})
@@ -427,34 +481,42 @@ let rec collect_struct_params
       in
       [ { param_name; member; is_optional; nested_var } ]
     | None ->
-      (* Check for direct nested struct *)
-      (match get_inline_struct_name member.type_ with
-       | Some nested_name ->
-         (* This member is a nested struct - collect its parameters *)
-         (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
-          | None -> []
-          | Some nested_struct ->
-            let nested_prefix = prefix ^ member.name ^ "_" in
-            let nested_var_name = prefix ^ member.name ^ "_nested" in
-            collect_struct_params
-              structs
-              nested_prefix
-              nested_struct
-              (Some nested_var_name))
-       | None ->
-         (* Regular member - create parameter *)
+      (* Check for optional pointer-to-struct (like depth_stencil and fragment) *)
+      (match get_optional_pointer_struct_name member with
+       | Some _nested_name ->
+         (* Optional pointer to struct - expose as a single optional parameter of record type.
+            Don't flatten - similar to array-of-structs handling. *)
          let param_name = escape_keyword (prefix ^ member.name) in
-         let is_optional =
-           member.optional
-           ||
-           match member.type_ with
-           | Primitive String_with_default_empty -> true
-           | Optional _ -> true
-           | Array _ -> true
-           | Pointer { inner = Array _; _ } -> true
-           | _ -> false
-         in
-         [ { param_name; member; is_optional; nested_var } ]))
+         [ { param_name; member; is_optional = true; nested_var } ]
+       | None ->
+         (* Check for direct nested struct *)
+         (match get_inline_struct_name member.type_ with
+          | Some nested_name ->
+            (* This member is a nested struct - collect its parameters *)
+            (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
+             | None -> []
+             | Some nested_struct ->
+               let nested_prefix = prefix ^ member.name ^ "_" in
+               let nested_var_name = prefix ^ member.name ^ "_nested" in
+               collect_struct_params
+                 structs
+                 nested_prefix
+                 nested_struct
+                 (Some nested_var_name))
+          | None ->
+            (* Regular member - create parameter *)
+            let param_name = escape_keyword (prefix ^ member.name) in
+            let is_optional =
+              member.optional
+              ||
+              match member.type_ with
+              | Primitive String_with_default_empty -> true
+              | Optional _ -> true
+              | Array _ -> true
+              | Pointer { inner = Array _; _ } -> true
+              | _ -> false
+            in
+            [ { param_name; member; is_optional; nested_var } ])))
 ;;
 
 let rec generate_struct_creates
@@ -549,12 +611,42 @@ let generate_array_of_structs_conversion
                ; "     | None -> ());"
                ])
         | None ->
-          (* Regular member - use entry_member_to_low_level for proper optional handling *)
-          let escaped_member = escape_keyword member.name in
-          let field_access = {%string|entry.%{escaped_member}|} in
-          let converted = entry_member_to_low_level field_access member in
-          [ {%string|    Wgpu_low.%{array_element_module}.%{array_element_struct.name}_set_%{member.name} e %{converted};|}
-          ]))
+          (* Check for nested array of structs *)
+          (match member_is_array_of_structs member.type_ with
+           | Some nested_struct_name ->
+             (* Nested array of structs - need to convert each element *)
+             (match
+                List.find structs ~f:(fun s -> String.equal s.name nested_struct_name)
+              with
+              | None -> []
+              | Some nested_struct ->
+                let nested_module = ocaml_module_name nested_struct.name in
+                let escaped_member = escape_keyword member.name in
+                let nested_entries_var = member.name ^ "_low_structs" in
+                let nested_array_var = member.name ^ "_low_array" in
+                [ {%string|    let %{nested_entries_var} = List.map (fun (attr : %{nested_module}.t) ->|}
+                ; {%string|      let a = Wgpu_low.%{nested_module}.%{nested_struct.name}_create () in|}
+                ]
+                @ List.filter_map nested_struct.members ~f:(fun nm ->
+                  if String.equal nm.name "nextInChain"
+                  then None
+                  else (
+                    let nm_escaped = escape_keyword nm.name in
+                    let field_access = {%string|attr.%{nm_escaped}|} in
+                    let converted = member_to_low_level field_access nm.type_ in
+                    Some
+                      {%string|      Wgpu_low.%{nested_module}.%{nested_struct.name}_set_%{nm.name} a %{converted};|}))
+                @ [ {%string|      a) entry.%{escaped_member} in|}
+                  ; {%string|    let %{nested_array_var} = Array.of_list %{nested_entries_var} in|}
+                  ; {%string|    Wgpu_low.%{array_element_module}.%{array_element_struct.name}_set_%{member.name} e %{nested_array_var};|}
+                  ])
+           | None ->
+             (* Regular member - use entry_member_to_low_level for proper optional handling *)
+             let escaped_member = escape_keyword member.name in
+             let field_access = {%string|entry.%{escaped_member}|} in
+             let converted = entry_member_to_low_level field_access member in
+             [ {%string|    Wgpu_low.%{array_element_module}.%{array_element_struct.name}_set_%{member.name} e %{converted};|}
+             ])))
     @ [ "    e) " ^ param_name ^ " in" ]
     @ [ {%string|let %{array_var} = Array.of_list %{entries_var} in|} ]
     @ [ {%string|Wgpu_low.%{parent_module}.%{parent_struct.name}_set_%{member_name} %{parent_var} %{array_var};|}
@@ -589,52 +681,269 @@ let rec generate_struct_sets
              member.name
          | None -> { code_lines = []; structs_to_free = [] })
       | None ->
-        (* Check for direct nested struct *)
-        (match get_inline_struct_name member.type_ with
+        (* Check for optional pointer-to-struct *)
+        (match get_optional_pointer_struct_name member with
          | Some nested_name ->
-           (* First, recursively set fields on the nested struct *)
+           (* Optional pointer to struct - generate conditional creation and setting *)
            (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
             | None -> { code_lines = []; structs_to_free = [] }
             | Some nested_struct ->
-              let nested_var = prefix ^ member.name ^ "_nested" in
-              let nested_prefix = prefix ^ member.name ^ "_" in
-              let nested_result =
-                generate_struct_sets structs nested_prefix nested_struct nested_var
+              let param_name = escape_keyword (prefix ^ member.name) in
+              let nested_module = ocaml_module_name nested_struct.name in
+              let nested_var = prefix ^ member.name ^ "_ptr_struct" in
+              (* Generate code that creates and sets the struct only if Some *)
+              let code_lines =
+                [ {%string|(match %{param_name} with|}
+                ; {%string| | Some (%{param_name}_rec : %{nested_module}.t) ->|}
+                ; {%string|   let %{nested_var} = Wgpu_low.%{nested_module}.%{nested_struct.name}_create () in|}
+                ]
+                @ List.concat_map nested_struct.members ~f:(fun nm ->
+                  if String.equal nm.name "nextInChain"
+                  then []
+                  else (
+                    (* Handle nested struct members within the optional pointer-to-struct *)
+                    match get_inline_struct_name nm.type_ with
+                    | Some inner_nested_name ->
+                      (* Inline nested struct within the optional struct *)
+                      (match
+                         List.find structs ~f:(fun s ->
+                           String.equal s.name inner_nested_name)
+                       with
+                       | None -> []
+                       | Some inner_nested_struct ->
+                         let inner_nested_module =
+                           ocaml_module_name inner_nested_struct.name
+                         in
+                         let inner_nested_var = nested_var ^ "_" ^ nm.name ^ "_nested" in
+                         let nm_escaped = escape_keyword nm.name in
+                         (* Create the inner nested struct *)
+                         [ {%string|   let %{inner_nested_var} = Wgpu_low.%{inner_nested_module}.%{inner_nested_struct.name}_create () in|}
+                         ]
+                         (* Set fields on the inner nested struct *)
+                         @ List.filter_map inner_nested_struct.members ~f:(fun inner_nm ->
+                           if String.equal inner_nm.name "nextInChain"
+                           then None
+                           else (
+                             let inner_nm_escaped = escape_keyword inner_nm.name in
+                             let field_access =
+                               {%string|%{param_name}_rec.%{nm_escaped}.%{inner_nm_escaped}|}
+                             in
+                             let converted =
+                               member_to_low_level field_access inner_nm.type_
+                             in
+                             Some
+                               {%string|   Wgpu_low.%{inner_nested_module}.%{inner_nested_struct.name}_set_%{inner_nm.name} %{inner_nested_var} %{converted};|}))
+                         (* Set the inner nested struct on the outer struct *)
+                         @ [ {%string|   Wgpu_low.%{nested_module}.%{nested_struct.name}_set_%{nm.name} %{nested_var} %{inner_nested_var};|}
+                           ])
+                    | None ->
+                      (* Check for array-of-structs member in the optional struct *)
+                      (match member_is_array_of_structs nm.type_ with
+                       | Some array_elem_name ->
+                         (* Array of structs - convert OCaml list to low-level array *)
+                         (match
+                            List.find structs ~f:(fun s ->
+                              String.equal s.name array_elem_name)
+                          with
+                          | None -> []
+                          | Some array_elem_struct ->
+                            let array_elem_module =
+                              ocaml_module_name array_elem_struct.name
+                            in
+                            let nm_escaped = escape_keyword nm.name in
+                            let field_access =
+                              {%string|%{param_name}_rec.%{nm_escaped}|}
+                            in
+                            let entries_var = nm.name ^ "_low_structs" in
+                            let array_var = nm.name ^ "_low_array" in
+                            [ {%string|   let %{entries_var} = List.map (fun (elem : %{array_elem_module}.t) ->|}
+                            ; {%string|     let s = Wgpu_low.%{array_elem_module}.%{array_elem_struct.name}_create () in|}
+                            ]
+                            @ List.concat_map array_elem_struct.members ~f:(fun elem_nm ->
+                              if String.equal elem_nm.name "nextInChain"
+                              then []
+                              else (
+                                let elem_nm_escaped = escape_keyword elem_nm.name in
+                                let elem_field_access =
+                                  {%string|elem.%{elem_nm_escaped}|}
+                                in
+                                (* Check for inline struct or optional pointer-to-struct within array element *)
+                                let inline_name_opt =
+                                  match get_inline_struct_name elem_nm.type_ with
+                                  | Some name -> Some name
+                                  | None -> get_optional_pointer_struct_name elem_nm
+                                in
+                                match inline_name_opt with
+                                | Some inline_name ->
+                                  (* Inline struct - wrap in match for optional *)
+                                  (match
+                                     List.find structs ~f:(fun s ->
+                                       String.equal s.name inline_name)
+                                   with
+                                   | None -> []
+                                   | Some inline_struct ->
+                                     let inline_module =
+                                       ocaml_module_name inline_struct.name
+                                     in
+                                     let inline_var = "inline_" ^ elem_nm.name in
+                                     [ {%string|     (match %{elem_field_access} with|}
+                                     ; {%string|      | Some %{elem_nm.name}_rec ->|}
+                                     ; {%string|        let %{inline_var} = Wgpu_low.%{inline_module}.%{inline_struct.name}_create () in|}
+                                     ]
+                                     @ List.concat_map
+                                         inline_struct.members
+                                         ~f:(fun inner_nm ->
+                                           if String.equal inner_nm.name "nextInChain"
+                                           then []
+                                           else (
+                                             let inner_nm_escaped =
+                                               escape_keyword inner_nm.name
+                                             in
+                                             let inner_field_access =
+                                               {%string|%{elem_nm.name}_rec.%{inner_nm_escaped}|}
+                                             in
+                                             (* Check if this is yet another inline struct *)
+                                             match
+                                               get_inline_struct_name inner_nm.type_
+                                             with
+                                             | Some deep_name ->
+                                               (* Deep inline struct - create and populate it *)
+                                               (match
+                                                  List.find structs ~f:(fun s ->
+                                                    String.equal s.name deep_name)
+                                                with
+                                                | None -> []
+                                                | Some deep_struct ->
+                                                  let deep_module =
+                                                    ocaml_module_name deep_struct.name
+                                                  in
+                                                  let deep_var =
+                                                    "deep_" ^ inner_nm.name
+                                                  in
+                                                  [ {%string|        let %{deep_var} = Wgpu_low.%{deep_module}.%{deep_struct.name}_create () in|}
+                                                  ]
+                                                  @ List.filter_map
+                                                      deep_struct.members
+                                                      ~f:(fun deep_nm ->
+                                                        if String.equal
+                                                             deep_nm.name
+                                                             "nextInChain"
+                                                        then None
+                                                        else (
+                                                          let deep_nm_escaped =
+                                                            escape_keyword deep_nm.name
+                                                          in
+                                                          let deep_field_access =
+                                                            {%string|%{inner_field_access}.%{deep_nm_escaped}|}
+                                                          in
+                                                          let converted =
+                                                            member_to_low_level
+                                                              deep_field_access
+                                                              deep_nm.type_
+                                                          in
+                                                          Some
+                                                            {%string|        Wgpu_low.%{deep_module}.%{deep_struct.name}_set_%{deep_nm.name} %{deep_var} %{converted};|}))
+                                                  @ [ {%string|        Wgpu_low.%{inline_module}.%{inline_struct.name}_set_%{inner_nm.name} %{inline_var} %{deep_var};|}
+                                                    ])
+                                             | None ->
+                                               let converted =
+                                                 member_to_low_level
+                                                   inner_field_access
+                                                   inner_nm.type_
+                                               in
+                                               [ {%string|        Wgpu_low.%{inline_module}.%{inline_struct.name}_set_%{inner_nm.name} %{inline_var} %{converted};|}
+                                               ]))
+                                     @ [ {%string|        Wgpu_low.%{array_elem_module}.%{array_elem_struct.name}_set_%{elem_nm.name} s %{inline_var}|}
+                                       ; "      | None -> ());"
+                                       ])
+                                | None ->
+                                  (* Regular member *)
+                                  let converted =
+                                    member_to_low_level elem_field_access elem_nm.type_
+                                  in
+                                  [ {%string|     Wgpu_low.%{array_elem_module}.%{array_elem_struct.name}_set_%{elem_nm.name} s %{converted};|}
+                                  ]))
+                            @ [ {%string|     s) %{field_access} in|}
+                              ; {%string|   let %{array_var} = Array.of_list %{entries_var} in|}
+                              ; {%string|   Wgpu_low.%{nested_module}.%{nested_struct.name}_set_%{nm.name} %{nested_var} %{array_var};|}
+                              ])
+                       | None ->
+                         (* Regular member in the optional struct *)
+                         let nm_escaped = escape_keyword nm.name in
+                         let field_access = {%string|%{param_name}_rec.%{nm_escaped}|} in
+                         (* Handle optional object members specially *)
+                         if nm.optional
+                            &&
+                            match nm.type_ with
+                            | Object _ -> true
+                            | _ -> false
+                         then (
+                           let obj_name =
+                             match nm.type_ with
+                             | Object name -> name
+                             | _ -> failwith "unreachable"
+                           in
+                           let obj_module = ocaml_module_name obj_name in
+                           [ {%string|   (match %{field_access} with|}
+                           ; {%string|    | Some x -> Wgpu_low.%{nested_module}.%{nested_struct.name}_set_%{nm.name} %{nested_var} x.%{obj_module}.handle|}
+                           ; "    | None -> ());"
+                           ])
+                         else (
+                           let converted = member_to_low_level field_access nm.type_ in
+                           [ {%string|   Wgpu_low.%{nested_module}.%{nested_struct.name}_set_%{nm.name} %{nested_var} %{converted};|}
+                           ]))))
+                @ [ {%string|   Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} %{nested_var}|}
+                  ; " | None -> ());"
+                  ]
               in
-              (* Then, set the nested struct on the parent *)
-              let set_nested =
-                {%string|Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} %{nested_var};|}
-              in
-              { code_lines = nested_result.code_lines @ [ set_nested ]
-              ; structs_to_free = nested_result.structs_to_free
-              })
+              { code_lines; structs_to_free = [] })
          | None ->
-           (* Regular member - set the value *)
-           let param_name = escape_keyword (prefix ^ member.name) in
-           (* Check if this is an optional object member - needs special handling *)
-           if is_optional_object_member member
-           then (
-             (* For optional object members, wrap in a match statement *)
-             let obj_name =
-               match member.type_ with
-               | Object name -> name
-               | _ -> failwith "is_optional_object_member returned true for non-object"
-             in
-             let obj_module = ocaml_module_name obj_name in
-             { code_lines =
-                 [ {%string|(match %{param_name} with|}
-                 ; {%string| | Some x -> Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} x.%{obj_module}.handle|}
-                 ; " | None -> ());"
-                 ]
-             ; structs_to_free = []
-             })
-           else (
-             let converted = member_to_low_level param_name member.type_ in
-             { code_lines =
-                 [ {%string|Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} %{converted};|}
-                 ]
-             ; structs_to_free = []
-             })))
+           (* Check for direct nested struct *)
+           (match get_inline_struct_name member.type_ with
+            | Some nested_name ->
+              (* First, recursively set fields on the nested struct *)
+              (match List.find structs ~f:(fun s -> String.equal s.name nested_name) with
+               | None -> { code_lines = []; structs_to_free = [] }
+               | Some nested_struct ->
+                 let nested_var = prefix ^ member.name ^ "_nested" in
+                 let nested_prefix = prefix ^ member.name ^ "_" in
+                 let nested_result =
+                   generate_struct_sets structs nested_prefix nested_struct nested_var
+                 in
+                 (* Then, set the nested struct on the parent *)
+                 let set_nested =
+                   {%string|Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} %{nested_var};|}
+                 in
+                 { code_lines = nested_result.code_lines @ [ set_nested ]
+                 ; structs_to_free = nested_result.structs_to_free
+                 })
+            | None ->
+              (* Regular member - set the value *)
+              let param_name = escape_keyword (prefix ^ member.name) in
+              (* Check if this is an optional object member - needs special handling *)
+              if is_optional_object_member member
+              then (
+                (* For optional object members, wrap in a match statement *)
+                let obj_name =
+                  match member.type_ with
+                  | Object name -> name
+                  | _ -> failwith "is_optional_object_member returned true for non-object"
+                in
+                let obj_module = ocaml_module_name obj_name in
+                { code_lines =
+                    [ {%string|(match %{param_name} with|}
+                    ; {%string| | Some x -> Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} x.%{obj_module}.handle|}
+                    ; " | None -> ());"
+                    ]
+                ; structs_to_free = []
+                })
+              else (
+                let converted = member_to_low_level param_name member.type_ in
+                { code_lines =
+                    [ {%string|Wgpu_low.%{struct_module}.%{struct_.name}_set_%{member.name} %{var_name} %{converted};|}
+                    ]
+                ; structs_to_free = []
+                }))))
   in
   let code = List.concat_map results ~f:(fun r -> r.code_lines) in
   let vars = List.concat_map results ~f:(fun r -> r.structs_to_free) in
@@ -669,7 +978,7 @@ let gen_method_with_structs
     (* Build parameter types for signature *)
     let struct_param_types =
       List.map struct_params ~f:(fun p ->
-        let type_str = high_level_member_type p.member in
+        let type_str = high_level_param_type p.member in
         if p.is_optional
         then {%string|?%{p.param_name}:%{type_str}|}
         else {%string|%{p.param_name}:%{type_str}|})
@@ -958,13 +1267,24 @@ and gen_array_element_struct_module
   : string
   =
   let module_name = ocaml_module_name struct_.name in
-  (* First, generate modules for any nested structs *)
+  (* First, generate modules for any nested inline structs *)
   let nested_modules =
     List.filter_map struct_.members ~f:(fun member ->
       match get_inline_struct_name member.type_ with
       | Some nested_name ->
         List.find structs ~f:(fun s -> String.equal s.name nested_name)
         |> Option.map ~f:(gen_nested_struct_module mode structs)
+      | None -> None)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+  in
+  (* Also generate modules for any optional pointer-to-struct members *)
+  let optional_ptr_modules =
+    List.filter_map struct_.members ~f:(fun member ->
+      match get_optional_pointer_struct_name member with
+      | Some nested_name ->
+        List.find structs ~f:(fun s -> String.equal s.name nested_name)
+        |> Option.map ~f:(gen_nested_optional_ptr_struct_module mode structs)
       | None -> None)
     |> List.dedup_and_sort ~compare:String.compare
     |> String.concat ~sep:"\n"
@@ -983,8 +1303,13 @@ and gen_array_element_struct_module
   let record_type = {%string|    type t = {
 %{fields_str}
     }|} in
+  let all_nested_modules =
+    String.concat
+      ~sep:"\n"
+      (List.filter ~f:(Fn.non String.is_empty) [ nested_modules; optional_ptr_modules ])
+  in
   let nested_prefix =
-    if String.is_empty nested_modules then "" else nested_modules ^ "\n"
+    if String.is_empty all_nested_modules then "" else all_nested_modules ^ "\n"
   in
   let module_keyword =
     match mode with
@@ -1024,12 +1349,127 @@ and gen_nested_struct_module
       }
     end
 |}
+
+and gen_nested_optional_ptr_struct_module
+  (mode : output_mode)
+  (structs : Ir.struct_ list)
+  (struct_ : Ir.struct_)
+  : string
+  =
+  let module_name = ocaml_module_name struct_.name in
+  (* Generate nested modules for any inline structs within this optional pointer struct *)
+  let nested_modules =
+    List.filter_map struct_.members ~f:(fun member ->
+      match get_inline_struct_name member.type_ with
+      | Some nested_name ->
+        List.find structs ~f:(fun s -> String.equal s.name nested_name)
+        |> Option.map ~f:(gen_deeply_nested_struct_module mode)
+      | None -> None)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+  in
+  let fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let field_name = escape_keyword member.name in
+        let field_type = high_level_member_type member in
+        Some {%string|        %{field_name} : %{field_type}|}))
+  in
+  let fields_str = String.concat ~sep:";\n" fields in
+  let nested_prefix =
+    if String.is_empty nested_modules then "" else nested_modules ^ "\n"
+  in
+  let module_keyword =
+    match mode with
+    | Implementation -> "= struct"
+    | Interface -> ": sig"
+  in
+  {%string|    module %{module_name} %{module_keyword}
+%{nested_prefix}      type t = {
+%{fields_str}
+      }
+    end
+|}
+
+and gen_deeply_nested_struct_module (mode : output_mode) (struct_ : Ir.struct_) : string =
+  let module_name = ocaml_module_name struct_.name in
+  let fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let field_name = escape_keyword member.name in
+        let field_type = high_level_member_type member in
+        Some {%string|          %{field_name} : %{field_type}|}))
+  in
+  let fields_str = String.concat ~sep:";\n" fields in
+  let module_keyword =
+    match mode with
+    | Implementation -> "= struct"
+    | Interface -> ": sig"
+  in
+  {%string|      module %{module_name} %{module_keyword}
+        type t = {
+%{fields_str}
+        }
+      end
+|}
 ;;
 
 let gen_array_element_struct_module_mli (structs : Ir.struct_ list) (struct_ : Ir.struct_)
   : string
   =
   gen_array_element_struct_module Interface structs struct_
+;;
+
+(** Generate a module for a struct used as an optional pointer-to-struct member. These are
+    top-level modules with record types. *)
+let gen_optional_pointer_struct_module
+  (mode : output_mode)
+  (structs : Ir.struct_ list)
+  (struct_ : Ir.struct_)
+  : string
+  =
+  let module_name = ocaml_module_name struct_.name in
+  (* First, generate modules for any inline nested structs *)
+  let nested_modules =
+    List.filter_map struct_.members ~f:(fun member ->
+      match get_inline_struct_name member.type_ with
+      | Some nested_name ->
+        List.find structs ~f:(fun s -> String.equal s.name nested_name)
+        |> Option.map ~f:(gen_nested_struct_module mode structs)
+      | None -> None)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> String.concat ~sep:"\n"
+  in
+  (* Generate the record type for this struct *)
+  let fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      if String.equal member.name "nextInChain"
+      then None
+      else (
+        let field_name = escape_keyword member.name in
+        let field_type = high_level_member_type member in
+        Some {%string|    %{field_name} : %{field_type}|}))
+  in
+  let fields_str = String.concat ~sep:";\n" fields in
+  let record_type = {%string|  type t = {
+%{fields_str}
+  }|} in
+  let nested_prefix =
+    if String.is_empty nested_modules then "" else nested_modules ^ "\n"
+  in
+  let module_keyword =
+    match mode with
+    | Implementation -> "= struct"
+    | Interface -> ": sig"
+  in
+  {%string|module %{module_name} %{module_keyword}
+%{nested_prefix}%{record_type}
+end
+|}
 ;;
 
 let gen_mli_method_with_output_struct
@@ -1300,6 +1740,36 @@ let collect_array_element_structs (api : Ir.api) : (Ir.struct_ * Ir.struct_ list
     | None -> None)
 ;;
 
+(** Collect structs that are used as optional pointer-to-struct members. These need module
+    definitions for the record types. *)
+let rec collect_optional_pointer_structs_from_struct
+  (api : Ir.api)
+  (struct_ : Ir.struct_)
+  (visited : Set.M(String).t)
+  : Ir.struct_ list
+  =
+  List.concat_map struct_.members ~f:(fun member ->
+    match get_optional_pointer_struct_name member with
+    | Some nested_name ->
+      if Set.mem visited nested_name
+      then []
+      else (
+        match List.find api.structs ~f:(fun s -> String.equal s.name nested_name) with
+        | Some nested_struct ->
+          let new_visited = Set.add visited nested_name in
+          (* Include this struct and recursively find structs it references *)
+          nested_struct
+          :: collect_optional_pointer_structs_from_struct api nested_struct new_visited
+        | None -> [])
+    | None -> [])
+;;
+
+let collect_optional_pointer_structs (api : Ir.api) : Ir.struct_ list =
+  List.concat_map api.structs ~f:(fun struct_ ->
+    collect_optional_pointer_structs_from_struct api struct_ (Set.empty (module String)))
+  |> List.dedup_and_sort ~compare:(fun a b -> String.compare a.name b.name)
+;;
+
 let gen_special_object_auto_methods
   (config : Config.t)
   (structs : Ir.struct_ list)
@@ -1383,6 +1853,12 @@ let gen_ml (api : Ir.api) : string =
   let config = Config.default in
   let header = "(* Generated by gen_bindings - high-level OCaml bindings *)\n\n" in
   let includes = "include Enums\ninclude Bitsets\n\n" in
+  (* Generate modules for structs used as optional pointer-to-struct members *)
+  let optional_pointer_struct_modules =
+    collect_optional_pointer_structs api
+    |> List.map ~f:(gen_optional_pointer_struct_module Implementation api.structs)
+    |> String.concat ~sep:"\n"
+  in
   (* Generate entry struct modules (for array-of-struct parameters) *)
   let array_element_struct_modules =
     collect_array_element_structs api
@@ -1522,6 +1998,7 @@ let gen_ml (api : Ir.api) : string =
     ; includes
     ; objects
     ; array_element_struct_modules
+    ; optional_pointer_struct_modules
     ; adapter_module
     ; instance_module
     ]
@@ -1531,6 +2008,12 @@ let gen_mli (api : Ir.api) : string =
   let config = Config.default in
   let header = "(* Generated by gen_bindings - high-level OCaml interface *)\n\n" in
   let includes = "include module type of Enums\ninclude module type of Bitsets\n\n" in
+  (* Generate module signatures for structs used as optional pointer-to-struct members *)
+  let optional_pointer_struct_modules =
+    collect_optional_pointer_structs api
+    |> List.map ~f:(gen_optional_pointer_struct_module Interface api.structs)
+    |> String.concat ~sep:"\n"
+  in
   (* Generate array element struct module signatures (for array-of-struct parameters) *)
   let array_element_struct_modules =
     collect_array_element_structs api
@@ -1679,6 +2162,7 @@ let gen_mli (api : Ir.api) : string =
     ; includes
     ; objects
     ; array_element_struct_modules
+    ; optional_pointer_struct_modules
     ; adapter_module
     ; instance_module
     ]

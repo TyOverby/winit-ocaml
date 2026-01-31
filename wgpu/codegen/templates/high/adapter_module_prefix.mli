@@ -69,31 +69,7 @@ module Device : sig
   (** Create a shader module from WGSL source code *)
   val create_shader_module : t -> ?label:string -> wgsl:string -> unit -> Shader_module.t
 
-  (* create_compute_pipeline is now auto-generated *)
-
-  (** Create a render pipeline (uses single shader module for vertex and fragment).
-      The [blend] parameter is a tuple of (color_src, color_dst, color_op, alpha_src, alpha_dst, alpha_op).
-      The optional [layout] parameter specifies the pipeline layout; if omitted, an empty layout is used.
-      The optional [vertex_buffer_layouts] parameter specifies vertex buffer layouts for
-      vertex attributes accessible via [@location(N)] in shaders.
-      If [depth_format] is provided, depth testing will be enabled with [depth_write_enabled]
-      (default: true) and [depth_compare] (default: Less) controlling the depth test behavior.
-      The [multisample_count] parameter controls MSAA (default: 1, use 4 for 4x MSAA). *)
-  val create_render_pipeline : t -> ?label:string -> shader_module:Shader_module.t ->
-    vertex_entry_point:string -> fragment_entry_point:string ->
-    color_format:Texture_format.t ->
-    ?topology:Primitive_topology.t -> ?front_face:Front_face.t ->
-    ?cull_mode:Cull_mode.t ->
-    ?blend:(Blend_factor.t * Blend_factor.t * Blend_operation.t *
-            Blend_factor.t * Blend_factor.t * Blend_operation.t) ->
-    ?write_mask:Color_write_mask.Item.t list ->
-    ?layout:Pipeline_layout.t ->
-    ?vertex_buffer_layouts:Vertex_buffer_layout.t list ->
-    ?depth_format:Texture_format.t ->
-    ?depth_write_enabled:bool ->
-    ?depth_compare:Compare_function.t ->
-    ?multisample_count:int ->
-    unit -> Render_pipeline.t
+  (* create_compute_pipeline and create_render_pipeline are now auto-generated *)
 
   (** Create a bind group layout for a single storage buffer *)
   val create_bind_group_layout_for_storage_buffer : t -> ?label:string -> binding:int ->

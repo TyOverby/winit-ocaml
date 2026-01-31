@@ -25,7 +25,6 @@ let method_config : (Method_key.t * method_handling) list =
   ; ("adapter", "get_features"), Manual { reason = "Output struct with array member" }
   ; ("device", "get_features"), Manual { reason = "Output struct with array member" }
   ; ("device", "create_shader_module"), Manual { reason = "Uses chained WGSL struct" }
-  ; ("device", "create_render_pipeline"), Manual { reason = "Deeply nested descriptors" }
   ; ("device", "get_adapter_info"), Manual { reason = "Returns struct" }
   ; ("queue", "write_buffer"), Manual { reason = "Uses pointer + size" }
   ; ( ("queue", "write_texture")

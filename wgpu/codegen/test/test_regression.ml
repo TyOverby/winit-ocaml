@@ -578,9 +578,122 @@ let%expect_test "manual: device.create_render_pipeline" =
     === Low-level ML ===
     external device_create_render_pipeline : device -> nativeint -> render_pipeline = "caml_wgpu_device_create_render_pipeline"
     === High-level MLI ===
-    (none)
+      val create_render_pipeline : t -> ?label:string -> ?layout:Pipeline_layout.t -> vertex_module:Shader_module.t -> vertex_entry_point:string -> ?vertex_constants:Constant_entry.t list -> ?vertex_buffers:Vertex_buffer_layout.t list -> primitive_topology:Primitive_topology.t -> primitive_strip_index_format:Index_format.t -> primitive_front_face:Front_face.t -> primitive_cull_mode:Cull_mode.t -> primitive_unclipped_depth:bool -> ?depth_stencil:Depth_stencil_state.t -> multisample_count:int -> multisample_mask:int -> multisample_alpha_to_coverage_enabled:bool -> ?fragment:Fragment_state.t -> unit -> Render_pipeline.t
+
     === High-level ML ===
-    (none)
+      let create_render_pipeline t ?(label = "") ?layout ~vertex_module ~vertex_entry_point ?(vertex_constants = []) ?(vertex_buffers = []) ~primitive_topology ~primitive_strip_index_format ~primitive_front_face ~primitive_cull_mode ~primitive_unclipped_depth ?depth_stencil ~multisample_count ~multisample_mask ~multisample_alpha_to_coverage_enabled ?fragment () =
+        let vertex_nested = Wgpu_low.Vertex_state.vertex_state_create () in
+        let primitive_nested = Wgpu_low.Primitive_state.primitive_state_create () in
+        let multisample_nested = Wgpu_low.Multisample_state.multisample_state_create () in
+        let desc_descriptor = Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_create () in
+        Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_label desc_descriptor label;
+        (match layout with
+         | Some x -> Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_layout desc_descriptor x.Pipeline_layout.handle
+         | None -> ());
+        Wgpu_low.Vertex_state.vertex_state_set_module vertex_nested vertex_module.Shader_module.handle;
+        Wgpu_low.Vertex_state.vertex_state_set_entry_point vertex_nested vertex_entry_point;
+        let vertex_constants_structs = List.map (fun (entry : Constant_entry.t) ->
+            let e = Wgpu_low.Constant_entry.constant_entry_create () in
+            Wgpu_low.Constant_entry.constant_entry_set_key e entry.key;
+            Wgpu_low.Constant_entry.constant_entry_set_value e entry.value;
+            e) vertex_constants in
+        let vertex_constants_array = Array.of_list vertex_constants_structs in
+        Wgpu_low.Vertex_state.vertex_state_set_constants vertex_nested vertex_constants_array;
+        let vertex_buffers_structs = List.map (fun (entry : Vertex_buffer_layout.t) ->
+            let e = Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_create () in
+            Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_set_step_mode e (Vertex_step_mode.to_int entry.step_mode);
+            Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_set_array_stride e entry.array_stride;
+            let attributes_low_structs = List.map (fun (attr : Vertex_attribute.t) ->
+              let a = Wgpu_low.Vertex_attribute.vertex_attribute_create () in
+              Wgpu_low.Vertex_attribute.vertex_attribute_set_format a (Vertex_format.to_int attr.format);
+              Wgpu_low.Vertex_attribute.vertex_attribute_set_offset a attr.offset;
+              Wgpu_low.Vertex_attribute.vertex_attribute_set_shader_location a attr.shader_location;
+              a) entry.attributes in
+            let attributes_low_array = Array.of_list attributes_low_structs in
+            Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_set_attributes e attributes_low_array;
+            e) vertex_buffers in
+        let vertex_buffers_array = Array.of_list vertex_buffers_structs in
+        Wgpu_low.Vertex_state.vertex_state_set_buffers vertex_nested vertex_buffers_array;
+        Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_vertex desc_descriptor vertex_nested;
+        Wgpu_low.Primitive_state.primitive_state_set_topology primitive_nested (Primitive_topology.to_int primitive_topology);
+        Wgpu_low.Primitive_state.primitive_state_set_strip_index_format primitive_nested (Index_format.to_int primitive_strip_index_format);
+        Wgpu_low.Primitive_state.primitive_state_set_front_face primitive_nested (Front_face.to_int primitive_front_face);
+        Wgpu_low.Primitive_state.primitive_state_set_cull_mode primitive_nested (Cull_mode.to_int primitive_cull_mode);
+        Wgpu_low.Primitive_state.primitive_state_set_unclipped_depth primitive_nested primitive_unclipped_depth;
+        Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_primitive desc_descriptor primitive_nested;
+        (match depth_stencil with
+         | Some (depth_stencil_rec : Depth_stencil_state.t) ->
+           let depth_stencil_ptr_struct = Wgpu_low.Depth_stencil_state.depth_stencil_state_create () in
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_format depth_stencil_ptr_struct (Texture_format.to_int depth_stencil_rec.format);
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_write_enabled depth_stencil_ptr_struct (Optional_bool.to_int depth_stencil_rec.depth_write_enabled);
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_compare depth_stencil_ptr_struct (Compare_function.to_int depth_stencil_rec.depth_compare);
+           let depth_stencil_ptr_struct_stencil_front_nested = Wgpu_low.Stencil_face_state.stencil_face_state_create () in
+           Wgpu_low.Stencil_face_state.stencil_face_state_set_compare depth_stencil_ptr_struct_stencil_front_nested (Compare_function.to_int depth_stencil_rec.stencil_front.compare);
+           Wgpu_low.Stencil_face_state.stencil_face_state_set_fail_op depth_stencil_ptr_struct_stencil_front_nested (Stencil_operation.to_int depth_stencil_rec.stencil_front.fail_op);
+           Wgpu_low.Stencil_face_state.stencil_face_state_set_depth_fail_op depth_stencil_ptr_struct_stencil_front_nested (Stencil_operation.to_int depth_stencil_rec.stencil_front.depth_fail_op);
+           Wgpu_low.Stencil_face_state.stencil_face_state_set_pass_op depth_stencil_ptr_struct_stencil_front_nested (Stencil_operation.to_int depth_stencil_rec.stencil_front.pass_op);
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_stencil_front depth_stencil_ptr_struct depth_stencil_ptr_struct_stencil_front_nested;
+           let depth_stencil_ptr_struct_stencil_back_nested = Wgpu_low.Stencil_face_state.stencil_face_state_create () in
+           Wgpu_low.Stencil_face_state.stencil_face_state_set_compare depth_stencil_ptr_struct_stencil_back_nested (Compare_function.to_int depth_stencil_rec.stencil_back.compare);
+           Wgpu_low.Stencil_face_state.stencil_face_state_set_fail_op depth_stencil_ptr_struct_stencil_back_nested (Stencil_operation.to_int depth_stencil_rec.stencil_back.fail_op);
+           Wgpu_low.Stencil_face_state.stencil_face_state_set_depth_fail_op depth_stencil_ptr_struct_stencil_back_nested (Stencil_operation.to_int depth_stencil_rec.stencil_back.depth_fail_op);
+           Wgpu_low.Stencil_face_state.stencil_face_state_set_pass_op depth_stencil_ptr_struct_stencil_back_nested (Stencil_operation.to_int depth_stencil_rec.stencil_back.pass_op);
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_stencil_back depth_stencil_ptr_struct depth_stencil_ptr_struct_stencil_back_nested;
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_stencil_read_mask depth_stencil_ptr_struct depth_stencil_rec.stencil_read_mask;
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_stencil_write_mask depth_stencil_ptr_struct depth_stencil_rec.stencil_write_mask;
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_bias depth_stencil_ptr_struct depth_stencil_rec.depth_bias;
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_bias_slope_scale depth_stencil_ptr_struct depth_stencil_rec.depth_bias_slope_scale;
+           Wgpu_low.Depth_stencil_state.depth_stencil_state_set_depth_bias_clamp depth_stencil_ptr_struct depth_stencil_rec.depth_bias_clamp;
+           Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_depth_stencil desc_descriptor depth_stencil_ptr_struct
+         | None -> ());
+        Wgpu_low.Multisample_state.multisample_state_set_count multisample_nested multisample_count;
+        Wgpu_low.Multisample_state.multisample_state_set_mask multisample_nested multisample_mask;
+        Wgpu_low.Multisample_state.multisample_state_set_alpha_to_coverage_enabled multisample_nested multisample_alpha_to_coverage_enabled;
+        Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_multisample desc_descriptor multisample_nested;
+        (match fragment with
+         | Some (fragment_rec : Fragment_state.t) ->
+           let fragment_ptr_struct = Wgpu_low.Fragment_state.fragment_state_create () in
+           Wgpu_low.Fragment_state.fragment_state_set_module fragment_ptr_struct fragment_rec.module_.Shader_module.handle;
+           Wgpu_low.Fragment_state.fragment_state_set_entry_point fragment_ptr_struct fragment_rec.entry_point;
+           let constants_low_structs = List.map (fun (elem : Constant_entry.t) ->
+             let s = Wgpu_low.Constant_entry.constant_entry_create () in
+             Wgpu_low.Constant_entry.constant_entry_set_key s elem.key;
+             Wgpu_low.Constant_entry.constant_entry_set_value s elem.value;
+             s) fragment_rec.constants in
+           let constants_low_array = Array.of_list constants_low_structs in
+           Wgpu_low.Fragment_state.fragment_state_set_constants fragment_ptr_struct constants_low_array;
+           let targets_low_structs = List.map (fun (elem : Color_target_state.t) ->
+             let s = Wgpu_low.Color_target_state.color_target_state_create () in
+             Wgpu_low.Color_target_state.color_target_state_set_format s (Texture_format.to_int elem.format);
+             (match elem.blend with
+              | Some blend_rec ->
+                let inline_blend = Wgpu_low.Blend_state.blend_state_create () in
+                let deep_color = Wgpu_low.Blend_component.blend_component_create () in
+                Wgpu_low.Blend_component.blend_component_set_operation deep_color (Blend_operation.to_int blend_rec.color.operation);
+                Wgpu_low.Blend_component.blend_component_set_src_factor deep_color (Blend_factor.to_int blend_rec.color.src_factor);
+                Wgpu_low.Blend_component.blend_component_set_dst_factor deep_color (Blend_factor.to_int blend_rec.color.dst_factor);
+                Wgpu_low.Blend_state.blend_state_set_color inline_blend deep_color;
+                let deep_alpha = Wgpu_low.Blend_component.blend_component_create () in
+                Wgpu_low.Blend_component.blend_component_set_operation deep_alpha (Blend_operation.to_int blend_rec.alpha.operation);
+                Wgpu_low.Blend_component.blend_component_set_src_factor deep_alpha (Blend_factor.to_int blend_rec.alpha.src_factor);
+                Wgpu_low.Blend_component.blend_component_set_dst_factor deep_alpha (Blend_factor.to_int blend_rec.alpha.dst_factor);
+                Wgpu_low.Blend_state.blend_state_set_alpha inline_blend deep_alpha;
+                Wgpu_low.Color_target_state.color_target_state_set_blend s inline_blend
+              | None -> ());
+             Wgpu_low.Color_target_state.color_target_state_set_write_mask s (Color_write_mask.list_to_int elem.write_mask);
+             s) fragment_rec.targets in
+           let targets_low_array = Array.of_list targets_low_structs in
+           Wgpu_low.Fragment_state.fragment_state_set_targets fragment_ptr_struct targets_low_array;
+           Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_set_fragment desc_descriptor fragment_ptr_struct
+         | None -> ());
+        let result = Wgpu_low.device_create_render_pipeline t.handle desc_descriptor in
+        List.iter (fun e -> Wgpu_low.Constant_entry.constant_entry_free e) vertex_constants_structs;
+        List.iter (fun e -> Wgpu_low.Vertex_buffer_layout.vertex_buffer_layout_free e) vertex_buffers_structs;
+        Wgpu_low.Multisample_state.multisample_state_free multisample_nested;
+        Wgpu_low.Primitive_state.primitive_state_free primitive_nested;
+        Wgpu_low.Vertex_state.vertex_state_free vertex_nested;
+        Wgpu_low.Render_pipeline_descriptor.render_pipeline_descriptor_free desc_descriptor;
+        ({ Render_pipeline.handle = result } : Render_pipeline.t)
     |}]
 ;;
 
@@ -896,9 +1009,23 @@ let%expect_test "manual: command_encoder.begin_compute_pass" =
     === Low-level ML ===
     external command_encoder_begin_compute_pass : command_encoder -> nativeint -> compute_pass_encoder = "caml_wgpu_command_encoder_begin_compute_pass"
     === High-level MLI ===
-    (none)
+      val begin_compute_pass : t -> ?label:string -> ?timestamp_writes:Compute_pass_timestamp_writes.t -> unit -> Compute_pass_encoder.t
+
     === High-level ML ===
-    (none)
+      let begin_compute_pass t ?(label = "") ?timestamp_writes () =
+        let desc_descriptor = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
+        Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc_descriptor label;
+        (match timestamp_writes with
+         | Some (timestamp_writes_rec : Compute_pass_timestamp_writes.t) ->
+           let timestamp_writes_ptr_struct = Wgpu_low.Compute_pass_timestamp_writes.compute_pass_timestamp_writes_create () in
+           Wgpu_low.Compute_pass_timestamp_writes.compute_pass_timestamp_writes_set_query_set timestamp_writes_ptr_struct timestamp_writes_rec.query_set.Query_set.handle;
+           Wgpu_low.Compute_pass_timestamp_writes.compute_pass_timestamp_writes_set_beginning_of_pass_write_index timestamp_writes_ptr_struct timestamp_writes_rec.beginning_of_pass_write_index;
+           Wgpu_low.Compute_pass_timestamp_writes.compute_pass_timestamp_writes_set_end_of_pass_write_index timestamp_writes_ptr_struct timestamp_writes_rec.end_of_pass_write_index;
+           Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_timestamp_writes desc_descriptor timestamp_writes_ptr_struct
+         | None -> ());
+        let result = Wgpu_low.command_encoder_begin_compute_pass t.handle desc_descriptor in
+        Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_free desc_descriptor;
+        ({ Compute_pass_encoder.handle = result } : Compute_pass_encoder.t)
     |}]
 ;;
 
@@ -922,9 +1049,60 @@ let%expect_test "manual: command_encoder.begin_render_pass" =
     === Low-level ML ===
     external command_encoder_begin_render_pass : command_encoder -> nativeint -> render_pass_encoder = "caml_wgpu_command_encoder_begin_render_pass"
     === High-level MLI ===
-    (none)
+      val begin_render_pass : t -> ?label:string -> ?color_attachments:Render_pass_color_attachment.t list -> ?depth_stencil_attachment:Render_pass_depth_stencil_attachment.t -> ?occlusion_query_set:Query_set.t -> ?timestamp_writes:Render_pass_timestamp_writes.t -> unit -> Render_pass_encoder.t
+
     === High-level ML ===
-    (none)
+      let begin_render_pass t ?(label = "") ?(color_attachments = []) ?depth_stencil_attachment ?occlusion_query_set ?timestamp_writes () =
+        let desc_descriptor = Wgpu_low.Render_pass_descriptor.render_pass_descriptor_create () in
+        Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_label desc_descriptor label;
+        let color_attachments_structs = List.map (fun (entry : Render_pass_color_attachment.t) ->
+            let e = Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_create () in
+            Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_set_view e (match entry.view with Some x -> x.Texture_view.handle | None -> 0n);
+            Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_set_depth_slice e entry.depth_slice;
+            Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_set_resolve_target e (match entry.resolve_target with Some x -> x.Texture_view.handle | None -> 0n);
+            Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_set_load_op e (Load_op.to_int entry.load_op);
+            Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_set_store_op e (Store_op.to_int entry.store_op);
+            (match entry.clear_value with
+             | Some clear_value_rec ->
+               let nested_clear_value = Wgpu_low.Color.color_create () in
+               Wgpu_low.Color.color_set_r nested_clear_value clear_value_rec.r;
+               Wgpu_low.Color.color_set_g nested_clear_value clear_value_rec.g;
+               Wgpu_low.Color.color_set_b nested_clear_value clear_value_rec.b;
+               Wgpu_low.Color.color_set_a nested_clear_value clear_value_rec.a;
+               Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_set_clear_value e nested_clear_value
+             | None -> ());
+            e) color_attachments in
+        let color_attachments_array = Array.of_list color_attachments_structs in
+        Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_color_attachments desc_descriptor color_attachments_array;
+        (match depth_stencil_attachment with
+         | Some (depth_stencil_attachment_rec : Render_pass_depth_stencil_attachment.t) ->
+           let depth_stencil_attachment_ptr_struct = Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_create () in
+           Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_set_view depth_stencil_attachment_ptr_struct depth_stencil_attachment_rec.view.Texture_view.handle;
+           Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_set_depth_load_op depth_stencil_attachment_ptr_struct (Load_op.to_int depth_stencil_attachment_rec.depth_load_op);
+           Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_set_depth_store_op depth_stencil_attachment_ptr_struct (Store_op.to_int depth_stencil_attachment_rec.depth_store_op);
+           Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_set_depth_clear_value depth_stencil_attachment_ptr_struct depth_stencil_attachment_rec.depth_clear_value;
+           Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_set_depth_read_only depth_stencil_attachment_ptr_struct depth_stencil_attachment_rec.depth_read_only;
+           Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_set_stencil_load_op depth_stencil_attachment_ptr_struct (Load_op.to_int depth_stencil_attachment_rec.stencil_load_op);
+           Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_set_stencil_store_op depth_stencil_attachment_ptr_struct (Store_op.to_int depth_stencil_attachment_rec.stencil_store_op);
+           Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_set_stencil_clear_value depth_stencil_attachment_ptr_struct depth_stencil_attachment_rec.stencil_clear_value;
+           Wgpu_low.Render_pass_depth_stencil_attachment.render_pass_depth_stencil_attachment_set_stencil_read_only depth_stencil_attachment_ptr_struct depth_stencil_attachment_rec.stencil_read_only;
+           Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_depth_stencil_attachment desc_descriptor depth_stencil_attachment_ptr_struct
+         | None -> ());
+        (match occlusion_query_set with
+         | Some x -> Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_occlusion_query_set desc_descriptor x.Query_set.handle
+         | None -> ());
+        (match timestamp_writes with
+         | Some (timestamp_writes_rec : Render_pass_timestamp_writes.t) ->
+           let timestamp_writes_ptr_struct = Wgpu_low.Render_pass_timestamp_writes.render_pass_timestamp_writes_create () in
+           Wgpu_low.Render_pass_timestamp_writes.render_pass_timestamp_writes_set_query_set timestamp_writes_ptr_struct timestamp_writes_rec.query_set.Query_set.handle;
+           Wgpu_low.Render_pass_timestamp_writes.render_pass_timestamp_writes_set_beginning_of_pass_write_index timestamp_writes_ptr_struct timestamp_writes_rec.beginning_of_pass_write_index;
+           Wgpu_low.Render_pass_timestamp_writes.render_pass_timestamp_writes_set_end_of_pass_write_index timestamp_writes_ptr_struct timestamp_writes_rec.end_of_pass_write_index;
+           Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_timestamp_writes desc_descriptor timestamp_writes_ptr_struct
+         | None -> ());
+        let result = Wgpu_low.command_encoder_begin_render_pass t.handle desc_descriptor in
+        List.iter (fun e -> Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_free e) color_attachments_structs;
+        Wgpu_low.Render_pass_descriptor.render_pass_descriptor_free desc_descriptor;
+        ({ Render_pass_encoder.handle = result } : Render_pass_encoder.t)
     |}]
 ;;
 
