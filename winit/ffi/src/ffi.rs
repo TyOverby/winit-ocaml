@@ -20,7 +20,7 @@ use crate::{RawHandleBackend, RawHandleData, RawWaylandHandle, RawWindowHandleIn
 use crate::{RawHandleBackend, RawHandleData, RawWin32Handle, RawWindowHandleInfo};
 
 #[cfg(target_os = "macos")]
-use crate::{RawAppKitHandle, RawHandleBackend, RawHandleData, RawWindowHandleInfo};
+use crate::{RawAppKitHandle, RawHandleBackend, RawHandleData, RawWindowHandleInfo, RawX11Handle};
 
 #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
 use crate::{RawHandleBackend, RawHandleData, RawWindowHandleInfo, RawX11Handle};
