@@ -37,7 +37,7 @@ let write_ppm ~filename ~width ~height ~data ~bytes_per_row =
 let ppm_to_png ~ppm_file ~png_file =
   (* Exclude timestamp chunks to ensure reproducible output *)
   let cmd =
-    sprintf "convert %s -define png:exclude-chunks=date,time %s" ppm_file png_file
+    sprintf "magick %s -define png:exclude-chunks=date,time %s" ppm_file png_file
   in
   match Core_unix.system cmd with
   | Ok () -> ()
@@ -62,7 +62,7 @@ let load_png ~filename =
     | _ -> failwith "Failed to parse image dimensions"
   in
   (* Convert to raw RGBA and read *)
-  let convert_cmd = sprintf "convert %s -depth 8 rgba:-" filename in
+  let convert_cmd = sprintf "magick %s -depth 8 rgba:-" filename in
   let ic = Core_unix.open_process_in convert_cmd in
   let data_size = width * height * 4 in
   let data = Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout data_size in
