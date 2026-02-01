@@ -29,10 +29,6 @@ let method_config : (Method_key.t * method_handling) list =
   ; ("queue", "write_buffer"), Manual { reason = "Uses pointer + size" }
   ; ( ("queue", "write_texture")
     , Manual { reason = "Uses pointer + size, bigarray wrapper" } )
-  ; ( ("command_encoder", "begin_compute_pass")
-    , Manual { reason = "Uses descriptor struct with arrays" } )
-  ; ( ("command_encoder", "begin_render_pass")
-    , Manual { reason = "Uses descriptor struct with arrays" } )
   ; ( ("surface", "get_current_texture")
     , Manual { reason = "Manually implemented with custom surface_texture type" } )
   ; ( ("surface", "get_capabilities")

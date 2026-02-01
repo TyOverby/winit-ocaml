@@ -125,7 +125,7 @@ let () =
       in
       (* Begin render pass *)
       let render_pass =
-        Wgpu.begin_render_pass
+        Wgpu.begin_render_pass_simple
           encoder
           ~label:"triangle_pass"
           ~color_view:texture_view

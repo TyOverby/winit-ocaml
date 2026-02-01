@@ -264,7 +264,10 @@ let () =
     Wgpu.Device.create_command_encoder device ~label:"compute_builtins_encoder" ()
   in
   let compute_pass =
-    Wgpu.Command_encoder.begin_compute_pass encoder ~label:"compute_builtins_pass" ()
+    Wgpu.Command_encoder.begin_compute_pass_simple
+      encoder
+      ~label:"compute_builtins_pass"
+      ()
   in
   Wgpu.Compute_pass_encoder.set_pipeline compute_pass ~pipeline:compute_pipeline;
   Wgpu.set_bind_group compute_pass ~index:0 ~bind_group;

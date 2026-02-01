@@ -72,7 +72,7 @@ let () =
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   (* Begin render pass that clears to red (R=1, G=0, B=0, A=1) *)
   let render_pass =
-    Wgpu.Command_encoder.begin_render_pass
+    Wgpu.Command_encoder.begin_render_pass_simple
       encoder
       ~label:"clear_pass"
       ~color_view:texture_view

@@ -369,7 +369,7 @@ let () =
   (* Render 4 quads in a 2x2 grid *)
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   let render_pass =
-    Wgpu.begin_render_pass
+    Wgpu.begin_render_pass_simple
       encoder
       ~label:"textured_quad_pass"
       ~color_view:render_texture_view

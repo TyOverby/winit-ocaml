@@ -22,7 +22,7 @@ end
 module Command_encoder = struct
   type t = { handle : Wgpu_low.command_encoder }
 
-  let begin_compute_pass t ?(label = "") () =
+  let begin_compute_pass_simple t ?(label = "") () =
     let desc = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
     Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc label;
     let pass = Wgpu_low.command_encoder_begin_compute_pass t.handle desc in
@@ -30,7 +30,7 @@ module Command_encoder = struct
     ({ Compute_pass_encoder.handle = pass } : Compute_pass_encoder.t)
   ;;
 
-  let begin_render_pass
+  let begin_render_pass_simple
     t
     ?(label = "")
     ~color_view

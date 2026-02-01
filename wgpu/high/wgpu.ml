@@ -724,7 +724,7 @@ end
 module Command_encoder = struct
   type t = { handle : Wgpu_low.command_encoder }
 
-  let begin_compute_pass t ?(label = "") () =
+  let begin_compute_pass_simple t ?(label = "") () =
     let desc = Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create () in
     Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label desc label;
     let pass = Wgpu_low.command_encoder_begin_compute_pass t.handle desc in
@@ -732,7 +732,7 @@ module Command_encoder = struct
     ({ Compute_pass_encoder.handle = pass } : Compute_pass_encoder.t)
   ;;
 
-  let begin_render_pass
+  let begin_render_pass_simple
     t
     ?(label = "")
     ~color_view
@@ -781,6 +781,178 @@ module Command_encoder = struct
     let result = Wgpu_low.command_encoder_finish t.handle desc_descriptor in
     Wgpu_low.Command_buffer_descriptor.command_buffer_descriptor_free desc_descriptor;
     ({ Command_buffer.handle = result } : Command_buffer.t)
+  ;;
+
+  let begin_compute_pass t ?(label = "") ?timestamp_writes () =
+    let desc_descriptor =
+      Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_create ()
+    in
+    Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_label
+      desc_descriptor
+      label;
+    (match timestamp_writes with
+     | Some (timestamp_writes_rec : Compute_pass_timestamp_writes.t) ->
+       let timestamp_writes_ptr_struct =
+         Wgpu_low.Compute_pass_timestamp_writes.compute_pass_timestamp_writes_create ()
+       in
+       Wgpu_low.Compute_pass_timestamp_writes.compute_pass_timestamp_writes_set_query_set
+         timestamp_writes_ptr_struct
+         timestamp_writes_rec.query_set.Query_set.handle;
+       Wgpu_low.Compute_pass_timestamp_writes
+       .compute_pass_timestamp_writes_set_beginning_of_pass_write_index
+         timestamp_writes_ptr_struct
+         timestamp_writes_rec.beginning_of_pass_write_index;
+       Wgpu_low.Compute_pass_timestamp_writes
+       .compute_pass_timestamp_writes_set_end_of_pass_write_index
+         timestamp_writes_ptr_struct
+         timestamp_writes_rec.end_of_pass_write_index;
+       Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_set_timestamp_writes
+         desc_descriptor
+         timestamp_writes_ptr_struct
+     | None -> ());
+    let result = Wgpu_low.command_encoder_begin_compute_pass t.handle desc_descriptor in
+    Wgpu_low.Compute_pass_descriptor.compute_pass_descriptor_free desc_descriptor;
+    ({ Compute_pass_encoder.handle = result } : Compute_pass_encoder.t)
+  ;;
+
+  let begin_render_pass
+    t
+    ?(label = "")
+    ?(color_attachments = [])
+    ?depth_stencil_attachment
+    ?occlusion_query_set
+    ?timestamp_writes
+    ()
+    =
+    let desc_descriptor =
+      Wgpu_low.Render_pass_descriptor.render_pass_descriptor_create ()
+    in
+    Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_label desc_descriptor label;
+    let color_attachments_structs =
+      List.map
+        (fun (entry : Render_pass_color_attachment.t) ->
+          let e =
+            Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_create ()
+          in
+          Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_set_view
+            e
+            (match entry.view with
+             | Some x -> x.Texture_view.handle
+             | None -> 0n);
+          Wgpu_low.Render_pass_color_attachment
+          .render_pass_color_attachment_set_depth_slice
+            e
+            entry.depth_slice;
+          Wgpu_low.Render_pass_color_attachment
+          .render_pass_color_attachment_set_resolve_target
+            e
+            (match entry.resolve_target with
+             | Some x -> x.Texture_view.handle
+             | None -> 0n);
+          Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_set_load_op
+            e
+            (Load_op.to_int entry.load_op);
+          Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_set_store_op
+            e
+            (Store_op.to_int entry.store_op);
+          (match entry.clear_value with
+           | Some clear_value_rec ->
+             let nested_clear_value = Wgpu_low.Color.color_create () in
+             Wgpu_low.Color.color_set_r nested_clear_value clear_value_rec.r;
+             Wgpu_low.Color.color_set_g nested_clear_value clear_value_rec.g;
+             Wgpu_low.Color.color_set_b nested_clear_value clear_value_rec.b;
+             Wgpu_low.Color.color_set_a nested_clear_value clear_value_rec.a;
+             Wgpu_low.Render_pass_color_attachment
+             .render_pass_color_attachment_set_clear_value
+               e
+               nested_clear_value
+           | None -> ());
+          e)
+        color_attachments
+    in
+    let color_attachments_array = Array.of_list color_attachments_structs in
+    Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_color_attachments
+      desc_descriptor
+      color_attachments_array;
+    (match depth_stencil_attachment with
+     | Some (depth_stencil_attachment_rec : Render_pass_depth_stencil_attachment.t) ->
+       let depth_stencil_attachment_ptr_struct =
+         Wgpu_low.Render_pass_depth_stencil_attachment
+         .render_pass_depth_stencil_attachment_create
+           ()
+       in
+       Wgpu_low.Render_pass_depth_stencil_attachment
+       .render_pass_depth_stencil_attachment_set_view
+         depth_stencil_attachment_ptr_struct
+         depth_stencil_attachment_rec.view.Texture_view.handle;
+       Wgpu_low.Render_pass_depth_stencil_attachment
+       .render_pass_depth_stencil_attachment_set_depth_load_op
+         depth_stencil_attachment_ptr_struct
+         (Load_op.to_int depth_stencil_attachment_rec.depth_load_op);
+       Wgpu_low.Render_pass_depth_stencil_attachment
+       .render_pass_depth_stencil_attachment_set_depth_store_op
+         depth_stencil_attachment_ptr_struct
+         (Store_op.to_int depth_stencil_attachment_rec.depth_store_op);
+       Wgpu_low.Render_pass_depth_stencil_attachment
+       .render_pass_depth_stencil_attachment_set_depth_clear_value
+         depth_stencil_attachment_ptr_struct
+         depth_stencil_attachment_rec.depth_clear_value;
+       Wgpu_low.Render_pass_depth_stencil_attachment
+       .render_pass_depth_stencil_attachment_set_depth_read_only
+         depth_stencil_attachment_ptr_struct
+         depth_stencil_attachment_rec.depth_read_only;
+       Wgpu_low.Render_pass_depth_stencil_attachment
+       .render_pass_depth_stencil_attachment_set_stencil_load_op
+         depth_stencil_attachment_ptr_struct
+         (Load_op.to_int depth_stencil_attachment_rec.stencil_load_op);
+       Wgpu_low.Render_pass_depth_stencil_attachment
+       .render_pass_depth_stencil_attachment_set_stencil_store_op
+         depth_stencil_attachment_ptr_struct
+         (Store_op.to_int depth_stencil_attachment_rec.stencil_store_op);
+       Wgpu_low.Render_pass_depth_stencil_attachment
+       .render_pass_depth_stencil_attachment_set_stencil_clear_value
+         depth_stencil_attachment_ptr_struct
+         depth_stencil_attachment_rec.stencil_clear_value;
+       Wgpu_low.Render_pass_depth_stencil_attachment
+       .render_pass_depth_stencil_attachment_set_stencil_read_only
+         depth_stencil_attachment_ptr_struct
+         depth_stencil_attachment_rec.stencil_read_only;
+       Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_depth_stencil_attachment
+         desc_descriptor
+         depth_stencil_attachment_ptr_struct
+     | None -> ());
+    (match occlusion_query_set with
+     | Some x ->
+       Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_occlusion_query_set
+         desc_descriptor
+         x.Query_set.handle
+     | None -> ());
+    (match timestamp_writes with
+     | Some (timestamp_writes_rec : Render_pass_timestamp_writes.t) ->
+       let timestamp_writes_ptr_struct =
+         Wgpu_low.Render_pass_timestamp_writes.render_pass_timestamp_writes_create ()
+       in
+       Wgpu_low.Render_pass_timestamp_writes.render_pass_timestamp_writes_set_query_set
+         timestamp_writes_ptr_struct
+         timestamp_writes_rec.query_set.Query_set.handle;
+       Wgpu_low.Render_pass_timestamp_writes
+       .render_pass_timestamp_writes_set_beginning_of_pass_write_index
+         timestamp_writes_ptr_struct
+         timestamp_writes_rec.beginning_of_pass_write_index;
+       Wgpu_low.Render_pass_timestamp_writes
+       .render_pass_timestamp_writes_set_end_of_pass_write_index
+         timestamp_writes_ptr_struct
+         timestamp_writes_rec.end_of_pass_write_index;
+       Wgpu_low.Render_pass_descriptor.render_pass_descriptor_set_timestamp_writes
+         desc_descriptor
+         timestamp_writes_ptr_struct
+     | None -> ());
+    let result = Wgpu_low.command_encoder_begin_render_pass t.handle desc_descriptor in
+    List.iter
+      (fun e -> Wgpu_low.Render_pass_color_attachment.render_pass_color_attachment_free e)
+      color_attachments_structs;
+    Wgpu_low.Render_pass_descriptor.render_pass_descriptor_free desc_descriptor;
+    ({ Render_pass_encoder.handle = result } : Render_pass_encoder.t)
   ;;
 
   let copy_buffer_to_buffer
@@ -2343,11 +2515,11 @@ end
 
 (* Convenience functions that delegate to module methods *)
 
-let begin_compute_pass (encoder : Command_encoder.t) ?(label = "") () =
-  Command_encoder.begin_compute_pass encoder ~label ()
+let begin_compute_pass_simple (encoder : Command_encoder.t) ?(label = "") () =
+  Command_encoder.begin_compute_pass_simple encoder ~label ()
 ;;
 
-let begin_render_pass
+let begin_render_pass_simple
   (encoder : Command_encoder.t)
   ?(label = "")
   ~color_view
@@ -2361,7 +2533,7 @@ let begin_render_pass
   ?resolve_target
   ()
   =
-  Command_encoder.begin_render_pass
+  Command_encoder.begin_render_pass_simple
     encoder
     ~label
     ~color_view

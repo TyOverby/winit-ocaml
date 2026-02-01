@@ -600,7 +600,7 @@ let () =
     (* Render *)
     let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
     let render_pass =
-      Wgpu.begin_render_pass
+      Wgpu.begin_render_pass_simple
         encoder
         ~label:"render_pass"
         ~color_view

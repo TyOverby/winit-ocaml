@@ -12,13 +12,14 @@ end
 module Command_encoder : sig
   type t
 
-  (** Begin a compute pass on this command encoder *)
-  val begin_compute_pass : t -> ?label:string -> unit -> Compute_pass_encoder.t
+  (** Begin a compute pass on this command encoder (simple convenience function) *)
+  val begin_compute_pass_simple : t -> ?label:string -> unit -> Compute_pass_encoder.t
 
   (** Begin a render pass on this command encoder with a single color attachment
-      and optional depth attachment. If [depth_view] is provided, depth testing
-      will be enabled. If [resolve_target] is provided, MSAA resolve will be performed. *)
-  val begin_render_pass
+      and optional depth attachment (simple convenience function).
+      If [depth_view] is provided, depth testing will be enabled.
+      If [resolve_target] is provided, MSAA resolve will be performed. *)
+  val begin_render_pass_simple
     :  t
     -> ?label:string
     -> color_view:Texture_view.t

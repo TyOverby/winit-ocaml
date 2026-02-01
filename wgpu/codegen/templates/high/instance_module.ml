@@ -24,11 +24,11 @@ end
 
 (* Convenience functions that delegate to module methods *)
 
-let begin_compute_pass (encoder : Command_encoder.t) ?(label = "") () =
-  Command_encoder.begin_compute_pass encoder ~label ()
+let begin_compute_pass_simple (encoder : Command_encoder.t) ?(label = "") () =
+  Command_encoder.begin_compute_pass_simple encoder ~label ()
 ;;
 
-let begin_render_pass
+let begin_render_pass_simple
   (encoder : Command_encoder.t)
   ?(label = "")
   ~color_view
@@ -42,7 +42,7 @@ let begin_render_pass
   ?resolve_target
   ()
   =
-  Command_encoder.begin_render_pass
+  Command_encoder.begin_render_pass_simple
     encoder
     ~label
     ~color_view

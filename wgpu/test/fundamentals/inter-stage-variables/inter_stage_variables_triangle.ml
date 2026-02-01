@@ -96,7 +96,7 @@ let render ~device ~queue ~pipeline ~output_name =
   (* Render the triangle *)
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   let render_pass =
-    Wgpu.begin_render_pass
+    Wgpu.begin_render_pass_simple
       encoder
       ~label:"inter_stage_pass"
       ~color_view:texture_view

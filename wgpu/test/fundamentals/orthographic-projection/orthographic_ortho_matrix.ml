@@ -497,7 +497,7 @@ let render
   Wgpu.Queue.write_buffer queue ~buffer:uniform_buffer ~offset:0L ~data:uniform_data;
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   let render_pass =
-    Wgpu.begin_render_pass
+    Wgpu.begin_render_pass_simple
       encoder
       ~label:"ortho_pass"
       ~color_view

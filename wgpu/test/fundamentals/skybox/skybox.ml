@@ -166,7 +166,7 @@ let render_frame ~device ~queue ~pipeline ~bind_group ~angle ~output_name =
   in
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   let render_pass =
-    Wgpu.begin_render_pass
+    Wgpu.begin_render_pass_simple
       encoder
       ~label:"skybox_pass"
       ~color_view:texture_view

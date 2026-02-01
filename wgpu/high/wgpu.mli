@@ -559,13 +559,14 @@ end
 module Command_encoder : sig
   type t
 
-  (** Begin a compute pass on this command encoder *)
-  val begin_compute_pass : t -> ?label:string -> unit -> Compute_pass_encoder.t
+  (** Begin a compute pass on this command encoder (simple convenience function) *)
+  val begin_compute_pass_simple : t -> ?label:string -> unit -> Compute_pass_encoder.t
 
   (** Begin a render pass on this command encoder with a single color attachment and
-      optional depth attachment. If [depth_view] is provided, depth testing will be
-      enabled. If [resolve_target] is provided, MSAA resolve will be performed. *)
-  val begin_render_pass
+      optional depth attachment (simple convenience function). If [depth_view] is
+      provided, depth testing will be enabled. If [resolve_target] is provided, MSAA
+      resolve will be performed. *)
+  val begin_render_pass_simple
     :  t
     -> ?label:string
     -> color_view:Texture_view.t
@@ -582,6 +583,23 @@ module Command_encoder : sig
 
   val release : t -> unit
   val finish : t -> ?label:string -> unit -> Command_buffer.t
+
+  val begin_compute_pass
+    :  t
+    -> ?label:string
+    -> ?timestamp_writes:Compute_pass_timestamp_writes.t
+    -> unit
+    -> Compute_pass_encoder.t
+
+  val begin_render_pass
+    :  t
+    -> ?label:string
+    -> ?color_attachments:Render_pass_color_attachment.t list
+    -> ?depth_stencil_attachment:Render_pass_depth_stencil_attachment.t
+    -> ?occlusion_query_set:Query_set.t
+    -> ?timestamp_writes:Render_pass_timestamp_writes.t
+    -> unit
+    -> Render_pass_encoder.t
 
   val copy_buffer_to_buffer
     :  t
@@ -1000,17 +1018,18 @@ module Instance : sig
   val process_events : t -> unit
 end
 
-(** Begin a compute pass on a command encoder *)
-val begin_compute_pass
+(** Begin a compute pass on a command encoder (simple convenience function) *)
+val begin_compute_pass_simple
   :  Command_encoder.t
   -> ?label:string
   -> unit
   -> Compute_pass_encoder.t
 
 (** Begin a render pass on a command encoder with a single color attachment and optional
-    depth attachment. If [depth_view] is provided, depth testing will be enabled. If
-    [resolve_target] is provided, MSAA resolve will be performed. *)
-val begin_render_pass
+    depth attachment (simple convenience function). If [depth_view] is provided, depth
+    testing will be enabled. If [resolve_target] is provided, MSAA resolve will be
+    performed. *)
+val begin_render_pass_simple
   :  Command_encoder.t
   -> ?label:string
   -> color_view:Texture_view.t

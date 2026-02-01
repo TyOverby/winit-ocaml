@@ -16,17 +16,18 @@ module Instance : sig
   (* AUTO-GENERATED INSTANCE METHOD SIGNATURES INJECTED HERE *)
 end
 
-(** Begin a compute pass on a command encoder *)
-val begin_compute_pass
+(** Begin a compute pass on a command encoder (simple convenience function) *)
+val begin_compute_pass_simple
   :  Command_encoder.t
   -> ?label:string
   -> unit
   -> Compute_pass_encoder.t
 
 (** Begin a render pass on a command encoder with a single color attachment and optional
-    depth attachment. If [depth_view] is provided, depth testing will be enabled. If
-    [resolve_target] is provided, MSAA resolve will be performed. *)
-val begin_render_pass
+    depth attachment (simple convenience function). If [depth_view] is provided, depth
+    testing will be enabled. If [resolve_target] is provided, MSAA resolve will be
+    performed. *)
+val begin_render_pass_simple
   :  Command_encoder.t
   -> ?label:string
   -> color_view:Texture_view.t

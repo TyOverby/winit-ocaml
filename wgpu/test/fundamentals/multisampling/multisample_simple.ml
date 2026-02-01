@@ -126,7 +126,7 @@ let () =
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   (* Begin render pass with MSAA texture and resolve target *)
   let render_pass =
-    Wgpu.begin_render_pass
+    Wgpu.begin_render_pass_simple
       encoder
       ~label:"msaa_pass"
       ~color_view:msaa_view
