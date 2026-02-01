@@ -67,6 +67,11 @@ jobs:
     runs-on: macos-latest
     needs: build-linux
 
+    # OSX builds are really expensive, only allow one at a time
+    concurrency:
+      group: osx-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
