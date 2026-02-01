@@ -49,7 +49,7 @@ jobs:
             opam-${{ runner.os }}-${{ env.CACHE_VERSION }}-
 
       - name: Install OCaml dependencies
-        run: opam install dune ppx_jane base stdio core core_unix yaml gg --yes
+        run: opam install dune ppx_jane base stdio core core_unix yaml gg ocamlformat --yes
 
       - name: Build project
         run: opam exec -- dune build
@@ -65,12 +65,16 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    needs: build-linux
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Install clang-format
+        run: brew install clang-format
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -96,7 +100,7 @@ jobs:
             opam-${{ runner.os }}-${{ env.CACHE_VERSION }}-
 
       - name: Install OCaml dependencies
-        run: opam install dune ppx_jane base stdio core core_unix yaml gg --yes
+        run: opam install dune ppx_jane base stdio core core_unix yaml gg ocamlformat --yes
 
       - name: Build project
         run: opam exec -- dune build
