@@ -166,11 +166,18 @@ let render_frame ~device ~queue ~pipeline ~bind_group ~angle ~output_name =
   in
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   let render_pass =
-    Wgpu.begin_render_pass_simple
+    Wgpu.Command_encoder.begin_render_pass
       encoder
       ~label:"skybox_pass"
-      ~color_view:texture_view
-      ~clear_color:(0.0, 0.0, 0.0, 1.0)
+      ~color_attachments:
+        [ { view = Some texture_view
+          ; depth_slice = 0xFFFFFFFF
+          ; resolve_target = None
+          ; load_op = Wgpu.Load_op.Clear
+          ; store_op = Wgpu.Store_op.Store
+          ; clear_value = Some { r = 0.0; g = 0.0; b = 0.0; a = 1.0 }
+          }
+        ]
       ()
   in
   Wgpu.Render_pass_encoder.set_pipeline render_pass ~pipeline;

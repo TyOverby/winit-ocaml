@@ -134,7 +134,7 @@ let () =
   in
   let encoder = Wgpu.Device.create_command_encoder device ~label:"compute_encoder" () in
   let compute_pass =
-    Wgpu.Command_encoder.begin_compute_pass_simple encoder ~label:"compute_pass" ()
+    Wgpu.Command_encoder.begin_compute_pass encoder ~label:"compute_pass" ()
   in
   Wgpu.Compute_pass_encoder.set_pipeline compute_pass ~pipeline:compute_pipeline;
   Wgpu.set_bind_group compute_pass ~index:0 ~bind_group;

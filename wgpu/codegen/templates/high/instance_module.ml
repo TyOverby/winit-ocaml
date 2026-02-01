@@ -24,39 +24,6 @@ end
 
 (* Convenience functions that delegate to module methods *)
 
-let begin_compute_pass_simple (encoder : Command_encoder.t) ?(label = "") () =
-  Command_encoder.begin_compute_pass_simple encoder ~label ()
-;;
-
-let begin_render_pass_simple
-  (encoder : Command_encoder.t)
-  ?(label = "")
-  ~color_view
-  ?(load_op = Load_op.Clear)
-  ?(store_op = Store_op.Store)
-  ~clear_color
-  ?depth_view
-  ?(depth_load_op = Load_op.Clear)
-  ?(depth_store_op = Store_op.Discard)
-  ?(depth_clear_value = 1.0)
-  ?resolve_target
-  ()
-  =
-  Command_encoder.begin_render_pass_simple
-    encoder
-    ~label
-    ~color_view
-    ~load_op
-    ~store_op
-    ~clear_color
-    ?depth_view
-    ~depth_load_op
-    ~depth_store_op
-    ~depth_clear_value
-    ?resolve_target
-    ()
-;;
-
 let finish (encoder : Command_encoder.t) ?(label = "") () =
   Command_encoder.finish encoder ~label ()
 ;;

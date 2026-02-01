@@ -559,28 +559,6 @@ end
 module Command_encoder : sig
   type t
 
-  (** Begin a compute pass on this command encoder (simple convenience function) *)
-  val begin_compute_pass_simple : t -> ?label:string -> unit -> Compute_pass_encoder.t
-
-  (** Begin a render pass on this command encoder with a single color attachment and
-      optional depth attachment (simple convenience function). If [depth_view] is
-      provided, depth testing will be enabled. If [resolve_target] is provided, MSAA
-      resolve will be performed. *)
-  val begin_render_pass_simple
-    :  t
-    -> ?label:string
-    -> color_view:Texture_view.t
-    -> ?load_op:Load_op.t
-    -> ?store_op:Store_op.t
-    -> clear_color:float * float * float * float
-    -> ?depth_view:Texture_view.t
-    -> ?depth_load_op:Load_op.t
-    -> ?depth_store_op:Store_op.t
-    -> ?depth_clear_value:float
-    -> ?resolve_target:Texture_view.t
-    -> unit
-    -> Render_pass_encoder.t
-
   val release : t -> unit
   val finish : t -> ?label:string -> unit -> Command_buffer.t
 
@@ -1017,32 +995,6 @@ module Instance : sig
   val has_WGSL_language_feature : t -> feature:Wgsl_language_feature_name.t -> bool
   val process_events : t -> unit
 end
-
-(** Begin a compute pass on a command encoder (simple convenience function) *)
-val begin_compute_pass_simple
-  :  Command_encoder.t
-  -> ?label:string
-  -> unit
-  -> Compute_pass_encoder.t
-
-(** Begin a render pass on a command encoder with a single color attachment and optional
-    depth attachment (simple convenience function). If [depth_view] is provided, depth
-    testing will be enabled. If [resolve_target] is provided, MSAA resolve will be
-    performed. *)
-val begin_render_pass_simple
-  :  Command_encoder.t
-  -> ?label:string
-  -> color_view:Texture_view.t
-  -> ?load_op:Load_op.t
-  -> ?store_op:Store_op.t
-  -> clear_color:float * float * float * float
-  -> ?depth_view:Texture_view.t
-  -> ?depth_load_op:Load_op.t
-  -> ?depth_store_op:Store_op.t
-  -> ?depth_clear_value:float
-  -> ?resolve_target:Texture_view.t
-  -> unit
-  -> Render_pass_encoder.t
 
 (** Finish recording commands and get a command buffer *)
 val finish : Command_encoder.t -> ?label:string -> unit -> Command_buffer.t

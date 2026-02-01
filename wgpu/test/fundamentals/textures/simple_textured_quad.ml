@@ -295,11 +295,18 @@ let () =
   (* Render *)
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   let render_pass =
-    Wgpu.begin_render_pass_simple
+    Wgpu.Command_encoder.begin_render_pass
       encoder
       ~label:"textured_quad_pass"
-      ~color_view:render_texture_view
-      ~clear_color:(0.3, 0.3, 0.3, 1.0)
+      ~color_attachments:
+        [ { view = Some render_texture_view
+          ; depth_slice = 0xFFFFFFFF
+          ; resolve_target = None
+          ; load_op = Wgpu.Load_op.Clear
+          ; store_op = Wgpu.Store_op.Store
+          ; clear_value = Some { r = 0.3; g = 0.3; b = 0.3; a = 1.0 }
+          }
+        ]
       ()
   in
   Wgpu.Render_pass_encoder.set_pipeline render_pass ~pipeline;

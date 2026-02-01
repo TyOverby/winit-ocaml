@@ -151,14 +151,18 @@ let () =
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
   (* Begin render pass with MSAA texture and resolve target *)
   let render_pass =
-    Wgpu.begin_render_pass_simple
+    Wgpu.Command_encoder.begin_render_pass
       encoder
       ~label:"msaa_pass"
-      ~color_view:msaa_view
-      ~load_op:Wgpu.Load_op.Clear
-      ~store_op:Wgpu.Store_op.Discard
-      ~clear_color:(0.3, 0.3, 0.3, 1.0)
-      ~resolve_target:resolve_view
+      ~color_attachments:
+        [ { view = Some msaa_view
+          ; depth_slice = 0xFFFFFFFF
+          ; resolve_target = Some resolve_view
+          ; load_op = Wgpu.Load_op.Clear
+          ; store_op = Wgpu.Store_op.Discard
+          ; clear_value = Some { r = 0.3; g = 0.3; b = 0.3; a = 1.0 }
+          }
+        ]
       ()
   in
   Wgpu.Render_pass_encoder.set_pipeline render_pass ~pipeline;
