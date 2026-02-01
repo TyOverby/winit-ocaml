@@ -177,31 +177,25 @@ let () =
       ~label:"texture_bind_group_layout"
       ~entries:
         [ (* Sampler at binding 0 *)
-          { Wgpu.Bind_group_layout_entry.binding = 0
-          ; visibility = [ Wgpu.Shader_stage.Item.Fragment ]
-          ; buffer = None
-          ; sampler =
-              Some
-                { Wgpu.Bind_group_layout_entry.Sampler_binding_layout.type_ =
-                    Wgpu.Sampler_binding_type.Filtering
-                }
-          ; texture = None
-          ; storage_texture = None
-          }
+          Wgpu.Bind_group_layout_entry.create
+            ~binding:0
+            ~visibility:[ Wgpu.Shader_stage.Item.Fragment ]
+            ~sampler:
+              (Wgpu.Bind_group_layout_entry.Sampler_binding_layout.create
+                 ~type_:Wgpu.Sampler_binding_type.Filtering
+                 ())
+            ()
         ; (* Texture at binding 1 *)
-          { Wgpu.Bind_group_layout_entry.binding = 1
-          ; visibility = [ Wgpu.Shader_stage.Item.Fragment ]
-          ; buffer = None
-          ; sampler = None
-          ; texture =
-              Some
-                { Wgpu.Bind_group_layout_entry.Texture_binding_layout.sample_type =
-                    Wgpu.Texture_sample_type.Float
-                ; view_dimension = Wgpu.Texture_view_dimension.N2d
-                ; multisampled = false
-                }
-          ; storage_texture = None
-          }
+          Wgpu.Bind_group_layout_entry.create
+            ~binding:1
+            ~visibility:[ Wgpu.Shader_stage.Item.Fragment ]
+            ~texture:
+              (Wgpu.Bind_group_layout_entry.Texture_binding_layout.create
+                 ~sample_type:Wgpu.Texture_sample_type.Float
+                 ~view_dimension:Wgpu.Texture_view_dimension.N2d
+                 ~multisampled:false
+                 ())
+            ()
         ]
       ()
   in
@@ -211,20 +205,13 @@ let () =
       ~label:"texture_bind_group"
       ~layout:bind_group_layout
       ~entries:
-        [ { Wgpu.Bind_group_entry.binding = 0
-          ; buffer = None
-          ; offset = 0L
-          ; size = 0L
-          ; sampler = Some sampler
-          ; texture_view = None
-          }
-        ; { Wgpu.Bind_group_entry.binding = 1
-          ; buffer = None
-          ; offset = 0L
-          ; size = 0L
-          ; sampler = None
-          ; texture_view = Some f_texture_view
-          }
+        [ Wgpu.Bind_group_entry.create ~binding:0 ~offset:0L ~size:0L ~sampler ()
+        ; Wgpu.Bind_group_entry.create
+            ~binding:1
+            ~offset:0L
+            ~size:0L
+            ~texture_view:f_texture_view
+            ()
         ]
       ()
   in
@@ -252,16 +239,16 @@ let () =
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   (* Create render target *)
@@ -299,13 +286,18 @@ let () =
       encoder
       ~label:"textured_quad_pass"
       ~color_attachments:
-        [ { view = Some render_texture_view
-          ; depth_slice = 0xFFFFFFFF
-          ; resolve_target = None
-          ; load_op = Wgpu.Load_op.Clear
-          ; store_op = Wgpu.Store_op.Store
-          ; clear_value = Some { r = 0.3; g = 0.3; b = 0.3; a = 1.0 }
-          }
+        [ Wgpu.Render_pass_color_attachment.create
+            ~view:render_texture_view
+            ~load_op:Wgpu.Load_op.Clear
+            ~store_op:Wgpu.Store_op.Store
+            ~clear_value:
+              (Wgpu.Render_pass_color_attachment.Color.create
+                 ~r:0.3
+                 ~g:0.3
+                 ~b:0.3
+                 ~a:1.0
+                 ())
+            ()
         ]
       ()
   in

@@ -170,13 +170,18 @@ let render_frame ~device ~queue ~pipeline ~bind_group ~angle ~output_name =
       encoder
       ~label:"skybox_pass"
       ~color_attachments:
-        [ { view = Some texture_view
-          ; depth_slice = 0xFFFFFFFF
-          ; resolve_target = None
-          ; load_op = Wgpu.Load_op.Clear
-          ; store_op = Wgpu.Store_op.Store
-          ; clear_value = Some { r = 0.0; g = 0.0; b = 0.0; a = 1.0 }
-          }
+        [ Wgpu.Render_pass_color_attachment.create
+            ~view:texture_view
+            ~load_op:Wgpu.Load_op.Clear
+            ~store_op:Wgpu.Store_op.Store
+            ~clear_value:
+              (Wgpu.Render_pass_color_attachment.Color.create
+                 ~r:0.0
+                 ~g:0.0
+                 ~b:0.0
+                 ~a:1.0
+                 ())
+            ()
         ]
       ()
   in
@@ -322,46 +327,36 @@ let () =
       ~label:"skybox_bind_group_layout"
       ~entries:
         [ (* Uniform buffer *)
-          { Wgpu.Bind_group_layout_entry.binding = 0
-          ; visibility =
-              [ Wgpu.Shader_stage.Item.Vertex; Wgpu.Shader_stage.Item.Fragment ]
-          ; buffer =
-              Some
-                { Wgpu.Bind_group_layout_entry.Buffer_binding_layout.type_ =
-                    Wgpu.Buffer_binding_type.Uniform
-                ; has_dynamic_offset = false
-                ; min_binding_size = 0L
-                }
-          ; sampler = None
-          ; texture = None
-          ; storage_texture = None
-          }
+          Wgpu.Bind_group_layout_entry.create
+            ~binding:0
+            ~visibility:[ Wgpu.Shader_stage.Item.Vertex; Wgpu.Shader_stage.Item.Fragment ]
+            ~buffer:
+              (Wgpu.Bind_group_layout_entry.Buffer_binding_layout.create
+                 ~type_:Wgpu.Buffer_binding_type.Uniform
+                 ~has_dynamic_offset:false
+                 ~min_binding_size:0L
+                 ())
+            ()
         ; (* Sampler *)
-          { Wgpu.Bind_group_layout_entry.binding = 1
-          ; visibility = [ Wgpu.Shader_stage.Item.Fragment ]
-          ; buffer = None
-          ; sampler =
-              Some
-                { Wgpu.Bind_group_layout_entry.Sampler_binding_layout.type_ =
-                    Wgpu.Sampler_binding_type.Filtering
-                }
-          ; texture = None
-          ; storage_texture = None
-          }
+          Wgpu.Bind_group_layout_entry.create
+            ~binding:1
+            ~visibility:[ Wgpu.Shader_stage.Item.Fragment ]
+            ~sampler:
+              (Wgpu.Bind_group_layout_entry.Sampler_binding_layout.create
+                 ~type_:Wgpu.Sampler_binding_type.Filtering
+                 ())
+            ()
         ; (* Cubemap texture *)
-          { Wgpu.Bind_group_layout_entry.binding = 2
-          ; visibility = [ Wgpu.Shader_stage.Item.Fragment ]
-          ; buffer = None
-          ; sampler = None
-          ; texture =
-              Some
-                { Wgpu.Bind_group_layout_entry.Texture_binding_layout.sample_type =
-                    Wgpu.Texture_sample_type.Float
-                ; view_dimension = Wgpu.Texture_view_dimension.Cube
-                ; multisampled = false
-                }
-          ; storage_texture = None
-          }
+          Wgpu.Bind_group_layout_entry.create
+            ~binding:2
+            ~visibility:[ Wgpu.Shader_stage.Item.Fragment ]
+            ~texture:
+              (Wgpu.Bind_group_layout_entry.Texture_binding_layout.create
+                 ~sample_type:Wgpu.Texture_sample_type.Float
+                 ~view_dimension:Wgpu.Texture_view_dimension.Cube
+                 ~multisampled:false
+                 ())
+            ()
         ]
       ()
   in
@@ -371,27 +366,19 @@ let () =
       ~label:"skybox_bind_group"
       ~layout:bind_group_layout
       ~entries:
-        [ { Wgpu.Bind_group_entry.binding = 0
-          ; buffer = Some uniform_buffer
-          ; offset = 0L
-          ; size = Int64.of_int uniform_buffer_size
-          ; sampler = None
-          ; texture_view = None
-          }
-        ; { Wgpu.Bind_group_entry.binding = 1
-          ; buffer = None
-          ; offset = 0L
-          ; size = 0L
-          ; sampler = Some sampler
-          ; texture_view = None
-          }
-        ; { Wgpu.Bind_group_entry.binding = 2
-          ; buffer = None
-          ; offset = 0L
-          ; size = 0L
-          ; sampler = None
-          ; texture_view = Some cubemap_view
-          }
+        [ Wgpu.Bind_group_entry.create
+            ~binding:0
+            ~buffer:uniform_buffer
+            ~offset:0L
+            ~size:(Int64.of_int uniform_buffer_size)
+            ()
+        ; Wgpu.Bind_group_entry.create ~binding:1 ~offset:0L ~size:0L ~sampler ()
+        ; Wgpu.Bind_group_entry.create
+            ~binding:2
+            ~offset:0L
+            ~size:0L
+            ~texture_view:cubemap_view
+            ()
         ]
       ()
   in
@@ -418,16 +405,16 @@ let () =
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   (* Render at different camera angles to show different views of the environment *)

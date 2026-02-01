@@ -100,13 +100,18 @@ let render ~device ~queue ~pipeline ~output_name =
       encoder
       ~label:"inter_stage_pass"
       ~color_attachments:
-        [ { view = Some texture_view
-          ; depth_slice = 0xFFFFFFFF
-          ; resolve_target = None
-          ; load_op = Wgpu.Load_op.Clear
-          ; store_op = Wgpu.Store_op.Store
-          ; clear_value = Some { r = 0.3; g = 0.3; b = 0.3; a = 1.0 }
-          }
+        [ Wgpu.Render_pass_color_attachment.create
+            ~view:texture_view
+            ~load_op:Wgpu.Load_op.Clear
+            ~store_op:Wgpu.Store_op.Store
+            ~clear_value:
+              (Wgpu.Render_pass_color_attachment.Color.create
+                 ~r:0.3
+                 ~g:0.3
+                 ~b:0.3
+                 ~a:1.0
+                 ())
+            ()
         ]
       ()
   in
@@ -176,16 +181,16 @@ let () =
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   render ~device ~queue ~pipeline ~output_name:"inter_stage_variables_triangle";

@@ -468,6 +468,10 @@ module Bind_group_entry = struct
     ; sampler : Sampler.t option
     ; texture_view : Texture_view.t option
     }
+
+  let create ~binding ?buffer ~offset ~size ?sampler ?texture_view () =
+    { binding; buffer; offset; size; sampler; texture_view }
+  ;;
 end
 
 module Bind_group_layout_entry = struct
@@ -477,10 +481,16 @@ module Bind_group_layout_entry = struct
       ; has_dynamic_offset : bool
       ; min_binding_size : int64
       }
+
+    let create ~type_ ~has_dynamic_offset ~min_binding_size () =
+      { type_; has_dynamic_offset; min_binding_size }
+    ;;
   end
 
   module Sampler_binding_layout = struct
     type t = { type_ : Sampler_binding_type.t }
+
+    let create ~type_ () = { type_ }
   end
 
   module Storage_texture_binding_layout = struct
@@ -489,6 +499,8 @@ module Bind_group_layout_entry = struct
       ; format : Texture_format.t
       ; view_dimension : Texture_view_dimension.t
       }
+
+    let create ~access ~format ~view_dimension () = { access; format; view_dimension }
   end
 
   module Texture_binding_layout = struct
@@ -497,6 +509,10 @@ module Bind_group_layout_entry = struct
       ; view_dimension : Texture_view_dimension.t
       ; multisampled : bool
       }
+
+    let create ~sample_type ~view_dimension ~multisampled () =
+      { sample_type; view_dimension; multisampled }
+    ;;
   end
 
   type t =
@@ -507,6 +523,10 @@ module Bind_group_layout_entry = struct
     ; texture : Texture_binding_layout.t option
     ; storage_texture : Storage_texture_binding_layout.t option
     }
+
+  let create ~binding ~visibility ?buffer ?sampler ?texture ?storage_texture () =
+    { binding; visibility; buffer; sampler; texture; storage_texture }
+  ;;
 end
 
 module Color_target_state = struct
@@ -517,12 +537,18 @@ module Color_target_state = struct
         ; src_factor : Blend_factor.t
         ; dst_factor : Blend_factor.t
         }
+
+      let create ~operation ~src_factor ~dst_factor () =
+        { operation; src_factor; dst_factor }
+      ;;
     end
 
     type t =
       { color : Blend_component.t
       ; alpha : Blend_component.t
       }
+
+    let create ~color ~alpha () = { color; alpha }
   end
 
   type t =
@@ -530,6 +556,8 @@ module Color_target_state = struct
     ; blend : Blend_state.t option
     ; write_mask : Color_write_mask.Item.t list
     }
+
+  let create ~format ?blend ~write_mask () = { format; blend; write_mask }
 end
 
 module Compilation_message = struct
@@ -541,6 +569,10 @@ module Compilation_message = struct
     ; offset : int64
     ; length : int64
     }
+
+  let create ~message ~type_ ~line_num ~line_pos ~offset ~length () =
+    { message; type_; line_num; line_pos; offset; length }
+  ;;
 end
 
 module Constant_entry = struct
@@ -548,6 +580,8 @@ module Constant_entry = struct
     { key : string
     ; value : float
     }
+
+  let create ?(key = "") ~value () = { key; value }
 end
 
 module Render_pass_color_attachment = struct
@@ -558,6 +592,8 @@ module Render_pass_color_attachment = struct
       ; b : float
       ; a : float
       }
+
+    let create ~r ~g ~b ~a () = { r; g; b; a }
   end
 
   type t =
@@ -568,6 +604,18 @@ module Render_pass_color_attachment = struct
     ; store_op : Store_op.t
     ; clear_value : Color.t option
     }
+
+  let create
+    ?view
+    ?(depth_slice = 0xFFFFFFFF)
+    ?resolve_target
+    ~load_op
+    ~store_op
+    ?clear_value
+    ()
+    =
+    { view; depth_slice; resolve_target; load_op; store_op; clear_value }
+  ;;
 end
 
 module Vertex_attribute = struct
@@ -576,6 +624,8 @@ module Vertex_attribute = struct
     ; offset : int64
     ; shader_location : int
     }
+
+  let create ~format ~offset ~shader_location () = { format; offset; shader_location }
 end
 
 module Vertex_buffer_layout = struct
@@ -584,6 +634,10 @@ module Vertex_buffer_layout = struct
     ; array_stride : int64
     ; attributes : Vertex_attribute.t list
     }
+
+  let create ~step_mode ~array_stride ?(attributes = []) () =
+    { step_mode; array_stride; attributes }
+  ;;
 end
 
 module Blend_state = struct
@@ -593,12 +647,18 @@ module Blend_state = struct
       ; src_factor : Blend_factor.t
       ; dst_factor : Blend_factor.t
       }
+
+    let create ~operation ~src_factor ~dst_factor () =
+      { operation; src_factor; dst_factor }
+    ;;
   end
 
   type t =
     { color : Blend_component.t
     ; alpha : Blend_component.t
     }
+
+  let create ~color ~alpha () = { color; alpha }
 end
 
 module Compute_pass_timestamp_writes = struct
@@ -607,6 +667,10 @@ module Compute_pass_timestamp_writes = struct
     ; beginning_of_pass_write_index : int
     ; end_of_pass_write_index : int
     }
+
+  let create ~query_set ~beginning_of_pass_write_index ~end_of_pass_write_index () =
+    { query_set; beginning_of_pass_write_index; end_of_pass_write_index }
+  ;;
 end
 
 module Depth_stencil_state = struct
@@ -617,6 +681,10 @@ module Depth_stencil_state = struct
       ; depth_fail_op : Stencil_operation.t
       ; pass_op : Stencil_operation.t
       }
+
+    let create ~compare ~fail_op ~depth_fail_op ~pass_op () =
+      { compare; fail_op; depth_fail_op; pass_op }
+    ;;
   end
 
   type t =
@@ -631,6 +699,32 @@ module Depth_stencil_state = struct
     ; depth_bias_slope_scale : float
     ; depth_bias_clamp : float
     }
+
+  let create
+    ~format
+    ~depth_write_enabled
+    ~depth_compare
+    ~stencil_front
+    ~stencil_back
+    ~stencil_read_mask
+    ~stencil_write_mask
+    ~depth_bias
+    ~depth_bias_slope_scale
+    ~depth_bias_clamp
+    ()
+    =
+    { format
+    ; depth_write_enabled
+    ; depth_compare
+    ; stencil_front
+    ; stencil_back
+    ; stencil_read_mask
+    ; stencil_write_mask
+    ; depth_bias
+    ; depth_bias_slope_scale
+    ; depth_bias_clamp
+    }
+  ;;
 end
 
 module Fragment_state = struct
@@ -640,6 +734,10 @@ module Fragment_state = struct
     ; constants : Constant_entry.t list
     ; targets : Color_target_state.t list
     }
+
+  let create ~module_ ~entry_point ?(constants = []) ?(targets = []) () =
+    { module_; entry_point; constants; targets }
+  ;;
 end
 
 module Limits = struct
@@ -676,6 +774,74 @@ module Limits = struct
     ; max_compute_workgroup_size_z : int
     ; max_compute_workgroups_per_dimension : int
     }
+
+  let create
+    ~max_texture_dimension_1D
+    ~max_texture_dimension_2D
+    ~max_texture_dimension_3D
+    ~max_texture_array_layers
+    ~max_bind_groups
+    ~max_bind_groups_plus_vertex_buffers
+    ~max_bindings_per_bind_group
+    ~max_dynamic_uniform_buffers_per_pipeline_layout
+    ~max_dynamic_storage_buffers_per_pipeline_layout
+    ~max_sampled_textures_per_shader_stage
+    ~max_samplers_per_shader_stage
+    ~max_storage_buffers_per_shader_stage
+    ~max_storage_textures_per_shader_stage
+    ~max_uniform_buffers_per_shader_stage
+    ~max_uniform_buffer_binding_size
+    ~max_storage_buffer_binding_size
+    ~min_uniform_buffer_offset_alignment
+    ~min_storage_buffer_offset_alignment
+    ~max_vertex_buffers
+    ~max_buffer_size
+    ~max_vertex_attributes
+    ~max_vertex_buffer_array_stride
+    ~max_inter_stage_shader_variables
+    ~max_color_attachments
+    ~max_color_attachment_bytes_per_sample
+    ~max_compute_workgroup_storage_size
+    ~max_compute_invocations_per_workgroup
+    ~max_compute_workgroup_size_x
+    ~max_compute_workgroup_size_y
+    ~max_compute_workgroup_size_z
+    ~max_compute_workgroups_per_dimension
+    ()
+    =
+    { max_texture_dimension_1D
+    ; max_texture_dimension_2D
+    ; max_texture_dimension_3D
+    ; max_texture_array_layers
+    ; max_bind_groups
+    ; max_bind_groups_plus_vertex_buffers
+    ; max_bindings_per_bind_group
+    ; max_dynamic_uniform_buffers_per_pipeline_layout
+    ; max_dynamic_storage_buffers_per_pipeline_layout
+    ; max_sampled_textures_per_shader_stage
+    ; max_samplers_per_shader_stage
+    ; max_storage_buffers_per_shader_stage
+    ; max_storage_textures_per_shader_stage
+    ; max_uniform_buffers_per_shader_stage
+    ; max_uniform_buffer_binding_size
+    ; max_storage_buffer_binding_size
+    ; min_uniform_buffer_offset_alignment
+    ; min_storage_buffer_offset_alignment
+    ; max_vertex_buffers
+    ; max_buffer_size
+    ; max_vertex_attributes
+    ; max_vertex_buffer_array_stride
+    ; max_inter_stage_shader_variables
+    ; max_color_attachments
+    ; max_color_attachment_bytes_per_sample
+    ; max_compute_workgroup_storage_size
+    ; max_compute_invocations_per_workgroup
+    ; max_compute_workgroup_size_x
+    ; max_compute_workgroup_size_y
+    ; max_compute_workgroup_size_z
+    ; max_compute_workgroups_per_dimension
+    }
+  ;;
 end
 
 module Render_pass_depth_stencil_attachment = struct
@@ -690,6 +856,30 @@ module Render_pass_depth_stencil_attachment = struct
     ; stencil_clear_value : int
     ; stencil_read_only : bool
     }
+
+  let create
+    ~view
+    ~depth_load_op
+    ~depth_store_op
+    ~depth_clear_value
+    ~depth_read_only
+    ~stencil_load_op
+    ~stencil_store_op
+    ~stencil_clear_value
+    ~stencil_read_only
+    ()
+    =
+    { view
+    ; depth_load_op
+    ; depth_store_op
+    ; depth_clear_value
+    ; depth_read_only
+    ; stencil_load_op
+    ; stencil_store_op
+    ; stencil_clear_value
+    ; stencil_read_only
+    }
+  ;;
 end
 
 module Render_pass_timestamp_writes = struct
@@ -698,6 +888,10 @@ module Render_pass_timestamp_writes = struct
     ; beginning_of_pass_write_index : int
     ; end_of_pass_write_index : int
     }
+
+  let create ~query_set ~beginning_of_pass_write_index ~end_of_pass_write_index () =
+    { query_set; beginning_of_pass_write_index; end_of_pass_write_index }
+  ;;
 end
 
 module Adapter_info = struct

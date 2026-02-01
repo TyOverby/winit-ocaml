@@ -241,45 +241,53 @@ let () =
     ~data:changing_data;
   (* Define vertex buffer layouts *)
   let vertex_buffer_layout_position =
-    { Wgpu.Vertex_buffer_layout.step_mode = Wgpu.Vertex_step_mode.Vertex
-    ; array_stride = Int64.of_int (5 * 4)
-    ; attributes =
-        [ { Wgpu.Vertex_attribute.format = Wgpu.Vertex_format.Float32x2
-          ; offset = 0L
-          ; shader_location = 0
-          }
-        ; { Wgpu.Vertex_attribute.format = Wgpu.Vertex_format.Float32x3
-          ; offset = Int64.of_int 8
-          ; shader_location = 4
-          }
+    Wgpu.Vertex_buffer_layout.create
+      ~step_mode:Wgpu.Vertex_step_mode.Vertex
+      ~array_stride:(Int64.of_int (5 * 4))
+      ~attributes:
+        [ Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Float32x2
+            ~offset:0L
+            ~shader_location:0
+            ()
+        ; Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Float32x3
+            ~offset:(Int64.of_int 8)
+            ~shader_location:4
+            ()
         ]
-    }
+      ()
   in
   let vertex_buffer_layout_static =
-    { Wgpu.Vertex_buffer_layout.step_mode = Wgpu.Vertex_step_mode.Instance
-    ; array_stride = Int64.of_int static_unit_size
-    ; attributes =
-        [ { Wgpu.Vertex_attribute.format = Wgpu.Vertex_format.Float32x4
-          ; offset = 0L
-          ; shader_location = 1
-          }
-        ; { Wgpu.Vertex_attribute.format = Wgpu.Vertex_format.Float32x2
-          ; offset = Int64.of_int 16
-          ; shader_location = 2
-          }
+    Wgpu.Vertex_buffer_layout.create
+      ~step_mode:Wgpu.Vertex_step_mode.Instance
+      ~array_stride:(Int64.of_int static_unit_size)
+      ~attributes:
+        [ Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Float32x4
+            ~offset:0L
+            ~shader_location:1
+            ()
+        ; Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Float32x2
+            ~offset:(Int64.of_int 16)
+            ~shader_location:2
+            ()
         ]
-    }
+      ()
   in
   let vertex_buffer_layout_changing =
-    { Wgpu.Vertex_buffer_layout.step_mode = Wgpu.Vertex_step_mode.Instance
-    ; array_stride = Int64.of_int changing_unit_size
-    ; attributes =
-        [ { Wgpu.Vertex_attribute.format = Wgpu.Vertex_format.Float32x2
-          ; offset = 0L
-          ; shader_location = 3
-          }
+    Wgpu.Vertex_buffer_layout.create
+      ~step_mode:Wgpu.Vertex_step_mode.Instance
+      ~array_stride:(Int64.of_int changing_unit_size)
+      ~attributes:
+        [ Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Float32x2
+            ~offset:0L
+            ~shader_location:3
+            ()
         ]
-    }
+      ()
   in
   (* Create render pipeline *)
   let pipeline =
@@ -302,16 +310,16 @@ let () =
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   (* Create render target and render *)
@@ -346,13 +354,18 @@ let () =
       encoder
       ~label:"vertex_buffers_index_buffer_pass"
       ~color_attachments:
-        [ { view = Some texture_view
-          ; depth_slice = 0xFFFFFFFF
-          ; resolve_target = None
-          ; load_op = Wgpu.Load_op.Clear
-          ; store_op = Wgpu.Store_op.Store
-          ; clear_value = Some { r = 0.3; g = 0.3; b = 0.3; a = 1.0 }
-          }
+        [ Wgpu.Render_pass_color_attachment.create
+            ~view:texture_view
+            ~load_op:Wgpu.Load_op.Clear
+            ~store_op:Wgpu.Store_op.Store
+            ~clear_value:
+              (Wgpu.Render_pass_color_attachment.Color.create
+                 ~r:0.3
+                 ~g:0.3
+                 ~b:0.3
+                 ~a:1.0
+                 ())
+            ()
         ]
       ()
   in

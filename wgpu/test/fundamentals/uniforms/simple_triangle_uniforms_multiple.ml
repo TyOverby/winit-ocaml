@@ -124,16 +124,16 @@ let () =
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   (* Create object infos with random colors and offsets *)
@@ -171,13 +171,12 @@ let () =
           ~label:(sprintf "bind group for obj: %d" i)
           ~layout:bind_group_layout
           ~entries:
-            [ { Wgpu.Bind_group_entry.binding = 0
-              ; buffer = Some uniform_buffer
-              ; offset = 0L
-              ; size = Int64.of_int uniform_buffer_size
-              ; sampler = None
-              ; texture_view = None
-              }
+            [ Wgpu.Bind_group_entry.create
+                ~binding:0
+                ~buffer:uniform_buffer
+                ~offset:0L
+                ~size:(Int64.of_int uniform_buffer_size)
+                ()
             ]
           ()
       in
@@ -217,13 +216,18 @@ let () =
       encoder
       ~label:"uniforms_multiple_pass"
       ~color_attachments:
-        [ { view = Some texture_view
-          ; depth_slice = 0xFFFFFFFF
-          ; resolve_target = None
-          ; load_op = Wgpu.Load_op.Clear
-          ; store_op = Wgpu.Store_op.Store
-          ; clear_value = Some { r = 0.3; g = 0.3; b = 0.3; a = 1.0 }
-          }
+        [ Wgpu.Render_pass_color_attachment.create
+            ~view:texture_view
+            ~load_op:Wgpu.Load_op.Clear
+            ~store_op:Wgpu.Store_op.Store
+            ~clear_value:
+              (Wgpu.Render_pass_color_attachment.Color.create
+                 ~r:0.3
+                 ~g:0.3
+                 ~b:0.3
+                 ~a:1.0
+                 ())
+            ()
         ]
       ()
   in

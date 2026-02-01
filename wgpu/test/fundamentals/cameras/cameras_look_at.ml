@@ -423,19 +423,16 @@ let () =
       device
       ~label:"bind_group_layout"
       ~entries:
-        [ { Wgpu.Bind_group_layout_entry.binding = 0
-          ; visibility = [ Wgpu.Shader_stage.Item.Vertex ]
-          ; buffer =
-              Some
-                { Wgpu.Bind_group_layout_entry.Buffer_binding_layout.type_ =
-                    Wgpu.Buffer_binding_type.Uniform
-                ; has_dynamic_offset = false
-                ; min_binding_size = 0L
-                }
-          ; sampler = None
-          ; texture = None
-          ; storage_texture = None
-          }
+        [ Wgpu.Bind_group_layout_entry.create
+            ~binding:0
+            ~visibility:[ Wgpu.Shader_stage.Item.Vertex ]
+            ~buffer:
+              (Wgpu.Bind_group_layout_entry.Buffer_binding_layout.create
+                 ~type_:Wgpu.Buffer_binding_type.Uniform
+                 ~has_dynamic_offset:false
+                 ~min_binding_size:0L
+                 ())
+            ()
         ]
       ()
   in
@@ -446,14 +443,23 @@ let () =
       ~bind_group_layouts:[ bind_group_layout ]
       ()
   in
-  let vertex_buffer_layout : Wgpu.Vertex_buffer_layout.t =
-    { step_mode = Wgpu.Vertex_step_mode.Vertex
-    ; array_stride = 16L
-    ; attributes =
-        [ { format = Wgpu.Vertex_format.Float32x3; offset = 0L; shader_location = 0 }
-        ; { format = Wgpu.Vertex_format.Unorm8x4; offset = 12L; shader_location = 1 }
+  let vertex_buffer_layout =
+    Wgpu.Vertex_buffer_layout.create
+      ~step_mode:Wgpu.Vertex_step_mode.Vertex
+      ~array_stride:16L
+      ~attributes:
+        [ Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Float32x3
+            ~offset:0L
+            ~shader_location:0
+            ()
+        ; Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Unorm8x4
+            ~offset:12L
+            ~shader_location:1
+            ()
         ]
-    }
+      ()
   in
   let pipeline =
     Wgpu.Device.create_render_pipeline
@@ -469,41 +475,44 @@ let () =
       ~primitive_cull_mode:Wgpu.Cull_mode.Back
       ~primitive_unclipped_depth:false
       ~depth_stencil:
-        { format = Wgpu.Texture_format.Depth24_plus
-        ; depth_write_enabled = True
-        ; depth_compare = Wgpu.Compare_function.Less
-        ; stencil_front =
-            { compare = Wgpu.Compare_function.Always
-            ; fail_op = Wgpu.Stencil_operation.Keep
-            ; depth_fail_op = Wgpu.Stencil_operation.Keep
-            ; pass_op = Wgpu.Stencil_operation.Keep
-            }
-        ; stencil_back =
-            { compare = Wgpu.Compare_function.Always
-            ; fail_op = Wgpu.Stencil_operation.Keep
-            ; depth_fail_op = Wgpu.Stencil_operation.Keep
-            ; pass_op = Wgpu.Stencil_operation.Keep
-            }
-        ; stencil_read_mask = 0xFFFFFFFF
-        ; stencil_write_mask = 0xFFFFFFFF
-        ; depth_bias = 0
-        ; depth_bias_slope_scale = 0.0
-        ; depth_bias_clamp = 0.0
-        }
+        (Wgpu.Depth_stencil_state.create
+           ~format:Wgpu.Texture_format.Depth24_plus
+           ~depth_write_enabled:True
+           ~depth_compare:Wgpu.Compare_function.Less
+           ~stencil_front:
+             (Wgpu.Depth_stencil_state.Stencil_face_state.create
+                ~compare:Wgpu.Compare_function.Always
+                ~fail_op:Wgpu.Stencil_operation.Keep
+                ~depth_fail_op:Wgpu.Stencil_operation.Keep
+                ~pass_op:Wgpu.Stencil_operation.Keep
+                ())
+           ~stencil_back:
+             (Wgpu.Depth_stencil_state.Stencil_face_state.create
+                ~compare:Wgpu.Compare_function.Always
+                ~fail_op:Wgpu.Stencil_operation.Keep
+                ~depth_fail_op:Wgpu.Stencil_operation.Keep
+                ~pass_op:Wgpu.Stencil_operation.Keep
+                ())
+           ~stencil_read_mask:0xFFFFFFFF
+           ~stencil_write_mask:0xFFFFFFFF
+           ~depth_bias:0
+           ~depth_bias_slope_scale:0.0
+           ~depth_bias_clamp:0.0
+           ())
       ~multisample_count:1
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   let object_infos =
@@ -523,13 +532,12 @@ let () =
           ~label:"bind_group"
           ~layout:bind_group_layout
           ~entries:
-            [ { Wgpu.Bind_group_entry.binding = 0
-              ; buffer = Some uniform_buffer
-              ; offset = 0L
-              ; size = Int64.of_int uniform_buffer_size
-              ; sampler = None
-              ; texture_view = None
-              }
+            [ Wgpu.Bind_group_entry.create
+                ~binding:0
+                ~buffer:uniform_buffer
+                ~offset:0L
+                ~size:(Int64.of_int uniform_buffer_size)
+                ()
             ]
           ()
       in
@@ -607,25 +615,31 @@ let () =
         encoder
         ~label:"render_pass"
         ~color_attachments:
-          [ { view = Some color_view
-            ; depth_slice = 0xFFFFFFFF
-            ; resolve_target = None
-            ; load_op = Wgpu.Load_op.Clear
-            ; store_op = Wgpu.Store_op.Store
-            ; clear_value = Some { r = 0.3; g = 0.3; b = 0.3; a = 1.0 }
-            }
+          [ Wgpu.Render_pass_color_attachment.create
+              ~view:color_view
+              ~load_op:Wgpu.Load_op.Clear
+              ~store_op:Wgpu.Store_op.Store
+              ~clear_value:
+                (Wgpu.Render_pass_color_attachment.Color.create
+                   ~r:0.3
+                   ~g:0.3
+                   ~b:0.3
+                   ~a:1.0
+                   ())
+              ()
           ]
         ~depth_stencil_attachment:
-          { view = depth_view
-          ; depth_load_op = Wgpu.Load_op.Clear
-          ; depth_store_op = Wgpu.Store_op.Store
-          ; depth_clear_value = 1.0
-          ; depth_read_only = false
-          ; stencil_load_op = Wgpu.Load_op.Clear
-          ; stencil_store_op = Wgpu.Store_op.Store
-          ; stencil_clear_value = 0
-          ; stencil_read_only = false
-          }
+          (Wgpu.Render_pass_depth_stencil_attachment.create
+             ~view:depth_view
+             ~depth_load_op:Wgpu.Load_op.Clear
+             ~depth_store_op:Wgpu.Store_op.Store
+             ~depth_clear_value:1.0
+             ~depth_read_only:false
+             ~stencil_load_op:Wgpu.Load_op.Clear
+             ~stencil_store_op:Wgpu.Store_op.Store
+             ~stencil_clear_value:0
+             ~stencil_read_only:false
+             ())
         ()
     in
     Wgpu.Render_pass_encoder.set_pipeline render_pass ~pipeline;

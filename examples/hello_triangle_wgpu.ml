@@ -86,16 +86,16 @@ let () =
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs_main"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Bgra8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs_main"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Bgra8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   (* Main loop *)
@@ -129,13 +129,19 @@ let () =
           encoder
           ~label:"triangle_pass"
           ~color_attachments:
-            [ { view = Some texture_view
-              ; depth_slice = 0
-              ; resolve_target = None
-              ; load_op = Wgpu.Load_op.Clear
-              ; store_op = Wgpu.Store_op.Store
-              ; clear_value = Some { r = 0.1; g = 0.2; b = 0.3; a = 1.0 }
-              }
+            [ Wgpu.Render_pass_color_attachment.create
+                ~view:texture_view
+                ~depth_slice:0
+                ~load_op:Wgpu.Load_op.Clear
+                ~store_op:Wgpu.Store_op.Store
+                ~clear_value:
+                  (Wgpu.Render_pass_color_attachment.Color.create
+                     ~r:0.1
+                     ~g:0.2
+                     ~b:0.3
+                     ~a:1.0
+                     ())
+                ()
             ]
           ()
       in

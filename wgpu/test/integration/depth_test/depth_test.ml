@@ -229,17 +229,23 @@ let () =
     init ()
   in
   (* Create render pipeline with depth testing enabled *)
-  let vertex_buffer_layout : Wgpu.Vertex_buffer_layout.t =
-    { step_mode = Wgpu.Vertex_step_mode.Vertex
-    ; array_stride = Int64.of_int bytes_per_vertex
-    ; attributes =
-        [ { format = Wgpu.Vertex_format.Float32x3; offset = 0L; shader_location = 0 }
-        ; { format = Wgpu.Vertex_format.Float32x3
-          ; offset = Int64.of_int (3 * 4)
-          ; shader_location = 1
-          }
+  let vertex_buffer_layout =
+    Wgpu.Vertex_buffer_layout.create
+      ~step_mode:Wgpu.Vertex_step_mode.Vertex
+      ~array_stride:(Int64.of_int bytes_per_vertex)
+      ~attributes:
+        [ Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Float32x3
+            ~offset:0L
+            ~shader_location:0
+            ()
+        ; Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Float32x3
+            ~offset:(Int64.of_int (3 * 4))
+            ~shader_location:1
+            ()
         ]
-    }
+      ()
   in
   let pipeline =
     Wgpu.Device.create_render_pipeline
@@ -254,41 +260,44 @@ let () =
       ~primitive_cull_mode:Wgpu.Cull_mode.None
       ~primitive_unclipped_depth:false
       ~depth_stencil:
-        { format = Wgpu.Texture_format.Depth24_plus
-        ; depth_write_enabled = True
-        ; depth_compare = Wgpu.Compare_function.Less
-        ; stencil_front =
-            { compare = Wgpu.Compare_function.Always
-            ; fail_op = Wgpu.Stencil_operation.Keep
-            ; depth_fail_op = Wgpu.Stencil_operation.Keep
-            ; pass_op = Wgpu.Stencil_operation.Keep
-            }
-        ; stencil_back =
-            { compare = Wgpu.Compare_function.Always
-            ; fail_op = Wgpu.Stencil_operation.Keep
-            ; depth_fail_op = Wgpu.Stencil_operation.Keep
-            ; pass_op = Wgpu.Stencil_operation.Keep
-            }
-        ; stencil_read_mask = 0xFFFFFFFF
-        ; stencil_write_mask = 0xFFFFFFFF
-        ; depth_bias = 0
-        ; depth_bias_slope_scale = 0.0
-        ; depth_bias_clamp = 0.0
-        }
+        (Wgpu.Depth_stencil_state.create
+           ~format:Wgpu.Texture_format.Depth24_plus
+           ~depth_write_enabled:True
+           ~depth_compare:Wgpu.Compare_function.Less
+           ~stencil_front:
+             (Wgpu.Depth_stencil_state.Stencil_face_state.create
+                ~compare:Wgpu.Compare_function.Always
+                ~fail_op:Wgpu.Stencil_operation.Keep
+                ~depth_fail_op:Wgpu.Stencil_operation.Keep
+                ~pass_op:Wgpu.Stencil_operation.Keep
+                ())
+           ~stencil_back:
+             (Wgpu.Depth_stencil_state.Stencil_face_state.create
+                ~compare:Wgpu.Compare_function.Always
+                ~fail_op:Wgpu.Stencil_operation.Keep
+                ~depth_fail_op:Wgpu.Stencil_operation.Keep
+                ~pass_op:Wgpu.Stencil_operation.Keep
+                ())
+           ~stencil_read_mask:0xFFFFFFFF
+           ~stencil_write_mask:0xFFFFFFFF
+           ~depth_bias:0
+           ~depth_bias_slope_scale:0.0
+           ~depth_bias_clamp:0.0
+           ())
       ~multisample_count:1
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs_main"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs_main"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
@@ -297,25 +306,31 @@ let () =
       encoder
       ~label:"depth_test_pass"
       ~color_attachments:
-        [ { view = Some color_view
-          ; depth_slice = 0xFFFFFFFF
-          ; resolve_target = None
-          ; load_op = Wgpu.Load_op.Clear
-          ; store_op = Wgpu.Store_op.Store
-          ; clear_value = Some { r = 0.2; g = 0.2; b = 0.2; a = 1.0 }
-          }
+        [ Wgpu.Render_pass_color_attachment.create
+            ~view:color_view
+            ~load_op:Wgpu.Load_op.Clear
+            ~store_op:Wgpu.Store_op.Store
+            ~clear_value:
+              (Wgpu.Render_pass_color_attachment.Color.create
+                 ~r:0.2
+                 ~g:0.2
+                 ~b:0.2
+                 ~a:1.0
+                 ())
+            ()
         ]
       ~depth_stencil_attachment:
-        { view = depth_view
-        ; depth_load_op = Wgpu.Load_op.Clear
-        ; depth_store_op = Wgpu.Store_op.Discard
-        ; depth_clear_value = 1.0
-        ; depth_read_only = false
-        ; stencil_load_op = Wgpu.Load_op.Clear
-        ; stencil_store_op = Wgpu.Store_op.Store
-        ; stencil_clear_value = 0
-        ; stencil_read_only = false
-        }
+        (Wgpu.Render_pass_depth_stencil_attachment.create
+           ~view:depth_view
+           ~depth_load_op:Wgpu.Load_op.Clear
+           ~depth_store_op:Wgpu.Store_op.Discard
+           ~depth_clear_value:1.0
+           ~depth_read_only:false
+           ~stencil_load_op:Wgpu.Load_op.Clear
+           ~stencil_store_op:Wgpu.Store_op.Store
+           ~stencil_clear_value:0
+           ~stencil_read_only:false
+           ())
       ()
   in
   Wgpu.Render_pass_encoder.set_pipeline render_pass ~pipeline;

@@ -187,16 +187,16 @@ let () =
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs_main"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs_main"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   let encoder = Wgpu.Device.create_command_encoder device ~label:"render_encoder" () in
@@ -206,13 +206,19 @@ let () =
       encoder
       ~label:"msaa_pass"
       ~color_attachments:
-        [ { view = Some msaa_view
-          ; depth_slice = 0xFFFFFFFF
-          ; resolve_target = Some resolve_view
-          ; load_op = Wgpu.Load_op.Clear
-          ; store_op = Wgpu.Store_op.Discard
-          ; clear_value = Some { r = 0.1; g = 0.1; b = 0.2; a = 1.0 }
-          }
+        [ Wgpu.Render_pass_color_attachment.create
+            ~view:msaa_view
+            ~resolve_target:resolve_view
+            ~load_op:Wgpu.Load_op.Clear
+            ~store_op:Wgpu.Store_op.Discard
+            ~clear_value:
+              (Wgpu.Render_pass_color_attachment.Color.create
+                 ~r:0.1
+                 ~g:0.1
+                 ~b:0.2
+                 ~a:1.0
+                 ())
+            ()
         ]
       ()
   in

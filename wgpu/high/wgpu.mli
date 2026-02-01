@@ -305,7 +305,7 @@ module Render_pass_encoder : sig
 end
 
 module Bind_group_entry : sig
-  type t =
+  type t = private
     { binding : int
     ; buffer : Buffer.t option
     ; offset : int64
@@ -313,38 +313,71 @@ module Bind_group_entry : sig
     ; sampler : Sampler.t option
     ; texture_view : Texture_view.t option
     }
+
+  val create
+    :  binding:int
+    -> ?buffer:Buffer.t
+    -> offset:int64
+    -> size:int64
+    -> ?sampler:Sampler.t
+    -> ?texture_view:Texture_view.t
+    -> unit
+    -> t
 end
 
 module Bind_group_layout_entry : sig
   module Buffer_binding_layout : sig
-    type t =
+    type t = private
       { type_ : Buffer_binding_type.t
       ; has_dynamic_offset : bool
       ; min_binding_size : int64
       }
+
+    val create
+      :  type_:Buffer_binding_type.t
+      -> has_dynamic_offset:bool
+      -> min_binding_size:int64
+      -> unit
+      -> t
   end
 
   module Sampler_binding_layout : sig
-    type t = { type_ : Sampler_binding_type.t }
+    type t = private { type_ : Sampler_binding_type.t }
+
+    val create : type_:Sampler_binding_type.t -> unit -> t
   end
 
   module Storage_texture_binding_layout : sig
-    type t =
+    type t = private
       { access : Storage_texture_access.t
       ; format : Texture_format.t
       ; view_dimension : Texture_view_dimension.t
       }
+
+    val create
+      :  access:Storage_texture_access.t
+      -> format:Texture_format.t
+      -> view_dimension:Texture_view_dimension.t
+      -> unit
+      -> t
   end
 
   module Texture_binding_layout : sig
-    type t =
+    type t = private
       { sample_type : Texture_sample_type.t
       ; view_dimension : Texture_view_dimension.t
       ; multisampled : bool
       }
+
+    val create
+      :  sample_type:Texture_sample_type.t
+      -> view_dimension:Texture_view_dimension.t
+      -> multisampled:bool
+      -> unit
+      -> t
   end
 
-  type t =
+  type t = private
     { binding : int
     ; visibility : Shader_stage.Item.t list
     ; buffer : Buffer_binding_layout.t option
@@ -352,33 +385,59 @@ module Bind_group_layout_entry : sig
     ; texture : Texture_binding_layout.t option
     ; storage_texture : Storage_texture_binding_layout.t option
     }
+
+  val create
+    :  binding:int
+    -> visibility:Shader_stage.Item.t list
+    -> ?buffer:Buffer_binding_layout.t
+    -> ?sampler:Sampler_binding_layout.t
+    -> ?texture:Texture_binding_layout.t
+    -> ?storage_texture:Storage_texture_binding_layout.t
+    -> unit
+    -> t
 end
 
 module Color_target_state : sig
   module Blend_state : sig
     module Blend_component : sig
-      type t =
+      type t = private
         { operation : Blend_operation.t
         ; src_factor : Blend_factor.t
         ; dst_factor : Blend_factor.t
         }
+
+      val create
+        :  operation:Blend_operation.t
+        -> src_factor:Blend_factor.t
+        -> dst_factor:Blend_factor.t
+        -> unit
+        -> t
     end
 
-    type t =
+    type t = private
       { color : Blend_component.t
       ; alpha : Blend_component.t
       }
+
+    val create : color:Blend_component.t -> alpha:Blend_component.t -> unit -> t
   end
 
-  type t =
+  type t = private
     { format : Texture_format.t
     ; blend : Blend_state.t option
     ; write_mask : Color_write_mask.Item.t list
     }
+
+  val create
+    :  format:Texture_format.t
+    -> ?blend:Blend_state.t
+    -> write_mask:Color_write_mask.Item.t list
+    -> unit
+    -> t
 end
 
 module Compilation_message : sig
-  type t =
+  type t = private
     { message : string
     ; type_ : Compilation_message_type.t
     ; line_num : int64
@@ -386,26 +445,40 @@ module Compilation_message : sig
     ; offset : int64
     ; length : int64
     }
+
+  val create
+    :  message:string
+    -> type_:Compilation_message_type.t
+    -> line_num:int64
+    -> line_pos:int64
+    -> offset:int64
+    -> length:int64
+    -> unit
+    -> t
 end
 
 module Constant_entry : sig
-  type t =
+  type t = private
     { key : string
     ; value : float
     }
+
+  val create : ?key:string -> value:float -> unit -> t
 end
 
 module Render_pass_color_attachment : sig
   module Color : sig
-    type t =
+    type t = private
       { r : float
       ; g : float
       ; b : float
       ; a : float
       }
+
+    val create : r:float -> g:float -> b:float -> a:float -> unit -> t
   end
 
-  type t =
+  type t = private
     { view : Texture_view.t option
     ; depth_slice : int
     ; resolve_target : Texture_view.t option
@@ -413,58 +486,101 @@ module Render_pass_color_attachment : sig
     ; store_op : Store_op.t
     ; clear_value : Color.t option
     }
+
+  val create
+    :  ?view:Texture_view.t
+    -> ?depth_slice:int
+    -> ?resolve_target:Texture_view.t
+    -> load_op:Load_op.t
+    -> store_op:Store_op.t
+    -> ?clear_value:Color.t
+    -> unit
+    -> t
 end
 
 module Vertex_attribute : sig
-  type t =
+  type t = private
     { format : Vertex_format.t
     ; offset : int64
     ; shader_location : int
     }
+
+  val create : format:Vertex_format.t -> offset:int64 -> shader_location:int -> unit -> t
 end
 
 module Vertex_buffer_layout : sig
-  type t =
+  type t = private
     { step_mode : Vertex_step_mode.t
     ; array_stride : int64
     ; attributes : Vertex_attribute.t list
     }
+
+  val create
+    :  step_mode:Vertex_step_mode.t
+    -> array_stride:int64
+    -> ?attributes:Vertex_attribute.t list
+    -> unit
+    -> t
 end
 
 module Blend_state : sig
   module Blend_component : sig
-    type t =
+    type t = private
       { operation : Blend_operation.t
       ; src_factor : Blend_factor.t
       ; dst_factor : Blend_factor.t
       }
+
+    val create
+      :  operation:Blend_operation.t
+      -> src_factor:Blend_factor.t
+      -> dst_factor:Blend_factor.t
+      -> unit
+      -> t
   end
 
-  type t =
+  type t = private
     { color : Blend_component.t
     ; alpha : Blend_component.t
     }
+
+  val create : color:Blend_component.t -> alpha:Blend_component.t -> unit -> t
 end
 
 module Compute_pass_timestamp_writes : sig
-  type t =
+  type t = private
     { query_set : Query_set.t
     ; beginning_of_pass_write_index : int
     ; end_of_pass_write_index : int
     }
+
+  val create
+    :  query_set:Query_set.t
+    -> beginning_of_pass_write_index:int
+    -> end_of_pass_write_index:int
+    -> unit
+    -> t
 end
 
 module Depth_stencil_state : sig
   module Stencil_face_state : sig
-    type t =
+    type t = private
       { compare : Compare_function.t
       ; fail_op : Stencil_operation.t
       ; depth_fail_op : Stencil_operation.t
       ; pass_op : Stencil_operation.t
       }
+
+    val create
+      :  compare:Compare_function.t
+      -> fail_op:Stencil_operation.t
+      -> depth_fail_op:Stencil_operation.t
+      -> pass_op:Stencil_operation.t
+      -> unit
+      -> t
   end
 
-  type t =
+  type t = private
     { format : Texture_format.t
     ; depth_write_enabled : Optional_bool.t
     ; depth_compare : Compare_function.t
@@ -476,19 +592,41 @@ module Depth_stencil_state : sig
     ; depth_bias_slope_scale : float
     ; depth_bias_clamp : float
     }
+
+  val create
+    :  format:Texture_format.t
+    -> depth_write_enabled:Optional_bool.t
+    -> depth_compare:Compare_function.t
+    -> stencil_front:Stencil_face_state.t
+    -> stencil_back:Stencil_face_state.t
+    -> stencil_read_mask:int
+    -> stencil_write_mask:int
+    -> depth_bias:int
+    -> depth_bias_slope_scale:float
+    -> depth_bias_clamp:float
+    -> unit
+    -> t
 end
 
 module Fragment_state : sig
-  type t =
+  type t = private
     { module_ : Shader_module.t
     ; entry_point : string
     ; constants : Constant_entry.t list
     ; targets : Color_target_state.t list
     }
+
+  val create
+    :  module_:Shader_module.t
+    -> entry_point:string
+    -> ?constants:Constant_entry.t list
+    -> ?targets:Color_target_state.t list
+    -> unit
+    -> t
 end
 
 module Limits : sig
-  type t =
+  type t = private
     { max_texture_dimension_1D : int
     ; max_texture_dimension_2D : int
     ; max_texture_dimension_3D : int
@@ -521,10 +659,45 @@ module Limits : sig
     ; max_compute_workgroup_size_z : int
     ; max_compute_workgroups_per_dimension : int
     }
+
+  val create
+    :  max_texture_dimension_1D:int
+    -> max_texture_dimension_2D:int
+    -> max_texture_dimension_3D:int
+    -> max_texture_array_layers:int
+    -> max_bind_groups:int
+    -> max_bind_groups_plus_vertex_buffers:int
+    -> max_bindings_per_bind_group:int
+    -> max_dynamic_uniform_buffers_per_pipeline_layout:int
+    -> max_dynamic_storage_buffers_per_pipeline_layout:int
+    -> max_sampled_textures_per_shader_stage:int
+    -> max_samplers_per_shader_stage:int
+    -> max_storage_buffers_per_shader_stage:int
+    -> max_storage_textures_per_shader_stage:int
+    -> max_uniform_buffers_per_shader_stage:int
+    -> max_uniform_buffer_binding_size:int64
+    -> max_storage_buffer_binding_size:int64
+    -> min_uniform_buffer_offset_alignment:int
+    -> min_storage_buffer_offset_alignment:int
+    -> max_vertex_buffers:int
+    -> max_buffer_size:int64
+    -> max_vertex_attributes:int
+    -> max_vertex_buffer_array_stride:int
+    -> max_inter_stage_shader_variables:int
+    -> max_color_attachments:int
+    -> max_color_attachment_bytes_per_sample:int
+    -> max_compute_workgroup_storage_size:int
+    -> max_compute_invocations_per_workgroup:int
+    -> max_compute_workgroup_size_x:int
+    -> max_compute_workgroup_size_y:int
+    -> max_compute_workgroup_size_z:int
+    -> max_compute_workgroups_per_dimension:int
+    -> unit
+    -> t
 end
 
 module Render_pass_depth_stencil_attachment : sig
-  type t =
+  type t = private
     { view : Texture_view.t
     ; depth_load_op : Load_op.t
     ; depth_store_op : Store_op.t
@@ -535,14 +708,34 @@ module Render_pass_depth_stencil_attachment : sig
     ; stencil_clear_value : int
     ; stencil_read_only : bool
     }
+
+  val create
+    :  view:Texture_view.t
+    -> depth_load_op:Load_op.t
+    -> depth_store_op:Store_op.t
+    -> depth_clear_value:float
+    -> depth_read_only:bool
+    -> stencil_load_op:Load_op.t
+    -> stencil_store_op:Store_op.t
+    -> stencil_clear_value:int
+    -> stencil_read_only:bool
+    -> unit
+    -> t
 end
 
 module Render_pass_timestamp_writes : sig
-  type t =
+  type t = private
     { query_set : Query_set.t
     ; beginning_of_pass_write_index : int
     ; end_of_pass_write_index : int
     }
+
+  val create
+    :  query_set:Query_set.t
+    -> beginning_of_pass_write_index:int
+    -> end_of_pass_write_index:int
+    -> unit
+    -> t
 end
 
 module Adapter_info : sig

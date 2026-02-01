@@ -1244,6 +1244,155 @@ let gen_output_struct_record_type (struct_ : Ir.struct_) : string =
 |}
 ;;
 
+(** Determine if a struct member should have a default value and what that default is.
+    Returns (is_optional, default_value_opt) where:
+    - is_optional: whether the parameter should use ?param syntax
+    - default_value_opt: Some default for fields with known defaults, None otherwise *)
+let member_default_info
+  ~(get_member_type : Ir.struct_member -> string)
+  (member : Ir.struct_member)
+  : bool * string option
+  =
+  (* Special case: depth_slice should default to 0xFFFFFFFF (undefined) *)
+  if String.equal member.name "depth_slice"
+  then true, Some "0xFFFFFFFF"
+  else (
+    match member.type_ with
+    (* Optional types always use optional syntax *)
+    | Optional _ -> true, Some "None"
+    (* Arrays default to empty list *)
+    | Array _ | Pointer { inner = Array _; _ } -> true, Some "[]"
+    (* String with default empty is optional with "" default *)
+    | Primitive String_with_default_empty -> true, Some {|""|}
+    (* Nested structs - check if the member type function generates an option type *)
+    | Struct _ ->
+      let member_type = get_member_type member in
+      if String.is_suffix member_type ~suffix:" option"
+      then true, Some "None"
+      else false, None (* Required - no default *)
+    (* Optional objects use bare optional syntax (no default) *)
+    | Object _ when member.optional -> true, None
+    (* Pointer to struct (optional pointer) defaults to None *)
+    | Pointer { inner = Struct _; _ } when member.optional -> true, Some "None"
+    (* Non-optional primitives and enums are required *)
+    | Primitive _ | Enum _ | Bitflag _ | Object _ -> false, None
+    (* Everything else is required *)
+    | _ -> false, None)
+;;
+
+(** Generate a create function parameter for a struct member. Returns the parameter string
+    (e.g., "~field" or "?(field = default)") *)
+let gen_create_param
+  ~(indent : string)
+  ~(get_member_type : Ir.struct_member -> string)
+  (member : Ir.struct_member)
+  : string option
+  =
+  if String.equal member.name "nextInChain"
+  then None
+  else (
+    let field_name = escape_keyword member.name in
+    let field_type = get_member_type member in
+    let is_optional, default_opt = member_default_info ~get_member_type member in
+    if is_optional
+    then (
+      match default_opt with
+      | Some default ->
+        (* If the field type is already an option and default is None,
+           use bare ?field syntax to avoid double-wrapping.
+           This makes ?field:X.t in signature match ?field in impl,
+           where field has type X.t option inside the function. *)
+        if String.is_suffix field_type ~suffix:" option" && String.equal default "None"
+        then Some {%string|%{indent}?%{field_name}|}
+        else Some {%string|%{indent}?(%{field_name} = %{default})|}
+      | None -> Some {%string|%{indent}?%{field_name}|})
+    else Some {%string|%{indent}~%{field_name}|})
+;;
+
+(** Generate a create function signature parameter for a struct member. Returns the
+    parameter type string (e.g., "field:int" or "?field:int") *)
+let gen_create_sig_param
+  ~(indent : string)
+  ~(get_member_type : Ir.struct_member -> string)
+  (member : Ir.struct_member)
+  : string option
+  =
+  if String.equal member.name "nextInChain"
+  then None
+  else (
+    let field_name = escape_keyword member.name in
+    let field_type = get_member_type member in
+    let is_optional, _ = member_default_info ~get_member_type member in
+    (* For optional parameters, strip the "option" suffix from the type if present *)
+    let param_type =
+      if is_optional
+      then (
+        (* Try to strip " option" suffix for cleaner API *)
+        match String.chop_suffix field_type ~suffix:" option" with
+        | Some base_type -> base_type
+        | None -> field_type)
+      else field_type
+    in
+    if is_optional
+    then Some {%string|%{indent}?%{field_name}:%{param_type}|}
+    else Some {%string|%{indent}%{field_name}:%{param_type}|})
+;;
+
+(** Generate the create function for a struct module. mode: Implementation generates the
+    function body, Interface generates the signature *)
+let gen_struct_create_function
+  (mode : output_mode)
+  ~(indent : string)
+  ~(get_member_type : Ir.struct_member -> string)
+  (members : Ir.struct_member list)
+  : string
+  =
+  match mode with
+  | Implementation ->
+    let params =
+      List.filter_map
+        members
+        ~f:(gen_create_param ~indent:(indent ^ "  ") ~get_member_type)
+    in
+    let params_str = String.concat ~sep:"\n" params in
+    let field_names =
+      List.filter_map members ~f:(fun member ->
+        if String.equal member.name "nextInChain"
+        then None
+        else Some (escape_keyword member.name))
+    in
+    let fields_str = String.concat ~sep:"; " field_names in
+    {%string|%{indent}let create
+%{params_str}
+%{indent}  ()
+%{indent}=
+%{indent}  { %{fields_str} }
+%{indent};;|}
+  | Interface ->
+    let params =
+      List.filter_map
+        members
+        ~f:(gen_create_sig_param ~indent:(indent ^ "  -> ") ~get_member_type)
+    in
+    (* First parameter needs ":  " instead of "-> " *)
+    let params_str =
+      match params with
+      | [] -> ""
+      | first :: rest ->
+        let fixed_first =
+          String.substr_replace_first
+            first
+            ~pattern:(indent ^ "  -> ")
+            ~with_:(indent ^ "  :  ")
+        in
+        String.concat ~sep:"\n" (fixed_first :: rest)
+    in
+    {%string|%{indent}val create
+%{params_str}
+%{indent}  -> unit
+%{indent}  -> t|}
+;;
+
 let rec array_element_struct_member_type
   (_structs : Ir.struct_ list)
   (member : Ir.struct_member)
@@ -1290,19 +1439,28 @@ and gen_array_element_struct_module
     |> String.concat ~sep:"\n"
   in
   (* Generate the record type for this struct *)
+  let get_member_type = array_element_struct_member_type structs in
   let fields =
     List.filter_map struct_.members ~f:(fun member ->
       if String.equal member.name "nextInChain"
       then None
       else (
         let field_name = escape_keyword member.name in
-        let field_type = array_element_struct_member_type structs member in
+        let field_type = get_member_type member in
         Some {%string|      %{field_name} : %{field_type}|}))
   in
   let fields_str = String.concat ~sep:";\n" fields in
-  let record_type = {%string|    type t = {
+  let private_keyword =
+    match mode with
+    | Interface -> " private"
+    | Implementation -> ""
+  in
+  let record_type = {%string|    type t =%{private_keyword} {
 %{fields_str}
     }|} in
+  let create_fn =
+    gen_struct_create_function mode ~indent:"    " ~get_member_type struct_.members
+  in
   let all_nested_modules =
     String.concat
       ~sep:"\n"
@@ -1318,6 +1476,8 @@ and gen_array_element_struct_module
   in
   {%string|  module %{module_name} %{module_keyword}
 %{nested_prefix}%{record_type}
+
+%{create_fn}
   end
 |}
 
@@ -1328,25 +1488,36 @@ and gen_nested_struct_module
   : string
   =
   let module_name = ocaml_module_name struct_.name in
+  let get_member_type = high_level_member_type in
   let fields =
     List.filter_map struct_.members ~f:(fun member ->
       if String.equal member.name "nextInChain"
       then None
       else (
         let field_name = escape_keyword member.name in
-        let field_type = high_level_member_type member in
+        let field_type = get_member_type member in
         Some {%string|        %{field_name} : %{field_type}|}))
   in
   let fields_str = String.concat ~sep:";\n" fields in
+  let private_keyword =
+    match mode with
+    | Interface -> " private"
+    | Implementation -> ""
+  in
+  let create_fn =
+    gen_struct_create_function mode ~indent:"      " ~get_member_type struct_.members
+  in
   let module_keyword =
     match mode with
     | Implementation -> "= struct"
     | Interface -> ": sig"
   in
   {%string|    module %{module_name} %{module_keyword}
-      type t = {
+      type t =%{private_keyword} {
 %{fields_str}
       }
+
+%{create_fn}
     end
 |}
 
@@ -1368,18 +1539,27 @@ and gen_nested_optional_ptr_struct_module
     |> List.dedup_and_sort ~compare:String.compare
     |> String.concat ~sep:"\n"
   in
+  let get_member_type = high_level_member_type in
   let fields =
     List.filter_map struct_.members ~f:(fun member ->
       if String.equal member.name "nextInChain"
       then None
       else (
         let field_name = escape_keyword member.name in
-        let field_type = high_level_member_type member in
+        let field_type = get_member_type member in
         Some {%string|        %{field_name} : %{field_type}|}))
   in
   let fields_str = String.concat ~sep:";\n" fields in
   let nested_prefix =
     if String.is_empty nested_modules then "" else nested_modules ^ "\n"
+  in
+  let private_keyword =
+    match mode with
+    | Interface -> " private"
+    | Implementation -> ""
+  in
+  let create_fn =
+    gen_struct_create_function mode ~indent:"      " ~get_member_type struct_.members
   in
   let module_keyword =
     match mode with
@@ -1387,33 +1567,46 @@ and gen_nested_optional_ptr_struct_module
     | Interface -> ": sig"
   in
   {%string|    module %{module_name} %{module_keyword}
-%{nested_prefix}      type t = {
+%{nested_prefix}      type t =%{private_keyword} {
 %{fields_str}
       }
+
+%{create_fn}
     end
 |}
 
 and gen_deeply_nested_struct_module (mode : output_mode) (struct_ : Ir.struct_) : string =
   let module_name = ocaml_module_name struct_.name in
+  let get_member_type = high_level_member_type in
   let fields =
     List.filter_map struct_.members ~f:(fun member ->
       if String.equal member.name "nextInChain"
       then None
       else (
         let field_name = escape_keyword member.name in
-        let field_type = high_level_member_type member in
+        let field_type = get_member_type member in
         Some {%string|          %{field_name} : %{field_type}|}))
   in
   let fields_str = String.concat ~sep:";\n" fields in
+  let private_keyword =
+    match mode with
+    | Interface -> " private"
+    | Implementation -> ""
+  in
+  let create_fn =
+    gen_struct_create_function mode ~indent:"        " ~get_member_type struct_.members
+  in
   let module_keyword =
     match mode with
     | Implementation -> "= struct"
     | Interface -> ": sig"
   in
   {%string|      module %{module_name} %{module_keyword}
-        type t = {
+        type t =%{private_keyword} {
 %{fields_str}
         }
+
+%{create_fn}
       end
 |}
 ;;
@@ -1445,19 +1638,28 @@ let gen_optional_pointer_struct_module
     |> String.concat ~sep:"\n"
   in
   (* Generate the record type for this struct *)
+  let get_member_type = high_level_member_type in
   let fields =
     List.filter_map struct_.members ~f:(fun member ->
       if String.equal member.name "nextInChain"
       then None
       else (
         let field_name = escape_keyword member.name in
-        let field_type = high_level_member_type member in
+        let field_type = get_member_type member in
         Some {%string|    %{field_name} : %{field_type}|}))
   in
   let fields_str = String.concat ~sep:";\n" fields in
-  let record_type = {%string|  type t = {
+  let private_keyword =
+    match mode with
+    | Interface -> " private"
+    | Implementation -> ""
+  in
+  let record_type = {%string|  type t =%{private_keyword} {
 %{fields_str}
   }|} in
+  let create_fn =
+    gen_struct_create_function mode ~indent:"  " ~get_member_type struct_.members
+  in
   let nested_prefix =
     if String.is_empty nested_modules then "" else nested_modules ^ "\n"
   in
@@ -1468,6 +1670,8 @@ let gen_optional_pointer_struct_module
   in
   {%string|module %{module_name} %{module_keyword}
 %{nested_prefix}%{record_type}
+
+%{create_fn}
 end
 |}
 ;;

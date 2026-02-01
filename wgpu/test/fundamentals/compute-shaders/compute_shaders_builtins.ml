@@ -112,45 +112,36 @@ let () =
       device
       ~label:"compute_builtins_bind_group_layout"
       ~entries:
-        [ { Wgpu.Bind_group_layout_entry.binding = 0
-          ; visibility = [ Wgpu.Shader_stage.Item.Compute ]
-          ; buffer =
-              Some
-                { Wgpu.Bind_group_layout_entry.Buffer_binding_layout.type_ =
-                    Wgpu.Buffer_binding_type.Storage
-                ; has_dynamic_offset = false
-                ; min_binding_size = 0L
-                }
-          ; sampler = None
-          ; texture = None
-          ; storage_texture = None
-          }
-        ; { Wgpu.Bind_group_layout_entry.binding = 1
-          ; visibility = [ Wgpu.Shader_stage.Item.Compute ]
-          ; buffer =
-              Some
-                { Wgpu.Bind_group_layout_entry.Buffer_binding_layout.type_ =
-                    Wgpu.Buffer_binding_type.Storage
-                ; has_dynamic_offset = false
-                ; min_binding_size = 0L
-                }
-          ; sampler = None
-          ; texture = None
-          ; storage_texture = None
-          }
-        ; { Wgpu.Bind_group_layout_entry.binding = 2
-          ; visibility = [ Wgpu.Shader_stage.Item.Compute ]
-          ; buffer =
-              Some
-                { Wgpu.Bind_group_layout_entry.Buffer_binding_layout.type_ =
-                    Wgpu.Buffer_binding_type.Storage
-                ; has_dynamic_offset = false
-                ; min_binding_size = 0L
-                }
-          ; sampler = None
-          ; texture = None
-          ; storage_texture = None
-          }
+        [ Wgpu.Bind_group_layout_entry.create
+            ~binding:0
+            ~visibility:[ Wgpu.Shader_stage.Item.Compute ]
+            ~buffer:
+              (Wgpu.Bind_group_layout_entry.Buffer_binding_layout.create
+                 ~type_:Wgpu.Buffer_binding_type.Storage
+                 ~has_dynamic_offset:false
+                 ~min_binding_size:0L
+                 ())
+            ()
+        ; Wgpu.Bind_group_layout_entry.create
+            ~binding:1
+            ~visibility:[ Wgpu.Shader_stage.Item.Compute ]
+            ~buffer:
+              (Wgpu.Bind_group_layout_entry.Buffer_binding_layout.create
+                 ~type_:Wgpu.Buffer_binding_type.Storage
+                 ~has_dynamic_offset:false
+                 ~min_binding_size:0L
+                 ())
+            ()
+        ; Wgpu.Bind_group_layout_entry.create
+            ~binding:2
+            ~visibility:[ Wgpu.Shader_stage.Item.Compute ]
+            ~buffer:
+              (Wgpu.Bind_group_layout_entry.Buffer_binding_layout.create
+                 ~type_:Wgpu.Buffer_binding_type.Storage
+                 ~has_dynamic_offset:false
+                 ~min_binding_size:0L
+                 ())
+            ()
         ]
       ()
   in
@@ -235,27 +226,24 @@ let () =
       ~label:"compute_builtins_bind_group"
       ~layout:bind_group_layout
       ~entries:
-        [ { Wgpu.Bind_group_entry.binding = 0
-          ; buffer = Some workgroup_buffer
-          ; offset = 0L
-          ; size = Int64.of_int buffer_size
-          ; sampler = None
-          ; texture_view = None
-          }
-        ; { Wgpu.Bind_group_entry.binding = 1
-          ; buffer = Some local_buffer
-          ; offset = 0L
-          ; size = Int64.of_int buffer_size
-          ; sampler = None
-          ; texture_view = None
-          }
-        ; { Wgpu.Bind_group_entry.binding = 2
-          ; buffer = Some global_buffer
-          ; offset = 0L
-          ; size = Int64.of_int buffer_size
-          ; sampler = None
-          ; texture_view = None
-          }
+        [ Wgpu.Bind_group_entry.create
+            ~binding:0
+            ~buffer:workgroup_buffer
+            ~offset:0L
+            ~size:(Int64.of_int buffer_size)
+            ()
+        ; Wgpu.Bind_group_entry.create
+            ~binding:1
+            ~buffer:local_buffer
+            ~offset:0L
+            ~size:(Int64.of_int buffer_size)
+            ()
+        ; Wgpu.Bind_group_entry.create
+            ~binding:2
+            ~buffer:global_buffer
+            ~offset:0L
+            ~size:(Int64.of_int buffer_size)
+            ()
         ]
       ()
   in

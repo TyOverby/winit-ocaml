@@ -233,13 +233,18 @@ let render
       encoder
       ~label:"rotation_unit_circle_pass"
       ~color_attachments:
-        [ { view = Some texture_view
-          ; depth_slice = 0xFFFFFFFF
-          ; resolve_target = None
-          ; load_op = Wgpu.Load_op.Clear
-          ; store_op = Wgpu.Store_op.Store
-          ; clear_value = Some { r = 0.15; g = 0.15; b = 0.2; a = 1.0 }
-          }
+        [ Wgpu.Render_pass_color_attachment.create
+            ~view:texture_view
+            ~load_op:Wgpu.Load_op.Clear
+            ~store_op:Wgpu.Store_op.Store
+            ~clear_value:
+              (Wgpu.Render_pass_color_attachment.Color.create
+                 ~r:0.15
+                 ~g:0.15
+                 ~b:0.2
+                 ~a:1.0
+                 ())
+            ()
         ]
       ()
   in
@@ -371,13 +376,12 @@ let () =
       ~label:"uniform_bind_group"
       ~layout:bind_group_layout
       ~entries:
-        [ { Wgpu.Bind_group_entry.binding = 0
-          ; buffer = Some uniform_buffer
-          ; offset = 0L
-          ; size = Int64.of_int uniform_buffer_size
-          ; sampler = None
-          ; texture_view = None
-          }
+        [ Wgpu.Bind_group_entry.create
+            ~binding:0
+            ~buffer:uniform_buffer
+            ~offset:0L
+            ~size:(Int64.of_int uniform_buffer_size)
+            ()
         ]
       ()
   in
@@ -391,15 +395,17 @@ let () =
   in
   (* Define vertex buffer layout *)
   let vertex_buffer_layout =
-    { Wgpu.Vertex_buffer_layout.step_mode = Wgpu.Vertex_step_mode.Vertex
-    ; array_stride = Int64.of_int (2 * 4)
-    ; attributes =
-        [ { Wgpu.Vertex_attribute.format = Wgpu.Vertex_format.Float32x2
-          ; offset = 0L
-          ; shader_location = 0
-          }
+    Wgpu.Vertex_buffer_layout.create
+      ~step_mode:Wgpu.Vertex_step_mode.Vertex
+      ~array_stride:(Int64.of_int (2 * 4))
+      ~attributes:
+        [ Wgpu.Vertex_attribute.create
+            ~format:Wgpu.Vertex_format.Float32x2
+            ~offset:0L
+            ~shader_location:0
+            ()
         ]
-    }
+      ()
   in
   (* Create render pipeline *)
   let pipeline =
@@ -419,16 +425,16 @@ let () =
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   (* Render at different positions on the unit circle.

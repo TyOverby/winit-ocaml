@@ -108,34 +108,27 @@ let () =
       ~label:"split_uniform_bind_group_layout"
       ~entries:
         [ (* Binding 0: static uniforms (color, offset) *)
-          { Wgpu.Bind_group_layout_entry.binding = 0
-          ; visibility =
-              [ Wgpu.Shader_stage.Item.Vertex; Wgpu.Shader_stage.Item.Fragment ]
-          ; buffer =
-              Some
-                { Wgpu.Bind_group_layout_entry.Buffer_binding_layout.type_ =
-                    Wgpu.Buffer_binding_type.Uniform
-                ; has_dynamic_offset = false
-                ; min_binding_size = 0L
-                }
-          ; sampler = None
-          ; texture = None
-          ; storage_texture = None
-          }
+          Wgpu.Bind_group_layout_entry.create
+            ~binding:0
+            ~visibility:[ Wgpu.Shader_stage.Item.Vertex; Wgpu.Shader_stage.Item.Fragment ]
+            ~buffer:
+              (Wgpu.Bind_group_layout_entry.Buffer_binding_layout.create
+                 ~type_:Wgpu.Buffer_binding_type.Uniform
+                 ~has_dynamic_offset:false
+                 ~min_binding_size:0L
+                 ())
+            ()
         ; (* Binding 1: dynamic uniforms (scale) *)
-          { Wgpu.Bind_group_layout_entry.binding = 1
-          ; visibility = [ Wgpu.Shader_stage.Item.Vertex ]
-          ; buffer =
-              Some
-                { Wgpu.Bind_group_layout_entry.Buffer_binding_layout.type_ =
-                    Wgpu.Buffer_binding_type.Uniform
-                ; has_dynamic_offset = false
-                ; min_binding_size = 0L
-                }
-          ; sampler = None
-          ; texture = None
-          ; storage_texture = None
-          }
+          Wgpu.Bind_group_layout_entry.create
+            ~binding:1
+            ~visibility:[ Wgpu.Shader_stage.Item.Vertex ]
+            ~buffer:
+              (Wgpu.Bind_group_layout_entry.Buffer_binding_layout.create
+                 ~type_:Wgpu.Buffer_binding_type.Uniform
+                 ~has_dynamic_offset:false
+                 ~min_binding_size:0L
+                 ())
+            ()
         ]
       ()
   in
@@ -164,16 +157,16 @@ let () =
       ~multisample_mask:0xFFFFFFFF
       ~multisample_alpha_to_coverage_enabled:false
       ~fragment:
-        { module_ = shader
-        ; entry_point = "fs"
-        ; constants = []
-        ; targets =
-            [ { format = Wgpu.Texture_format.Rgba8_unorm
-              ; blend = None
-              ; write_mask = [ Wgpu.Color_write_mask.Item.All ]
-              }
-            ]
-        }
+        (Wgpu.Fragment_state.create
+           ~module_:shader
+           ~entry_point:"fs"
+           ~targets:
+             [ Wgpu.Color_target_state.create
+                 ~format:Wgpu.Texture_format.Rgba8_unorm
+                 ~write_mask:[ Wgpu.Color_write_mask.Item.All ]
+                 ()
+             ]
+           ())
       ()
   in
   (* Offsets into static uniform buffer *)
@@ -229,20 +222,18 @@ let () =
           ~label:(sprintf "bind group for obj: %d" i)
           ~layout:bind_group_layout
           ~entries:
-            [ { Wgpu.Bind_group_entry.binding = 0
-              ; buffer = Some static_buffer
-              ; offset = 0L
-              ; size = Int64.of_int static_uniform_buffer_size
-              ; sampler = None
-              ; texture_view = None
-              }
-            ; { Wgpu.Bind_group_entry.binding = 1
-              ; buffer = Some dynamic_buffer
-              ; offset = 0L
-              ; size = Int64.of_int dynamic_uniform_buffer_size
-              ; sampler = None
-              ; texture_view = None
-              }
+            [ Wgpu.Bind_group_entry.create
+                ~binding:0
+                ~buffer:static_buffer
+                ~offset:0L
+                ~size:(Int64.of_int static_uniform_buffer_size)
+                ()
+            ; Wgpu.Bind_group_entry.create
+                ~binding:1
+                ~buffer:dynamic_buffer
+                ~offset:0L
+                ~size:(Int64.of_int dynamic_uniform_buffer_size)
+                ()
             ]
           ()
       in
@@ -282,13 +273,18 @@ let () =
       encoder
       ~label:"uniforms_split_pass"
       ~color_attachments:
-        [ { view = Some texture_view
-          ; depth_slice = 0xFFFFFFFF
-          ; resolve_target = None
-          ; load_op = Wgpu.Load_op.Clear
-          ; store_op = Wgpu.Store_op.Store
-          ; clear_value = Some { r = 0.3; g = 0.3; b = 0.3; a = 1.0 }
-          }
+        [ Wgpu.Render_pass_color_attachment.create
+            ~view:texture_view
+            ~load_op:Wgpu.Load_op.Clear
+            ~store_op:Wgpu.Store_op.Store
+            ~clear_value:
+              (Wgpu.Render_pass_color_attachment.Color.create
+                 ~r:0.3
+                 ~g:0.3
+                 ~b:0.3
+                 ~a:1.0
+                 ())
+            ()
         ]
       ()
   in
