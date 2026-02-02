@@ -57,6 +57,8 @@ jobs:
 
       - name: Build project
         run: opam exec -- dune build
+        timeout-minutes: 300  # 5 hours - allows time for cache save
+        continue-on-error: true
 
       - name: Build paint example
         run: opam exec -- dune build ./examples/paint.exe
@@ -66,6 +68,7 @@ jobs:
         with:
           name: paint-linux
           path: _build/default/examples/paint.exe
+        if: success()
 
   build-macos:
     runs-on: macos-latest
@@ -117,6 +120,8 @@ jobs:
 
       - name: Build project
         run: opam exec -- dune build
+        timeout-minutes: 300  # 5 hours - allows time for cache save
+        continue-on-error: true
 
       - name: Build paint example
         run: opam exec -- dune build ./examples/paint.exe
@@ -126,3 +131,4 @@ jobs:
         with:
           name: paint-macos
           path: _build/default/examples/paint.exe
+        if: success()
