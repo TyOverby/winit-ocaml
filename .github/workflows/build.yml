@@ -13,6 +13,7 @@ env:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    timeout-minutes: 350  # Ensure graceful timeout before GitHub's 6-hour hard limit
 
     steps:
       - name: Checkout repository
@@ -69,6 +70,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     needs: build-linux
+    timeout-minutes: 350  # Ensure graceful timeout before GitHub's 6-hour hard limit
 
     # OSX builds are really expensive, only allow one at a time
     concurrency:
