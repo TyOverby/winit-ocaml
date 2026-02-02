@@ -132,3 +132,4 @@ jobs:
           name: paint-macos
           path: _build/default/examples/paint.exe
         if: success()
+# Trigger CI rebuild
