@@ -32,6 +32,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: ". -> _build/rust"
+          save-always: true
 
       - name: Install OCaml (OxCaml)
         uses: ocaml/setup-ocaml@v3
@@ -90,6 +91,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: ". -> _build/rust"
+          save-always: true
 
       - name: Install OCaml (OxCaml)
         uses: ocaml/setup-ocaml@v3
