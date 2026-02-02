@@ -30,6 +30,8 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> _build/rust"
 
       - name: Install OCaml (OxCaml)
         uses: ocaml/setup-ocaml@v3
@@ -86,6 +88,8 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> _build/rust"
 
       - name: Install OCaml (OxCaml)
         uses: ocaml/setup-ocaml@v3
