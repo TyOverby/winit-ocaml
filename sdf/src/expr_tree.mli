@@ -5,8 +5,6 @@ module Type : sig
     | Bool : bool t
     | Float : float t
   [@@deriving hash, sexp_of]
-
-  val type_equal : 'a t -> 'b t -> ('a, 'b) Type_equal.t option
 end
 
 type 'a t =
