@@ -1,0 +1,6 @@
+(library
+ (name sdf)
+ (libraries bigarray base stdlib_upstream_compatible core)
+ (preprocess (pps ppx_jane))
+ (ocamlopt_flags
+  (:standard -zero-alloc-check all)))

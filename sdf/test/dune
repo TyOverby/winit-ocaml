@@ -1,0 +1,6 @@
+(library
+ (name sdf_test)
+ (libraries sdf base)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))
