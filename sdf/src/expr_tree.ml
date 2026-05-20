@@ -24,6 +24,7 @@ module Var_name = struct
   type t = string [@@deriving sexp_of, equal, compare, hash]
 
   let quickcheck_generator = Quickcheck.Generator.of_list [ "x"; "y" ]
+
   let quickcheck_observer =
     Quickcheck.Observer.create (fun s ~size:_ ~hash -> hash_fold_t hash s)
   ;;

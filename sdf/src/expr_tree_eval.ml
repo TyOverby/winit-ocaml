@@ -26,14 +26,11 @@ let rec eval_float (t : Expr_tree.t) : float Or_error.t =
     Error
       (Error.create_s
          [%message
-           "unbound variable"
-             (name : string)
-             ~loc:(t.loc : Source_code_position.t)])
+           "unbound variable" (name : string) ~loc:(t.loc : Source_code_position.t)])
   | Bool_literal _ | Lt _ | Gt _ | Lte _ | Gte _ | And _ | Or _ | Xor _ ->
     Error
       (Error.create_s
-         [%message
-           "expected float, got bool" ~loc:(t.loc : Source_code_position.t)])
+         [%message "expected float, got bool" ~loc:(t.loc : Source_code_position.t)])
 
 and eval_bool (t : Expr_tree.t) : bool Or_error.t =
   match t.kind with
@@ -73,14 +70,11 @@ and eval_bool (t : Expr_tree.t) : bool Or_error.t =
     Error
       (Error.create_s
          [%message
-           "unbound variable"
-             (name : string)
-             ~loc:(t.loc : Source_code_position.t)])
+           "unbound variable" (name : string) ~loc:(t.loc : Source_code_position.t)])
   | Float_literal _ | Add _ | Sub _ | Mul _ | Div _ ->
     Error
       (Error.create_s
-         [%message
-           "expected bool, got float" ~loc:(t.loc : Source_code_position.t)])
+         [%message "expected bool, got float" ~loc:(t.loc : Source_code_position.t)])
 ;;
 
 let eval (t : Expr_tree.t) : float Or_error.t =
