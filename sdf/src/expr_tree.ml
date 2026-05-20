@@ -1,186 +1,197 @@
-open! Base
+open! Core
 
 module Type = struct
-  type 'a t =
-    | Bool : bool t
-    | Float : float t
-  [@@deriving sexp_of, hash]
-
-  let compare : type a b. a t -> b t -> int =
-    fun a b ->
-    match a, b with
-    | Bool, Bool | Float, Float -> 0
-    | Bool, Float -> -1
-    | Float, Bool -> 1
-  ;;
-
-  let equal : type a b. a t -> b t -> bool =
-    fun a b ->
-    match a, b with
-    | Bool, Bool | Float, Float -> true
-    | _ -> false
-  ;;
-
-  let hash_fold_fn : type a. a t -> (Hash.state -> a -> Hash.state) = function
-    | Bool -> hash_fold_bool
-    | Float -> hash_fold_float
-  ;;
-
-  let equal_fn : type a. a t -> (a -> a -> bool) = function
-    | Bool -> equal_bool
-    | Float -> equal_float
-  ;;
-
-  let sexp_of_fn : type a. a t -> (a -> Sexp.t) = function
-    | Bool -> sexp_of_bool
-    | Float -> sexp_of_float
-  ;;
-
-  let compare_fn : type a. a t -> (a -> a -> int) = function
-    | Bool -> compare_bool
-    | Float -> compare_float
-  ;;
-
-  let type_equal : type a b. a t -> b t -> (a, b) Type_equal.t option =
-    fun a b ->
-    match a, b with
-    | Bool, Bool -> Some T
-    | Float, Float -> Some T
-    | _ -> None
-  ;;
-end
-
-type 'a t =
-  | Var : string * 'a Type.t -> 'a t
-  | Constant : 'a * 'a Type.t -> 'a t
-  | Add : float t * float t -> float t
-  | Sub : float t * float t -> float t
-  | Mul : float t * float t -> float t
-  | Div : float t * float t -> float t
-  | Cond : bool t * 'a t * 'a t -> 'a t
-  | Eq : float t * float t -> bool t
-  | Lt : float t * float t -> bool t
-  | Lte : float t * float t -> bool t
-  | Gt : float t * float t -> bool t
-  | Gte : float t * float t -> bool t
-[@@deriving hash, sexp_of]
-
-let ord : type a. a t -> int = function
-  | Var _ -> 0
-  | Constant _ -> 1
-  | Add _ -> 2
-  | Sub _ -> 3
-  | Mul _ -> 4
-  | Div _ -> 5
-  | Cond _ -> 6
-  | Eq _ -> 7
-  | Lt _ -> 8
-  | Lte _ -> 9
-  | Gt _ -> 10
-  | Gte _ -> 11
-;;
-
-let rec compare_many = function
-  | [] -> 0
-  | 0 :: tl -> compare_many tl
-  | other :: _ -> other
-;;
-
-let rec compare : type a. (a -> a -> int) -> a t -> a t -> int =
-  fun f a b ->
-  match a, b with
-  | Var (a, t1), Var (b, t2) -> compare_many [ compare_string a b; Type.compare t1 t2 ]
-  | Constant (a, t1), Constant (b, t2) -> compare_many [ f a b; Type.compare t1 t2 ]
-  | Add (a1, a2), Add (b1, b2) -> compare_many [ compare f a1 b1; compare f a2 b2 ]
-  | Sub (a1, a2), Sub (b1, b2) -> compare_many [ compare f a1 b1; compare f a2 b2 ]
-  | Mul (a1, a2), Mul (b1, b2) -> compare_many [ compare f a1 b1; compare f a2 b2 ]
-  | Div (a1, a2), Div (b1, b2) -> compare_many [ compare f a1 b1; compare f a2 b2 ]
-  | Cond (c1, t1, e1), Cond (c2, t2, e2) ->
-    compare_many [ compare compare_bool c1 c2; compare f t1 t2; compare f e1 e2 ]
-  | Eq (a1, a2), Eq (b1, b2) ->
-    compare_many [ compare compare_float a1 b1; compare compare_float a2 b2 ]
-  | Lt (a1, a2), Lt (b1, b2) ->
-    compare_many [ compare compare_float a1 b1; compare compare_float a2 b2 ]
-  | Lte (a1, a2), Lte (b1, b2) ->
-    compare_many [ compare compare_float a1 b1; compare compare_float a2 b2 ]
-  | Gt (a1, a2), Gte (b1, b2) ->
-    compare_many [ compare compare_float a1 b1; compare compare_float a2 b2 ]
-  | _, _ -> compare_int (ord a) (ord b)
-;;
-
-let rec equal : type a. (a -> a -> bool) -> a t -> a t -> bool =
-  fun f a b ->
-  match a, b with
-  | Var (a, t1), Var (b, t2) -> equal_string a b && Type.equal t1 t2
-  | Constant (a, t1), Constant (b, t2) -> f a b && Type.equal t1 t2
-  | Add (a1, a2), Add (b1, b2) -> equal f a1 b1 && equal f a2 b2
-  | Sub (a1, a2), Sub (b1, b2) -> equal f a1 b1 && equal f a2 b2
-  | Mul (a1, a2), Mul (b1, b2) -> equal f a1 b1 && equal f a2 b2
-  | Div (a1, a2), Div (b1, b2) -> equal f a1 b1 && equal f a2 b2
-  | Cond (c1, t1, e1), Cond (c2, t2, e2) ->
-    equal equal_bool c1 c2 && equal f t1 t2 && equal f e1 e2
-  | Eq (a1, a2), Eq (b1, b2) -> equal equal_float a1 b1 && equal equal_float a2 b2
-  | Lt (a1, a2), Lt (b1, b2) -> equal equal_float a1 b1 && equal equal_float a2 b2
-  | Lte (a1, a2), Lte (b1, b2) -> equal equal_float a1 b1 && equal equal_float a2 b2
-  | Gt (a1, a2), Gt (b1, b2) -> equal equal_float a1 b1 && equal equal_float a2 b2
-  | Gte (a1, a2), Gte (b1, b2) -> equal equal_float a1 b1 && equal equal_float a2 b2
-  | _, _ -> false
-;;
-
-let rec type_of : type a. a t -> a Type.t = function
-  | Var (_, t) -> t
-  | Constant (_, t) -> t
-  | Add _ -> Float
-  | Sub _ -> Float
-  | Mul _ -> Float
-  | Div _ -> Float
-  | Cond (_, t, _) -> type_of t
-  | Eq _ -> Bool
-  | Lt _ -> Bool
-  | Lte _ -> Bool
-  | Gt _ -> Bool
-  | Gte _ -> Bool
-;;
-
-module Packed = struct
-  type 'a t' = 'a t
-
   type t =
-    | T :
-        { expr : 'a t'
-        ; type_ : 'a Type.t
-        }
-        -> t
-
-  let compare (T { expr = expr_a; type_ = type_a }) (T { expr = expr_b; type_ = type_b }) =
-    match Type.type_equal type_a type_b with
-    | Some T -> compare (Type.compare_fn type_a) expr_a expr_b
-    | None -> Type.compare type_a type_b
-  ;;
-
-  let equal (T { expr = expr_a; type_ = type_a }) (T { expr = expr_b; type_ = type_b }) =
-    match Type.type_equal type_a type_b with
-    | Some T -> equal (Type.equal_fn type_a) expr_a expr_b
-    | None -> false
-  ;;
-
-  let hash_fold_t hash_state (T { expr = expr_a; type_ = type_a }) =
-    let hash_state = hash_fold_t (Type.hash_fold_fn type_a) hash_state expr_a in
-    Type.hash_fold_t (fun _ -> assert false) hash_state type_a
-  ;;
-
-  let sexp_of_t (T { expr; type_ }) = sexp_of_t (Type.sexp_of_fn type_) expr
-
-  let hash t =
-    let state = Hash.alloc () in
-    let state = hash_fold_t state t in
-    Hash.get_hash_value state
-  ;;
-
-  include functor Core.Hashable.Make_plain
+    | Bool
+    | Float
+  [@@deriving sexp, equal, compare, hash, quickcheck]
 end
 
-let pack expr =
-  let type_ = type_of expr in
-  Packed.T { expr; type_ }
+module Source_code_position = struct
+  type t = Source_code_position.t [@@deriving sexp_of, equal, compare, hash]
+
+  let quickcheck_generator = Quickcheck.Generator.return Stdlib.Lexing.dummy_pos
+
+  let quickcheck_observer =
+    Quickcheck.Observer.create (fun pos ~size:_ ~hash ->
+      Source_code_position.hash_fold_t hash pos)
+  ;;
+
+  let quickcheck_shrinker = Quickcheck.Shrinker.create Sequence.return
+end
+
+module Var_name = struct
+  type t = string [@@deriving sexp_of, equal, compare, hash]
+
+  let quickcheck_generator = Quickcheck.Generator.of_list [ "x"; "y" ]
+  let quickcheck_observer =
+    Quickcheck.Observer.create (fun s ~size:_ ~hash -> hash_fold_t hash s)
+  ;;
+
+  let quickcheck_shrinker = Quickcheck.Shrinker.empty ()
+end
+
+type t =
+  { loc : Source_code_position.t
+  ; kind : kind
+  ; type_ : Type.t
+  }
+
+and kind =
+  | Float_literal of float
+  | Bool_literal of bool
+  | Var of Var_name.t * Type.t
+  | Add of t * t
+  | Mul of t * t
+  | Sub of t * t
+  | Div of t * t
+  | Cond of
+      { condition : t
+      ; then_ : t
+      ; else_ : t
+      }
+  | Lt of t * t
+  | Gt of t * t
+  | Lte of t * t
+  | Gte of t * t
+  | And of t * t
+  | Or of t * t
+  | Xor of t * t
+[@@deriving sexp_of, equal, compare, hash, quickcheck]
+
+let both_float name a b =
+  match a.type_, b.type_ with
+  | Type.Float, Type.Float -> Ok ()
+  | Float, Bool ->
+    Error
+      (Error.create_s
+         [%message
+           "RHS of operator is a bool"
+             (name : string)
+             ~loc:(b.loc : Source_code_position.t)])
+  | Bool, Float ->
+    Error
+      (Error.create_s
+         [%message
+           "LHS of operator is a bool"
+             (name : string)
+             ~loc:(a.loc : Source_code_position.t)])
+  | Bool, Bool ->
+    Error
+      (Error.create_s
+         [%message
+           "both arguments to operator are bools"
+             (name : string)
+             ~lhs_loc:(a.loc : Source_code_position.t)
+             ~rhs_loc:(b.loc : Source_code_position.t)])
+;;
+
+let both_bool name a b =
+  match a.type_, b.type_ with
+  | Type.Bool, Type.Bool -> Ok ()
+  | Bool, Float ->
+    Error
+      (Error.create_s
+         [%message
+           "RHS of operator is a float"
+             (name : string)
+             ~loc:(b.loc : Source_code_position.t)])
+  | Float, Bool ->
+    Error
+      (Error.create_s
+         [%message
+           "LHS of operator is a float"
+             (name : string)
+             ~loc:(a.loc : Source_code_position.t)])
+  | Float, Float ->
+    Error
+      (Error.create_s
+         [%message
+           "both arguments to operator are floats"
+             (name : string)
+             ~lhs_loc:(a.loc : Source_code_position.t)
+             ~rhs_loc:(b.loc : Source_code_position.t)])
+;;
+
+let float_literal ~loc v = Ok { loc; kind = Float_literal v; type_ = Type.Float }
+let bool_literal ~loc v = Ok { loc; kind = Bool_literal v; type_ = Type.Bool }
+let var ~loc name type_ = Ok { loc; kind = Var (name, type_); type_ }
+
+let add ~loc a b =
+  let%map.Or_error () = both_float "addition" a b in
+  { loc; kind = Add (a, b); type_ = Type.Float }
+;;
+
+let mul ~loc a b =
+  let%map.Or_error () = both_float "multiplication" a b in
+  { loc; kind = Mul (a, b); type_ = Type.Float }
+;;
+
+let sub ~loc a b =
+  let%map.Or_error () = both_float "subtraction" a b in
+  { loc; kind = Sub (a, b); type_ = Type.Float }
+;;
+
+let div ~loc a b =
+  let%map.Or_error () = both_float "division" a b in
+  { loc; kind = Div (a, b); type_ = Type.Float }
+;;
+
+let cond ~loc ~condition ~then_ ~else_ =
+  let%bind.Or_error () =
+    match condition.type_ with
+    | Bool -> Ok ()
+    | Float ->
+      Error
+        (Error.create_s
+           [%message "condition is a float" ~loc:(condition.loc : Source_code_position.t)])
+  in
+  let%map.Or_error type_ =
+    match then_.type_, else_.type_ with
+    | Float, Float -> Ok Type.Float
+    | Bool, Bool -> Ok Type.Bool
+    | Float, Bool | Bool, Float ->
+      Error
+        (Error.create_s
+           [%message
+             "conditional arms disagree"
+               ~then_loc:(then_.loc : Source_code_position.t)
+               ~else_loc:(else_.loc : Source_code_position.t)])
+  in
+  { loc; kind = Cond { condition; then_; else_ }; type_ }
+;;
+
+let lt ~loc a b =
+  let%map.Or_error () = both_float "less than" a b in
+  { loc; kind = Lt (a, b); type_ = Type.Bool }
+;;
+
+let gt ~loc a b =
+  let%map.Or_error () = both_float "greater than" a b in
+  { loc; kind = Gt (a, b); type_ = Type.Bool }
+;;
+
+let lte ~loc a b =
+  let%map.Or_error () = both_float "less than or equal to" a b in
+  { loc; kind = Lte (a, b); type_ = Type.Bool }
+;;
+
+let gte ~loc a b =
+  let%map.Or_error () = both_float "greater than or equal to" a b in
+  { loc; kind = Gte (a, b); type_ = Type.Bool }
+;;
+
+let and_ ~loc a b =
+  let%map.Or_error () = both_bool "and" a b in
+  { loc; kind = And (a, b); type_ = Type.Bool }
+;;
+
+let or_ ~loc a b =
+  let%map.Or_error () = both_bool "or" a b in
+  { loc; kind = Or (a, b); type_ = Type.Bool }
+;;
+
+let xor ~loc a b =
+  let%map.Or_error () = both_bool "xor" a b in
+  { loc; kind = Xor (a, b); type_ = Type.Bool }
 ;;
