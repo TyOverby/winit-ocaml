@@ -1,6 +1,6 @@
 (library
  (name sdf)
- (libraries bigarray base stdlib_upstream_compatible core)
+ (libraries bigarray base stdlib_upstream_compatible core unboxed.float32_u)
  (preprocess
   (pps ppx_jane))
  (ocamlopt_flags

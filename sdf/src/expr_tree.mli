@@ -18,7 +18,7 @@ type t = private
   }
 
 and kind = private
-  | Float_literal of float
+  | Float_literal of Float32_u.t
   | Bool_literal of bool
   | Var of Var_name.t * Type.t
   | Add of t * t
@@ -37,9 +37,11 @@ and kind = private
   | And of t * t
   | Or of t * t
   | Xor of t * t
-[@@deriving sexp_of, equal, compare, hash]
+[@@deriving sexp_of, equal, compare]
 
-val float_literal : loc:Source_code_position.t -> float -> t Or_error.t
+include Comparator.S with type t := t
+
+val float_literal : loc:Source_code_position.t -> float32# -> t Or_error.t
 val bool_literal : loc:Source_code_position.t -> bool -> t Or_error.t
 val var : loc:Source_code_position.t -> string -> Type.t -> t Or_error.t
 val add : loc:Source_code_position.t -> t -> t -> t Or_error.t

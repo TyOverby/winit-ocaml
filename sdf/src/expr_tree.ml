@@ -39,7 +39,7 @@ type t =
   }
 
 and kind =
-  | Float_literal of float
+  | Float_literal of Float32_u.t
   | Bool_literal of bool
   | Var of Var_name.t * Type.t
   | Add of t * t
@@ -58,7 +58,9 @@ and kind =
   | And of t * t
   | Or of t * t
   | Xor of t * t
-[@@deriving sexp_of, equal, compare, hash, quickcheck]
+[@@deriving sexp_of, equal, compare, quickcheck]
+
+include functor Comparator.Make
 
 let both_float name a b =
   match a.type_, b.type_ with

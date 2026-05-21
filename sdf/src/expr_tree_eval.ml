@@ -1,27 +1,47 @@
 open! Core
 
-let rec eval_float (t : Expr_tree.t) : float Or_error.t =
+module Eval_result = struct
+  type t =
+    | Ok of Float32_u.t
+    | Error of Error.t
+  [@@deriving sexp_of]
+end
+
+let rec eval_float (t : Expr_tree.t) : Eval_result.t =
   match t.kind with
   | Float_literal v -> Ok v
   | Add (a, b) ->
-    let%bind.Or_error a = eval_float a in
-    let%map.Or_error b = eval_float b in
-    a +. b
+    (match eval_float a with
+     | Error _ as e -> e
+     | Ok a ->
+       (match eval_float b with
+        | Error _ as e -> e
+        | Ok b -> Ok Float32_u.O.(a + b)))
   | Sub (a, b) ->
-    let%bind.Or_error a = eval_float a in
-    let%map.Or_error b = eval_float b in
-    a -. b
+    (match eval_float a with
+     | Error _ as e -> e
+     | Ok a ->
+       (match eval_float b with
+        | Error _ as e -> e
+        | Ok b -> Ok Float32_u.O.(a - b)))
   | Mul (a, b) ->
-    let%bind.Or_error a = eval_float a in
-    let%map.Or_error b = eval_float b in
-    a *. b
+    (match eval_float a with
+     | Error _ as e -> e
+     | Ok a ->
+       (match eval_float b with
+        | Error _ as e -> e
+        | Ok b -> Ok Float32_u.O.(a * b)))
   | Div (a, b) ->
-    let%bind.Or_error a = eval_float a in
-    let%map.Or_error b = eval_float b in
-    a /. b
+    (match eval_float a with
+     | Error _ as e -> e
+     | Ok a ->
+       (match eval_float b with
+        | Error _ as e -> e
+        | Ok b -> Ok Float32_u.O.(a / b)))
   | Cond { condition; then_; else_ } ->
-    let%bind.Or_error c = eval_bool condition in
-    if c then eval_float then_ else eval_float else_
+    (match eval_bool condition with
+     | Error e -> Error e
+     | Ok c -> if c then eval_float then_ else eval_float else_)
   | Var (name, _) ->
     Error
       (Error.create_s
@@ -36,21 +56,33 @@ and eval_bool (t : Expr_tree.t) : bool Or_error.t =
   match t.kind with
   | Bool_literal v -> Ok v
   | Lt (a, b) ->
-    let%bind.Or_error a = eval_float a in
-    let%map.Or_error b = eval_float b in
-    Float.( < ) a b
+    (match eval_float a with
+     | Error e -> Error e
+     | Ok a ->
+       (match eval_float b with
+        | Error e -> Error e
+        | Ok b -> Ok Float32_u.O.(a < b)))
   | Gt (a, b) ->
-    let%bind.Or_error a = eval_float a in
-    let%map.Or_error b = eval_float b in
-    Float.( > ) a b
+    (match eval_float a with
+     | Error e -> Error e
+     | Ok a ->
+       (match eval_float b with
+        | Error e -> Error e
+        | Ok b -> Ok Float32_u.O.(a > b)))
   | Lte (a, b) ->
-    let%bind.Or_error a = eval_float a in
-    let%map.Or_error b = eval_float b in
-    Float.( <= ) a b
+    (match eval_float a with
+     | Error e -> Error e
+     | Ok a ->
+       (match eval_float b with
+        | Error e -> Error e
+        | Ok b -> Ok Float32_u.O.(a <= b)))
   | Gte (a, b) ->
-    let%bind.Or_error a = eval_float a in
-    let%map.Or_error b = eval_float b in
-    Float.( >= ) a b
+    (match eval_float a with
+     | Error e -> Error e
+     | Ok a ->
+       (match eval_float b with
+        | Error e -> Error e
+        | Ok b -> Ok Float32_u.O.(a >= b)))
   | And (a, b) ->
     let%bind.Or_error a = eval_bool a in
     let%map.Or_error b = eval_bool b in
@@ -77,7 +109,7 @@ and eval_bool (t : Expr_tree.t) : bool Or_error.t =
          [%message "expected bool, got float" ~loc:(t.loc : Source_code_position.t)])
 ;;
 
-let eval (t : Expr_tree.t) : float Or_error.t =
+let eval (t : Expr_tree.t) : Eval_result.t =
   match t.type_ with
   | Float -> eval_float t
   | Bool ->
