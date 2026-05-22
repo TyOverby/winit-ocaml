@@ -8,6 +8,7 @@ type instr =
   | Float_literal of Float32_u.t
   | Bool_literal of bool
   | Var of Expr_tree.Var_name.t * Expr_tree.Type.t
+  | Read of Register.t
   | Add of Register.t * Register.t
   | Mul of Register.t * Register.t
   | Sub of Register.t * Register.t

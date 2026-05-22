@@ -1,13 +1,20 @@
 open! Core
 
-module Eval_result = struct
+module Result = struct
+  type t =
+    | Ok of Value.t
+    | Error of Error.t
+  [@@deriving sexp_of]
+end
+
+module Float_result = struct
   type t =
     | Ok of Float32_u.t
     | Error of Error.t
   [@@deriving sexp_of]
 end
 
-let rec eval_float (t : Expr_tree.t) : Eval_result.t =
+let rec eval_float (t : Expr_tree.t) : Float_result.t =
   match t.kind with
   | Float_literal v -> Ok v
   | Add (a, b) ->
@@ -109,13 +116,14 @@ and eval_bool (t : Expr_tree.t) : bool Or_error.t =
          [%message "expected bool, got float" ~loc:(t.loc : Source_code_position.t)])
 ;;
 
-let eval (t : Expr_tree.t) : Eval_result.t =
+let eval (t : Expr_tree.t) : Result.t =
   match t.type_ with
-  | Float -> eval_float t
+  | Float ->
+    (match eval_float t with
+     | Ok f -> Ok (Value.of_float f)
+     | Error e -> Error e)
   | Bool ->
-    Error
-      (Error.create_s
-         [%message
-           "top-level expression has type bool, expected float"
-             ~loc:(t.loc : Source_code_position.t)])
+    (match eval_bool t with
+     | Ok f -> Ok (Value.of_bool f)
+     | Error e -> Error e)
 ;;

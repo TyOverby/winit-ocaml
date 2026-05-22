@@ -1,10 +1,10 @@
 open! Core
 
-module Eval_result : sig
+module Result : sig
   type t =
-    | Ok of Float32_u.t
+    | Ok of Value.t
     | Error of Error.t
   [@@deriving sexp_of]
 end
 
-val eval : Expr_tree.t -> Eval_result.t
+val eval : Expr_tree.t -> Result.t
