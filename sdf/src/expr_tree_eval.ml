@@ -4,15 +4,13 @@ module Result = struct
   type t =
     | Ok of Value.t
     | Error of Error.t
-  [@@deriving sexp_of]
-end
+  [@@deriving sexp_of]end
 
 module Float_result = struct
   type t =
     | Ok of Float32_u.t
     | Error of Error.t
-  [@@deriving sexp_of]
-end
+  [@@deriving sexp_of]end
 
 let rec eval_float
   ~(env : (string, Value.Boxed.t, String.comparator_witness) Map.t)

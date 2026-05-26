@@ -366,7 +366,9 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
 let gen_test_case =
   let open Quickcheck.Generator.Let_syntax in
   let%bind depth = Int.gen_incl 0 4 in
-  let%bind type_ = Expr_tree.Type.quickcheck_generator in
+  let%bind type_ =
+    Quickcheck.Generator.of_list [ Expr_tree.Type.Bool; Float ]
+  in
   let%bind tree = gen_expr ~depth type_ in
   let%bind x = Float.quickcheck_generator in
   let%map y = Float.quickcheck_generator in

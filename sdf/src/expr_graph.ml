@@ -1,14 +1,13 @@
 open! Core
 
 module Register : sig
-  type t = int [@@deriving sexp_of, equal, compare, hash]
-  type allocator
+  type t = int [@@deriving sexp_of, equal, compare, hash]  type allocator
 
   val create_allocator : unit -> allocator
   val fresh : allocator -> t
   val count : allocator -> int
 end = struct
-  include Int
+  type t = int [@@deriving sexp_of, equal, compare, hash]
 
   type allocator = int ref
 
@@ -46,7 +45,6 @@ type instr =
   | Xor of Register.t * Register.t
 
 and t = (Register.t * instr) list [@@deriving sexp_of, equal, compare]
-
 module Bindings = struct
   type t =
     | Base of (Expr_tree.t, Register.t, Expr_tree.comparator_witness) Map.t
@@ -55,7 +53,7 @@ module Bindings = struct
         ; map : (Expr_tree.t, Register.t, Expr_tree.comparator_witness) Map.t
         }
 
-  let empty = Base (Map.empty (module Expr_tree))
+  let empty () = Base (Map.empty (module Expr_tree))
   let new_level t = Level { up = t; map = Map.empty (module Expr_tree) }
 
   let rec lookup t tree =
@@ -165,7 +163,7 @@ let from_tree tree =
       let instrs = (output_register, instr) :: instrs in
       ~instrs, ~env, output_register
   in
-  let ~instrs, ~env:_, register = loop tree ~instrs:[] ~env:Bindings.empty in
+  let ~instrs, ~env:_, register = loop tree ~instrs:[] ~env:(Bindings.empty ()) in
   ( ~instructions:(List.rev instrs)
   , ~final_register:register
   , ~register_count:(Register.count register_allocator)

@@ -1,3 +1,4 @@
+@@portable
 open! Core
 
 module Result : sig

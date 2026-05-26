@@ -1,14 +1,16 @@
+@@ portable
+
 open! Core
 
 module Type : sig
   type t =
     | Bool
     | Float
-  [@@deriving sexp, equal, compare, hash, quickcheck]
+  [@@deriving sexp, equal, compare, hash]
 end
 
 module Var_name : sig
-  type t = string [@@deriving sexp_of, equal, compare, hash, quickcheck]
+  type t = string [@@deriving sexp_of, equal, compare, hash]
 end
 
 type t = private
@@ -39,7 +41,7 @@ and kind = private
   | Xor of t * t
 [@@deriving sexp_of, equal, compare]
 
-include Comparator.S with type t := t
+include Comparator.S [@portable] with type t := t
 
 val float_literal : loc:Source_code_position.t -> float32# -> t Or_error.t
 val bool_literal : loc:Source_code_position.t -> bool -> t Or_error.t

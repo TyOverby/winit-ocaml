@@ -71,7 +71,7 @@ and kind =
   | Xor of t * t
 [@@deriving sexp_of, equal, compare, quickcheck]
 
-include functor Comparator.Make
+include functor Comparator.Make [@mode portable]
 
 let both_float name a b =
   match a.type_, b.type_ with
