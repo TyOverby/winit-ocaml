@@ -36,6 +36,7 @@ and kind = private
   | Gt of t * t
   | Lte of t * t
   | Gte of t * t
+  | Sqrt of t
   | And of t * t
   | Or of t * t
   | Xor of t * t
@@ -50,6 +51,7 @@ val add : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val mul : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val sub : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val div : loc:Source_code_position.t -> t -> t -> t Or_error.t
+val sqrt : loc:Source_code_position.t -> t -> t Or_error.t
 val cond : loc:Source_code_position.t -> condition:t -> then_:t -> else_:t -> t Or_error.t
 val lt : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val gt : loc:Source_code_position.t -> t -> t -> t Or_error.t

@@ -38,12 +38,17 @@ let rec gen_float_expr ~depth =
       let%map b = gen_float_expr ~depth:d in
       ok (op ~loc a b)
     in
+    let unop op =
+      let%map a = gen_float_expr ~depth:d in
+      ok (op ~loc a)
+    in
     Quickcheck.Generator.union
       [ leaf
       ; binop Expr_tree.add
       ; binop Expr_tree.sub
       ; binop Expr_tree.mul
       ; binop Expr_tree.div
+      ; unop Expr_tree.sqrt
       ; (let%bind condition = gen_bool_expr ~depth:d in
          let%bind then_ = gen_float_expr ~depth:d in
          let%map else_ = gen_float_expr ~depth:d in

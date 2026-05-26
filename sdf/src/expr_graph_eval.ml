@@ -29,6 +29,9 @@ let rec run ~variables ~instructions ~registers =
         let a = Value.Array.get_float registers a in
         let b = Value.Array.get_float registers b in
         Value.of_float Float32_u.(a / b)
+      | Sqrt a ->
+        let a = Value.Array.get_float registers a in
+        Value.of_float (Float32_u.of_float (Float.sqrt (Float32_u.to_float a)))
       | Lt (a, b) ->
         let a = Value.Array.get_float registers a in
         let b = Value.Array.get_float registers b in

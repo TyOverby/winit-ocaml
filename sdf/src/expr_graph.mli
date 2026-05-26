@@ -15,6 +15,7 @@ type instr =
   | Mul of Register.t * Register.t
   | Sub of Register.t * Register.t
   | Div of Register.t * Register.t
+  | Sqrt of Register.t
   | Condition of
       { cond : Register.t
       ; then_ : t

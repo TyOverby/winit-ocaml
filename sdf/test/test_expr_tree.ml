@@ -49,6 +49,11 @@ let%expect_test "division" =
   [%expect {| 2.5 |}]
 ;;
 
+let%expect_test "sqrt" =
+  eval_float (sqrt (f #9.s));
+  [%expect {| 3 |}]
+;;
+
 let%expect_test "division by zero produces infinity" =
   eval_float (div (f #1.s) (f #0.s));
   [%expect {| INF |}]

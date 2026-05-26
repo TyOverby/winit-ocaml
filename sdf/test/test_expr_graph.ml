@@ -32,6 +32,11 @@ let%expect_test "variables" =
   [%expect {| 3 |}]
 ;;
 
+let%expect_test "sqrt" =
+  eval_float (sqrt (f #9.s));
+  [%expect {| 3 |}]
+;;
+
 let pp tree =
   let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
     Expr_graph.from_tree tree

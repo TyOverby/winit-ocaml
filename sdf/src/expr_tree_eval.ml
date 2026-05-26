@@ -49,6 +49,10 @@ let rec eval_float
        (match eval_float ~env b with
         | Error _ as e -> e
         | Ok b -> Ok Float32_u.O.(a / b)))
+  | Sqrt a ->
+    (match eval_float ~env a with
+     | Error _ as e -> e
+     | Ok a -> Ok (Float32_u.of_float (Float.sqrt (Float32_u.to_float a))))
   | Cond { condition; then_; else_ } ->
     (match eval_bool ~env condition with
      | Error e -> Error e
@@ -120,7 +124,7 @@ and eval_bool ~env (t : Expr_tree.t) : bool Or_error.t =
          (Error.create_s
             [%message
               "unbound variable" (name : string) ~loc:(t.loc : Source_code_position.t)]))
-  | Float_literal _ | Add _ | Sub _ | Mul _ | Div _ ->
+  | Float_literal _ | Add _ | Sub _ | Mul _ | Div _ | Sqrt _ ->
     Error
       (Error.create_s
          [%message "expected bool, got float" ~loc:(t.loc : Source_code_position.t)])

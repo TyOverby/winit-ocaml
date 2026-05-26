@@ -66,6 +66,7 @@ and kind =
   | Gt of t * t
   | Lte of t * t
   | Gte of t * t
+  | Sqrt of t
   | And of t * t
   | Or of t * t
   | Xor of t * t
@@ -149,6 +150,15 @@ let sub ~loc a b =
 let div ~loc a b =
   let%map.Or_error () = both_float "division" a b in
   { loc; kind = Div (a, b); type_ = Type.Float }
+;;
+
+let sqrt ~loc a =
+  match a.type_ with
+  | Type.Float -> Ok { loc; kind = Sqrt a; type_ = Type.Float }
+  | Bool ->
+    Error
+      (Error.create_s
+         [%message "argument to sqrt is a bool" ~loc:(a.loc : Source_code_position.t)])
 ;;
 
 let cond ~loc ~condition ~then_ ~else_ =

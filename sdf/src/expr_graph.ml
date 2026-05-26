@@ -31,6 +31,7 @@ type instr =
   | Mul of Register.t * Register.t
   | Sub of Register.t * Register.t
   | Div of Register.t * Register.t
+  | Sqrt of Register.t
   | Condition of
       { cond : Register.t
       ; then_ : t
@@ -117,6 +118,9 @@ let from_tree tree =
           let ~instrs, ~env, a = loop a ~instrs ~env in
           let ~instrs, ~env, b = loop b ~instrs ~env in
           ~instr:(Div (a, b)), ~instrs, ~env
+        | Sqrt a ->
+          let ~instrs, ~env, a = loop a ~instrs ~env in
+          ~instr:(Sqrt a), ~instrs, ~env
         | Cond { condition; then_; else_ } ->
           let ~instrs, ~env, cond = loop condition ~instrs ~env in
           let ~instrs:then_instrs, ~env:_, then_ =
@@ -186,6 +190,7 @@ let pp_instructions instructions =
       | Sub (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- sub $%d $%d\n" pad out a b)
       | Mul (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- mul $%d $%d\n" pad out a b)
       | Div (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- div $%d $%d\n" pad out a b)
+      | Sqrt a -> Buffer.add_string buf (sprintf "%s$%d <- sqrt $%d\n" pad out a)
       | Lt (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- lt $%d $%d\n" pad out a b)
       | Gt (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- gt $%d $%d\n" pad out a b)
       | Lte (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- lte $%d $%d\n" pad out a b)
