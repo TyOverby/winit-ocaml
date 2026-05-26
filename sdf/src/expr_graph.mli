@@ -7,7 +7,7 @@ end
 type instr =
   | Float_literal of Float32_u.t
   | Bool_literal of bool
-  | Var of Expr_tree.Var_name.t * Expr_tree.Type.t
+  | Var of int
   | Read of Register.t
   | Add of Register.t * Register.t
   | Mul of Register.t * Register.t
@@ -28,4 +28,11 @@ type instr =
 
 and t = (Register.t * instr) list [@@deriving sexp_of, equal, compare]
 
-val from_tree : Expr_tree.t -> instructions:t * final_register:int * register_count:int
+val from_tree
+  :  Expr_tree.t
+  -> instructions:t
+     * final_register:int
+     * register_count:int
+     * var_mapping:int String.Table.t
+
+val pp_instructions : t -> string

@@ -14,6 +14,10 @@ let to_bool t =
   | _ -> true
 ;;
 
+module Boxed = struct
+  type nonrec t = T of t
+end
+
 module Array = struct
   type t = Int32_u.t array
 

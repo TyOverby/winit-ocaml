@@ -1,16 +1,16 @@
 open! Core
 
-let rec run ~instructions ~registers =
+let rec run ~variables ~instructions ~registers =
   List.iter instructions ~f:(fun (out, instruction) ->
     let value =
       match (instruction : Expr_graph.instr) with
       | Float_literal f -> Value.of_float f
       | Bool_literal b -> Value.of_bool b
-      | Var _ -> assert false
+      | Var i -> Value.Array.get variables i
       | Condition { cond; then_; else_ } ->
         if Value.Array.get_bool registers cond
-        then run ~instructions:then_ ~registers
-        else run ~instructions:else_ ~registers;
+        then run ~variables ~instructions:then_ ~registers
+        else run ~variables ~instructions:else_ ~registers;
         Value.Array.get registers out
       | Read input_register -> Value.Array.get registers input_register
       | Add (a, b) ->
@@ -61,8 +61,15 @@ let rec run ~instructions ~registers =
     Value.Array.set registers out value)
 ;;
 
-let run ~instructions ~final_register ~register_count =
+let run ~instructions ~variables ~final_register ~register_count =
   let registers = Value.Array.create ~len:register_count in
-  run ~instructions ~registers;
+  run ~instructions ~variables ~registers;
   Value.Array.get registers final_register
+;;
+
+let run_tree tree =
+  let ~instructions, ~final_register, ~register_count, ~var_mapping =
+    Expr_graph.from_tree tree
+  in
+  ~var_mapping, ~run:(run ~instructions ~final_register ~register_count)
 ;;

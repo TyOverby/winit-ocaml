@@ -7,4 +7,4 @@ module Result : sig
   [@@deriving sexp_of]
 end
 
-val eval : Expr_tree.t -> Result.t
+val eval : env:Value.Boxed.t String.Map.t -> Expr_tree.t -> Result.t

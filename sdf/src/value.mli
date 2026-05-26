@@ -14,6 +14,10 @@ val to_float : t -> Float32_u.t
 val to_int : t -> Int32_u.t
 val to_bool : t -> bool
 
+module Boxed : sig
+  type nonrec t = T of t
+end
+
 module Array : sig
   type value := t
   type t

@@ -1,0 +1,20 @@
+open! Core
+open Sdf
+
+let here = Stdlib.Lexing.dummy_pos
+let ok = Or_error.ok_exn
+let f x = ok (Expr_tree.float_literal ~loc:here x)
+let b x = ok (Expr_tree.bool_literal ~loc:here x)
+let var name type_ = ok (Expr_tree.var ~loc:here name type_)
+let add a b = ok (Expr_tree.add ~loc:here a b)
+let sub a b = ok (Expr_tree.sub ~loc:here a b)
+let mul a b = ok (Expr_tree.mul ~loc:here a b)
+let div a b = ok (Expr_tree.div ~loc:here a b)
+let lt a b = ok (Expr_tree.lt ~loc:here a b)
+let gt a b = ok (Expr_tree.gt ~loc:here a b)
+let lte a b = ok (Expr_tree.lte ~loc:here a b)
+let gte a b = ok (Expr_tree.gte ~loc:here a b)
+let and_ a b = ok (Expr_tree.and_ ~loc:here a b)
+let or_ a b = ok (Expr_tree.or_ ~loc:here a b)
+let xor a b = ok (Expr_tree.xor ~loc:here a b)
+let cond ~condition ~then_ ~else_ = ok (Expr_tree.cond ~loc:here ~condition ~then_ ~else_)

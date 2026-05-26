@@ -1,32 +1,24 @@
 open! Core
 open Sdf
+open Helpers
 
-let here = Stdlib.Lexing.dummy_pos
-let ok = Or_error.ok_exn
-let f x = ok (Expr_tree.float_literal ~loc:here x)
-let b x = ok (Expr_tree.bool_literal ~loc:here x)
-let add a b = ok (Expr_tree.add ~loc:here a b)
-let sub a b = ok (Expr_tree.sub ~loc:here a b)
-let mul a b = ok (Expr_tree.mul ~loc:here a b)
-let div a b = ok (Expr_tree.div ~loc:here a b)
-let lt a b = ok (Expr_tree.lt ~loc:here a b)
-let gt a b = ok (Expr_tree.gt ~loc:here a b)
-let lte a b = ok (Expr_tree.lte ~loc:here a b)
-let gte a b = ok (Expr_tree.gte ~loc:here a b)
-let and_ a b = ok (Expr_tree.and_ ~loc:here a b)
-let or_ a b = ok (Expr_tree.or_ ~loc:here a b)
-let xor a b = ok (Expr_tree.xor ~loc:here a b)
-let cond ~condition ~then_ ~else_ = ok (Expr_tree.cond ~loc:here ~condition ~then_ ~else_)
+let default_env =
+  String.Map.of_alist_exn
+    [ "x", Value.Boxed.T (Value.of_float #1.0s)
+    ; "y", Value.Boxed.T (Value.of_float #1.0s)
+    ; "b", Value.Boxed.T (Value.of_bool true)
+    ]
+;;
 
 let eval_float t =
-  let value = Expr_tree_eval.eval t in
+  let value = Expr_tree_eval.eval ~env:default_env t in
   match value with
   | Ok v -> print_s (Float32_u.sexp_of_t (Value.to_float v))
   | Error e -> print_s (Error.sexp_of_t e)
 ;;
 
 let eval_bool t =
-  let value = Expr_tree_eval.eval t in
+  let value = Expr_tree_eval.eval ~env:default_env t in
   match value with
   | Ok v -> print_s (Bool.sexp_of_t (Value.to_bool v))
   | Error e -> print_s (Error.sexp_of_t e)
@@ -148,15 +140,33 @@ let%expect_test "nested cond (cond inside then-branch)" =
 ;;
 
 let%expect_test "unbound float variable" =
-  let v = ok (Expr_tree.var ~loc:here "x" Float) in
+  let v = ok (Expr_tree.var ~loc:here "sdf" Float) in
   eval_float v;
-  [%expect {| ("unbound variable" (name x) (loc :0:-1)) |}]
+  [%expect {| ("unbound variable" (name sdf) (loc :0:-1)) |}]
 ;;
 
 let%expect_test "unbound variable inside arithmetic propagates error" =
-  let v = ok (Expr_tree.var ~loc:here "y" Float) in
+  let v = ok (Expr_tree.var ~loc:here "sdf" Float) in
   eval_float (add (f #1.s) v);
-  [%expect {| ("unbound variable" (name y) (loc :0:-1)) |}]
+  [%expect {| ("unbound variable" (name sdf) (loc :0:-1)) |}]
+;;
+
+let%expect_test "unbound bool variable inside cond" =
+  let v = ok (Expr_tree.var ~loc:here "c" Bool) in
+  eval_float (cond ~condition:v ~then_:(f #1.s) ~else_:(f #2.s));
+  [%expect {| ("unbound variable" (name c) (loc :0:-1)) |}]
+;;
+
+let%expect_test "float variable" =
+  let v = ok (Expr_tree.var ~loc:here "x" Float) in
+  eval_float v;
+  [%expect {| 1 |}]
+;;
+
+let%expect_test "multiple bound variables" =
+  let v = add (var "y" Float) (var "x" Float) in
+  eval_float (add (f #1.s) v);
+  [%expect {| 3 |}]
 ;;
 
 let%expect_test "unbound bool variable inside cond" =
