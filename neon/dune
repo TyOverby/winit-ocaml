@@ -1,0 +1,5 @@
+(executable
+ (name neon)
+ (libraries winit softbuffer unix bigarray core image_buf sdf)
+ (preprocess
+  (pps ppx_jane)))

@@ -26,6 +26,10 @@ let create ?(transparency = false) ~width ~height color =
   { buffer; width; height; transparency }
 ;;
 
+let from_external ?(transparency = false) ~width ~height buffer =
+  { buffer; width; height; transparency }
+;;
+
 let width { width; _ } = width
 let height { height; _ } = height
 let transparency { transparency; _ } = transparency
@@ -41,40 +45,51 @@ let set t ~x ~y v =
 ;;
 
 let blit ~from ~(region : Rect.t) ~to_ ~x:dst_x ~y:dst_y =
-  (* Extract region fields via pattern match for unboxed record *)
+  (* Fast path: full-buffer blit when source and dest are the same size,
+     region covers the entire source, and destination offset is zero. *)
   let #{ Rect.x = src_x; y = src_y; w; h } = region in
-  (* Clip source to from's bounds (left/top) *)
-  let dst_x, w, src_x =
-    if src_x < 0 then dst_x - src_x, w + src_x, 0 else dst_x, w, src_x
-  in
-  let dst_y, h, src_y =
-    if src_y < 0 then dst_y - src_y, h + src_y, 0 else dst_y, h, src_y
-  in
-  (* Clip destination to to_'s bounds (left/top) *)
-  let src_x, w, dst_x =
-    if dst_x < 0 then src_x - dst_x, w + dst_x, 0 else src_x, w, dst_x
-  in
-  let src_y, h, dst_y =
-    if dst_y < 0 then src_y - dst_y, h + dst_y, 0 else src_y, h, dst_y
-  in
-  (* Clip source to from's bounds (right/bottom) *)
-  let w = if src_x + w > from.width then from.width - src_x else w in
-  let h = if src_y + h > from.height then from.height - src_y else h in
-  (* Clip destination to to_'s bounds (right/bottom) *)
-  let w = if dst_x + w > to_.width then to_.width - dst_x else w in
-  let h = if dst_y + h > to_.height then to_.height - dst_y else h in
-  (* If nothing to blit, return early *)
-  if w <= 0 || h <= 0
-  then ()
-  else
-    (* Copy row by row using Bigarray.blit *)
-    for row = 0 to h - 1 do
-      let src_row_start = ((src_y + row) * from.width) + src_x in
-      let dst_row_start = ((dst_y + row) * to_.width) + dst_x in
-      let src_row = Bigarray.Array1.sub from.buffer src_row_start w in
-      let dst_row = Bigarray.Array1.sub to_.buffer dst_row_start w in
-      Bigarray.Array1.blit src_row dst_row
-    done
+  if dst_x = 0
+     && dst_y = 0
+     && src_x = 0
+     && src_y = 0
+     && w = from.width
+     && h = from.height
+     && from.width = to_.width
+     && from.height = to_.height
+  then Bigarray.Array1.blit from.buffer to_.buffer
+  else (
+    (* Clip source to from's bounds (left/top) *)
+    let dst_x, w, src_x =
+      if src_x < 0 then dst_x - src_x, w + src_x, 0 else dst_x, w, src_x
+    in
+    let dst_y, h, src_y =
+      if src_y < 0 then dst_y - src_y, h + src_y, 0 else dst_y, h, src_y
+    in
+    (* Clip destination to to_'s bounds (left/top) *)
+    let src_x, w, dst_x =
+      if dst_x < 0 then src_x - dst_x, w + dst_x, 0 else src_x, w, dst_x
+    in
+    let src_y, h, dst_y =
+      if dst_y < 0 then src_y - dst_y, h + dst_y, 0 else src_y, h, dst_y
+    in
+    (* Clip source to from's bounds (right/bottom) *)
+    let w = if src_x + w > from.width then from.width - src_x else w in
+    let h = if src_y + h > from.height then from.height - src_y else h in
+    (* Clip destination to to_'s bounds (right/bottom) *)
+    let w = if dst_x + w > to_.width then to_.width - dst_x else w in
+    let h = if dst_y + h > to_.height then to_.height - dst_y else h in
+    (* If nothing to blit, return early *)
+    if w <= 0 || h <= 0
+    then ()
+    else
+      (* Copy row by row using Bigarray.blit *)
+      for row = 0 to h - 1 do
+        let src_row_start = ((src_y + row) * from.width) + src_x in
+        let dst_row_start = ((dst_y + row) * to_.width) + dst_x in
+        let src_row = Bigarray.Array1.sub from.buffer src_row_start w in
+        let dst_row = Bigarray.Array1.sub to_.buffer dst_row_start w in
+        Bigarray.Array1.blit src_row dst_row
+      done)
 ;;
 
 module For_testing = struct

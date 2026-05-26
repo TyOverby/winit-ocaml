@@ -1,3 +1,5 @@
+@@ portable
+
 open! Base
 
 module Rect : sig
@@ -12,6 +14,13 @@ end
 type t
 
 val create : ?transparency:bool -> width:int -> height:int -> int32# -> t
+
+val from_external
+  :  ?transparency:bool
+  -> width:int
+  -> height:int
+  -> (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t
+  -> t
 
 (* property getters *)
 val width : t -> int
