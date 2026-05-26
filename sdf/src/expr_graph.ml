@@ -32,6 +32,14 @@ type instr =
   | Sub of Register.t * Register.t
   | Div of Register.t * Register.t
   | Sqrt of Register.t
+  | Abs of Register.t
+  | Neg of Register.t
+  | Sign of Register.t
+  | Sin of Register.t
+  | Cos of Register.t
+  | Round of Register.t
+  | Min of Register.t * Register.t
+  | Max of Register.t * Register.t
   | Condition of
       { cond : Register.t
       ; then_ : t
@@ -121,6 +129,32 @@ let from_tree tree =
         | Sqrt a ->
           let ~instrs, ~env, a = loop a ~instrs ~env in
           ~instr:(Sqrt a), ~instrs, ~env
+        | Abs a ->
+          let ~instrs, ~env, a = loop a ~instrs ~env in
+          ~instr:(Abs a), ~instrs, ~env
+        | Neg a ->
+          let ~instrs, ~env, a = loop a ~instrs ~env in
+          ~instr:(Neg a), ~instrs, ~env
+        | Sign a ->
+          let ~instrs, ~env, a = loop a ~instrs ~env in
+          ~instr:(Sign a), ~instrs, ~env
+        | Sin a ->
+          let ~instrs, ~env, a = loop a ~instrs ~env in
+          ~instr:(Sin a), ~instrs, ~env
+        | Cos a ->
+          let ~instrs, ~env, a = loop a ~instrs ~env in
+          ~instr:(Cos a), ~instrs, ~env
+        | Round a ->
+          let ~instrs, ~env, a = loop a ~instrs ~env in
+          ~instr:(Round a), ~instrs, ~env
+        | Min (a, b) ->
+          let ~instrs, ~env, a = loop a ~instrs ~env in
+          let ~instrs, ~env, b = loop b ~instrs ~env in
+          ~instr:(Min (a, b)), ~instrs, ~env
+        | Max (a, b) ->
+          let ~instrs, ~env, a = loop a ~instrs ~env in
+          let ~instrs, ~env, b = loop b ~instrs ~env in
+          ~instr:(Max (a, b)), ~instrs, ~env
         | Cond { condition; then_; else_ } ->
           let ~instrs, ~env, cond = loop condition ~instrs ~env in
           let ~instrs:then_instrs, ~env:_, then_ =
@@ -191,6 +225,14 @@ let pp_instructions instructions =
       | Mul (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- mul $%d $%d\n" pad out a b)
       | Div (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- div $%d $%d\n" pad out a b)
       | Sqrt a -> Buffer.add_string buf (sprintf "%s$%d <- sqrt $%d\n" pad out a)
+      | Abs a -> Buffer.add_string buf (sprintf "%s$%d <- abs $%d\n" pad out a)
+      | Neg a -> Buffer.add_string buf (sprintf "%s$%d <- neg $%d\n" pad out a)
+      | Sign a -> Buffer.add_string buf (sprintf "%s$%d <- sign $%d\n" pad out a)
+      | Sin a -> Buffer.add_string buf (sprintf "%s$%d <- sin $%d\n" pad out a)
+      | Cos a -> Buffer.add_string buf (sprintf "%s$%d <- cos $%d\n" pad out a)
+      | Round a -> Buffer.add_string buf (sprintf "%s$%d <- round $%d\n" pad out a)
+      | Min (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- min $%d $%d\n" pad out a b)
+      | Max (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- max $%d $%d\n" pad out a b)
       | Lt (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- lt $%d $%d\n" pad out a b)
       | Gt (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- gt $%d $%d\n" pad out a b)
       | Lte (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- lte $%d $%d\n" pad out a b)

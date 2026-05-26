@@ -32,6 +32,37 @@ let rec run ~variables ~instructions ~registers =
       | Sqrt a ->
         let a = Value.Array.get_float registers a in
         Value.of_float (Float32_u.of_float (Float.sqrt (Float32_u.to_float a)))
+      | Abs a ->
+        let a = Value.Array.get_float registers a in
+        Value.of_float (Float32_u.of_float (Float.abs (Float32_u.to_float a)))
+      | Neg a ->
+        let a = Value.Array.get_float registers a in
+        Value.of_float (Float32_u.neg a)
+      | Sign a ->
+        let a = Value.Array.get_float registers a in
+        let f = Float32_u.to_float a in
+        Value.of_float
+          (Float32_u.of_float
+             (if Float.( > ) f 0.0 then 1.0 else if Float.( < ) f 0.0 then -1.0 else 0.0))
+      | Sin a ->
+        let a = Value.Array.get_float registers a in
+        Value.of_float (Float32_u.of_float (Float.sin (Float32_u.to_float a)))
+      | Cos a ->
+        let a = Value.Array.get_float registers a in
+        Value.of_float (Float32_u.of_float (Float.cos (Float32_u.to_float a)))
+      | Round a ->
+        let a = Value.Array.get_float registers a in
+        Value.of_float (Float32_u.of_float (Float.round_nearest (Float32_u.to_float a)))
+      | Min (a, b) ->
+        let a = Value.Array.get_float registers a in
+        let b = Value.Array.get_float registers b in
+        Value.of_float
+          (Float32_u.of_float (Float.min (Float32_u.to_float a) (Float32_u.to_float b)))
+      | Max (a, b) ->
+        let a = Value.Array.get_float registers a in
+        let b = Value.Array.get_float registers b in
+        Value.of_float
+          (Float32_u.of_float (Float.max (Float32_u.to_float a) (Float32_u.to_float b)))
       | Lt (a, b) ->
         let a = Value.Array.get_float registers a in
         let b = Value.Array.get_float registers b in

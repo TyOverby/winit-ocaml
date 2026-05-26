@@ -53,6 +53,52 @@ let rec eval_float
     (match eval_float ~env a with
      | Error _ as e -> e
      | Ok a -> Ok (Float32_u.of_float (Float.sqrt (Float32_u.to_float a))))
+  | Abs a ->
+    (match eval_float ~env a with
+     | Error _ as e -> e
+     | Ok a -> Ok (Float32_u.of_float (Float.abs (Float32_u.to_float a))))
+  | Neg a ->
+    (match eval_float ~env a with
+     | Error _ as e -> e
+     | Ok a -> Ok (Float32_u.neg a))
+  | Sign a ->
+    (match eval_float ~env a with
+     | Error _ as e -> e
+     | Ok a ->
+       let f = Float32_u.to_float a in
+       Ok
+         (Float32_u.of_float
+            (if Float.( > ) f 0.0 then 1.0 else if Float.( < ) f 0.0 then -1.0 else 0.0)))
+  | Sin a ->
+    (match eval_float ~env a with
+     | Error _ as e -> e
+     | Ok a -> Ok (Float32_u.of_float (Float.sin (Float32_u.to_float a))))
+  | Cos a ->
+    (match eval_float ~env a with
+     | Error _ as e -> e
+     | Ok a -> Ok (Float32_u.of_float (Float.cos (Float32_u.to_float a))))
+  | Round a ->
+    (match eval_float ~env a with
+     | Error _ as e -> e
+     | Ok a -> Ok (Float32_u.of_float (Float.round_nearest (Float32_u.to_float a))))
+  | Min (a, b) ->
+    (match eval_float ~env a with
+     | Error _ as e -> e
+     | Ok a ->
+       (match eval_float ~env b with
+        | Error _ as e -> e
+        | Ok b ->
+          Ok
+            (Float32_u.of_float (Float.min (Float32_u.to_float a) (Float32_u.to_float b)))))
+  | Max (a, b) ->
+    (match eval_float ~env a with
+     | Error _ as e -> e
+     | Ok a ->
+       (match eval_float ~env b with
+        | Error _ as e -> e
+        | Ok b ->
+          Ok
+            (Float32_u.of_float (Float.max (Float32_u.to_float a) (Float32_u.to_float b)))))
   | Cond { condition; then_; else_ } ->
     (match eval_bool ~env condition with
      | Error e -> Error e
@@ -124,7 +170,20 @@ and eval_bool ~env (t : Expr_tree.t) : bool Or_error.t =
          (Error.create_s
             [%message
               "unbound variable" (name : string) ~loc:(t.loc : Source_code_position.t)]))
-  | Float_literal _ | Add _ | Sub _ | Mul _ | Div _ | Sqrt _ ->
+  | Float_literal _
+  | Add _
+  | Sub _
+  | Mul _
+  | Div _
+  | Sqrt _
+  | Abs _
+  | Neg _
+  | Sign _
+  | Sin _
+  | Cos _
+  | Round _
+  | Min _
+  | Max _ ->
     Error
       (Error.create_s
          [%message "expected bool, got float" ~loc:(t.loc : Source_code_position.t)])

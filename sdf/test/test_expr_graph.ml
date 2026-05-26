@@ -37,6 +37,46 @@ let%expect_test "sqrt" =
   [%expect {| 3 |}]
 ;;
 
+let%expect_test "abs" =
+  eval_float (abs (f Float32_u.(neg #3.s)));
+  [%expect {| 3 |}]
+;;
+
+let%expect_test "neg" =
+  eval_float (neg (f #3.s));
+  [%expect {| -3 |}]
+;;
+
+let%expect_test "sign" =
+  eval_float (sign (f #5.s));
+  [%expect {| 1 |}]
+;;
+
+let%expect_test "sin" =
+  eval_float (sin (f #0.s));
+  [%expect {| 0 |}]
+;;
+
+let%expect_test "cos" =
+  eval_float (cos (f #0.s));
+  [%expect {| 1 |}]
+;;
+
+let%expect_test "round" =
+  eval_float (round (f #2.7s));
+  [%expect {| 3 |}]
+;;
+
+let%expect_test "min" =
+  eval_float (min (f #3.s) (f #5.s));
+  [%expect {| 3 |}]
+;;
+
+let%expect_test "max" =
+  eval_float (max (f #3.s) (f #5.s));
+  [%expect {| 5 |}]
+;;
+
 let pp tree =
   let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
     Expr_graph.from_tree tree

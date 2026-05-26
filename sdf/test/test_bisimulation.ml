@@ -49,6 +49,14 @@ let rec gen_float_expr ~depth =
       ; binop Expr_tree.mul
       ; binop Expr_tree.div
       ; unop Expr_tree.sqrt
+      ; unop Expr_tree.abs
+      ; unop Expr_tree.neg
+      ; unop Expr_tree.sign
+      ; unop Expr_tree.sin
+      ; unop Expr_tree.cos
+      ; unop Expr_tree.round
+      ; binop Expr_tree.min
+      ; binop Expr_tree.max
       ; (let%bind condition = gen_bool_expr ~depth:d in
          let%bind then_ = gen_float_expr ~depth:d in
          let%map else_ = gen_float_expr ~depth:d in

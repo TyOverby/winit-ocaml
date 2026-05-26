@@ -67,6 +67,14 @@ and kind =
   | Lte of t * t
   | Gte of t * t
   | Sqrt of t
+  | Abs of t
+  | Neg of t
+  | Sign of t
+  | Sin of t
+  | Cos of t
+  | Round of t
+  | Min of t * t
+  | Max of t * t
   | And of t * t
   | Or of t * t
   | Xor of t * t
@@ -159,6 +167,33 @@ let sqrt ~loc a =
     Error
       (Error.create_s
          [%message "argument to sqrt is a bool" ~loc:(a.loc : Source_code_position.t)])
+;;
+
+let unary_float name kind ~loc a =
+  match a.type_ with
+  | Type.Float -> Ok { loc; kind = kind a; type_ = Type.Float }
+  | Bool ->
+    Error
+      (Error.create_s
+         [%message
+           ("argument to " ^ name ^ " is a bool") ~loc:(a.loc : Source_code_position.t)])
+;;
+
+let abs ~loc a = unary_float "abs" (fun a -> Abs a) ~loc a
+let neg ~loc a = unary_float "neg" (fun a -> Neg a) ~loc a
+let sign ~loc a = unary_float "sign" (fun a -> Sign a) ~loc a
+let sin ~loc a = unary_float "sin" (fun a -> Sin a) ~loc a
+let cos ~loc a = unary_float "cos" (fun a -> Cos a) ~loc a
+let round ~loc a = unary_float "round" (fun a -> Round a) ~loc a
+
+let min ~loc a b =
+  let%map.Or_error () = both_float "min" a b in
+  { loc; kind = Min (a, b); type_ = Type.Float }
+;;
+
+let max ~loc a b =
+  let%map.Or_error () = both_float "max" a b in
+  { loc; kind = Max (a, b); type_ = Type.Float }
 ;;
 
 let cond ~loc ~condition ~then_ ~else_ =

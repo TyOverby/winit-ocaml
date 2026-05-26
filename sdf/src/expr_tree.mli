@@ -37,6 +37,14 @@ and kind = private
   | Lte of t * t
   | Gte of t * t
   | Sqrt of t
+  | Abs of t
+  | Neg of t
+  | Sign of t
+  | Sin of t
+  | Cos of t
+  | Round of t
+  | Min of t * t
+  | Max of t * t
   | And of t * t
   | Or of t * t
   | Xor of t * t
@@ -52,6 +60,14 @@ val mul : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val sub : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val div : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val sqrt : loc:Source_code_position.t -> t -> t Or_error.t
+val abs : loc:Source_code_position.t -> t -> t Or_error.t
+val neg : loc:Source_code_position.t -> t -> t Or_error.t
+val sign : loc:Source_code_position.t -> t -> t Or_error.t
+val sin : loc:Source_code_position.t -> t -> t Or_error.t
+val cos : loc:Source_code_position.t -> t -> t Or_error.t
+val round : loc:Source_code_position.t -> t -> t Or_error.t
+val min : loc:Source_code_position.t -> t -> t -> t Or_error.t
+val max : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val cond : loc:Source_code_position.t -> condition:t -> then_:t -> else_:t -> t Or_error.t
 val lt : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val gt : loc:Source_code_position.t -> t -> t -> t Or_error.t

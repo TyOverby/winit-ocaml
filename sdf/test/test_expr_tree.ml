@@ -54,6 +54,61 @@ let%expect_test "sqrt" =
   [%expect {| 3 |}]
 ;;
 
+let%expect_test "abs positive" =
+  eval_float (abs (f #3.s));
+  [%expect {| 3 |}]
+;;
+
+let%expect_test "abs negative" =
+  eval_float (abs (f Float32_u.(neg #3.s)));
+  [%expect {| 3 |}]
+;;
+
+let%expect_test "neg" =
+  eval_float (neg (f #3.s));
+  [%expect {| -3 |}]
+;;
+
+let%expect_test "sign positive" =
+  eval_float (sign (f #5.s));
+  [%expect {| 1 |}]
+;;
+
+let%expect_test "sign negative" =
+  eval_float (sign (f Float32_u.(neg #5.s)));
+  [%expect {| -1 |}]
+;;
+
+let%expect_test "sign zero" =
+  eval_float (sign (f #0.s));
+  [%expect {| 0 |}]
+;;
+
+let%expect_test "sin" =
+  eval_float (sin (f #0.s));
+  [%expect {| 0 |}]
+;;
+
+let%expect_test "cos" =
+  eval_float (cos (f #0.s));
+  [%expect {| 1 |}]
+;;
+
+let%expect_test "round" =
+  eval_float (round (f #2.7s));
+  [%expect {| 3 |}]
+;;
+
+let%expect_test "min" =
+  eval_float (min (f #3.s) (f #5.s));
+  [%expect {| 3 |}]
+;;
+
+let%expect_test "max" =
+  eval_float (max (f #3.s) (f #5.s));
+  [%expect {| 5 |}]
+;;
+
 let%expect_test "division by zero produces infinity" =
   eval_float (div (f #1.s) (f #0.s));
   [%expect {| INF |}]

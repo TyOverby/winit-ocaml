@@ -16,6 +16,14 @@ type instr =
   | Sub of Register.t * Register.t
   | Div of Register.t * Register.t
   | Sqrt of Register.t
+  | Abs of Register.t
+  | Neg of Register.t
+  | Sign of Register.t
+  | Sin of Register.t
+  | Cos of Register.t
+  | Round of Register.t
+  | Min of Register.t * Register.t
+  | Max of Register.t * Register.t
   | Condition of
       { cond : Register.t
       ; then_ : t
