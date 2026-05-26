@@ -31,7 +31,7 @@ let rec gen_float_expr ~depth =
   in
   if depth <= 0
   then leaf
-  else
+  else (
     let d = depth - 1 in
     let binop op =
       let%bind a = gen_float_expr ~depth:d in
@@ -48,7 +48,7 @@ let rec gen_float_expr ~depth =
          let%bind then_ = gen_float_expr ~depth:d in
          let%map else_ = gen_float_expr ~depth:d in
          ok (Expr_tree.cond ~loc ~condition ~then_ ~else_))
-      ]
+      ])
 
 and gen_bool_expr ~depth =
   let open Quickcheck.Generator.Let_syntax in
@@ -58,7 +58,7 @@ and gen_bool_expr ~depth =
   in
   if depth <= 0
   then leaf
-  else
+  else (
     let d = depth - 1 in
     let float_cmp op =
       let%bind a = gen_float_expr ~depth:d in
@@ -83,7 +83,7 @@ and gen_bool_expr ~depth =
          let%bind then_ = gen_bool_expr ~depth:d in
          let%map else_ = gen_bool_expr ~depth:d in
          ok (Expr_tree.cond ~loc ~condition ~then_ ~else_))
-      ]
+      ])
 ;;
 
 let gen_expr ~depth (type_ : Expr_tree.Type.t) =
@@ -146,10 +146,7 @@ let assert_bisimulation tree ~x ~y =
         Expr_graph.from_tree tree
       in
       let graph_asm =
-        sprintf
-          "result: $%d\n%s"
-          final_register
-          (Expr_graph.pp_instructions instructions)
+        sprintf "result: $%d\n%s" final_register (Expr_graph.pp_instructions instructions)
       in
       Error.raise_s
         [%message
@@ -227,10 +224,7 @@ let%expect_test "computed condition with nested else cond" =
 
 let%expect_test "shared var across both cond branches" =
   let tree =
-    cond
-      ~condition:(b true)
-      ~then_:(var "x" Float)
-      ~else_:(add (var "x" Float) (f #1.0s))
+    cond ~condition:(b true) ~then_:(var "x" Float) ~else_:(add (var "x" Float) (f #1.0s))
   in
   check tree ~x:42.0 ~y:0.0;
   [%expect {| 42. |}]
@@ -242,10 +236,7 @@ let%expect_test "shared var with nested cond in else" =
       ~condition:(b true)
       ~then_:(var "x" Float)
       ~else_:
-        (cond
-           ~condition:(b true)
-           ~then_:(mul (var "x" Float) (f #2.0s))
-           ~else_:(f #3.0s))
+        (cond ~condition:(b true) ~then_:(mul (var "x" Float) (f #2.0s)) ~else_:(f #3.0s))
   in
   check tree ~x:42.0 ~y:0.0;
   [%expect {| 42. |}]
@@ -257,10 +248,7 @@ let%expect_test "computed condition, var in then, nested cond with ops in else" 
       ~condition:(lt (f #1.0s) (f #2.0s))
       ~then_:(var "x" Float)
       ~else_:
-        (cond
-           ~condition:(b true)
-           ~then_:(mul (nf #1.0s) (nf #1.0s))
-           ~else_:(f #999.0s))
+        (cond ~condition:(b true) ~then_:(mul (nf #1.0s) (nf #1.0s)) ~else_:(f #999.0s))
   in
   check tree ~x:7.0 ~y:0.0;
   [%expect {| 7. |}]
@@ -268,10 +256,7 @@ let%expect_test "computed condition, var in then, nested cond with ops in else" 
 
 let%expect_test "div by zero in else branch, taking then branch" =
   let tree =
-    cond
-      ~condition:(b true)
-      ~then_:(var "x" Float)
-      ~else_:(div (var "y" Float) (f #0.0s))
+    cond ~condition:(b true) ~then_:(var "x" Float) ~else_:(div (var "y" Float) (f #0.0s))
   in
   check tree ~x:7.0 ~y:1.0;
   [%expect {| 7. |}]
@@ -283,9 +268,12 @@ let%expect_test "original quickcheck failure - simplified" =
      +infinity from the else branch. *)
   let tree =
     cond
-      ~condition:(lt (add (nf #0.0s) (div (var "x" Float) (var "x" Float)))
-                     (sub (div (var "y" Float) (f #0.0s))
-                        (cond ~condition:(b false) ~then_:(var "x" Float) ~else_:(f #1.45220733s))))
+      ~condition:
+        (lt
+           (add (nf #0.0s) (div (var "x" Float) (var "x" Float)))
+           (sub
+              (div (var "y" Float) (f #0.0s))
+              (cond ~condition:(b false) ~then_:(var "x" Float) ~else_:(f #1.45220733s))))
       ~then_:(var "x" Float)
       ~else_:
         (cond
@@ -293,11 +281,11 @@ let%expect_test "original quickcheck failure - simplified" =
            ~then_:
              (mul
                 (div (nf #1.26763916s) (var "y" Float))
-                (cond ~condition:(b false) ~then_:(nf #0.0s) ~else_:(f Float32_u.(neg_infinity ()))))
-           ~else_:
-             (add
-                (div (var "y" Float) (nf #0.0s))
-                (mul (var "x" Float) (nf #0.0s))))
+                (cond
+                   ~condition:(b false)
+                   ~then_:(nf #0.0s)
+                   ~else_:(f Float32_u.(neg_infinity ()))))
+           ~else_:(add (div (var "y" Float) (nf #0.0s)) (mul (var "x" Float) (nf #0.0s))))
   in
   check tree ~x:(-0.267355561256) ~y:2.9582283945787943e-31;
   [%expect {| -0.267355561 |}]
@@ -339,7 +327,8 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
       ~else_:(f #2.0s)
   in
   pp tree;
-  [%expect {|
+  [%expect
+    {|
     result: $0
     $3 <- -0.
     $5 <- var(0)
@@ -366,9 +355,7 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
 let gen_test_case =
   let open Quickcheck.Generator.Let_syntax in
   let%bind depth = Int.gen_incl 0 4 in
-  let%bind type_ =
-    Quickcheck.Generator.of_list [ Expr_tree.Type.Bool; Float ]
-  in
+  let%bind type_ = Quickcheck.Generator.of_list [ Expr_tree.Type.Bool; Float ] in
   let%bind tree = gen_expr ~depth type_ in
   let%bind x = Float.quickcheck_generator in
   let%map y = Float.quickcheck_generator in
