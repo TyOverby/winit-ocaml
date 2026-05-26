@@ -1,5 +1,16 @@
 open! Core
 
+(* Shadow Float32_u with bitwise comparison for CSE correctness.
+   IEEE 754 treats -0.0 = +0.0, but they have different bit patterns
+   and different semantics (e.g., 1/+0 = +inf, 1/-0 = -inf), so the
+   expression tree's equality must distinguish them. *)
+module Float32_u = struct
+  include Float32_u
+
+  let equal a b = Int32_u.equal (to_bits a) (to_bits b)
+  let compare a b = Int32_u.compare (to_bits a) (to_bits b)
+end
+
 module Type = struct
   type t =
     | Bool
