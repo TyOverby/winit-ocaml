@@ -76,3 +76,33 @@ val gte : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val and_ : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val or_ : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val xor : loc:Source_code_position.t -> t -> t -> t Or_error.t
+
+(** Raising variants of the constructors. Type errors raise instead of
+    returning [Or_error.t]. The [loc] parameter is automatically filled
+    by [[%call_pos]]. *)
+module Direct : sig
+  val float_literal : loc:[%call_pos] -> float32# -> t
+  val bool_literal : loc:[%call_pos] -> bool -> t
+  val var : loc:[%call_pos] -> string -> Type.t -> t
+  val add : loc:[%call_pos] -> t -> t -> t
+  val mul : loc:[%call_pos] -> t -> t -> t
+  val sub : loc:[%call_pos] -> t -> t -> t
+  val div : loc:[%call_pos] -> t -> t -> t
+  val sqrt : loc:[%call_pos] -> t -> t
+  val abs : loc:[%call_pos] -> t -> t
+  val neg : loc:[%call_pos] -> t -> t
+  val sign : loc:[%call_pos] -> t -> t
+  val sin : loc:[%call_pos] -> t -> t
+  val cos : loc:[%call_pos] -> t -> t
+  val round : loc:[%call_pos] -> t -> t
+  val min : loc:[%call_pos] -> t -> t -> t
+  val max : loc:[%call_pos] -> t -> t -> t
+  val cond : loc:[%call_pos] -> condition:t -> then_:t -> else_:t -> unit -> t
+  val lt : loc:[%call_pos] -> t -> t -> t
+  val gt : loc:[%call_pos] -> t -> t -> t
+  val lte : loc:[%call_pos] -> t -> t -> t
+  val gte : loc:[%call_pos] -> t -> t -> t
+  val and_ : loc:[%call_pos] -> t -> t -> t
+  val or_ : loc:[%call_pos] -> t -> t -> t
+  val xor : loc:[%call_pos] -> t -> t -> t
+end

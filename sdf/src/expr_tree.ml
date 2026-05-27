@@ -254,3 +254,34 @@ let xor ~loc a b =
   let%map.Or_error () = both_bool "xor" a b in
   { loc; kind = Xor (a, b); type_ = Type.Bool }
 ;;
+
+module Direct = struct
+  let float_literal ~(loc : [%call_pos]) v = Or_error.ok_exn (float_literal ~loc v)
+  let bool_literal ~(loc : [%call_pos]) v = Or_error.ok_exn (bool_literal ~loc v)
+  let var ~(loc : [%call_pos]) name type_ = Or_error.ok_exn (var ~loc name type_)
+  let add ~(loc : [%call_pos]) a b = Or_error.ok_exn (add ~loc a b)
+  let mul ~(loc : [%call_pos]) a b = Or_error.ok_exn (mul ~loc a b)
+  let sub ~(loc : [%call_pos]) a b = Or_error.ok_exn (sub ~loc a b)
+  let div ~(loc : [%call_pos]) a b = Or_error.ok_exn (div ~loc a b)
+  let sqrt ~(loc : [%call_pos]) a = Or_error.ok_exn (sqrt ~loc a)
+  let abs ~(loc : [%call_pos]) a = Or_error.ok_exn (abs ~loc a)
+  let neg ~(loc : [%call_pos]) a = Or_error.ok_exn (neg ~loc a)
+  let sign ~(loc : [%call_pos]) a = Or_error.ok_exn (sign ~loc a)
+  let sin ~(loc : [%call_pos]) a = Or_error.ok_exn (sin ~loc a)
+  let cos ~(loc : [%call_pos]) a = Or_error.ok_exn (cos ~loc a)
+  let round ~(loc : [%call_pos]) a = Or_error.ok_exn (round ~loc a)
+  let min ~(loc : [%call_pos]) a b = Or_error.ok_exn (min ~loc a b)
+  let max ~(loc : [%call_pos]) a b = Or_error.ok_exn (max ~loc a b)
+
+  let cond ~(loc : [%call_pos]) ~condition ~then_ ~else_ () =
+    Or_error.ok_exn (cond ~loc ~condition ~then_ ~else_)
+  ;;
+
+  let lt ~(loc : [%call_pos]) a b = Or_error.ok_exn (lt ~loc a b)
+  let gt ~(loc : [%call_pos]) a b = Or_error.ok_exn (gt ~loc a b)
+  let lte ~(loc : [%call_pos]) a b = Or_error.ok_exn (lte ~loc a b)
+  let gte ~(loc : [%call_pos]) a b = Or_error.ok_exn (gte ~loc a b)
+  let and_ ~(loc : [%call_pos]) a b = Or_error.ok_exn (and_ ~loc a b)
+  let or_ ~(loc : [%call_pos]) a b = Or_error.ok_exn (or_ ~loc a b)
+  let xor ~(loc : [%call_pos]) a b = Or_error.ok_exn (xor ~loc a b)
+end

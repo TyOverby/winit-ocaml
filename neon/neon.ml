@@ -30,51 +30,47 @@ let ensure_canvas_size state screen =
 
 (* Build a circle SDF: sqrt((x - cx)^2 + (y - cy)^2) - r *)
 let build_circle_sdf ~cx ~cy ~r =
-  let open Or_error.Let_syntax in
-  let loc = [%here] in
-  let%bind x = Sdf.Expr_tree.var ~loc "x" Float in
-  let%bind y = Sdf.Expr_tree.var ~loc "y" Float in
-  let%bind x' = Sdf.Expr_tree.sin ~loc y in
-  let%bind x = Sdf.Expr_tree.add ~loc x x' in
-  (*let%bind y = Sdf.Expr_tree.cos ~loc y in *)
-  let%bind cx_lit = Sdf.Expr_tree.float_literal ~loc cx in
-  let%bind cy_lit = Sdf.Expr_tree.float_literal ~loc cy in
-  let%bind r_lit = Sdf.Expr_tree.float_literal ~loc r in
-  let%bind dx = Sdf.Expr_tree.sub ~loc x cx_lit in
-  let%bind dy = Sdf.Expr_tree.sub ~loc y cy_lit in
-  let%bind dx2 = Sdf.Expr_tree.mul ~loc dx dx in
-  let%bind dy2 = Sdf.Expr_tree.mul ~loc dy dy in
-  let%bind sum = Sdf.Expr_tree.add ~loc dx2 dy2 in
-  let%bind dist = Sdf.Expr_tree.sqrt ~loc sum in
-  Sdf.Expr_tree.sub ~loc dist r_lit
+  let open Sdf.Expr_tree.Direct in
+  let x = var "x" Float in
+  let y = var "y" Float in
+  let x = add x (mul (sin (div y (float_literal #5.0s))) (float_literal #5.0s)) in
+  let y = add y (mul (cos (div x (float_literal #5.0s))) (float_literal #5.0s)) in
+  let cx_lit = float_literal cx in
+  let cy_lit = float_literal cy in
+  let r_lit = float_literal r in
+  let dx = sub x cx_lit in
+  let dy = sub y cy_lit in
+  let dx2 = mul dx dx in
+  let dy2 = mul dy dy in
+  let sum = add dx2 dy2 in
+  let dist = sqrt sum in
+  sub dist r_lit
 ;;
 
 (* Smooth union: min(a, b) - h*h*0.25/k where h = max(k - abs(a-b), 0) and k = k_in * 4 *)
 let smooth_union ~k a b =
-  let open Or_error.Let_syntax in
-  let loc = [%here] in
-  let%bind four = Sdf.Expr_tree.float_literal ~loc #4.0s in
-  let%bind k_scaled = Sdf.Expr_tree.mul ~loc k four in
-  let%bind a_minus_b = Sdf.Expr_tree.sub ~loc a b in
-  let%bind abs_diff = Sdf.Expr_tree.abs ~loc a_minus_b in
-  let%bind k_minus_abs = Sdf.Expr_tree.sub ~loc k_scaled abs_diff in
-  let%bind zero = Sdf.Expr_tree.float_literal ~loc #0.0s in
-  let%bind h = Sdf.Expr_tree.max ~loc k_minus_abs zero in
-  let%bind h_sq = Sdf.Expr_tree.mul ~loc h h in
-  let%bind quarter = Sdf.Expr_tree.float_literal ~loc #0.25s in
-  let%bind h_sq_quarter = Sdf.Expr_tree.mul ~loc h_sq quarter in
-  let%bind correction = Sdf.Expr_tree.div ~loc h_sq_quarter k_scaled in
-  let%bind min_ab = Sdf.Expr_tree.min ~loc a b in
-  Sdf.Expr_tree.sub ~loc min_ab correction
+  let open Sdf.Expr_tree.Direct in
+  let four = float_literal #4.0s in
+  let k_scaled = mul k four in
+  let a_minus_b = sub a b in
+  let abs_diff = abs a_minus_b in
+  let k_minus_abs = sub k_scaled abs_diff in
+  let zero = float_literal #0.0s in
+  let h = max k_minus_abs zero in
+  let h_sq = mul h h in
+  let quarter = float_literal #0.25s in
+  let h_sq_quarter = mul h_sq quarter in
+  let correction = div h_sq_quarter k_scaled in
+  let min_ab = min a b in
+  sub min_ab correction
 ;;
 
 let build_sdf () =
-  Or_error.ok_exn
-    (let open Or_error.Let_syntax in
-     let%bind k = Sdf.Expr_tree.float_literal ~loc:[%here] #10.0s in
-     let%bind c1 = build_circle_sdf ~cx:#150.0s ~cy:#150.0s ~r:#80.0s in
-     let%bind c2 = build_circle_sdf ~cx:#250.0s ~cy:#200.0s ~r:#80.0s in
-     smooth_union ~k c1 c2)
+  let open Sdf.Expr_tree.Direct in
+  let k = float_literal #10.0s in
+  let c1 = build_circle_sdf ~cx:#150.0s ~cy:#150.0s ~r:#80.0s in
+  let c2 = build_circle_sdf ~cx:#250.0s ~cy:#200.0s ~r:#80.0s in
+  smooth_union ~k c1 c2
 ;;
 
 type compiled_sdf =
