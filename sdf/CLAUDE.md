@@ -46,6 +46,14 @@ Add the new operator to the quickcheck generators (`gen_float_expr` or `gen_bool
 
 Add at least one expect test for the new operator in each file.
 
+## Testing
+All tests are built into the `@runtest` alias, so from the root of the repo, you can run `dune build @sdf/runtest` 
+to build and run them all.
+
+### Style
+Most tests are built using Jane Street's "expect test" framework, meaning that the expected output is included in the file.
+Please continue to write tests of this form, and for new tests, just leave the `[%expect {||}]` block empty.  `dune build @sdf/runtest --auto-promote` will fix it up.
+
 ## Benchmarks
 
 Benchmarks live in `bench/` and measure the full pipeline: parsing `.neo` files, compiling to expression graphs, and evaluating on a 1000x1000 pixel grid.
@@ -54,25 +62,25 @@ Benchmarks live in `bench/` and measure the full pipeline: parsing `.neo` files,
 
 ```bash
 # Run with default 10s budget (from repo root)
-dune exec sdf/bench/bench.exe
+dune exec sdf/bench/bench.exe --profile=release
 
 # Shorter budget for quick checks
-dune exec sdf/bench/bench.exe -- -budget 3
+dune exec sdf/bench/bench.exe --profile=release -- -budget 3
 
 # Custom examples directory
-dune exec sdf/bench/bench.exe -- -dir path/to/neo/files
+dune exec sdf/bench/bench.exe --profile=release -- -dir path/to/neo/files
 ```
 
 ### Comparing results
 
 ```bash
 # Save baseline
-dune exec sdf/bench/bench.exe -- -dump-sexp > before.sexp
+dune exec sdf/bench/bench.exe --profile=release -- -dump-sexp > before.sexp
 
 # ... make changes ...
 
 # Save new results and compare
-dune exec sdf/bench/bench.exe -- -dump-sexp > after.sexp
+dune exec sdf/bench/bench.exe --profile=release -- -dump-sexp > after.sexp
 dune exec sdf/bench/compare.exe -- before.sexp after.sexp
 ```
 
