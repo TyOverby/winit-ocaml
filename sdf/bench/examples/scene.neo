@@ -1,0 +1,39 @@
+let x : float = var("x");
+let y : float = var("y");
+
+// A circle SDF centered at (cx, cy) with radius r.
+// Returns a function (x, y) -> distance.
+fn circle(cx, cy, r) {
+  fn(x, y) {
+    let dx = x - cx;
+    let dy = y - cy;
+    sqrt(dx * dx + dy * dy) - r
+  }
+}
+
+// Distort a shape by applying sin/cos modulation to the coordinates.
+fn modulate(shape, freq, amp) {
+  fn(x, y) {
+    let x = x + sin(y / freq) * amp;
+    let y = y + cos(x / freq) * amp;
+    shape(x, y)
+  }
+}
+
+// Smooth union of two SDFs.
+// Blends the surfaces together with smoothing radius k.
+fn smooth_union(a, b, k) {
+  fn(x, y) {
+    let d1 = a(x, y);
+    let d2 = b(x, y);
+    let k_scaled = k * 4;
+    let h = max(k_scaled - abs(d1 - d2), 0);
+    min(d1, d2) - h * h * 0.25 / k_scaled
+  }
+}
+
+let c1 = circle(150, 150, 80).modulate(5, 5);
+let c2 = circle(250, 200, 80).modulate(5, 5);
+let scene = smooth_union(c1, c2, 10);
+
+export scene(x, y);
