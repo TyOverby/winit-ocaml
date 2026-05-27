@@ -11,7 +11,7 @@ module Rect : sig
      }
 end
 
-type t
+type t : value mod contended portable
 
 val create : ?transparency:bool -> width:int -> height:int -> int32# -> t
 

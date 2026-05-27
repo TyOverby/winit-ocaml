@@ -10,7 +10,7 @@ module Rect = struct
      }
 end
 
-type t =
+type inner =
   { (* a bigarray of size width*height of int32 where
        each element represents a pixel in AARRGGBB format *)
     buffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t
@@ -19,27 +19,31 @@ type t =
   ; transparency : bool
   }
 
+type t = inner portended
+
 let create ?(transparency = false) ~width ~height color =
   let buffer = Bigarray.Array1.create Bigarray.Int32 Bigarray.C_layout (width * height) in
   let color_boxed @ local = Int32_u.to_int32 color in
   Bigarray.Array1.fill buffer color_boxed;
-  { buffer; width; height; transparency }
+  { portended = { buffer; width; height; transparency } }
 ;;
 
 let from_external ?(transparency = false) ~width ~height buffer =
-  { buffer; width; height; transparency }
+  { portended = { buffer; width; height; transparency } }
 ;;
 
-let width { width; _ } = width
-let height { height; _ } = height
-let transparency { transparency; _ } = transparency
+let width t = t.portended.width
+let height t = t.portended.height
+let transparency t = t.portended.transparency
 
 let get t ~x ~y =
+  let t = Stdlib.Obj.magic_uncontended t.portended in
   let a @ local = Bigarray.Array1.get t.buffer ((y * t.width) + x) in
   Int32_u.of_int32 a
 ;;
 
 let set t ~x ~y v =
+  let t = Stdlib.Obj.magic_uncontended t.portended in
   let v @ local = Int32_u.to_int32 v in
   Bigarray.Array1.set t.buffer ((y * t.width) + x) v
 ;;
@@ -47,6 +51,8 @@ let set t ~x ~y v =
 let blit ~from ~(region : Rect.t) ~to_ ~x:dst_x ~y:dst_y =
   (* Fast path: full-buffer blit when source and dest are the same size,
      region covers the entire source, and destination offset is zero. *)
+  let from = Stdlib.Obj.magic_uncontended from.portended in
+  let to_ = Stdlib.Obj.magic_uncontended to_.portended in
   let #{ Rect.x = src_x; y = src_y; w; h } = region in
   if dst_x = 0
      && dst_y = 0
@@ -94,9 +100,10 @@ let blit ~from ~(region : Rect.t) ~to_ ~x:dst_x ~y:dst_y =
 
 module For_testing = struct
   let to_string t =
-    let buf = Buffer.create ((t.width + 1) * t.height) in
-    for y = 0 to t.height - 1 do
-      for x = 0 to t.width - 1 do
+    let inner = Stdlib.Obj.magic_uncontended t.portended in
+    let buf = Buffer.create ((inner.width + 1) * inner.height) in
+    for y = 0 to inner.height - 1 do
+      for x = 0 to inner.width - 1 do
         let pixel = Int32_u.to_int (get t ~x ~y) in
         let alpha = (pixel lsr 24) land 0xFF in
         let rgb = pixel land 0xFFFFFF in
@@ -113,7 +120,7 @@ module For_testing = struct
         in
         Buffer.add_char buf c
       done;
-      if y < t.height - 1 then Buffer.add_char buf '\n'
+      if y < inner.height - 1 then Buffer.add_char buf '\n'
     done;
     Buffer.contents buf
   ;;

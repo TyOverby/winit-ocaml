@@ -1,5 +1,14 @@
 (executable
  (name neon)
- (libraries winit softbuffer unix bigarray core image_buf sdf)
+ (libraries
+  winit
+  softbuffer
+  unix
+  bigarray
+  core
+  image_buf
+  sdf
+  parallel
+  parallel.scheduler)
  (preprocess
   (pps ppx_jane)))

@@ -75,10 +75,12 @@ let build_sdf () =
 ;;
 
 type compiled_sdf =
-  { run : variables:Sdf.Value.Array.t -> Sdf.Value.t
-  ; variables : Sdf.Value.Array.t
+  { instructions : (int * Sdf.Expr_graph.instr) list
+  ; final_register : int
+  ; register_count : int
   ; x_idx : int
   ; y_idx : int
+  ; num_vars : int
   }
 
 let compile_sdf () =
@@ -86,40 +88,48 @@ let compile_sdf () =
   let ~instructions, ~final_register, ~register_count, ~var_mapping =
     Sdf.Expr_graph.from_tree tree
   in
-  let registers = Sdf.Value.Array.create ~len:register_count in
-  let run ~variables =
-    Sdf.Expr_graph_eval.run ~instructions ~registers ~variables;
-    Sdf.Value.Array.get registers final_register
-  in
   let x_idx = Hashtbl.find_exn var_mapping "x" in
   let y_idx = Hashtbl.find_exn var_mapping "y" in
   let num_vars = Hashtbl.length var_mapping in
-  let variables = Sdf.Value.Array.create ~len:num_vars in
-  { run; variables; x_idx; y_idx }
+  { instructions; final_register; register_count; x_idx; y_idx; num_vars }
 ;;
 
-let draw_shape (state : state) (sdf : compiled_sdf) =
+let draw_shape
+  (state : state)
+  (sdf : compiled_sdf)
+  (scheduler : Parallel_scheduler.t)
+  =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
-  for x = 0 to width - 1 do
-    for y = 0 to height - 1 do
+  let canvas = state.canvas in
+  let instructions = sdf.instructions in
+  let final_register = sdf.final_register in
+  let register_count = sdf.register_count in
+  let x_idx = sdf.x_idx in
+  let y_idx = sdf.y_idx in
+  let num_vars = sdf.num_vars in
+  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+    Parallel.for_ par ~start:0 ~stop:width ~f:(fun _par x ->
+      let variables = Sdf.Value.Array.create ~len:num_vars in
+      let registers = Sdf.Value.Array.create ~len:register_count in
       Sdf.Value.Array.set_float
-        sdf.variables
-        sdf.x_idx
+        variables
+        x_idx
         (Float32_u.of_float (Float.of_int x));
-      Sdf.Value.Array.set_float
-        sdf.variables
-        sdf.y_idx
-        (Float32_u.of_float (Float.of_int y));
-      let value = sdf.run ~variables:sdf.variables in
-      let dist = Float32_u.to_float (Sdf.Value.to_float value) in
-      if Float.(dist <= 0.0)
-      then Image_buf.set state.canvas ~x ~y #0xFF000000l
-      else if Float.(dist <= 8.0)
-      then Image_buf.set state.canvas ~x ~y #0xFF5384EDl
-      else Image_buf.set state.canvas ~x ~y #0xFFFFFFFFl
-    done
-  done
+      for y = 0 to height - 1 do
+        Sdf.Value.Array.set_float
+          variables
+          y_idx
+          (Float32_u.of_float (Float.of_int y));
+        Sdf.Expr_graph_eval.run ~variables ~instructions ~registers;
+        let value = Sdf.Value.Array.get registers final_register in
+        let dist = Float32_u.to_float (Sdf.Value.to_float value) in
+        if Float.(dist <= 0.0)
+        then Image_buf.set canvas ~x ~y #0xFF000000l
+        else if Float.(dist <= 8.0)
+        then Image_buf.set canvas ~x ~y #0xFF5384EDl
+        else Image_buf.set canvas ~x ~y #0xFFFFFFFFl
+      done))
 ;;
 
 let () =
@@ -127,6 +137,7 @@ let () =
   let surface = Softbuffer.create (Winit.get_handle window) in
   let state = create_state () in
   let sdf = compile_sdf () in
+  let scheduler = Parallel_scheduler.create () in
   let should_exit = ref false in
   while not !should_exit do
     (* Pump events *)
@@ -157,7 +168,7 @@ let () =
     (* Blit canvas to screen *)
     Printf.printf "blitting everything!\n%!";
     let before = Core.Time_ns.now () in
-    draw_shape state sdf;
+    draw_shape state sdf scheduler;
     let after = Core.Time_ns.now () in
     print_s
       [%message "" ~time_to_draw:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)];
