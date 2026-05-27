@@ -128,10 +128,55 @@ let eval_with_graph tree ~x ~y =
   run ~variables
 ;;
 
+(* Find the number of registers needed for an instruction list (max register + 1),
+   including nested branches. *)
+let rec count_registers (instrs : Expr_graph.t) =
+  List.fold instrs ~init:0 ~f:(fun acc (out, instr) ->
+    let acc = Int.max acc (out + 1) in
+    match instr with
+    | Condition { then_; else_; _ } ->
+      Int.max acc (Int.max (count_registers then_) (count_registers else_))
+    | _ -> acc)
+;;
+
+let eval_with_minimized_graph tree ~x ~y =
+  let ~instructions, ~final_register:_, ~register_count:_, ~var_mapping =
+    Expr_graph.from_tree tree
+  in
+  let minimized = Expr_graph_register_minimizer.minimize instructions in
+  let final_register = fst (List.last_exn minimized) in
+  let register_count = count_registers minimized in
+  let registers = Value.Array.create ~len:register_count in
+  let variables = Value.Array.create ~len:(Hashtbl.length var_mapping) in
+  Hashtbl.iteri var_mapping ~f:(fun ~key ~data:idx ->
+    let value =
+      match key with
+      | "x" -> Value.of_float (Float32_u.of_float x)
+      | "y" -> Value.of_float (Float32_u.of_float y)
+      | other -> value_failwith ("unexpected variable: " ^ other)
+    in
+    Value.Array.set variables idx value);
+  Expr_graph_eval.run ~variables ~instructions:minimized ~registers;
+  Value.Array.get registers final_register
+;;
+
 let format_value v (type_ : Expr_tree.Type.t) =
   match type_ with
   | Float -> Float32_u.to_string (Value.to_float v)
   | Bool -> Bool.to_string (Value.to_bool v)
+;;
+
+(** Print the results of tree and minimized-graph evaluators. On mismatch,
+    prints the minimized value. *)
+let check_minimized tree ~x ~y =
+  let minimized_result = eval_with_minimized_graph tree ~x ~y in
+  match Expr_tree_eval.eval ~env:(make_env ~x ~y) tree with
+  | Error err -> printf !"tree eval error: %{Error#hum}\n" err
+  | Ok tree_value ->
+    let type_ = tree.type_ in
+    printf "%s\n" (format_value tree_value type_);
+    if not (Value.equal tree_value minimized_result)
+    then printf "MISMATCH: minimized=%s\n" (format_value minimized_result type_)
 ;;
 
 (** Print the results of both evaluators. On mismatch, prints both values. *)
@@ -149,27 +194,41 @@ let check tree ~x ~y =
 (** Assert bisimulation holds. Raises on mismatch. For use in quickcheck. *)
 let assert_bisimulation tree ~x ~y =
   let graph_result = eval_with_graph tree ~x ~y in
+  let minimized_result = eval_with_minimized_graph tree ~x ~y in
   match Expr_tree_eval.eval ~env:(make_env ~x ~y) tree with
   | Error err -> Error.raise err
   | Ok tree_value ->
-    if not (Value.equal tree_value graph_result)
-    then (
-      let type_ = tree.type_ in
-      let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
-        Expr_graph.from_tree tree
-      in
-      let graph_asm =
-        sprintf "result: $%d\n%s" final_register (Expr_graph.pp_instructions instructions)
-      in
-      Error.raise_s
-        [%message
-          "bisimulation failure"
-            ~tree:(Expr_tree.sexp_of_t tree : Sexp.t)
-            ~tree_result:(format_value tree_value type_ : string)
-            ~graph_result:(format_value graph_result type_ : string)
-            ~graph_asm:(graph_asm : string)
-            ~x:(x : float)
-            ~y:(y : float)])
+    let type_ = tree.type_ in
+    let check_match ~label result =
+      if not (Value.equal tree_value result)
+      then (
+        let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
+          Expr_graph.from_tree tree
+        in
+        let graph_asm =
+          sprintf "result: $%d\n%s" final_register (Expr_graph.pp_instructions instructions)
+        in
+        let minimized = Expr_graph_register_minimizer.minimize instructions in
+        let minimized_asm =
+          sprintf
+            "result: $%d\n%s"
+            (fst (List.last_exn minimized))
+            (Expr_graph.pp_instructions minimized)
+        in
+        Error.raise_s
+          [%message
+            "bisimulation failure"
+              ~evaluator:(label : string)
+              ~tree:(Expr_tree.sexp_of_t tree : Sexp.t)
+              ~tree_result:(format_value tree_value type_ : string)
+              ~other_result:(format_value result type_ : string)
+              ~graph_asm:(graph_asm : string)
+              ~minimized_asm:(minimized_asm : string)
+              ~x:(x : float)
+              ~y:(y : float)])
+    in
+    check_match ~label:"graph" graph_result;
+    check_match ~label:"minimized_graph" minimized_result
 ;;
 
 (* --- Hardcoded bisimulation tests --- *)
@@ -361,6 +420,71 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
         $12 <- 2.
         $0 <- $12
     |}]
+;;
+
+(* Regression: an outer-scope variable used inside a cond branch must not
+   be freed by the branch. This tree compiles into two sequential Condition
+   instructions that both reference x's register:
+
+     $x  <- var(0)
+     ...
+     $r1 <- cond ...          ← inner cond; then-branch uses $x then does more work
+     $r0 <- cond $r1          ← outer cond; then-branch uses $x via neg
+
+   Without the fix, the inner then-branch would free $x after its last local
+   use, allowing later allocations inside the branch to clobber it. When the
+   outer then-branch reads $x for [neg], it gets the wrong value. *)
+let pp_minimized tree =
+  let ~instructions, ~final_register:_, ~register_count:_, ~var_mapping:_ =
+    Expr_graph.from_tree tree
+  in
+  let minimized = Expr_graph_register_minimizer.minimize instructions in
+  printf "result: $%d\n" (fst (List.last_exn minimized));
+  print_string (Expr_graph.pp_instructions minimized)
+;;
+
+let%expect_test "outer var survives register pressure in cond branch (minimized)" =
+  let x = var "x" Float in
+  let tree =
+    cond
+      ~condition:
+        (cond
+           ~condition:(lt x (f #10.0s))
+           ~then_:(lt (mul x (f #2.0s)) (mul (f #3.0s) (f #4.0s)))
+           ~else_:(b false))
+      ~then_:(neg x)
+      ~else_:(f #0.0s)
+  in
+  (* The minimized graph should keep $0 (x) alive through both conditions.
+     In the inner then-branch, $0 must NOT be freed and reused. *)
+  pp_minimized tree;
+  [%expect {|
+    result: $2
+    $0 <- var(0)
+    $1 <- 10.
+    $2 <- lt $0 $1
+    $1 <- cond $2
+      then:
+        $3 <- 2.
+        $4 <- mul $0 $3
+        $3 <- 3.
+        $5 <- 4.
+        $6 <- mul $3 $5
+        $3 <- lt $4 $6
+        $1 <- $3
+      else:
+        $3 <- false
+        $1 <- $3
+    $2 <- cond $1
+      then:
+        $7 <- neg $0
+        $2 <- $7
+      else:
+        $7 <- 0.
+        $2 <- $7
+    |}];
+  check_minimized tree ~x:5.0 ~y:0.0;
+  [%expect {| -5. |}]
 ;;
 
 (* --- Quickcheck bisimulation test --- *)
