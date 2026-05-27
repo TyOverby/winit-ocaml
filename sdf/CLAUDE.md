@@ -45,3 +45,37 @@ Add the new operator to the quickcheck generators (`gen_float_expr` or `gen_bool
 ### 9. `test/test_expr_tree.ml` and `test/test_expr_graph.ml`
 
 Add at least one expect test for the new operator in each file.
+
+## Benchmarks
+
+Benchmarks live in `bench/` and measure the full pipeline: parsing `.neo` files, compiling to expression graphs, and evaluating on a 1000x1000 pixel grid.
+
+### Running benchmarks
+
+```bash
+# Run with default 10s budget (from repo root)
+dune exec sdf/bench/bench.exe
+
+# Shorter budget for quick checks
+dune exec sdf/bench/bench.exe -- -budget 3
+
+# Custom examples directory
+dune exec sdf/bench/bench.exe -- -dir path/to/neo/files
+```
+
+### Comparing results
+
+```bash
+# Save baseline
+dune exec sdf/bench/bench.exe -- -dump-sexp > before.sexp
+
+# ... make changes ...
+
+# Save new results and compare
+dune exec sdf/bench/bench.exe -- -dump-sexp > after.sexp
+dune exec sdf/bench/compare.exe -- before.sexp after.sexp
+```
+
+### Adding benchmark files
+
+Add `.neo` files to `bench/examples/`. They are discovered automatically.
