@@ -24,10 +24,10 @@ let instr_inputs (instr : Expr_graph.instr) : Expr_graph.Register.t list =
    through nested Condition branches) that are NOT defined within [instrs].
    These are registers that must come from an outer scope. *)
 let rec collect_outer_inputs (instrs : Expr_graph.t) : Int.Set.t =
-  let defined = Int.Set.of_list (List.map instrs ~f:fst) in
+  let defined = Int.Set.of_array (Array.map instrs ~f:fst) in
   let outer = ref Int.Set.empty in
   let add_if_outer r = if not (Set.mem defined r) then outer := Set.add !outer r in
-  List.iter instrs ~f:(fun (_out, instr) ->
+  Array.iter instrs ~f:(fun (_out, instr) ->
     List.iter (instr_inputs instr) ~f:add_if_outer;
     match instr with
     | Condition { then_; else_; _ } ->
@@ -46,9 +46,9 @@ let rec collect_outer_inputs (instrs : Expr_graph.t) : Int.Set.t =
    the position of the Condition instruction, so that the enclosing scope
    keeps those registers alive through the branch. *)
 let compute_last_use (instructions : Expr_graph.t) : int Int.Table.t =
-  let defined = Int.Set.of_list (List.map instructions ~f:fst) in
+  let defined = Int.Set.of_array (Array.map instructions ~f:fst) in
   let last_use = Int.Table.create () in
-  List.iteri instructions ~f:(fun pos (_out, instr) ->
+  Array.iteri instructions ~f:(fun pos (_out, instr) ->
     let mark r = if Set.mem defined r then Hashtbl.set last_use ~key:r ~data:pos in
     List.iter (instr_inputs instr) ~f:mark;
     match instr with
@@ -136,7 +136,7 @@ let rec minimize_branch state (instructions : Expr_graph.t) : Expr_graph.t * int
 and minimize_block state (instructions : Expr_graph.t) : Expr_graph.t =
   let last_use = compute_last_use instructions in
   let result = ref [] in
-  List.iteri instructions ~f:(fun pos (out, instr) ->
+  Array.iteri instructions ~f:(fun pos (out, instr) ->
     (* Allocate the output register. If [out] already has a mapping (e.g.
        a branch writing to the Condition's output register), reuse it. *)
     let new_out =
@@ -167,7 +167,7 @@ and minimize_block state (instructions : Expr_graph.t) : Expr_graph.t =
         match Hashtbl.find state.mapping reg with
         | Some phys -> free state phys
         | None -> ())));
-  List.rev !result
+  Array.of_list_rev !result
 ;;
 
 let minimize ~instructions ~final_register ~register_count:_ =

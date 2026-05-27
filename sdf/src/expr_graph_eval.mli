@@ -4,7 +4,7 @@ open! Core
 
 val run
   :  variables:Value.Array.t
-  -> instructions:(int * Expr_graph.instr) list
+  -> instructions:(int * Expr_graph.instr) array
   -> registers:Value.Array.t
   -> unit
 

@@ -1,7 +1,9 @@
 open! Core
 
 let rec run ~variables ~instructions ~registers =
-  List.iter instructions ~f:(fun (out, instruction) ->
+  let len = Array.length instructions in
+  for i = 0 to len - 1 do
+    let out, instruction = Array.unsafe_get instructions i in
     let value =
       match (instruction : Expr_graph.instr) with
       | Float_literal f -> Value.of_float f
@@ -93,7 +95,8 @@ let rec run ~variables ~instructions ~registers =
         let b = Value.Array.get_bool registers b in
         Value.of_bool Bool.(a <> b)
     in
-    Value.Array.set registers out value)
+    Value.Array.set registers out value
+  done
 ;;
 
 let run' ~instructions ~variables ~final_register ~register_count =
