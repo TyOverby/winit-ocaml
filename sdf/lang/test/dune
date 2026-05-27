@@ -1,0 +1,6 @@
+(library
+ (name neo_test)
+ (libraries neo sdf core)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

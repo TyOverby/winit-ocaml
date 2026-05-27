@@ -1,0 +1,175 @@
+
+** Conflict (shift/reduce) in state 86.
+** Token involved: FN
+** This state is reached from program after reading:
+
+list(stmt) EXPORT IF expr LBRACE block RBRACE ELSE LBRACE
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+program 
+list(stmt) EXPORT expr SEMI EOF 
+                  or_expr 
+                  and_expr 
+                  cmp_expr 
+                  add_expr 
+                  mul_expr 
+                  unary_expr 
+                  postfix_expr 
+                  primary_expr 
+                  IF expr LBRACE block RBRACE ELSE LBRACE block RBRACE 
+                                                          (?)
+
+** In state 86, looking ahead at FN, reducing production
+** list(stmt) ->
+** is permitted because of the following sub-derivation:
+
+list(stmt) expr // lookahead token appears because expr can begin with FN
+. 
+
+** In state 86, looking ahead at FN, shifting is permitted
+** because of the following sub-derivation:
+
+list(stmt) expr 
+stmt list(stmt) 
+. FN IDENT LPAREN loption(separated_nonempty_list(COMMA,param)) RPAREN LBRACE block RBRACE 
+
+** Conflict (shift/reduce) in state 82.
+** Token involved: FN
+** This state is reached from program after reading:
+
+list(stmt) EXPORT IF expr LBRACE
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+program 
+list(stmt) EXPORT expr SEMI EOF 
+                  or_expr 
+                  and_expr 
+                  cmp_expr 
+                  add_expr 
+                  mul_expr 
+                  unary_expr 
+                  postfix_expr 
+                  primary_expr 
+                  IF expr LBRACE block RBRACE ELSE LBRACE block RBRACE 
+                                 (?)
+
+** In state 82, looking ahead at FN, reducing production
+** list(stmt) ->
+** is permitted because of the following sub-derivation:
+
+list(stmt) expr // lookahead token appears because expr can begin with FN
+. 
+
+** In state 82, looking ahead at FN, shifting is permitted
+** because of the following sub-derivation:
+
+list(stmt) expr 
+stmt list(stmt) 
+. FN IDENT LPAREN loption(separated_nonempty_list(COMMA,param)) RPAREN LBRACE block RBRACE 
+
+** Conflict (shift/reduce) in state 31.
+** Token involved: FN
+** This state is reached from program after reading:
+
+list(stmt) EXPORT IF expr LBRACE stmt
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+program 
+list(stmt) EXPORT expr SEMI EOF 
+                  or_expr 
+                  and_expr 
+                  cmp_expr 
+                  add_expr 
+                  mul_expr 
+                  unary_expr 
+                  postfix_expr 
+                  primary_expr 
+                  IF expr LBRACE block RBRACE ELSE LBRACE block RBRACE 
+                                 (?)
+
+** In state 31, looking ahead at FN, reducing production
+** list(stmt) ->
+** is permitted because of the following sub-derivation:
+
+list(stmt) expr // lookahead token appears because expr can begin with FN
+stmt list(stmt) // lookahead token is inherited
+     . 
+
+** In state 31, looking ahead at FN, shifting is permitted
+** because of the following sub-derivation:
+
+list(stmt) expr 
+stmt list(stmt) 
+     stmt list(stmt) 
+     . FN IDENT LPAREN loption(separated_nonempty_list(COMMA,param)) RPAREN LBRACE block RBRACE 
+
+** Conflict (shift/reduce) in state 30.
+** Token involved: FN
+** This state is reached from program after reading:
+
+FN IDENT LPAREN loption(separated_nonempty_list(COMMA,param)) RPAREN LBRACE
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+program 
+list(stmt) EXPORT expr SEMI EOF 
+stmt list(stmt) 
+FN IDENT LPAREN loption(separated_nonempty_list(COMMA,param)) RPAREN LBRACE block RBRACE 
+                                                                            (?)
+
+** In state 30, looking ahead at FN, reducing production
+** list(stmt) ->
+** is permitted because of the following sub-derivation:
+
+list(stmt) expr // lookahead token appears because expr can begin with FN
+. 
+
+** In state 30, looking ahead at FN, shifting is permitted
+** because of the following sub-derivation:
+
+list(stmt) expr 
+stmt list(stmt) 
+. FN IDENT LPAREN loption(separated_nonempty_list(COMMA,param)) RPAREN LBRACE block RBRACE 
+
+** Conflict (shift/reduce) in state 24.
+** Token involved: FN
+** This state is reached from program after reading:
+
+list(stmt) EXPORT FN LPAREN loption(separated_nonempty_list(COMMA,param)) RPAREN LBRACE
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+program 
+list(stmt) EXPORT expr SEMI EOF 
+                  or_expr 
+                  and_expr 
+                  cmp_expr 
+                  add_expr 
+                  mul_expr 
+                  unary_expr 
+                  postfix_expr 
+                  primary_expr 
+                  FN LPAREN loption(separated_nonempty_list(COMMA,param)) RPAREN LBRACE block RBRACE 
+                                                                                        (?)
+
+** In state 24, looking ahead at FN, reducing production
+** list(stmt) ->
+** is permitted because of the following sub-derivation:
+
+list(stmt) expr // lookahead token appears because expr can begin with FN
+. 
+
+** In state 24, looking ahead at FN, shifting is permitted
+** because of the following sub-derivation:
+
+list(stmt) expr 
+stmt list(stmt) 
+. FN IDENT LPAREN loption(separated_nonempty_list(COMMA,param)) RPAREN LBRACE block RBRACE 

@@ -1,0 +1,10 @@
+(menhir
+ (modules parser))
+
+(ocamllex lexer)
+
+(library
+ (name neo)
+ (libraries sdf core)
+ (preprocess
+  (pps ppx_jane)))
