@@ -136,8 +136,24 @@ type event =
   | ThemeChanged of theme
   | ScaleFactorChanged of float
 
+(** Window level - controls z-ordering relative to other windows *)
+type window_level =
+  | Always_on_bottom
+  | Normal
+  | Always_on_top
+
 (* External C stubs *)
-external create : unit -> window = "caml_winit_window_create"
+external create_raw : int -> string -> int -> int -> window = "caml_winit_window_create"
+
+let create ?(window_level = Normal) ?(title = "OCaml Window") ?(width = 800) ?(height = 600) () =
+  let level =
+    match window_level with
+    | Always_on_bottom -> 0
+    | Normal -> 1
+    | Always_on_top -> 2
+  in
+  create_raw level title width height
+;;
 
 external pump_events_raw
   :  window

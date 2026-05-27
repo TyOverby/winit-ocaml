@@ -34,6 +34,6 @@ fn smooth_union(a, b, k) {
 
 let c1 = circle(150, 150, 80).modulate(5, 5);
 let c2 = circle(250, 200, 80).modulate(5, 5);
-let scene = smooth_union(c1, c2, 10);
+let scene = smooth_union(c1, c2, 1);
 
 export scene(x, y);

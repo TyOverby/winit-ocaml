@@ -103,7 +103,9 @@ let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_schedu
 ;;
 
 let () =
-  let window = Winit.create () in
+  let window =
+    Winit.create ~window_level:Always_on_top ~title:"Neon" ~width:200 ~height:200 ()
+  in
   let surface = Softbuffer.create (Winit.get_handle window) in
   let state = create_state () in
   let source = In_channel.read_all scene_file in

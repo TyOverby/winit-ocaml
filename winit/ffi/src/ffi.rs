@@ -32,14 +32,22 @@ pub struct EventCollector {
     pub(crate) window: Option<Arc<Box<dyn Window>>>,
     events: Vec<Event>,
     should_exit: bool,
+    window_level: winit::window::WindowLevel,
+    title: String,
+    width: u32,
+    height: u32,
 }
 
 impl EventCollector {
-    pub fn new() -> Self {
+    pub fn new(window_level: winit::window::WindowLevel, title: String, width: u32, height: u32) -> Self {
         Self {
             window: None,
             events: Vec::new(),
             should_exit: false,
+            window_level,
+            title,
+            width,
+            height,
         }
     }
 
@@ -50,15 +58,16 @@ impl EventCollector {
 
 impl Default for EventCollector {
     fn default() -> Self {
-        Self::new()
+        Self::new(winit::window::WindowLevel::Normal, "OCaml Window".to_string(), 800, 600)
     }
 }
 
 impl ApplicationHandler for EventCollector {
     fn can_create_surfaces(&mut self, event_loop: &dyn ActiveEventLoop) {
         let window_attributes = WindowAttributes::default()
-            .with_title("OCaml Window")
-            .with_surface_size(winit::dpi::LogicalSize::new(800, 600));
+            .with_title(self.title.clone())
+            .with_surface_size(winit::dpi::LogicalSize::new(self.width, self.height))
+            .with_window_level(self.window_level.clone());
 
         match event_loop.create_window(window_attributes) {
             Ok(window) => {
@@ -438,9 +447,9 @@ pub struct WinitWindow {
 }
 
 impl WinitWindow {
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(window_level: winit::window::WindowLevel, title: String, width: u32, height: u32) -> Result<Self, Box<dyn std::error::Error>> {
         let event_loop = EventLoop::new()?;
-        let collector = EventCollector::new();
+        let collector = EventCollector::new(window_level, title, width, height);
 
         Ok(Self {
             event_loop: Some(event_loop),
@@ -505,8 +514,27 @@ impl WinitWindow {
 // FFI functions
 
 #[no_mangle]
-pub extern "C" fn winit_window_create() -> *mut WinitWindow {
-    match WinitWindow::new() {
+pub extern "C" fn winit_window_create(
+    window_level: i32,
+    title: *const std::ffi::c_char,
+    width: i32,
+    height: i32,
+) -> *mut WinitWindow {
+    let window_level = match window_level {
+        0 => winit::window::WindowLevel::AlwaysOnBottom,
+        2 => winit::window::WindowLevel::AlwaysOnTop,
+        _ => winit::window::WindowLevel::Normal,
+    };
+    let title = if title.is_null() {
+        "OCaml Window".to_string()
+    } else {
+        unsafe { std::ffi::CStr::from_ptr(title) }
+            .to_string_lossy()
+            .into_owned()
+    };
+    let width = if width > 0 { width as u32 } else { 800 };
+    let height = if height > 0 { height as u32 } else { 600 };
+    match WinitWindow::new(window_level, title, width, height) {
         Ok(mut window) => match window.initialize() {
             Ok(_) => Box::into_raw(Box::new(window)),
             Err(e) => {

@@ -6,7 +6,7 @@
 #include <string.h>
 
 // Forward declarations of Rust FFI functions
-extern void* winit_window_create(void);
+extern void* winit_window_create(int window_level, const char* title, int width, int height);
 extern int winit_window_pump_events(void* window, void* events_out, size_t max_events);
 extern const void* winit_window_get_handle(const void* window);
 extern void winit_window_handle_release(const void* handle);
@@ -144,12 +144,16 @@ static value alloc_winit_window_handle(const void* handle) {
     return v;
 }
 
-// OCaml: external create : unit -> window = "caml_winit_window_create"
-CAMLprim value caml_winit_window_create(value unit) {
-    CAMLparam1(unit);
+// OCaml: external create_raw : int -> string -> int -> int -> window = "caml_winit_window_create"
+CAMLprim value caml_winit_window_create(value level_val, value title_val, value width_val, value height_val) {
+    CAMLparam4(level_val, title_val, width_val, height_val);
     CAMLlocal1(result);
 
-    void* window = winit_window_create();
+    int level = Int_val(level_val);
+    const char* title = String_val(title_val);
+    int width = Int_val(width_val);
+    int height = Int_val(height_val);
+    void* window = winit_window_create(level, title, width, height);
     if (window == NULL) {
         caml_failwith("Failed to create winit window");
     }

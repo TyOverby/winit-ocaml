@@ -142,8 +142,18 @@ type event =
   | ThemeChanged of theme (** System theme changed *)
   | ScaleFactorChanged of float (** Window DPI scale factor changed *)
 
-(** Create a new window. This initializes the window system and creates a window. *)
-val create : unit -> window
+(** Window level - controls z-ordering relative to other windows *)
+type window_level =
+  | Always_on_bottom (** Below all other windows *)
+  | Normal (** Default window level *)
+  | Always_on_top (** Above all other windows *)
+
+(** Create a new window. This initializes the window system and creates a window.
+    @param window_level Controls the z-ordering of the window. Default is [Normal].
+    @param title The window title. Default is ["OCaml Window"].
+    @param width The initial logical width in pixels. Default is [800].
+    @param height The initial logical height in pixels. Default is [600]. *)
+val create : ?window_level:window_level -> ?title:string -> ?width:int -> ?height:int -> unit -> window
 
 (** Pump events from the window system. This polls for new events and returns them as a
     list. Should be called regularly (e.g., once per frame) to keep the window responsive. *)
