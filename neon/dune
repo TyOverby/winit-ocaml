@@ -8,6 +8,7 @@
   core
   image_buf
   sdf
+  neo
   parallel
   parallel.scheduler)
  (preprocess

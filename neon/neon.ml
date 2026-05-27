@@ -28,32 +28,10 @@ let ensure_canvas_size state screen =
     state.canvas <- Image_buf.create ~width ~height #0xFFFFFFFl)
 ;;
 
-(* Build a circle SDF: sqrt((x - cx)^2 + (y - cy)^2) - r *)
-let build_circle_sdf ~cx ~cy ~r =
-  let open Sdf.Expr_tree.Direct in
-  let x = var "x" Float in
-  let y = var "y" Float in
-  let x = x + (sin (y / float_literal #5.0s) * float_literal #5.0s) in
-  let y = y + (cos (x / float_literal #5.0s) * float_literal #5.0s) in
-  let dx = x - float_literal cx in
-  let dy = y - float_literal cy in
-  sqrt ((dx * dx) + (dy * dy)) - float_literal r
-;;
+let scene_file = (Sys.get_argv ()).(1)
+let scene_source = In_channel.read_all scene_file
 
-(* Smooth union: min(a, b) - h*h*0.25/k where h = max(k - abs(a-b), 0) and k = k_in * 4 *)
-let smooth_union ~k a b =
-  let open Sdf.Expr_tree.Direct in
-  let k_scaled = k * float_literal #4.0s in
-  let h = max (k_scaled - abs (a - b)) (float_literal #0.0s) in
-  min a b - (h * h * float_literal #0.25s / k_scaled)
-;;
-
-let build_sdf () =
-  let open Sdf.Expr_tree.Direct in
-  let c1 = build_circle_sdf ~cx:#150.0s ~cy:#150.0s ~r:#80.0s in
-  let c2 = build_circle_sdf ~cx:#250.0s ~cy:#200.0s ~r:#80.0s in
-  smooth_union ~k:(float_literal #10.0s) c1 c2
-;;
+let build_sdf () = Neo.compile ~filename:scene_file scene_source |> Or_error.ok_exn
 
 type compiled_sdf =
   { instructions : (int * Sdf.Expr_graph.instr) list
