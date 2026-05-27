@@ -284,4 +284,14 @@ module Direct = struct
   let and_ ~(loc : [%call_pos]) a b = Or_error.ok_exn (and_ ~loc a b)
   let or_ ~(loc : [%call_pos]) a b = Or_error.ok_exn (or_ ~loc a b)
   let xor ~(loc : [%call_pos]) a b = Or_error.ok_exn (xor ~loc a b)
+  let ( + ) = add
+  let ( - ) = sub
+  let ( * ) = mul
+  let ( / ) = div
+  let ( < ) = lt
+  let ( > ) = gt
+  let ( <= ) = lte
+  let ( >= ) = gte
+  let ( && ) = and_
+  let ( || ) = or_
 end

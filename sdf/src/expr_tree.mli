@@ -105,4 +105,14 @@ module Direct : sig
   val and_ : loc:[%call_pos] -> t -> t -> t
   val or_ : loc:[%call_pos] -> t -> t -> t
   val xor : loc:[%call_pos] -> t -> t -> t
+  val ( + ) : loc:[%call_pos] -> t -> t -> t
+  val ( - ) : loc:[%call_pos] -> t -> t -> t
+  val ( * ) : loc:[%call_pos] -> t -> t -> t
+  val ( / ) : loc:[%call_pos] -> t -> t -> t
+  val ( < ) : loc:[%call_pos] -> t -> t -> t
+  val ( > ) : loc:[%call_pos] -> t -> t -> t
+  val ( <= ) : loc:[%call_pos] -> t -> t -> t
+  val ( >= ) : loc:[%call_pos] -> t -> t -> t
+  val ( && ) : loc:[%call_pos] -> t -> t -> t
+  val ( || ) : loc:[%call_pos] -> t -> t -> t
 end

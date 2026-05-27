@@ -33,44 +33,26 @@ let build_circle_sdf ~cx ~cy ~r =
   let open Sdf.Expr_tree.Direct in
   let x = var "x" Float in
   let y = var "y" Float in
-  let x = add x (mul (sin (div y (float_literal #5.0s))) (float_literal #5.0s)) in
-  let y = add y (mul (cos (div x (float_literal #5.0s))) (float_literal #5.0s)) in
-  let cx_lit = float_literal cx in
-  let cy_lit = float_literal cy in
-  let r_lit = float_literal r in
-  let dx = sub x cx_lit in
-  let dy = sub y cy_lit in
-  let dx2 = mul dx dx in
-  let dy2 = mul dy dy in
-  let sum = add dx2 dy2 in
-  let dist = sqrt sum in
-  sub dist r_lit
+  let x = x + (sin (y / float_literal #5.0s) * float_literal #5.0s) in
+  let y = y + (cos (x / float_literal #5.0s) * float_literal #5.0s) in
+  let dx = x - float_literal cx in
+  let dy = y - float_literal cy in
+  sqrt ((dx * dx) + (dy * dy)) - float_literal r
 ;;
 
 (* Smooth union: min(a, b) - h*h*0.25/k where h = max(k - abs(a-b), 0) and k = k_in * 4 *)
 let smooth_union ~k a b =
   let open Sdf.Expr_tree.Direct in
-  let four = float_literal #4.0s in
-  let k_scaled = mul k four in
-  let a_minus_b = sub a b in
-  let abs_diff = abs a_minus_b in
-  let k_minus_abs = sub k_scaled abs_diff in
-  let zero = float_literal #0.0s in
-  let h = max k_minus_abs zero in
-  let h_sq = mul h h in
-  let quarter = float_literal #0.25s in
-  let h_sq_quarter = mul h_sq quarter in
-  let correction = div h_sq_quarter k_scaled in
-  let min_ab = min a b in
-  sub min_ab correction
+  let k_scaled = k * float_literal #4.0s in
+  let h = max (k_scaled - abs (a - b)) (float_literal #0.0s) in
+  min a b - (h * h * float_literal #0.25s / k_scaled)
 ;;
 
 let build_sdf () =
   let open Sdf.Expr_tree.Direct in
-  let k = float_literal #10.0s in
   let c1 = build_circle_sdf ~cx:#150.0s ~cy:#150.0s ~r:#80.0s in
   let c2 = build_circle_sdf ~cx:#250.0s ~cy:#200.0s ~r:#80.0s in
-  smooth_union ~k c1 c2
+  smooth_union ~k:(float_literal #10.0s) c1 c2
 ;;
 
 type compiled_sdf =
