@@ -3,11 +3,10 @@
 open! Core
 
 val run
-  :  instructions:(Expr_graph.Register.t * Expr_graph.instr) list
-  -> variables:Value.Array.t
-  -> final_register:int
-  -> register_count:int
-  -> Value.t
+  :  variables:Value.Array.t
+  -> instructions:(int * Expr_graph.instr) list
+  -> registers:Value.Array.t
+  -> unit
 
 val run_tree
   :  Expr_tree.t

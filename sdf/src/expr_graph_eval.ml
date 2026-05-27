@@ -95,7 +95,7 @@ let rec run ~variables ~instructions ~registers =
     Value.Array.set registers out value)
 ;;
 
-let run ~instructions ~variables ~final_register ~register_count =
+let run' ~instructions ~variables ~final_register ~register_count =
   let registers = Value.Array.create ~len:register_count in
   run ~instructions ~variables ~registers;
   Value.Array.get registers final_register
@@ -105,5 +105,5 @@ let run_tree tree =
   let ~instructions, ~final_register, ~register_count, ~var_mapping =
     Expr_graph.from_tree tree
   in
-  ~var_mapping, ~run:(run ~instructions ~final_register ~register_count)
+  ~var_mapping, ~run:(run' ~instructions ~final_register ~register_count)
 ;;
