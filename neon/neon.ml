@@ -46,14 +46,32 @@ let build_circle_sdf ~cx ~cy ~r =
   Sdf.Expr_tree.sub ~loc dist r_lit
 ;;
 
-(* Union of two circles via min(sdf1, sdf2) *)
+(* Smooth union: min(a, b) - h*h*0.25/k where h = max(k - abs(a-b), 0) and k = k_in * 4 *)
+let smooth_union ~k a b =
+  let open Or_error.Let_syntax in
+  let loc = [%here] in
+  let%bind four = Sdf.Expr_tree.float_literal ~loc #4.0s in
+  let%bind k_scaled = Sdf.Expr_tree.mul ~loc k four in
+  let%bind a_minus_b = Sdf.Expr_tree.sub ~loc a b in
+  let%bind abs_diff = Sdf.Expr_tree.abs ~loc a_minus_b in
+  let%bind k_minus_abs = Sdf.Expr_tree.sub ~loc k_scaled abs_diff in
+  let%bind zero = Sdf.Expr_tree.float_literal ~loc #0.0s in
+  let%bind h = Sdf.Expr_tree.max ~loc k_minus_abs zero in
+  let%bind h_sq = Sdf.Expr_tree.mul ~loc h h in
+  let%bind quarter = Sdf.Expr_tree.float_literal ~loc #0.25s in
+  let%bind h_sq_quarter = Sdf.Expr_tree.mul ~loc h_sq quarter in
+  let%bind correction = Sdf.Expr_tree.div ~loc h_sq_quarter k_scaled in
+  let%bind min_ab = Sdf.Expr_tree.min ~loc a b in
+  Sdf.Expr_tree.sub ~loc min_ab correction
+;;
+
 let build_sdf () =
   Or_error.ok_exn
     (let open Or_error.Let_syntax in
-     let loc = [%here] in
+     let%bind k = Sdf.Expr_tree.float_literal ~loc:[%here] #10.0s in
      let%bind c1 = build_circle_sdf ~cx:#150.0s ~cy:#150.0s ~r:#80.0s in
-     let%bind c2 = build_circle_sdf ~cx:#250.0s ~cy:#200.0s ~r:#60.0s in
-     Sdf.Expr_tree.min ~loc c1 c2)
+     let%bind c2 = build_circle_sdf ~cx:#250.0s ~cy:#200.0s ~r:#80.0s in
+     smooth_union ~k c1 c2)
 ;;
 
 type compiled_sdf =
