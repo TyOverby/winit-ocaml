@@ -34,6 +34,9 @@ let build_circle_sdf ~cx ~cy ~r =
   let loc = [%here] in
   let%bind x = Sdf.Expr_tree.var ~loc "x" Float in
   let%bind y = Sdf.Expr_tree.var ~loc "y" Float in
+  let%bind x' = Sdf.Expr_tree.sin ~loc y in
+  let%bind x = Sdf.Expr_tree.add ~loc x x' in
+  (*let%bind y = Sdf.Expr_tree.cos ~loc y in *)
   let%bind cx_lit = Sdf.Expr_tree.float_literal ~loc cx in
   let%bind cy_lit = Sdf.Expr_tree.float_literal ~loc cy in
   let%bind r_lit = Sdf.Expr_tree.float_literal ~loc r in
@@ -94,11 +97,7 @@ let compile_sdf () =
   { instructions; final_register; register_count; x_idx; y_idx; num_vars }
 ;;
 
-let draw_shape
-  (state : state)
-  (sdf : compiled_sdf)
-  (scheduler : Parallel_scheduler.t)
-  =
+let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_scheduler.t) =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
   let canvas = state.canvas in
@@ -112,15 +111,9 @@ let draw_shape
     Parallel.for_ par ~start:0 ~stop:width ~f:(fun _par x ->
       let variables = Sdf.Value.Array.create ~len:num_vars in
       let registers = Sdf.Value.Array.create ~len:register_count in
-      Sdf.Value.Array.set_float
-        variables
-        x_idx
-        (Float32_u.of_float (Float.of_int x));
+      Sdf.Value.Array.set_float variables x_idx (Float32_u.of_float (Float.of_int x));
       for y = 0 to height - 1 do
-        Sdf.Value.Array.set_float
-          variables
-          y_idx
-          (Float32_u.of_float (Float.of_int y));
+        Sdf.Value.Array.set_float variables y_idx (Float32_u.of_float (Float.of_int y));
         Sdf.Expr_graph_eval.run ~variables ~instructions ~registers;
         let value = Sdf.Value.Array.get registers final_register in
         let dist = Float32_u.to_float (Sdf.Value.to_float value) in
