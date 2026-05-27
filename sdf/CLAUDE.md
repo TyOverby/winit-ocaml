@@ -12,6 +12,8 @@ Add the new variant to the `kind` type and a smart constructor to the signature.
 
 Add the new variant to the `kind` type definition and implement the smart constructor. Use `both_float` for binary float ops, `both_bool` for binary bool ops, or a direct `match` on `a.type_` for unary ops. The constructor should validate operand types and return `t Or_error.t`.
 
+Add an exception-throwing version to `Expr_tree.Direct`.
+
 ### 3. `src/expr_tree_eval.ml`
 
 Add the new case to `eval_float` (if it produces a float) or `eval_bool` (if it produces a bool). Also add it to the error arm of the *other* function (e.g. a float op must appear in the catch-all error case in `eval_bool`).
