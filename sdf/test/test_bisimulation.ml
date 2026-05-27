@@ -128,24 +128,13 @@ let eval_with_graph tree ~x ~y =
   run ~variables
 ;;
 
-(* Find the number of registers needed for an instruction list (max register + 1),
-   including nested branches. *)
-let rec count_registers (instrs : Expr_graph.t) =
-  List.fold instrs ~init:0 ~f:(fun acc (out, instr) ->
-    let acc = Int.max acc (out + 1) in
-    match instr with
-    | Condition { then_; else_; _ } ->
-      Int.max acc (Int.max (count_registers then_) (count_registers else_))
-    | _ -> acc)
-;;
-
 let eval_with_minimized_graph tree ~x ~y =
-  let ~instructions, ~final_register:_, ~register_count:_, ~var_mapping =
+  let ~instructions, ~final_register, ~register_count, ~var_mapping =
     Expr_graph.from_tree tree
   in
-  let minimized = Expr_graph_register_minimizer.minimize instructions in
-  let final_register = fst (List.last_exn minimized) in
-  let register_count = count_registers minimized in
+  let ~instructions, ~final_register, ~register_count =
+    Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count
+  in
   let registers = Value.Array.create ~len:register_count in
   let variables = Value.Array.create ~len:(Hashtbl.length var_mapping) in
   Hashtbl.iteri var_mapping ~f:(fun ~key ~data:idx ->
@@ -156,7 +145,7 @@ let eval_with_minimized_graph tree ~x ~y =
       | other -> value_failwith ("unexpected variable: " ^ other)
     in
     Value.Array.set variables idx value);
-  Expr_graph_eval.run ~variables ~instructions:minimized ~registers;
+  Expr_graph_eval.run ~variables ~instructions ~registers;
   Value.Array.get registers final_register
 ;;
 
@@ -208,11 +197,13 @@ let assert_bisimulation tree ~x ~y =
         let graph_asm =
           sprintf "result: $%d\n%s" final_register (Expr_graph.pp_instructions instructions)
         in
-        let minimized = Expr_graph_register_minimizer.minimize instructions in
+        let ~instructions:minimized, ~final_register:min_final, ~register_count:_ =
+          Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count:0
+        in
         let minimized_asm =
           sprintf
             "result: $%d\n%s"
-            (fst (List.last_exn minimized))
+            min_final
             (Expr_graph.pp_instructions minimized)
         in
         Error.raise_s
@@ -435,12 +426,14 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
    use, allowing later allocations inside the branch to clobber it. When the
    outer then-branch reads $x for [neg], it gets the wrong value. *)
 let pp_minimized tree =
-  let ~instructions, ~final_register:_, ~register_count:_, ~var_mapping:_ =
+  let ~instructions, ~final_register, ~register_count, ~var_mapping:_ =
     Expr_graph.from_tree tree
   in
-  let minimized = Expr_graph_register_minimizer.minimize instructions in
-  printf "result: $%d\n" (fst (List.last_exn minimized));
-  print_string (Expr_graph.pp_instructions minimized)
+  let ~instructions, ~final_register, ~register_count:_ =
+    Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count
+  in
+  printf "result: $%d\n" final_register;
+  print_string (Expr_graph.pp_instructions instructions)
 ;;
 
 let%expect_test "outer var survives register pressure in cond branch (minimized)" =

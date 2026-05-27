@@ -170,12 +170,15 @@ and minimize_block state (instructions : Expr_graph.t) : Expr_graph.t =
   List.rev !result
 ;;
 
-let minimize (instructions : Expr_graph.t) : Expr_graph.t =
+let minimize ~instructions ~final_register ~register_count:_ =
   let state =
     { mapping = Int.Table.create ()
     ; free_pool = ref Int.Set.empty
     ; next_reg = ref 0
     }
   in
-  minimize_block state instructions
+  let instructions = minimize_block state instructions in
+  let final_register = lookup state final_register in
+  let register_count = !(state.next_reg) in
+  ~instructions, ~final_register, ~register_count
 ;;

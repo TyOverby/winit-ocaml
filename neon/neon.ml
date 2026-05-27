@@ -69,6 +69,11 @@ let compile_sdf () =
   let ~instructions, ~final_register, ~register_count, ~var_mapping =
     Sdf.Expr_graph.from_tree tree
   in
+  Printf.printf "registers before minimization: %d\n%!" register_count;
+  let ~instructions, ~final_register, ~register_count =
+    Sdf.Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count
+  in
+  Printf.printf "registers after minimization:  %d\n%!" register_count;
   let x_idx = Hashtbl.find_exn var_mapping "x" in
   let y_idx = Hashtbl.find_exn var_mapping "y" in
   let num_vars = Hashtbl.length var_mapping in

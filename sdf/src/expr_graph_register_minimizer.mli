@@ -1,3 +1,7 @@
 open! Core
 
-val minimize : Expr_graph.t -> Expr_graph.t
+val minimize
+  :  instructions:Expr_graph.t
+  -> final_register:int
+  -> register_count:int
+  -> instructions:Expr_graph.t * final_register:int * register_count:int
