@@ -77,9 +77,8 @@ val and_ : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val or_ : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val xor : loc:Source_code_position.t -> t -> t -> t Or_error.t
 
-(** Raising variants of the constructors. Type errors raise instead of
-    returning [Or_error.t]. The [loc] parameter is automatically filled
-    by [[%call_pos]]. *)
+(** Raising variants of the constructors. Type errors raise instead of returning
+    [Or_error.t]. The [loc] parameter is automatically filled by [[%call_pos]]. *)
 module Direct : sig
   val float_literal : loc:[%call_pos] -> float32# -> t
   val bool_literal : loc:[%call_pos] -> bool -> t

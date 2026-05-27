@@ -155,8 +155,8 @@ let format_value v (type_ : Expr_tree.Type.t) =
   | Bool -> Bool.to_string (Value.to_bool v)
 ;;
 
-(** Print the results of tree and minimized-graph evaluators. On mismatch,
-    prints the minimized value. *)
+(** Print the results of tree and minimized-graph evaluators. On mismatch, prints the
+    minimized value. *)
 let check_minimized tree ~x ~y =
   let minimized_result = eval_with_minimized_graph tree ~x ~y in
   match Expr_tree_eval.eval ~env:(make_env ~x ~y) tree with
@@ -195,16 +195,19 @@ let assert_bisimulation tree ~x ~y =
           Expr_graph.from_tree tree
         in
         let graph_asm =
-          sprintf "result: $%d\n%s" final_register (Expr_graph.pp_instructions instructions)
-        in
-        let ~instructions:minimized, ~final_register:min_final, ~register_count:_ =
-          Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count:0
-        in
-        let minimized_asm =
           sprintf
             "result: $%d\n%s"
-            min_final
-            (Expr_graph.pp_instructions minimized)
+            final_register
+            (Expr_graph.pp_instructions instructions)
+        in
+        let ~instructions:minimized, ~final_register:min_final, ~register_count:_ =
+          Expr_graph_register_minimizer.minimize
+            ~instructions
+            ~final_register
+            ~register_count:0
+        in
+        let minimized_asm =
+          sprintf "result: $%d\n%s" min_final (Expr_graph.pp_instructions minimized)
         in
         Error.raise_s
           [%message
@@ -451,7 +454,8 @@ let%expect_test "outer var survives register pressure in cond branch (minimized)
   (* The minimized graph should keep $0 (x) alive through both conditions.
      In the inner then-branch, $0 must NOT be freed and reused. *)
   pp_minimized tree;
-  [%expect {|
+  [%expect
+    {|
     result: $2
     $0 <- var(0)
     $1 <- 10.
