@@ -19,7 +19,13 @@ module Type = struct
 end
 
 module Source_code_position = struct
-  type t = Source_code_position.t [@@deriving sexp_of, equal, compare, hash]
+  type t = Source_code_position.t [@@deriving sexp_of, hash]
+
+  (* Ignore source positions in structural comparison so that CSE in
+     [Expr_graph.from_tree] can merge identical subexpressions regardless
+     of where they were defined. *)
+  let equal _ _ = true
+  let compare _ _ = 0
 
   let quickcheck_generator = Quickcheck.Generator.return Stdlib.Lexing.dummy_pos
 
