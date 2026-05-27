@@ -95,22 +95,19 @@ let both_float name a b =
     Error
       (Error.create_s
          [%message
-           "RHS of operator is a bool"
-             (name : string)
+           (sprintf "type error in %s: right-hand side is bool, expected float" name)
              ~loc:(b.loc : Source_code_position.t)])
   | Bool, Float ->
     Error
       (Error.create_s
          [%message
-           "LHS of operator is a bool"
-             (name : string)
+           (sprintf "type error in %s: left-hand side is bool, expected float" name)
              ~loc:(a.loc : Source_code_position.t)])
   | Bool, Bool ->
     Error
       (Error.create_s
          [%message
-           "both arguments to operator are bools"
-             (name : string)
+           (sprintf "type error in %s: both arguments are bool, expected float" name)
              ~lhs_loc:(a.loc : Source_code_position.t)
              ~rhs_loc:(b.loc : Source_code_position.t)])
 ;;
@@ -122,22 +119,19 @@ let both_bool name a b =
     Error
       (Error.create_s
          [%message
-           "RHS of operator is a float"
-             (name : string)
+           (sprintf "type error in %s: right-hand side is float, expected bool" name)
              ~loc:(b.loc : Source_code_position.t)])
   | Float, Bool ->
     Error
       (Error.create_s
          [%message
-           "LHS of operator is a float"
-             (name : string)
+           (sprintf "type error in %s: left-hand side is float, expected bool" name)
              ~loc:(a.loc : Source_code_position.t)])
   | Float, Float ->
     Error
       (Error.create_s
          [%message
-           "both arguments to operator are floats"
-             (name : string)
+           (sprintf "type error in %s: both arguments are float, expected bool" name)
              ~lhs_loc:(a.loc : Source_code_position.t)
              ~rhs_loc:(b.loc : Source_code_position.t)])
 ;;
@@ -172,7 +166,9 @@ let sqrt ~loc a =
   | Bool ->
     Error
       (Error.create_s
-         [%message "argument to sqrt is a bool" ~loc:(a.loc : Source_code_position.t)])
+         [%message
+           "type error: 'sqrt' expects a float argument but got bool"
+             ~loc:(a.loc : Source_code_position.t)])
 ;;
 
 let unary_float name kind ~loc a =
@@ -182,7 +178,8 @@ let unary_float name kind ~loc a =
     Error
       (Error.create_s
          [%message
-           ("argument to " ^ name ^ " is a bool") ~loc:(a.loc : Source_code_position.t)])
+           (sprintf "type error: '%s' expects a float argument but got bool" name)
+             ~loc:(a.loc : Source_code_position.t)])
 ;;
 
 let abs ~loc a = unary_float "abs" (fun a -> Abs a) ~loc a
@@ -209,17 +206,26 @@ let cond ~loc ~condition ~then_ ~else_ =
     | Float ->
       Error
         (Error.create_s
-           [%message "condition is a float" ~loc:(condition.loc : Source_code_position.t)])
+           [%message
+             "type error: if-condition is float, expected bool"
+               ~loc:(condition.loc : Source_code_position.t)])
+  in
+  let type_name = function
+    | Type.Float -> "float"
+    | Type.Bool -> "bool"
   in
   let%map.Or_error type_ =
     match then_.type_, else_.type_ with
     | Float, Float -> Ok Type.Float
     | Bool, Bool -> Ok Type.Bool
-    | Float, Bool | Bool, Float ->
+    | _, _ ->
       Error
         (Error.create_s
            [%message
-             "conditional arms disagree"
+             (sprintf
+                "type error: if-arms disagree; then-branch is %s but else-branch is %s"
+                (type_name then_.type_)
+                (type_name else_.type_))
                ~then_loc:(then_.loc : Source_code_position.t)
                ~else_loc:(else_.loc : Source_code_position.t)])
   in

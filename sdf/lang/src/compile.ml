@@ -22,24 +22,35 @@ and env = value Map.M(String).t
 
 let dummy_loc : Source_code_position.t = Stdlib.Lexing.dummy_pos
 
+let builtin_arity (name : string) : int =
+  match name with
+  | "sqrt" | "abs" | "neg" | "sign" | "sin" | "cos" | "round" -> 1
+  | "min" | "max" | "xor" -> 2
+  | _ -> -1
+;;
+
 (** Force a value down to an [Expr_tree.t]. Closures cannot be forced and produce an
     error. Cond values are recursively forced and produce [Expr_tree.cond]. *)
-let rec force_expr (v : value) : Expr_tree.t Or_error.t =
+let rec force_expr ~loc:(loc : Source_code_position.t) (v : value) : Expr_tree.t Or_error.t =
   match v with
   | Expr e -> Ok e
-  | String s -> Or_error.error_s [%message "cannot use string as expression" (s : string)]
-  | Closure _ -> Or_error.error_s [%message "cannot use function as expression"]
+  | String s ->
+    Or_error.error_s
+      [%message (sprintf "cannot use string '%s' as an expression" s) ~loc:(loc : Source_code_position.t)]
+  | Closure _ ->
+    Or_error.error_s
+      [%message "cannot use function as a value; did you forget to call it?" ~loc:(loc : Source_code_position.t)]
   | Cond { condition; then_; else_ } ->
-    let loc = condition.loc in
-    let%bind.Or_error then_ = force_expr then_ in
-    let%bind.Or_error else_ = force_expr else_ in
-    Expr_tree.cond ~loc ~condition ~then_ ~else_
+    let cond_loc = condition.loc in
+    let%bind.Or_error then_ = force_expr ~loc then_ in
+    let%bind.Or_error else_ = force_expr ~loc else_ in
+    Expr_tree.cond ~loc:cond_loc ~condition ~then_ ~else_
 ;;
 
 (** Call a value as a function with the given arguments. Closures are directly applied.
     Cond values are "lifted": both branches are called with the same arguments, and the
     results are wrapped in a new Cond. *)
-let rec call_value (func : value) (args : value list) : value Or_error.t =
+let rec call_value ~loc:(loc : Source_code_position.t) (func : value) (args : value list) : value Or_error.t =
   match func with
   | Closure { params; body; env } ->
     (match
@@ -50,15 +61,19 @@ let rec call_value (func : value) (args : value list) : value Or_error.t =
      | Unequal_lengths ->
        Or_error.error_s
          [%message
-           "wrong number of arguments"
-             ~param_count:(List.length params : int)
-             ~arg_count:(List.length args : int)])
+           (sprintf
+              "wrong number of arguments: expected %d but got %d"
+              (List.length params)
+              (List.length args))
+             ~loc:(loc : Source_code_position.t)])
   | Cond { condition; then_; else_ } ->
-    let%bind.Or_error then_ = call_value then_ args in
-    let%map.Or_error else_ = call_value else_ args in
+    let%bind.Or_error then_ = call_value ~loc then_ args in
+    let%map.Or_error else_ = call_value ~loc else_ args in
     Cond { condition; then_; else_ }
-  | Expr _ -> Or_error.error_s [%message "cannot call a non-function value"]
-  | String _ -> Or_error.error_s [%message "cannot call a string"]
+  | Expr _ ->
+    Or_error.error_s [%message "cannot call a non-function value" ~loc:(loc : Source_code_position.t)]
+  | String _ ->
+    Or_error.error_s [%message "cannot call a string" ~loc:(loc : Source_code_position.t)]
 
 and eval_expr (env : env) (expr : Ast.expr) : value Or_error.t =
   let loc = expr.loc in
@@ -73,12 +88,15 @@ and eval_expr (env : env) (expr : Ast.expr) : value Or_error.t =
   | Ident name ->
     (match Map.find env name with
      | Some v -> Ok v
-     | None -> Or_error.error_s [%message "unbound variable" (name : string)])
+     | None ->
+       Or_error.error_s
+         [%message (sprintf "unbound variable '%s'" name) ~loc:(loc : Source_code_position.t)])
   | Placeholder ->
-    Or_error.error_s [%message "placeholder _ outside of function call arguments"]
+    Or_error.error_s
+      [%message "placeholder _ outside of function call arguments" ~loc:(loc : Source_code_position.t)]
   | Unary_neg inner ->
     let%bind.Or_error v = eval_expr env inner in
-    let%bind.Or_error e = force_expr v in
+    let%bind.Or_error e = force_expr ~loc v in
     let%map.Or_error e = Expr_tree.neg ~loc e in
     Expr e
   | Binop (op, lhs_ast, rhs_ast) ->
@@ -92,14 +110,14 @@ and eval_expr (env : env) (expr : Ast.expr) : value Or_error.t =
     eval_call env func_expr (obj_expr :: arg_exprs)
   | If (cond_expr, then_block, else_block) ->
     let%bind.Or_error cond_val = eval_expr env cond_expr in
-    eval_if env cond_val then_block else_block
+    eval_if ~loc env cond_val then_block else_block
   | Fn (params, body) ->
     let param_names = List.map params ~f:(fun (p : Ast.param) -> p.name) in
     Ok (Closure { params = param_names; body; env })
 
 and eval_binop ~loc (lhs : value) (rhs : value) (op : Ast.binop) : value Or_error.t =
-  let%bind.Or_error lhs = force_expr lhs in
-  let%bind.Or_error rhs = force_expr rhs in
+  let%bind.Or_error lhs = force_expr ~loc lhs in
+  let%bind.Or_error rhs = force_expr ~loc rhs in
   let%map.Or_error e =
     match op with
     | Add -> Expr_tree.add ~loc lhs rhs
@@ -118,6 +136,7 @@ and eval_binop ~loc (lhs : value) (rhs : value) (op : Ast.binop) : value Or_erro
 and eval_call (env : env) (func_expr : Ast.expr) (arg_exprs : Ast.expr list)
   : value Or_error.t
   =
+  let loc = func_expr.loc in
   (* Check for placeholders to create partial application *)
   let has_placeholders =
     List.exists arg_exprs ~f:(fun (e : Ast.expr) ->
@@ -134,19 +153,21 @@ and eval_call (env : env) (func_expr : Ast.expr) (arg_exprs : Ast.expr list)
       (match Map.find env name with
        | Some func ->
          let%bind.Or_error args = eval_args env arg_exprs in
-         call_value func args
+         call_value ~loc func args
        | None ->
          if String.equal name "var"
-         then eval_builtin_var ~loc:func_expr.loc env arg_exprs
+         then eval_builtin_var ~loc env arg_exprs
          else if is_builtin name
          then (
            let%bind.Or_error args = eval_args env arg_exprs in
-           eval_builtin ~loc:func_expr.loc name args)
-         else Or_error.error_s [%message "unbound function" (name : string)])
+           eval_builtin ~loc name args)
+         else
+           Or_error.error_s
+             [%message (sprintf "unbound function '%s'" name) ~loc:(loc : Source_code_position.t)])
     | _ ->
       let%bind.Or_error func = eval_expr env func_expr in
       let%bind.Or_error args = eval_args env arg_exprs in
-      call_value func args)
+      call_value ~loc func args)
 
 and eval_args (env : env) (arg_exprs : Ast.expr list) : value list Or_error.t =
   List.map arg_exprs ~f:(eval_expr env) |> Or_error.all
@@ -161,8 +182,14 @@ and eval_builtin_var ~loc (env : env) (arg_exprs : Ast.expr list) : value Or_err
           The let-binding type annotation should override this. *)
        let%map.Or_error e = Expr_tree.var ~loc name Expr_tree.Type.Float in
        Expr e
-     | _ -> Or_error.error_s [%message "var() expects a string argument"])
-  | _ -> Or_error.error_s [%message "var() expects exactly one argument"]
+     | _ ->
+       Or_error.error_s
+         [%message "var() expects a string argument" ~loc:(loc : Source_code_position.t)])
+  | _ ->
+    let arg_count = List.length arg_exprs in
+    Or_error.error_s
+      [%message
+        (sprintf "var() expects exactly 1 argument but got %d" arg_count) ~loc:(loc : Source_code_position.t)]
 
 and is_builtin (name : string) : bool =
   match name with
@@ -174,54 +201,61 @@ and eval_builtin ~loc (name : string) (args : value list) : value Or_error.t =
   match name, args with
   (* Unary float builtins *)
   | "sqrt", [ arg ] ->
-    let%bind.Or_error a = force_expr arg in
+    let%bind.Or_error a = force_expr ~loc arg in
     let%map.Or_error e = Expr_tree.sqrt ~loc a in
     Expr e
   | "abs", [ arg ] ->
-    let%bind.Or_error a = force_expr arg in
+    let%bind.Or_error a = force_expr ~loc arg in
     let%map.Or_error e = Expr_tree.abs ~loc a in
     Expr e
   | "neg", [ arg ] ->
-    let%bind.Or_error a = force_expr arg in
+    let%bind.Or_error a = force_expr ~loc arg in
     let%map.Or_error e = Expr_tree.neg ~loc a in
     Expr e
   | "sign", [ arg ] ->
-    let%bind.Or_error a = force_expr arg in
+    let%bind.Or_error a = force_expr ~loc arg in
     let%map.Or_error e = Expr_tree.sign ~loc a in
     Expr e
   | "sin", [ arg ] ->
-    let%bind.Or_error a = force_expr arg in
+    let%bind.Or_error a = force_expr ~loc arg in
     let%map.Or_error e = Expr_tree.sin ~loc a in
     Expr e
   | "cos", [ arg ] ->
-    let%bind.Or_error a = force_expr arg in
+    let%bind.Or_error a = force_expr ~loc arg in
     let%map.Or_error e = Expr_tree.cos ~loc a in
     Expr e
   | "round", [ arg ] ->
-    let%bind.Or_error a = force_expr arg in
+    let%bind.Or_error a = force_expr ~loc arg in
     let%map.Or_error e = Expr_tree.round ~loc a in
     Expr e
   (* Binary float builtins *)
   | "min", [ a; b ] ->
-    let%bind.Or_error a = force_expr a in
-    let%bind.Or_error b = force_expr b in
+    let%bind.Or_error a = force_expr ~loc a in
+    let%bind.Or_error b = force_expr ~loc b in
     let%map.Or_error e = Expr_tree.min ~loc a b in
     Expr e
   | "max", [ a; b ] ->
-    let%bind.Or_error a = force_expr a in
-    let%bind.Or_error b = force_expr b in
+    let%bind.Or_error a = force_expr ~loc a in
+    let%bind.Or_error b = force_expr ~loc b in
     let%map.Or_error e = Expr_tree.max ~loc a b in
     Expr e
   (* Boolean builtin *)
   | "xor", [ a; b ] ->
-    let%bind.Or_error a = force_expr a in
-    let%bind.Or_error b = force_expr b in
+    let%bind.Or_error a = force_expr ~loc a in
+    let%bind.Or_error b = force_expr ~loc b in
     let%map.Or_error e = Expr_tree.xor ~loc a b in
     Expr e
   | _, _ ->
-    let arg_count = List.length args in
+    let expected = builtin_arity name in
+    let got = List.length args in
     Or_error.error_s
-      [%message "wrong number of arguments to builtin" (name : string) (arg_count : int)]
+      [%message
+        (sprintf
+           "wrong number of arguments to '%s': expected %d but got %d"
+           name
+           expected
+           got)
+          ~loc:(loc : Source_code_position.t)]
 
 and eval_partial_app (env : env) (func_expr : Ast.expr) (arg_exprs : Ast.expr list)
   : value Or_error.t
@@ -276,6 +310,7 @@ and eval_partial_app (env : env) (func_expr : Ast.expr) (arg_exprs : Ast.expr li
        })
 
 and eval_if
+  ~loc:(loc : Source_code_position.t)
   (env : env)
   (cond_val : value)
   (then_block : Ast.block)
@@ -292,7 +327,8 @@ and eval_if
        let%bind.Or_error then_val = eval_block env then_block in
        let%map.Or_error else_val = eval_block env else_block in
        Cond { condition = cond_expr; then_ = then_val; else_ = else_val })
-  | _ -> Or_error.error_s [%message "condition must be a boolean expression"]
+  | _ ->
+    Or_error.error_s [%message "condition must be a boolean expression" ~loc:(loc : Source_code_position.t)]
 
 and eval_block (env : env) (block : Ast.block) : value Or_error.t =
   let%bind.Or_error env = eval_stmts env block.stmts in
@@ -337,7 +373,8 @@ and eval_let
 
 let compile_program (program : Ast.program) : Expr_tree.t Or_error.t =
   let env = Map.empty (module String) in
+  let loc = program.export.loc in
   let%bind.Or_error env = eval_stmts env program.stmts in
   let%bind.Or_error export_val = eval_expr env program.export in
-  force_expr export_val
+  force_expr ~loc export_val
 ;;

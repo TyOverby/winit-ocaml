@@ -1,7 +1,7 @@
 {
 open Parser
 
-exception Syntax_error of string
+exception Syntax_error of string * Lexing.position
 }
 
 let whitespace = [' ' '\t']+
@@ -48,7 +48,7 @@ rule token = parse
   | '_'        { UNDERSCORE }
   | ident_start ident_char* as s { IDENT s }
   | eof        { EOF }
-  | _ as c     { raise (Syntax_error (Printf.sprintf "unexpected character: %c" c)) }
+  | _ as c     { raise (Syntax_error (Printf.sprintf "unexpected character: %c" c, lexbuf.lex_curr_p)) }
 
 and line_comment = parse
   | newline { Lexing.new_line lexbuf; token lexbuf }
@@ -61,5 +61,5 @@ and string_lit buf = parse
   | '\\' '\\' { Buffer.add_char buf '\\'; string_lit buf lexbuf }
   | '\\' '"'  { Buffer.add_char buf '"'; string_lit buf lexbuf }
   | [^ '"' '\\']+ as s { Buffer.add_string buf s; string_lit buf lexbuf }
-  | eof       { raise (Syntax_error "unterminated string literal") }
-  | _         { raise (Syntax_error "invalid escape in string") }
+  | eof       { raise (Syntax_error ("unterminated string literal", lexbuf.lex_curr_p)) }
+  | _         { raise (Syntax_error ("invalid escape in string", lexbuf.lex_curr_p)) }
