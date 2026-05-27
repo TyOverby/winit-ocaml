@@ -29,9 +29,6 @@ let ensure_canvas_size state screen =
 ;;
 
 let scene_file = (Sys.get_argv ()).(1)
-let scene_source = In_channel.read_all scene_file
-
-let build_sdf () = Neo.compile ~filename:scene_file scene_source |> Or_error.ok_exn
 
 type compiled_sdf =
   { instructions : (int * Sdf.Expr_graph.instr) list
@@ -42,8 +39,8 @@ type compiled_sdf =
   ; num_vars : int
   }
 
-let compile_sdf () =
-  let tree = build_sdf () in
+let compile_sdf_from_source source =
+  let tree = Neo.compile ~filename:scene_file source |> Or_error.ok_exn in
   let ~instructions, ~final_register, ~register_count, ~var_mapping =
     Sdf.Expr_graph.from_tree tree
   in
@@ -59,6 +56,22 @@ let compile_sdf () =
   let y_idx = Hashtbl.find_exn var_mapping "y" in
   let num_vars = Hashtbl.length var_mapping in
   { instructions; final_register; register_count; x_idx; y_idx; num_vars }
+;;
+
+let maybe_recompile ~last_mtime ~current_sdf =
+  let stats = Core_unix.stat scene_file in
+  let mtime = stats.st_mtime in
+  if Float.( <> ) mtime last_mtime
+  then (
+    Printf.printf "File changed, recompiling...\n%!";
+    match compile_sdf_from_source (In_channel.read_all scene_file) with
+    | sdf ->
+      Printf.printf "Recompiled successfully.\n%!";
+      mtime, sdf
+    | exception exn ->
+      Printf.printf "Compilation error: %s\n%!" (Exn.to_string exn);
+      mtime, current_sdf)
+  else mtime, current_sdf
 ;;
 
 let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_scheduler.t) =
@@ -93,10 +106,16 @@ let () =
   let window = Winit.create () in
   let surface = Softbuffer.create (Winit.get_handle window) in
   let state = create_state () in
-  let sdf = compile_sdf () in
+  let source = In_channel.read_all scene_file in
+  let sdf = ref (compile_sdf_from_source source) in
+  let last_mtime = ref (Core_unix.stat scene_file).st_mtime in
   let scheduler = Parallel_scheduler.create () in
   let should_exit = ref false in
   while not !should_exit do
+    (* Check for file changes *)
+    let new_mtime, new_sdf = maybe_recompile ~last_mtime:!last_mtime ~current_sdf:!sdf in
+    last_mtime := new_mtime;
+    sdf := new_sdf;
     (* Pump events *)
     let events = Winit.pump_events window in
     (* Process events *)
@@ -122,10 +141,9 @@ let () =
     in
     (* Ensure canvas is the right size *)
     ensure_canvas_size state screen;
-    (* Blit canvas to screen *)
-    Printf.printf "blitting everything!\n%!";
+    (* Draw and present *)
     let before = Core.Time_ns.now () in
-    draw_shape state sdf scheduler;
+    draw_shape state !sdf scheduler;
     let after = Core.Time_ns.now () in
     print_s
       [%message "" ~time_to_draw:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)];

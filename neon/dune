@@ -6,6 +6,7 @@
   unix
   bigarray
   core
+  core_unix
   image_buf
   sdf
   neo
