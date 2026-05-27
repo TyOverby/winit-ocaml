@@ -116,6 +116,8 @@ let%expect_test "division by zero produces infinity" =
 
 let%expect_test "zero divided by zero is NaN" =
   eval_float (div (f #0.s) (f #0.s));
+  (* arm64 produces "NAN" and x86-64 produces "-NAN" *)
+  [%expect.output] |> String.chop_prefix_if_exists ~prefix:"-" |> print_endline;
   [%expect {| NAN |}]
 ;;
 
