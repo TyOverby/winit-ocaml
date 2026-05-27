@@ -28,8 +28,6 @@ let ensure_canvas_size state screen =
     state.canvas <- Image_buf.create ~width ~height #0xFFFFFFFl)
 ;;
 
-let scene_file = (Sys.get_argv ()).(1)
-
 type compiled_sdf =
   { instructions : (int * Sdf.Expr_graph.instr) list
   ; final_register : int
@@ -39,7 +37,7 @@ type compiled_sdf =
   ; num_vars : int
   }
 
-let compile_sdf_from_source source =
+let compile_sdf_from_source ~scene_file source =
   let tree = Neo.compile ~filename:scene_file source |> Or_error.ok_exn in
   let ~instructions, ~final_register, ~register_count, ~var_mapping =
     Sdf.Expr_graph.from_tree tree
@@ -58,13 +56,13 @@ let compile_sdf_from_source source =
   { instructions; final_register; register_count; x_idx; y_idx; num_vars }
 ;;
 
-let maybe_recompile ~last_mtime ~current_sdf =
+let maybe_recompile ~scene_file ~last_mtime ~current_sdf =
   let stats = Core_unix.stat scene_file in
   let mtime = stats.st_mtime in
   if Float.( <> ) mtime last_mtime
   then (
     Printf.printf "File changed, recompiling...\n%!";
-    match compile_sdf_from_source (In_channel.read_all scene_file) with
+    match compile_sdf_from_source ~scene_file (In_channel.read_all scene_file) with
     | sdf ->
       Printf.printf "Recompiled successfully.\n%!";
       mtime, sdf
@@ -102,64 +100,76 @@ let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_schedu
       done))
 ;;
 
-let () =
-  let window =
-    Winit.create ~window_level:Always_on_top ~title:"Neon" ~width:200 ~height:200 ()
-  in
-  let surface = Softbuffer.create (Winit.get_handle window) in
-  let state = create_state () in
-  let source = In_channel.read_all scene_file in
-  let sdf = ref (compile_sdf_from_source source) in
-  let last_mtime = ref (Core_unix.stat scene_file).st_mtime in
-  let scheduler = Parallel_scheduler.create () in
-  let should_exit = ref false in
-  while not !should_exit do
-    (* Check for file changes *)
-    let new_mtime, new_sdf = maybe_recompile ~last_mtime:!last_mtime ~current_sdf:!sdf in
-    last_mtime := new_mtime;
-    sdf := new_sdf;
-    (* Pump events *)
-    let events = Winit.pump_events window in
-    (* Process events *)
-    List.iter events ~f:(fun event ->
-      match event with
-      | Winit.CloseRequested -> should_exit := true
-      | Winit.SurfaceResized { width; height } -> Softbuffer.resize surface ~width ~height
-      | Winit.PointerButtonPressed _ ->
-        Printf.printf "Pen down\n%!";
-        state.is_drawing <- true
-      | Winit.PointerButtonReleased _ ->
-        Printf.printf "Pen up\n%!";
-        state.is_drawing <- false;
-        state.last_x <- None;
-        state.last_y <- None
-      | Winit.PointerMoved { x; y; source = _; _ } ->
-        Printf.printf "pointer moved: (%.1f, %.1f)" x y
-      | _ -> ());
-    (* Get buffer and draw *)
-    let screen =
-      let width, height, buffer = Softbuffer.get_buffer surface in
-      Image_buf.from_external ~width ~height buffer
-    in
-    (* Ensure canvas is the right size *)
-    ensure_canvas_size state screen;
-    (* Draw and present *)
-    let before = Core.Time_ns.now () in
-    draw_shape state !sdf scheduler;
-    let after = Core.Time_ns.now () in
-    print_s
-      [%message "" ~time_to_draw:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)];
-    Image_buf.blit
-      ~from:state.canvas
-      ~to_:screen
-      ~x:0
-      ~y:0
-      ~region:
-        #{ Image_buf.Rect.x = 0
-         ; y = 0
-         ; w = Image_buf.width state.canvas
-         ; h = Image_buf.height state.canvas
-         };
-    Softbuffer.present surface
-  done
+let command =
+  Command.basic
+    ~summary:"Neon SDF renderer"
+    (let%map_open.Command scene_file = anon ("SCENE_FILE" %: string)
+     and show_timings =
+       flag "-timings" no_arg ~doc:" Print timing information for each frame"
+     in
+     fun () ->
+       let window =
+         Winit.create ~window_level:Always_on_top ~title:"Neon" ~width:200 ~height:200 ()
+       in
+       let surface = Softbuffer.create (Winit.get_handle window) in
+       let state = create_state () in
+       let source = In_channel.read_all scene_file in
+       let sdf = ref (compile_sdf_from_source ~scene_file source) in
+       let last_mtime = ref (Core_unix.stat scene_file).st_mtime in
+       let scheduler = Parallel_scheduler.create () in
+       let should_exit = ref false in
+       while not !should_exit do
+         (* Check for file changes *)
+         let new_mtime, new_sdf =
+           maybe_recompile ~scene_file ~last_mtime:!last_mtime ~current_sdf:!sdf
+         in
+         last_mtime := new_mtime;
+         sdf := new_sdf;
+         (* Pump events *)
+         let events = Winit.pump_events window in
+         (* Process events *)
+         List.iter events ~f:(fun event ->
+           match event with
+           | Winit.CloseRequested -> should_exit := true
+           | Winit.SurfaceResized { width; height } ->
+             Softbuffer.resize surface ~width ~height
+           | Winit.PointerButtonPressed _ -> state.is_drawing <- true
+           | Winit.PointerButtonReleased _ ->
+             state.is_drawing <- false;
+             state.last_x <- None;
+             state.last_y <- None
+           | Winit.PointerMoved { x = _; y = _; source = _; _ } -> ()
+           | _ -> ());
+         (* Get buffer and draw *)
+         let screen =
+           let width, height, buffer = Softbuffer.get_buffer surface in
+           Image_buf.from_external ~width ~height buffer
+         in
+         (* Ensure canvas is the right size *)
+         ensure_canvas_size state screen;
+         (* Draw and present *)
+         if show_timings
+         then (
+           let before = Core.Time_ns.now () in
+           draw_shape state !sdf scheduler;
+           let after = Core.Time_ns.now () in
+           print_s
+             [%message
+               "" ~time_to_draw:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)])
+         else draw_shape state !sdf scheduler;
+         Image_buf.blit
+           ~from:state.canvas
+           ~to_:screen
+           ~x:0
+           ~y:0
+           ~region:
+             #{ Image_buf.Rect.x = 0
+              ; y = 0
+              ; w = Image_buf.width state.canvas
+              ; h = Image_buf.height state.canvas
+              };
+         Softbuffer.present surface
+       done)
 ;;
+
+let () = Command_unix.run command
