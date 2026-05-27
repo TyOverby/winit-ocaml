@@ -22,12 +22,12 @@ module Array = struct
   type t = Int32_u.t array
 
   let create ~len = Array.create ~len #0l
-  let get = Array.get
+  let get = Array.unsafe_get
   let get_int t n = Array.unsafe_get t n
   let get_float t n = get_int t n |> to_float
   let get_bool t n = get_int t n |> to_bool
   let set_int t n v = Array.unsafe_set t n v
   let set_bool t n v = set_int t n (of_bool v)
   let set_float t n v = set_int t n (of_float v)
-  let set = Array.set
+  let set = Array.unsafe_set
 end
