@@ -350,7 +350,7 @@ let%expect_test "original quickcheck failure - simplified" =
                 (cond
                    ~condition:(b false)
                    ~then_:(nf #0.0s)
-                   ~else_:(f Float32_u.(neg_infinity ()))))
+                   ~else_:(f Float32_u.(-#1.0s / #0.0s))))
            ~else_:(add (div (var "y" Float) (nf #0.0s)) (mul (var "x" Float) (nf #0.0s))))
   in
   check tree ~x:(-0.267355561256) ~y:2.9582283945787943e-31;
