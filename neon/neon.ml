@@ -71,7 +71,10 @@ let compile_sdf () =
   in
   Printf.printf "registers before minimization: %d\n%!" register_count;
   let ~instructions, ~final_register, ~register_count =
-    Sdf.Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count
+    Sdf.Expr_graph_register_minimizer.minimize
+      ~instructions
+      ~final_register
+      ~register_count
   in
   Printf.printf "registers after minimization:  %d\n%!" register_count;
   let x_idx = Hashtbl.find_exn var_mapping "x" in
@@ -91,12 +94,12 @@ let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_schedu
   let y_idx = sdf.y_idx in
   let num_vars = sdf.num_vars in
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
-    Parallel.for_ par ~start:0 ~stop:width ~f:(fun _par x ->
+    Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
       let variables = Sdf.Value.Array.create ~len:num_vars in
       let registers = Sdf.Value.Array.create ~len:register_count in
-      Sdf.Value.Array.set_float variables x_idx (Float32_u.of_float (Float.of_int x));
-      for y = 0 to height - 1 do
-        Sdf.Value.Array.set_float variables y_idx (Float32_u.of_float (Float.of_int y));
+      Sdf.Value.Array.set_float variables y_idx (Float32_u.of_float (Float.of_int y));
+      for x = 0 to width - 1 do
+        Sdf.Value.Array.set_float variables x_idx (Float32_u.of_float (Float.of_int x));
         Sdf.Expr_graph_eval.run ~variables ~instructions ~registers;
         let value = Sdf.Value.Array.get registers final_register in
         let dist = Float32_u.to_float (Sdf.Value.to_float value) in
