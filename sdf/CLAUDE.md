@@ -137,13 +137,14 @@ dune exec sdf/bench/bench.exe --profile=release -- -dir path/to/neo/files
 ### Comparing results
 
 ```bash
-# Save baseline
-dune exec sdf/bench/bench.exe --profile=release -- -dump-sexp > before.sexp
+# Save baseline (redirect stderr to /dev/null — progress messages go to stderr
+# and will corrupt the sexp file if not suppressed)
+dune exec sdf/bench/bench.exe --profile=release -- -dump-sexp 2>/dev/null > before.sexp
 
 # ... make changes ...
 
 # Save new results and compare
-dune exec sdf/bench/bench.exe --profile=release -- -dump-sexp > after.sexp
+dune exec sdf/bench/bench.exe --profile=release -- -dump-sexp 2>/dev/null > after.sexp
 dune exec sdf/bench/compare.exe -- before.sexp after.sexp
 ```
 
