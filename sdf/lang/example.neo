@@ -1,0 +1,47 @@
+// Pull variables from environment.  "var" is a special builtin function that requires instr
+// declarations to have the type specified
+let x : float = var("x");
+let y : float = var("y");
+
+// function declaration.  Parameters don't need types specified, but they can be specified
+// if the user wants
+fn circle(cx, cy, r : float) {
+  // anonymous function returned
+  fn(x, y) {
+    let dx = cx - x;
+    let dy = cy - y;
+    // blocks implicitly return their final expression.
+    sqrt(dx * dx + dy * dy) - r
+  }
+}
+
+// another function declaration
+fn modulate(f, freq, amp) {
+  fn(x, y) {
+    // variable shadowing is ok.  +=, -=, and any form of mutating assignment is banned
+    let x = x + sin(y / freq) * amp;
+    // sin and cos are builtins.  Look at `expr_tree.ml` for the list of builtin functions
+    let y = y + cos(x / freq) * amp;
+    f(x, y)
+  }
+}
+
+// booleans are valid types
+let modulate_high = true;
+
+let my_modulate = 
+  // `if` is an expression
+  if modulate_high {
+    // partially apply the modulate function
+    modulate(_, 20, 20)
+  } else {
+    modulate(_, 10, 10)
+  };
+
+
+// '.' syntax for function calls translates `x.foo(y, z)` into `foo(x, y, z)``
+let my_shape = circle(100, 100, 30).my_modulate();
+
+// the first "export" keyword that is hit terminates the program and produces the expression
+// tree at the location.
+export my_shape(x, y);
