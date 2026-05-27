@@ -115,6 +115,8 @@ let draw_shape (state : state) (sdf : compiled_sdf) =
       let dist = Float32_u.to_float (Sdf.Value.to_float value) in
       if Float.(dist <= 0.0)
       then Image_buf.set state.canvas ~x ~y #0xFF000000l
+      else if Float.(dist <= 8.0)
+      then Image_buf.set state.canvas ~x ~y #0xFF5384EDl
       else Image_buf.set state.canvas ~x ~y #0xFFFFFFFFl
     done
   done
