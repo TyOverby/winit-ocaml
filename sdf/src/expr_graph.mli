@@ -37,6 +37,7 @@ type instr =
   | Or of Register.t * Register.t
   | Xor of Register.t * Register.t
 
+(* a list containing each instruction and the register that the instruction writes into *)
 and t = (Register.t * instr) list [@@deriving sexp_of, equal, compare]
 
 val from_tree
