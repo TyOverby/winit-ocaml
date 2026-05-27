@@ -5,3 +5,4 @@ module Expr_graph = Expr_graph
 module Expr_graph_eval = Expr_graph_eval
 module Expr_graph_register_minimizer = Expr_graph_register_minimizer
 module Value = Value
+module Expr_graph_batch_eval = Expr_graph_batch_eval

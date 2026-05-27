@@ -6,7 +6,8 @@
   stdlib_upstream_compatible
   core
   unboxed.float32_u
-  unboxed.int32_u)
+  unboxed.int32_u
+  ocaml_simd.sse)
  (preprocess
   (pps ppx_jane))
  (ocamlopt_flags

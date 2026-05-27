@@ -149,6 +149,33 @@ let eval_with_minimized_graph tree ~x ~y =
   Value.Array.get registers final_register
 ;;
 
+let eval_with_batch tree ~x ~y =
+  let ~instructions, ~final_register, ~register_count, ~var_mapping =
+    Expr_graph.from_tree tree
+  in
+  let ~instructions, ~final_register, ~register_count =
+    Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count
+  in
+  let register_bank =
+    Expr_graph_batch_eval.create_register_bank ~register_count ~width:1
+  in
+  let variable_bank =
+    Expr_graph_batch_eval.create_variable_bank
+      ~num_vars:(Hashtbl.length var_mapping)
+      ~width:1
+  in
+  Hashtbl.iteri var_mapping ~f:(fun ~key ~data:idx ->
+    let value =
+      match key with
+      | "x" -> Value.of_float (Float32_u.of_float x)
+      | "y" -> Value.of_float (Float32_u.of_float y)
+      | other -> value_failwith ("unexpected variable: " ^ other)
+    in
+    Expr_graph_batch_eval.set_variable variable_bank ~var:idx ~px:0 value);
+  Expr_graph_batch_eval.run ~variable_bank ~instructions ~register_bank ~width:1;
+  Expr_graph_batch_eval.get_result register_bank ~reg:final_register ~px:0
+;;
+
 let format_value v (type_ : Expr_tree.Type.t) =
   match type_ with
   | Float -> Float32_u.to_string (Value.to_float v)
@@ -184,6 +211,7 @@ let check tree ~x ~y =
 let assert_bisimulation tree ~x ~y =
   let graph_result = eval_with_graph tree ~x ~y in
   let minimized_result = eval_with_minimized_graph tree ~x ~y in
+  let batch_result = eval_with_batch tree ~x ~y in
   match Expr_tree_eval.eval ~env:(make_env ~x ~y) tree with
   | Error err -> Error.raise err
   | Ok tree_value ->
@@ -222,7 +250,8 @@ let assert_bisimulation tree ~x ~y =
               ~y:(y : float)])
     in
     check_match ~label:"graph" graph_result;
-    check_match ~label:"minimized_graph" minimized_result
+    check_match ~label:"minimized_graph" minimized_result;
+    check_match ~label:"batch" batch_result
 ;;
 
 (* --- Hardcoded bisimulation tests --- *)
