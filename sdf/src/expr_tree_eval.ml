@@ -65,13 +65,13 @@ let rec eval_float
     (match eval_float ~env a with
      | Error _ as e -> e
      | Ok a ->
-       let zero = Float32_u.of_float 0.0 in
+       let my_zero = Float32_u.of_float 0.0 in
        Ok
-         (if Float32_u.(a > zero)
+         (if Float32_u.(a > my_zero)
           then Float32_u.of_float 1.0
-          else if Float32_u.(a < zero)
+          else if Float32_u.(a < my_zero)
           then Float32_u.of_float (-1.0)
-          else zero))
+          else my_zero))
   | Sin a ->
     (match eval_float ~env a with
      | Error _ as e -> e

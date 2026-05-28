@@ -40,13 +40,13 @@ let rec run ~variables ~instructions ~registers =
         Value.of_float (Float32_u.neg a)
       | Sign a ->
         let a = Value.Array.get_float registers a in
-        let zero = Float32_u.of_float 0.0 in
+        let my_zero = Float32_u.of_float 0.0 in
         Value.of_float
-          (if Float32_u.(a > zero)
+          (if Float32_u.(a > my_zero)
            then Float32_u.of_float 1.0
-           else if Float32_u.(a < zero)
+           else if Float32_u.(a < my_zero)
            then Float32_u.of_float (-1.0)
-           else zero)
+           else my_zero)
       | Sin a ->
         let a = Value.Array.get_float registers a in
         Value.of_float (Float32_u.sin a)
