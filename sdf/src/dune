@@ -6,9 +6,11 @@
   stdlib_upstream_compatible
   core
   unboxed.float32_u
-  unboxed.int32_u
-  ocaml_simd.sse)
+  unboxed.int32_u)
+ (foreign_stubs
+  (language c)
+  (names simd_stubs))
  (preprocess
-  (pps ppx_jane))
+  (pps ppx_jane ppx_builtin))
  (ocamlopt_flags
   (:standard -zero-alloc-check all)))

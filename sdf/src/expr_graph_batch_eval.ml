@@ -1,6 +1,4 @@
 open! Core
-module F = Ocaml_simd_sse.Float32x4
-module I = Ocaml_simd_sse.Int32x4
 
 type register_bank = int32# array array
 type variable_bank = int32# array array
@@ -21,19 +19,19 @@ let get_result bank ~reg ~px = Value.of_int (Array.unsafe_get (Array.unsafe_get 
 
 (* SIMD helpers: load/store 4 pixels at a time *)
 let[@inline always] load_f (arr : int32# array) (px : int) : float32x4# =
-  F.of_int32x4_bits (I.Int32_u_array.unsafe_get arr ~idx:px)
+  Simd.float32x4_of_int32x4 (Simd.arr_load arr ~idx:px)
 ;;
 
 let[@inline always] store_f (arr : int32# array) (px : int) (v : float32x4#) : unit =
-  I.Int32_u_array.unsafe_set arr ~idx:px (I.of_float32x4_bits v)
+  Simd.arr_store arr ~idx:px (Simd.int32x4_of_float32x4 v)
 ;;
 
 let[@inline always] load_i (arr : int32# array) (px : int) : int32x4# =
-  I.Int32_u_array.unsafe_get arr ~idx:px
+  Simd.arr_load arr ~idx:px
 ;;
 
 let[@inline always] store_i (arr : int32# array) (px : int) (v : int32x4#) : unit =
-  I.Int32_u_array.unsafe_set arr ~idx:px v
+  Simd.arr_store arr ~idx:px v
 ;;
 
 (* Scalar helpers for tail pixels *)
@@ -64,7 +62,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
     let out_arr = Array.unsafe_get register_bank out in
     (match (instruction : Expr_graph.instr) with
      | Float_literal f ->
-       let v = F.set1 f in
+       let v = Simd.f32x4_set1 f in
        let px = ref 0 in
        while !px < simd_end do
          store_f out_arr !px v;
@@ -75,7 +73,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        done
      | Bool_literal b ->
        let bits = if b then #1l else #0l in
-       let v = I.set1 bits in
+       let v = Simd.i32x4_set1 bits in
        let px = ref 0 in
        while !px < simd_end do
          store_i out_arr !px v;
@@ -95,7 +93,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let b_arr = Array.unsafe_get register_bank b in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px F.(load_f a_arr !px + load_f b_arr !px);
+         store_f out_arr !px (Simd.f32x4_add (load_f a_arr !px) (load_f b_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -106,7 +104,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let b_arr = Array.unsafe_get register_bank b in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px F.(load_f a_arr !px - load_f b_arr !px);
+         store_f out_arr !px (Simd.f32x4_sub (load_f a_arr !px) (load_f b_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -117,7 +115,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let b_arr = Array.unsafe_get register_bank b in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px F.(load_f a_arr !px * load_f b_arr !px);
+         store_f out_arr !px (Simd.f32x4_mul (load_f a_arr !px) (load_f b_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -128,7 +126,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let b_arr = Array.unsafe_get register_bank b in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px F.(load_f a_arr !px / load_f b_arr !px);
+         store_f out_arr !px (Simd.f32x4_div (load_f a_arr !px) (load_f b_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -138,7 +136,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let a_arr = Array.unsafe_get register_bank a in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px (F.sqrt (load_f a_arr !px));
+         store_f out_arr !px (Simd.f32x4_sqrt (load_f a_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -148,7 +146,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let a_arr = Array.unsafe_get register_bank a in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px (F.abs (load_f a_arr !px));
+         store_f out_arr !px (Simd.f32x4_abs (load_f a_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -158,7 +156,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let a_arr = Array.unsafe_get register_bank a in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px (F.neg (load_f a_arr !px));
+         store_f out_arr !px (Simd.f32x4_neg (load_f a_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -166,16 +164,16 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        done
      | Sign a ->
        let a_arr = Array.unsafe_get register_bank a in
-       let zero = F.zero in
-       let one = F.one in
-       let neg_one = F.neg one in
+       let zero = Simd.f32x4_zero in
+       let one = Simd.f32x4_one in
+       let neg_one = Simd.f32x4_neg one in
        let px = ref 0 in
        while !px < simd_end do
          let v = load_f a_arr !px in
-         let pos_mask = F.(v > zero) in
-         let neg_mask = F.(v < zero) in
-         let result = F.select pos_mask ~fail:zero ~pass:one in
-         let result = F.select neg_mask ~fail:result ~pass:neg_one in
+         let pos_mask = Simd.f32x4_gt v zero in
+         let neg_mask = Simd.f32x4_lt v zero in
+         let result = Simd.f32x4_select pos_mask ~fail:zero ~pass:one in
+         let result = Simd.f32x4_select neg_mask ~fail:result ~pass:neg_one in
          store_f out_arr !px result;
          px := !px + 4
        done;
@@ -205,7 +203,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let a_arr = Array.unsafe_get register_bank a in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px (F.round_nearest (load_f a_arr !px));
+         store_f out_arr !px (Simd.f32x4_round_nearest (load_f a_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -216,7 +214,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let b_arr = Array.unsafe_get register_bank b in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px (F.min (load_f a_arr !px) (load_f b_arr !px));
+         store_f out_arr !px (Simd.f32x4_min (load_f a_arr !px) (load_f b_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -227,7 +225,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let b_arr = Array.unsafe_get register_bank b in
        let px = ref 0 in
        while !px < simd_end do
-         store_f out_arr !px (F.max (load_f a_arr !px) (load_f b_arr !px));
+         store_f out_arr !px (Simd.f32x4_max (load_f a_arr !px) (load_f b_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -236,11 +234,11 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
      | Lt (a, b) ->
        let a_arr = Array.unsafe_get register_bank a in
        let b_arr = Array.unsafe_get register_bank b in
-       let one_i = I.set1 #1l in
+       let one_i = Simd.i32x4_set1 #1l in
        let px = ref 0 in
        while !px < simd_end do
-         let mask = F.(load_f a_arr !px < load_f b_arr !px) in
-         store_i out_arr !px I.(mask land one_i);
+         let mask = Simd.f32x4_lt (load_f a_arr !px) (load_f b_arr !px) in
+         store_i out_arr !px (Simd.i32x4_and mask one_i);
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -251,11 +249,11 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
      | Gt (a, b) ->
        let a_arr = Array.unsafe_get register_bank a in
        let b_arr = Array.unsafe_get register_bank b in
-       let one_i = I.set1 #1l in
+       let one_i = Simd.i32x4_set1 #1l in
        let px = ref 0 in
        while !px < simd_end do
-         let mask = F.(load_f a_arr !px > load_f b_arr !px) in
-         store_i out_arr !px I.(mask land one_i);
+         let mask = Simd.f32x4_gt (load_f a_arr !px) (load_f b_arr !px) in
+         store_i out_arr !px (Simd.i32x4_and mask one_i);
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -266,11 +264,11 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
      | Lte (a, b) ->
        let a_arr = Array.unsafe_get register_bank a in
        let b_arr = Array.unsafe_get register_bank b in
-       let one_i = I.set1 #1l in
+       let one_i = Simd.i32x4_set1 #1l in
        let px = ref 0 in
        while !px < simd_end do
-         let mask = F.(load_f a_arr !px <= load_f b_arr !px) in
-         store_i out_arr !px I.(mask land one_i);
+         let mask = Simd.f32x4_le (load_f a_arr !px) (load_f b_arr !px) in
+         store_i out_arr !px (Simd.i32x4_and mask one_i);
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -281,11 +279,11 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
      | Gte (a, b) ->
        let a_arr = Array.unsafe_get register_bank a in
        let b_arr = Array.unsafe_get register_bank b in
-       let one_i = I.set1 #1l in
+       let one_i = Simd.i32x4_set1 #1l in
        let px = ref 0 in
        while !px < simd_end do
-         let mask = F.(load_f a_arr !px >= load_f b_arr !px) in
-         store_i out_arr !px I.(mask land one_i);
+         let mask = Simd.f32x4_ge (load_f a_arr !px) (load_f b_arr !px) in
+         store_i out_arr !px (Simd.i32x4_and mask one_i);
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -298,7 +296,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let b_arr = Array.unsafe_get register_bank b in
        let px = ref 0 in
        while !px < simd_end do
-         store_i out_arr !px I.(load_i a_arr !px land load_i b_arr !px);
+         store_i out_arr !px (Simd.i32x4_and (load_i a_arr !px) (load_i b_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -311,7 +309,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let b_arr = Array.unsafe_get register_bank b in
        let px = ref 0 in
        while !px < simd_end do
-         store_i out_arr !px I.(load_i a_arr !px lor load_i b_arr !px);
+         store_i out_arr !px (Simd.i32x4_or (load_i a_arr !px) (load_i b_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -324,7 +322,7 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        let b_arr = Array.unsafe_get register_bank b in
        let px = ref 0 in
        while !px < simd_end do
-         store_i out_arr !px I.(load_i a_arr !px lxor load_i b_arr !px);
+         store_i out_arr !px (Simd.i32x4_xor (load_i a_arr !px) (load_i b_arr !px));
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
@@ -342,14 +340,14 @@ let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width
        (* Run else_ branch for all pixels *)
        run ~variable_bank ~instructions:else_ ~register_bank ~width;
        (* Blend: if cond true, use then_ result; else keep else_ result *)
-       let one_i = I.set1 #1l in
+       let one_i = Simd.i32x4_set1 #1l in
        let px = ref 0 in
        while !px < simd_end do
          let c = load_i cond_arr !px in
-         let mask = I.(c = one_i) in
+         let mask = Simd.i32x4_cmpeq c one_i in
          let then_v = load_i then_results !px in
          let else_v = load_i out_arr !px in
-         store_i out_arr !px (I.select mask ~fail:else_v ~pass:then_v);
+         store_i out_arr !px (Simd.i32x4_select mask ~fail:else_v ~pass:then_v);
          px := !px + 4
        done;
        for px = simd_end to width - 1 do
