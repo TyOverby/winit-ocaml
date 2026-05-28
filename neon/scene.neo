@@ -12,9 +12,9 @@ fn circle(cx, cy, r) {
 // Distort a shape by applying sin/cos modulation to the coordinates.
 fn modulate(shape, freq, amp) {
   fn(x, y) {
-    let x = x + sin(y / freq) * amp;
-    let y = y + cos(x / freq) * amp;
-    shape(x, y)
+    let x2 = x + sin(y / freq) * amp;
+    let y2 = y + cos(x / freq) * amp;
+    shape(x2, y2)
   }
 }
 
