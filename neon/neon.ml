@@ -107,8 +107,17 @@ let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_schedu
         let dist = Float32_u.to_float (Sdf.Value.to_float value) in
         if Float.(dist <= 0.0)
         then Image_buf.set canvas ~x ~y #0xFF000000l
-        else if Float.(dist <= 8.0)
-        then Image_buf.set canvas ~x ~y #0xFF5384EDl
+        else if Float.(dist <= 1.0)
+        then (
+          let component = dist *. 255.0 |> Float.to_int |> Int32_u.of_int_trunc in
+          let color =
+            Int32_u.(
+              component
+              lor shift_left component 8
+              lor shift_left component 16
+              lor #0xFF000000l)
+          in
+          Image_buf.set canvas ~x ~y color)
         else Image_buf.set canvas ~x ~y #0xFFFFFFFFl
       done))
 ;;
@@ -122,7 +131,7 @@ let command =
      in
      fun () ->
        let window =
-         Winit.create ~window_level:Always_on_top ~title:"Neon" ~width:200 ~height:200 ()
+         Winit.create ~window_level:Always_on_top ~title:"Neon" ~width:400 ~height:400 ()
        in
        let surface = Softbuffer.create (Winit.get_handle window) in
        let state = create_state () in

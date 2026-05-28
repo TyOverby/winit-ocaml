@@ -1,5 +1,3 @@
-let x : float = var("x");
-let y : float = var("y");
 
 // A circle SDF centered at (cx, cy) with radius r.
 // Returns a function (x, y) -> distance.
@@ -32,8 +30,13 @@ fn smooth_union(a, b, k) {
   }
 }
 
-let c1 = circle(150, 150, 80).modulate(5, 5);
-let c2 = circle(250, 200, 80).modulate(5, 5);
-let scene = smooth_union(c1, c2, 1);
+let c1 = circle(150, 150, 80);
+let c2 = circle(250, 200, 80);
+let scene = smooth_union(c1, c2, 1).modulate(5, 5);
+
+let x : float = var("x");
+let x = x / 2;
+let y : float = var("y");
+let y = y / 2;
 
 export scene(x, y);
