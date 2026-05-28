@@ -38,7 +38,7 @@ type instr =
   | Xor of Register.t * Register.t
 
 (* an array containing each instruction and the register that the instruction writes into *)
-and t = (Register.t * instr) array [@@deriving sexp_of, equal, compare]
+and t = (Register.t * instr) iarray [@@deriving sexp_of, equal, compare]
 
 val from_tree
   :  Expr_tree.t

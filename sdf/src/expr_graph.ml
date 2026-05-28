@@ -53,7 +53,7 @@ type instr =
   | Or of Register.t * Register.t
   | Xor of Register.t * Register.t
 
-and t = (Register.t * instr) array [@@deriving sexp_of, equal, compare]
+and t = (Register.t * instr) iarray [@@deriving sexp_of, equal, compare]
 
 module Bindings = struct
   type t =
@@ -167,8 +167,8 @@ let from_tree tree =
           let else_instrs = (output_register, Read else_) :: else_instrs in
           ( ~instr:(Condition
                       { cond
-                      ; then_ = Array.of_list_rev then_instrs
-                      ; else_ = Array.of_list_rev else_instrs
+                      ; then_ = Iarray.of_list_rev then_instrs
+                      ; else_ = Iarray.of_list_rev else_instrs
                       })
           , ~instrs
           , ~env )
@@ -206,7 +206,7 @@ let from_tree tree =
       ~instrs, ~env, output_register
   in
   let ~instrs, ~env:_, register = loop tree ~instrs:[] ~env:(Bindings.empty ()) in
-  ( ~instructions:(Array.of_list_rev instrs)
+  ( ~instructions:(Iarray.of_list_rev instrs)
   , ~final_register:register
   , ~register_count:(Register.count register_allocator)
   , ~var_mapping )
@@ -216,7 +216,7 @@ let pp_instructions instructions =
   let buf = Buffer.create 256 in
   let rec pp ~indent instrs =
     let pad = String.make (indent * 2) ' ' in
-    Array.iter instrs ~f:(fun (out, instr) ->
+    Iarray.iter instrs ~f:(fun (out, instr) ->
       match (instr : instr) with
       | Float_literal f ->
         Buffer.add_string buf (sprintf "%s$%d <- %s\n" pad out (Float32_u.to_string f))

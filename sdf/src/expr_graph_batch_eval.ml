@@ -55,10 +55,10 @@ let copy_array (src : int32# array) (dst : int32# array) ~width ~simd_end =
 ;;
 
 let rec run ~variable_bank ~instructions ~(register_bank : register_bank) ~width =
-  let len = Array.length instructions in
+  let len = Iarray.length instructions in
   let simd_end = width land lnot 3 in
   for i = 0 to len - 1 do
-    let out, instruction = Array.unsafe_get instructions i in
+    let out, instruction = Iarray.unsafe_get instructions i in
     let out_arr = Array.unsafe_get register_bank out in
     (match (instruction : Expr_graph.instr) with
      | Float_literal f ->

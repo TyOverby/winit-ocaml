@@ -1,9 +1,9 @@
 open! Core
 
 let rec run ~variables ~instructions ~registers =
-  let len = Array.length instructions in
+  let len = Iarray.length instructions in
   for i = 0 to len - 1 do
-    let out, instruction = Array.unsafe_get instructions i in
+    let out, instruction = Iarray.unsafe_get instructions i in
     let value =
       match (instruction : Expr_graph.instr) with
       | Float_literal f -> Value.of_float f

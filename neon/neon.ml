@@ -29,7 +29,7 @@ let ensure_canvas_size state screen =
 ;;
 
 type compiled_sdf =
-  { instructions : (int * Sdf.Expr_graph.instr) list
+  { instructions : (int * Sdf.Expr_graph.instr) iarray
   ; final_register : int
   ; register_count : int
   ; x_idx : int
