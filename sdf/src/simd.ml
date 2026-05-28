@@ -21,9 +21,11 @@ external int32x4_of_float32x4 : float32x4# -> int32x4#
 (* ---- int32# array load/store (compiler primitives, cross-platform) ---- *)
 
 external arr_load : (int32# array[@local_opt]) @ read -> idx:int -> int32x4#
+  @@ portable
   = "%caml_unboxed_int32_array_get128u#"
 
 external arr_store : (int32# array[@local_opt]) -> idx:int -> int32x4# -> unit
+  @@ portable
   = "%caml_unboxed_int32_array_set128u#"
 
 (* ---- broadcast (set1) ---- *)

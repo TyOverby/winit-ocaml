@@ -1,3 +1,5 @@
+@@ portable
+
 open! Core
 
 type register_bank
