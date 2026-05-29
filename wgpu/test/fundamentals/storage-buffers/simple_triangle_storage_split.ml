@@ -1,9 +1,8 @@
-(*
-   WebGPU Fundamentals: Storage Buffers with Instancing
+(* WebGPU Fundamentals: Storage Buffers with Instancing
 
-   This test demonstrates the power of storage buffers for instanced rendering.
-   Unlike uniform buffers which have a 64 KiB limit, storage buffers can be
-   much larger (128 MiB by default) and support arrays.
+   This test demonstrates the power of storage buffers for instanced rendering. Unlike
+   uniform buffers which have a 64 KiB limit, storage buffers can be much larger (128 MiB
+   by default) and support arrays.
 
    Key concepts:
    - Storage buffers with runtime-sized arrays
@@ -11,9 +10,9 @@
    - Single draw call for all 100 triangles
    - Passing color through inter-stage variables
 
-   The vertex shader uses instance_index to look up per-object data from
-   the storage buffer arrays, enabling a single draw call to render all
-   objects with different transforms and colors.
+   The vertex shader uses instance_index to look up per-object data from the storage
+   buffer arrays, enabling a single draw call to render all objects with different
+   transforms and colors.
 *)
 
 open! Core
@@ -73,13 +72,11 @@ struct VSOutput {
 (* Storage buffer layout for static data (color + offset):
    - color: vec4f (4 floats, 16 bytes)
    - offset: vec2f (2 floats, 8 bytes)
-   - padding: 8 bytes (struct alignment)
-   Total per object: 32 bytes *)
+   - padding: 8 bytes (struct alignment) Total per object: 32 bytes *)
 let static_unit_size = 32
 
 (* Storage buffer layout for dynamic data (scale):
-   - scale: vec2f (2 floats, 8 bytes)
-   Total per object: 8 bytes *)
+   - scale: vec2f (2 floats, 8 bytes) Total per object: 8 bytes *)
 let changing_unit_size = 8
 
 (* Random number in range [min, max) *)

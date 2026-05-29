@@ -1,8 +1,8 @@
 open! Core
 
 (* Get output path for test artifacts. When running via dune runtest (cwd is in _build),
-   write next to the executable. When running via dune exec (cwd is not in _build),
-   write to the source directory. *)
+   write next to the executable. When running via dune exec (cwd is not in _build), write
+   to the source directory. *)
 let output_path filename =
   let cwd = Stdlib.Sys.getcwd () in
   let in_build = String.is_substring cwd ~substring:"_build" in
@@ -46,8 +46,8 @@ let ppm_to_png ~ppm_file ~png_file =
       [%message "Error: ImageMagick convert failed" (e : Core_unix.Exit_or_signal.error)]
 ;;
 
-(* Load a PNG file into RGBA pixel data using ImageMagick.
-   Returns (width, height, data) where data is a Bigarray of RGBA bytes. *)
+(* Load a PNG file into RGBA pixel data using ImageMagick. Returns (width, height, data)
+   where data is a Bigarray of RGBA bytes. *)
 let load_png ~filename =
   (* Use ImageMagick to get dimensions *)
   let identify_cmd = sprintf "identify -format '%%w %%h' %s" filename in

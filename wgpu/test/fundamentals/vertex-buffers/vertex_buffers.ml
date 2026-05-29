@@ -1,13 +1,12 @@
-(*
-   WebGPU Fundamentals: Vertex Buffers
+(* WebGPU Fundamentals: Vertex Buffers
 
-   This test demonstrates the basic use of vertex buffers in WebGPU.
-   We render 100 colored circles using:
+   This test demonstrates the basic use of vertex buffers in WebGPU. We render 100 colored
+   circles using:
    - A vertex buffer with position data (stepped per vertex)
    - Storage buffers for per-instance color/offset and scale data
 
-   The circles are positioned randomly across the canvas and each
-   has a random color and size.
+   The circles are positioned randomly across the canvas and each has a random color and
+   size.
 *)
 
 open! Core
@@ -33,11 +32,7 @@ let create_circle_vertices ~radius ~inner_radius =
     Bigarray.Array1.set vertex_data (!offset + 1) y;
     offset := !offset + 2
   in
-  (* 2 triangles per subdivision:
-     0--1 4
-     | / /|
-     |/ / |
-     2 3--5 *)
+  (* 2 triangles per subdivision: 0--1 4 | / /| |/ / | 2 3--5 *)
   for i = 0 to num_subdivisions - 1 do
     let start_angle = 0.0 in
     let end_angle = Float.pi *. 2.0 in
@@ -113,13 +108,11 @@ struct VSOutput {
 (* Storage buffer layout for static data (color + offset):
    - color: vec4f (4 floats, 16 bytes)
    - offset: vec2f (2 floats, 8 bytes)
-   - padding: 8 bytes (struct alignment)
-   Total per object: 32 bytes *)
+   - padding: 8 bytes (struct alignment) Total per object: 32 bytes *)
 let static_unit_size = 32
 
 (* Storage buffer layout for dynamic data (scale):
-   - scale: vec2f (2 floats, 8 bytes)
-   Total per object: 8 bytes *)
+   - scale: vec2f (2 floats, 8 bytes) Total per object: 8 bytes *)
 let changing_unit_size = 8
 
 let init () =

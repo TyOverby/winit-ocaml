@@ -1,15 +1,14 @@
-(*
-   WebGPU Fundamentals: Multisampling (Center Interpolation Issue)
+(* WebGPU Fundamentals: Multisampling (Center Interpolation Issue)
 
-   This test demonstrates an issue with center-based interpolation when using
-   MSAA. We pass barycentric coordinates from the vertex shader to the fragment
-   shader. The fragment shader checks if these coordinates are within [0,1] for
-   all three components - they should always be inside the triangle.
+   This test demonstrates an issue with center-based interpolation when using MSAA. We
+   pass barycentric coordinates from the vertex shader to the fragment shader. The
+   fragment shader checks if these coordinates are within [0,1] for all three components -
+   they should always be inside the triangle.
 
-   However, with default 'center' interpolation, the GPU interpolates values
-   relative to the pixel center. When the pixel center is outside the triangle
-   (but some samples are inside), the interpolated barycentric coordinates can
-   fall outside [0,1], causing the test to fail and showing yellow pixels.
+   However, with default 'center' interpolation, the GPU interpolates values relative to
+   the pixel center. When the pixel center is outside the triangle (but some samples are
+   inside), the interpolated barycentric coordinates can fall outside [0,1], causing the
+   test to fail and showing yellow pixels.
 
    This is rendered at low resolution to make the issue visible.
 *)

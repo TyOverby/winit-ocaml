@@ -11,8 +11,8 @@ module Rect = struct
 end
 
 type inner =
-  { (* a bigarray of size width*height of int32 where
-       each element represents a pixel in AARRGGBB format *)
+  { (* a bigarray of size width*height of int32 where each element represents a pixel in
+       AARRGGBB format *)
     buffer : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t
   ; width : int
   ; height : int
@@ -49,8 +49,8 @@ let set t ~x ~y v =
 ;;
 
 let blit ~from ~(region : Rect.t) ~to_ ~x:dst_x ~y:dst_y =
-  (* Fast path: full-buffer blit when source and dest are the same size,
-     region covers the entire source, and destination offset is zero. *)
+  (* Fast path: full-buffer blit when source and dest are the same size, region covers the
+     entire source, and destination offset is zero. *)
   let from = Stdlib.Obj.magic_uncontended from.portended in
   let to_ = Stdlib.Obj.magic_uncontended to_.portended in
   let #{ Rect.x = src_x; y = src_y; w; h } = region in

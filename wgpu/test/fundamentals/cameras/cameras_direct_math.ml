@@ -1,13 +1,12 @@
-(*
-   WebGPU Fundamentals: Cameras - Step 1 (Direct Math)
+(* WebGPU Fundamentals: Cameras - Step 1 (Direct Math)
 
    This test demonstrates:
    - A circle of 5 F shapes rendered with perspective projection
    - A camera that orbits around the circle using rotation and translation
    - Depth testing to properly occlude overlapping geometry
 
-   The camera position is computed by rotating around the Y axis and translating
-   along the Z axis. The inverse of this camera matrix becomes the view matrix.
+   The camera position is computed by rotating around the Y axis and translating along the
+   Z axis. The inverse of this camera matrix becomes the view matrix.
 *)
 
 open! Core

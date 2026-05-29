@@ -1,17 +1,16 @@
-(*
-   WebGPU Fundamentals: Storage Buffers (Minimal Changes)
+(* WebGPU Fundamentals: Storage Buffers (Minimal Changes)
 
-   This test demonstrates using storage buffers as a drop-in replacement for
-   uniform buffers. The only changes from uniform buffers are:
+   This test demonstrates using storage buffers as a drop-in replacement for uniform
+   buffers. The only changes from uniform buffers are:
    - Buffer usage: STORAGE instead of UNIFORM
    - WGSL declaration: var<storage, read> instead of var<uniform>
 
-   This approach uses one pair of storage buffers per object, similar to
-   the uniform buffer pattern. It's included to show that storage buffers
-   can be used identically to uniform buffers when needed.
+   This approach uses one pair of storage buffers per object, similar to the uniform
+   buffer pattern. It's included to show that storage buffers can be used identically to
+   uniform buffers when needed.
 
-   Note: Uniform buffers are faster for this use case, but storage buffers
-   can be much larger (128 MiB vs 64 KiB by default) and support read/write.
+   Note: Uniform buffers are faster for this use case, but storage buffers can be much
+   larger (128 MiB vs 64 KiB by default) and support read/write.
 *)
 
 open! Core
@@ -25,14 +24,12 @@ let buffer_size = bytes_per_row * height
 (* Static storage buffer layout (OurStruct):
    - color: vec4f (4 floats, 16 bytes)
    - offset: vec2f (2 floats, 8 bytes)
-   - padding: 8 bytes to align to 16 bytes
-   Total: 32 bytes *)
+   - padding: 8 bytes to align to 16 bytes Total: 32 bytes *)
 let num_static_floats = 8
 let static_storage_buffer_size = num_static_floats * 4
 
 (* Dynamic storage buffer layout (OtherStruct):
-   - scale: vec2f (2 floats, 8 bytes)
-   Total: 8 bytes *)
+   - scale: vec2f (2 floats, 8 bytes) Total: 8 bytes *)
 let num_dynamic_floats = 2
 let dynamic_storage_buffer_size = num_dynamic_floats * 4
 let num_objects = 100

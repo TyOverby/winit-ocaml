@@ -1,14 +1,12 @@
-(*
-   Render Uniform Buffer Test
+(* Render Uniform Buffer Test
 
-   This test demonstrates using uniform buffers with render pipelines.
-   It creates a pipeline with a bind group layout for a uniform buffer,
-   writes color values to the uniform buffer, and verifies that the
-   fragment shader reads and uses those values correctly.
+   This test demonstrates using uniform buffers with render pipelines. It creates a
+   pipeline with a bind group layout for a uniform buffer, writes color values to the
+   uniform buffer, and verifies that the fragment shader reads and uses those values
+   correctly.
 
-   The uniform buffer contains an RGBA color that the fragment shader
-   outputs directly. We test by setting a specific color (magenta) and
-   verifying the rendered output matches.
+   The uniform buffer contains an RGBA color that the fragment shader outputs directly. We
+   test by setting a specific color (magenta) and verifying the rendered output matches.
 *)
 
 open! Core

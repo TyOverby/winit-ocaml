@@ -1,5 +1,4 @@
-(*
-   WebGPU Fundamentals: Cameras - Step 4 (Aim Fs)
+(* WebGPU Fundamentals: Cameras - Step 4 (Aim Fs)
 
    This test demonstrates:
    - The aim function which orients an object to face a target (positive Z toward target)
@@ -384,8 +383,8 @@ let look_at_matrix ~eye ~target ~up =
     1.0
 ;;
 
-(* Aim matrix - positions object at eye, oriented with positive Z toward target
-   This is the opposite direction from cameraAim *)
+(* Aim matrix - positions object at eye, oriented with positive Z toward target This is
+   the opposite direction from cameraAim *)
 let aim_matrix ~eye ~target ~up =
   let open Gg in
   (* Z points from eye toward target (positive Z forward) *)

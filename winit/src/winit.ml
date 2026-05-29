@@ -145,7 +145,13 @@ type window_level =
 (* External C stubs *)
 external create_raw : int -> string -> int -> int -> window = "caml_winit_window_create"
 
-let create ?(window_level = Normal) ?(title = "OCaml Window") ?(width = 800) ?(height = 600) () =
+let create
+  ?(window_level = Normal)
+  ?(title = "OCaml Window")
+  ?(width = 800)
+  ?(height = 600)
+  ()
+  =
   let level =
     match window_level with
     | Always_on_bottom -> 0

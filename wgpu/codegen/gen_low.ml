@@ -507,7 +507,8 @@ let gen_ml_struct (struct_ : Ir.struct_) : string =
       {%string|external %{type_name}_get_%{member.name} : nativeint -> %{ml_type} = "caml_wgpu_%{struct_lower}_get_%{member_lower}"|})
     |> String.concat ~sep:"\n"
   in
-  (* Extension chain functions for extension structs, or nextInChain setter for base structs *)
+  (* Extension chain functions for extension structs, or nextInChain setter for base
+     structs *)
   let chain_exts =
     match struct_.type_ with
     | Ir.Extension_in _ | Ir.Extension_out _ ->

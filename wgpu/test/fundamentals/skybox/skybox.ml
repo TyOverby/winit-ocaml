@@ -1,5 +1,4 @@
-(*
-   WebGPU Fundamentals: Skybox
+(* WebGPU Fundamentals: Skybox
 
    This test demonstrates cubemap textures and skybox rendering:
    - Loading 6 images for the cubemap faces (Leadenhall Market environment)
@@ -111,9 +110,8 @@ let look_at_matrix ~eye ~target ~up =
     1.0
 ;;
 
-(* Convert matrix to bigarray for upload to GPU.
-   Gg stores matrices row-major, WebGPU expects column-major,
-   so we transpose during upload. *)
+(* Convert matrix to bigarray for upload to GPU. Gg stores matrices row-major, WebGPU
+   expects column-major, so we transpose during upload. *)
 let matrix_to_bigarray m =
   let data = Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout 16 in
   for col = 0 to 3 do

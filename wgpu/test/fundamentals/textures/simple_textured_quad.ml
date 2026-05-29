@@ -1,12 +1,11 @@
-(*
-   WebGPU Fundamentals: Simple Textured Quad
+(* WebGPU Fundamentals: Simple Textured Quad
 
-   This test demonstrates basic texture creation and sampling.
-   A 5x7 pixel texture containing a yellow "F" on a red background with
-   a blue corner pixel is applied to a quad covering part of the screen.
+   This test demonstrates basic texture creation and sampling. A 5x7 pixel texture
+   containing a yellow "F" on a red background with a blue corner pixel is applied to a
+   quad covering part of the screen.
 
-   The texture is sampled using a simple sampler with nearest filtering,
-   showing how texture coordinates work.
+   The texture is sampled using a simple sampler with nearest filtering, showing how
+   texture coordinates work.
 *)
 
 open! Core

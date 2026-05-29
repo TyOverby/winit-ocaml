@@ -1,16 +1,14 @@
-(*
-   WebGPU Fundamentals: Orthographic Projection - Ortho Matrix
+(* WebGPU Fundamentals: Orthographic Projection - Ortho Matrix
 
-   This test demonstrates the standard orthographic projection matrix
-   (ortho function) which provides more flexibility than the simple
-   projection function. The ortho function takes left, right, bottom,
-   top, near, and far parameters.
+   This test demonstrates the standard orthographic projection matrix (ortho function)
+   which provides more flexibility than the simple projection function. The ortho function
+   takes left, right, bottom, top, near, and far parameters.
 
    ortho(left, right, bottom, top, near, far)
 
-   This is the standard way to set up orthographic projection in 3D
-   graphics libraries. We demonstrate it by rendering the same 3D F
-   shape as in orthographic_3d_f but using the standard ortho matrix.
+   This is the standard way to set up orthographic projection in 3D graphics libraries. We
+   demonstrate it by rendering the same 3D F shape as in orthographic_3d_f but using the
+   standard ortho matrix.
 
    The ortho matrix maps:
    - x: [left, right] -> [-1, 1]
@@ -337,8 +335,8 @@ let create_vertex_data () =
   vertex_data, num_vertices
 ;;
 
-(* Standard orthographic projection matrix
-   Maps [left,right] x [bottom,top] x [near,far] to [-1,1] x [-1,1] x [0,1] *)
+(* Standard orthographic projection matrix Maps [left,right] x [bottom,top] x [near,far]
+   to [-1,1] x [-1,1] x [0,1] *)
 let ortho_matrix ~left ~right ~bottom ~top ~near ~far =
   let width = right -. left in
   let height = top -. bottom in
@@ -469,9 +467,9 @@ let render
       ~mapped_at_creation:false
       ()
   in
-  (* Use the standard ortho matrix
-     ortho(left=0, right=width, bottom=height, top=0, near=400, far=-400)
-     Note: bottom > top flips Y, and near > far for the depth range we want *)
+  (* Use the standard ortho matrix ortho(left=0, right=width, bottom=height, top=0,
+     near=400, far=-400) Note: bottom > top flips Y, and near > far for the depth range we
+     want *)
   let proj =
     ortho_matrix
       ~left:0.0

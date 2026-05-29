@@ -1,13 +1,11 @@
-(*
-   WebGPU Fundamentals: Inter-Stage Variables - RGB Triangle
+(* WebGPU Fundamentals: Inter-Stage Variables - RGB Triangle
 
-   This test demonstrates inter-stage variables in WebGPU. The vertex shader
-   outputs both position (@builtin(position)) and color (@location(0)) as
-   a struct. The fragment shader receives the interpolated color values
-   and uses them directly.
+   This test demonstrates inter-stage variables in WebGPU. The vertex shader outputs both
+   position (@builtin(position)) and color (@location(0)) as a struct. The fragment shader
+   receives the interpolated color values and uses them directly.
 
-   The GPU automatically interpolates the color values across the triangle,
-   creating a smooth gradient between the red, green, and blue vertices.
+   The GPU automatically interpolates the color values across the triangle, creating a
+   smooth gradient between the red, green, and blue vertices.
 *)
 
 open! Core

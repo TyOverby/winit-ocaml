@@ -153,7 +153,13 @@ type window_level =
     @param title The window title. Default is ["OCaml Window"].
     @param width The initial logical width in pixels. Default is [800].
     @param height The initial logical height in pixels. Default is [600]. *)
-val create : ?window_level:window_level -> ?title:string -> ?width:int -> ?height:int -> unit -> window
+val create
+  :  ?window_level:window_level
+  -> ?title:string
+  -> ?width:int
+  -> ?height:int
+  -> unit
+  -> window
 
 (** Pump events from the window system. This polls for new events and returns them as a
     list. Should be called regularly (e.g., once per frame) to keep the window responsive. *)

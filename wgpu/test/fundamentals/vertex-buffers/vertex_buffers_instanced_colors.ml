@@ -1,8 +1,7 @@
-(*
-   WebGPU Fundamentals: Vertex Buffers with Instanced Colors
+(* WebGPU Fundamentals: Vertex Buffers with Instanced Colors
 
-   This test demonstrates instanced vertex attributes in WebGPU.
-   We render 100 colored circles using only vertex buffers (no storage buffers):
+   This test demonstrates instanced vertex attributes in WebGPU. We render 100 colored
+   circles using only vertex buffers (no storage buffers):
    - A vertex buffer with position data (stepped per vertex)
    - A vertex buffer with color and offset (stepped per instance)
    - A vertex buffer with scale (stepped per instance)
@@ -91,13 +90,11 @@ struct VSOutput {
 
 (* Static vertex buffer layout (color + offset):
    - color: vec4f (4 floats, 16 bytes)
-   - offset: vec2f (2 floats, 8 bytes)
-   Total per instance: 24 bytes *)
+   - offset: vec2f (2 floats, 8 bytes) Total per instance: 24 bytes *)
 let static_unit_size = 24
 
 (* Changing vertex buffer layout (scale):
-   - scale: vec2f (2 floats, 8 bytes)
-   Total per instance: 8 bytes *)
+   - scale: vec2f (2 floats, 8 bytes) Total per instance: 8 bytes *)
 let changing_unit_size = 8
 
 let init () =

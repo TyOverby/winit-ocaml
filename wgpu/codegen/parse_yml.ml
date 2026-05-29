@@ -17,9 +17,9 @@ let get_string_opt (yaml : Yaml.value) key =
      | Some (`String s) -> Some s
      | Some `Null -> None
      | Some (`Bool b) ->
-       (* YAML parses y/n/yes/no/on/off/true/false as bools.
-          For names, y and n are common single-letter field names (coordinates).
-          Map back to single letters when appropriate. *)
+       (* YAML parses y/n/yes/no/on/off/true/false as bools. For names, y and n are common
+          single-letter field names (coordinates). Map back to single letters when
+          appropriate. *)
        Some (if b then "y" else "n")
      | Some (`Float f) -> Some (Float.to_string f)
      | Some _ -> None

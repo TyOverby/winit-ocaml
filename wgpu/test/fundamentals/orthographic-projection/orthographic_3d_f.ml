@@ -1,5 +1,4 @@
-(*
-   WebGPU Fundamentals: Orthographic Projection - 3D F
+(* WebGPU Fundamentals: Orthographic Projection - 3D F
 
    This test demonstrates orthographic projection with a 3D "F" shape:
    - 3D vertex positions (x, y, z)
@@ -8,8 +7,8 @@
    - Depth testing with depth texture
    - Orthographic projection matrix
 
-   The F shape has 16 faces (rectangles) forming a 3D letter F.
-   Each face has a distinct color to make the 3D structure visible.
+   The F shape has 16 faces (rectangles) forming a 3D letter F. Each face has a distinct
+   color to make the 3D structure visible.
 
    We render at multiple rotation angles to show the 3D nature.
 *)
@@ -300,7 +299,8 @@ let quad_colors =
 (* Build vertex data: for each index, copy position and add color based on quad *)
 let create_vertex_data () =
   let num_vertices = Array.length indices in
-  (* Each vertex: 3 floats for position + 1 float (4 bytes as unorm8x4 for color) = 4 floats *)
+  (* Each vertex: 3 floats for position + 1 float (4 bytes as unorm8x4 for color) = 4
+     floats *)
   let vertex_data =
     Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout (num_vertices * 4)
   in
@@ -344,13 +344,11 @@ let create_vertex_data () =
   vertex_data, num_vertices
 ;;
 
-(* Orthographic projection matrix that converts pixel coordinates to clip space.
-   This matrix flips Y so 0 is at the top. *)
+(* Orthographic projection matrix that converts pixel coordinates to clip space. This
+   matrix flips Y so 0 is at the top. *)
 let projection_matrix ~width ~height ~depth =
-  (* Maps:
-     x: [0, width] -> [-1, 1]
-     y: [0, height] -> [1, -1] (flipped)
-     z: [-depth/2, depth/2] -> [0, 1] *)
+  (* Maps: x: [0, width] -> [-1, 1] y: [0, height] -> [1, -1] (flipped) z:
+     [-depth/2, depth/2] -> [0, 1] *)
   Gg.M4.v
     (2.0 /. width)
     0.0
@@ -486,7 +484,8 @@ let render
       ~mapped_at_creation:false
       ()
   in
-  (* Compute transformation matrix: projection * translate * rotateX * rotateY * rotateZ * scale *)
+  (* Compute transformation matrix: projection * translate * rotateX * rotateY * rotateZ *
+     scale *)
   let proj =
     projection_matrix
       ~width:(Float.of_int width)

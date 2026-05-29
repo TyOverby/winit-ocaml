@@ -1,5 +1,4 @@
-(*
-   WebGPU Fundamentals: Compute Shaders - Builtins
+(* WebGPU Fundamentals: Compute Shaders - Builtins
 
    This test demonstrates the compute shader builtin values:
    - workgroup_id: The ID of the workgroup (same for all threads in a workgroup)
@@ -8,11 +7,11 @@
    - local_invocation_index: Linearized version of local_invocation_id
    - num_workgroups: The dispatch count passed to dispatchWorkgroups
 
-   We dispatch 4x3x2 workgroups, each with 2x3x4 threads, for a total of
-   24 workgroups * 24 threads/workgroup = 576 threads.
+   We dispatch 4x3x2 workgroups, each with 2x3x4 threads, for a total of 24 workgroups *
+   24 threads/workgroup = 576 threads.
 
-   Each thread writes its workgroup_id, local_invocation_id, and global_invocation_id
-   to storage buffers, which we then read back and print.
+   Each thread writes its workgroup_id, local_invocation_id, and global_invocation_id to
+   storage buffers, which we then read back and print.
 *)
 
 open! Core

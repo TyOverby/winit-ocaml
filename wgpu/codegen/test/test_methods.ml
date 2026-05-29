@@ -470,8 +470,8 @@ methods:
 ;;
 
 (* ===== Test methods with struct parameters ===== *)
-(* These tests require struct context which is harder to express in simple YAML,
-   so we keep them as direct IR for now *)
+(* These tests require struct context which is harder to express in simple YAML, so we
+   keep them as direct IR for now *)
 
 let simple_descriptor_struct : Ir.struct_ =
   { name = "buffer_descriptor"
