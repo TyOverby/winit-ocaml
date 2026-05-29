@@ -18,25 +18,32 @@ fn modulate(shape, freq, amp) {
   }
 }
 
+fn union(f, g) {
+  fn(x, y) {
+    min(f(x, y), g(x, y))
+  }
+}
+
 // Smooth union of two SDFs.
 // Blends the surfaces together with smoothing radius k.
 fn smooth_union(a, b, k) {
-  fn(x, y) {
-    let d1 = a(x, y);
-    let d2 = b(x, y);
-    let k_scaled = k * 4;
-    let h = max(k_scaled - abs(d1 - d2), 0);
-    min(d1, d2) - h * h * 0.25 / k_scaled
+  if k <= 0 {
+    union(a, b)
+  } else {
+    fn(x, y) {
+      let d1 = a(x, y);
+      let d2 = b(x, y);
+      let k_scaled = k * 4;
+      let h = max(k_scaled - abs(d1 - d2), 0);
+      min(d1, d2) - h * h * 0.25 / k_scaled
+    }
   }
 }
 
 let c1 = circle(150, 150, 80);
 let c2 = circle(250, 200, 80);
-let scene = smooth_union(c1, c2, 1).modulate(5, 5);
+let scene = smooth_union(c1, c2, 10.0).modulate(5, 5);
 
 let x : float = var("x");
-let x = x / 2;
 let y : float = var("y");
-let y = y / 2;
-
-export scene(x, y);
+export scene(x / 2, y / 2);
