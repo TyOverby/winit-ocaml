@@ -1,23 +1,26 @@
 open! Core
 
-type register_bank = int32# array array
-type variable_bank = int32# array array
+module Register_bank = struct
+  type t = int32# array array
 
-let create_register_bank ~register_count ~width =
-  Array.init register_count ~f:(fun _ -> Array.create ~len:width #0l)
-;;
+  let create ~register_count ~width =
+    Array.init register_count ~f:(fun _ -> Array.create ~len:width #0l)
+  ;;
 
-let create_variable_bank ~num_vars ~width =
-  Array.init num_vars ~f:(fun _ -> Array.create ~len:width #0l)
-;;
+  let get_result t ~reg ~px = Value.of_int (Array.unsafe_get (Array.unsafe_get t reg) px)
+end
 
-let set_variable bank ~var ~px value =
-  Array.unsafe_set (Array.unsafe_get bank var) px (Value.to_int value)
-;;
+module Variable_bank = struct
+  type t = int32# array array
 
-let get_result bank ~reg ~px =
-  Value.of_int (Array.unsafe_get (Array.unsafe_get bank reg) px)
-;;
+  let create ~num_vars ~width =
+    Array.init num_vars ~f:(fun _ -> Array.create ~len:width #0l)
+  ;;
+
+  let set_variable t ~var ~px value =
+    Array.unsafe_set (Array.unsafe_get t var) px (Value.to_int value)
+  ;;
+end
 
 (* SIMD helpers: load/store 4 pixels at a time *)
 let[@inline always] load_f (arr : int32# array) (px : int) : float32x4# =
@@ -58,7 +61,7 @@ let copy_array (src : int32# array) (dst : int32# array) ~width =
 ;;
 
 (* SIMD-only run: assumes width is a multiple of 4 *)
-let rec run_simd ~variable_bank ~instructions ~(register_bank : register_bank) ~width =
+let rec run_simd ~variable_bank ~instructions ~(register_bank : Register_bank.t) ~width =
   let len = Iarray.length instructions in
   for i = 0 to len - 1 do
     let out, instruction = Iarray.unsafe_get instructions i in

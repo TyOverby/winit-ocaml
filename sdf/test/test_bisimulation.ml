@@ -156,10 +156,10 @@ let eval_with_batch tree ~x ~y =
     Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count
   in
   let register_bank =
-    Expr_graph_batch_eval.create_register_bank ~register_count ~width:1
+    Expr_graph_batch_eval.Register_bank.create ~register_count ~width:1
   in
   let variable_bank =
-    Expr_graph_batch_eval.create_variable_bank
+    Expr_graph_batch_eval.Variable_bank.create
       ~num_vars:(Hashtbl.length var_mapping)
       ~width:1
   in
@@ -170,9 +170,9 @@ let eval_with_batch tree ~x ~y =
       | "y" -> Value.of_float (Float32_u.of_float y)
       | other -> value_failwith ("unexpected variable: " ^ other)
     in
-    Expr_graph_batch_eval.set_variable variable_bank ~var:idx ~px:0 value);
+    Expr_graph_batch_eval.Variable_bank.set_variable variable_bank ~var:idx ~px:0 value);
   Expr_graph_batch_eval.run ~variable_bank ~instructions ~register_bank ~width:1;
-  Expr_graph_batch_eval.get_result register_bank ~reg:final_register ~px:0
+  Expr_graph_batch_eval.Register_bank.get_result register_bank ~reg:final_register ~px:0
 ;;
 
 let format_value v (type_ : Expr_tree.Type.t) =

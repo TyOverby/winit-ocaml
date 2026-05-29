@@ -58,16 +58,20 @@ let run_one ~source ~filename ~strategy =
         done
       | Batch ->
         let register_bank =
-          Sdf.Expr_graph_batch_eval.create_register_bank ~register_count ~width:grid_width
+          Sdf.Expr_graph_batch_eval.Register_bank.create ~register_count ~width:grid_width
         in
         let variable_bank =
-          Sdf.Expr_graph_batch_eval.create_variable_bank ~num_vars ~width:grid_width
+          Sdf.Expr_graph_batch_eval.Variable_bank.create ~num_vars ~width:grid_width
         in
         for y = 0 to grid_height - 1 do
           let y_val = Sdf.Value.of_float (Float32_u.of_float (Float.of_int y)) in
           for x = 0 to grid_width - 1 do
-            Sdf.Expr_graph_batch_eval.set_variable variable_bank ~var:y_idx ~px:x y_val;
-            Sdf.Expr_graph_batch_eval.set_variable
+            Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
+              variable_bank
+              ~var:y_idx
+              ~px:x
+              y_val;
+            Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
               variable_bank
               ~var:x_idx
               ~px:x
