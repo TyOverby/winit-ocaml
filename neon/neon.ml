@@ -85,15 +85,19 @@ let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_schedu
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
       let register_bank =
-        Sdf.Expr_graph_batch_eval.create_register_bank ~register_count ~width
+        Sdf.Expr_graph_batch_eval.Register_bank.create ~register_count ~width
       in
       let variable_bank =
-        Sdf.Expr_graph_batch_eval.create_variable_bank ~num_vars ~width
+        Sdf.Expr_graph_batch_eval.Variable_bank.create ~num_vars ~width
       in
       let y_val = Sdf.Value.of_float (Float32_u.of_float (Float.of_int y)) in
       for x = 0 to width - 1 do
-        Sdf.Expr_graph_batch_eval.set_variable variable_bank ~var:y_idx ~px:x y_val;
-        Sdf.Expr_graph_batch_eval.set_variable
+        Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
+          variable_bank
+          ~var:y_idx
+          ~px:x
+          y_val;
+        Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
           variable_bank
           ~var:x_idx
           ~px:x
@@ -102,7 +106,10 @@ let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_schedu
       Sdf.Expr_graph_batch_eval.run ~variable_bank ~instructions ~register_bank ~width;
       for x = 0 to width - 1 do
         let value =
-          Sdf.Expr_graph_batch_eval.get_result register_bank ~reg:final_register ~px:x
+          Sdf.Expr_graph_batch_eval.Register_bank.get_result
+            register_bank
+            ~reg:final_register
+            ~px:x
         in
         let dist = Float32_u.to_float (Sdf.Value.to_float value) in
         if Float.(dist <= 0.0)
