@@ -20,9 +20,9 @@ let instr_inputs (instr : Expr_graph.instr) : Expr_graph.Register.t list =
   | Condition { cond; then_ = _; else_ = _ } -> [ cond ]
 ;;
 
-(* Returns the set of registers used as inputs within [instrs] (recursively
-   through nested Condition branches) that are NOT defined within [instrs].
-   These are registers that must come from an outer scope. *)
+(* Returns the set of registers used as inputs within [instrs] (recursively through nested
+   Condition branches) that are NOT defined within [instrs]. These are registers that must
+   come from an outer scope. *)
 let rec collect_outer_inputs (instrs : Expr_graph.t) : Int.Set.t =
   let defined = Int.Set.of_array (Iarray.to_array (Iarray.map instrs ~f:fst)) in
   let outer = ref Int.Set.empty in
@@ -37,14 +37,14 @@ let rec collect_outer_inputs (instrs : Expr_graph.t) : Int.Set.t =
   !outer
 ;;
 
-(* For each register DEFINED in [instructions] that is also used as an input,
-   compute the index of the instruction where it is last used. Only registers
-   that are defined in this block are tracked — outer-scope registers (used but
-   not defined here) are managed by the enclosing scope.
+(* For each register DEFINED in [instructions] that is also used as an input, compute the
+   index of the instruction where it is last used. Only registers that are defined in this
+   block are tracked — outer-scope registers (used but not defined here) are managed by
+   the enclosing scope.
 
-   Uses of outer-scope registers inside Condition branches are attributed to
-   the position of the Condition instruction, so that the enclosing scope
-   keeps those registers alive through the branch. *)
+   Uses of outer-scope registers inside Condition branches are attributed to the position
+   of the Condition instruction, so that the enclosing scope keeps those registers alive
+   through the branch. *)
 let compute_last_use (instructions : Expr_graph.t) : int Int.Table.t =
   let defined = Int.Set.of_array (Iarray.to_array (Iarray.map instructions ~f:fst)) in
   let last_use = Int.Table.create () in
@@ -84,9 +84,8 @@ let lookup state r =
   | None -> raise_s [%message "register not mapped" (r : int)]
 ;;
 
-(* Rewrite an instruction's register operands using the mapping. Condition
-   branches are NOT translated here; they are handled separately by the
-   block-level processing. *)
+(* Rewrite an instruction's register operands using the mapping. Condition branches are
+   NOT translated here; they are handled separately by the block-level processing. *)
 let translate_instr state (instr : Expr_graph.instr) : Expr_graph.instr =
   let l = lookup state in
   match instr with
@@ -117,10 +116,10 @@ let translate_instr state (instr : Expr_graph.instr) : Expr_graph.instr =
     Condition { cond = l cond; then_; else_ }
 ;;
 
-(* Process a branch (then_ or else_ of a Condition). Creates a copy of the
-   outer state so that the branch's local allocations do not interfere with
-   the outer scope or the sibling branch. Returns the minimized branch
-   instructions and the high-water mark for next_reg. *)
+(* Process a branch (then_ or else_ of a Condition). Creates a copy of the outer state so
+   that the branch's local allocations do not interfere with the outer scope or the
+   sibling branch. Returns the minimized branch instructions and the high-water mark for
+   next_reg. *)
 let rec minimize_branch state (instructions : Expr_graph.t) : Expr_graph.t * int =
   let branch_state =
     { mapping = Hashtbl.copy state.mapping
@@ -131,14 +130,14 @@ let rec minimize_branch state (instructions : Expr_graph.t) : Expr_graph.t * int
   let result = minimize_block branch_state instructions in
   result, !(branch_state.next_reg)
 
-(* Forward pass over an instruction block. Allocates physical registers for
-   outputs, translates operands, and frees registers after their last use. *)
+(* Forward pass over an instruction block. Allocates physical registers for outputs,
+   translates operands, and frees registers after their last use. *)
 and minimize_block state (instructions : Expr_graph.t) : Expr_graph.t =
   let last_use = compute_last_use instructions in
   let result = ref [] in
   Iarray.iteri instructions ~f:(fun pos (out, instr) ->
-    (* Allocate the output register. If [out] already has a mapping (e.g.
-       a branch writing to the Condition's output register), reuse it. *)
+    (* Allocate the output register. If [out] already has a mapping (e.g. a branch writing
+       to the Condition's output register), reuse it. *)
     let new_out =
       match Hashtbl.find state.mapping out with
       | Some r -> r

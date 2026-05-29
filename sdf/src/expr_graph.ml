@@ -92,7 +92,10 @@ let from_tree tree =
       incr next;
       r
   in
-  let rec loop (tree : Expr_tree.t) ~(instrs : (Register.t * instr) list) ~(env : Bindings.t)
+  let rec loop
+    (tree : Expr_tree.t)
+    ~(instrs : (Register.t * instr) list)
+    ~(env : Bindings.t)
     : instrs:(Register.t * instr) list * env:Bindings.t * Register.t
     =
     match Bindings.lookup env tree with

@@ -1,9 +1,8 @@
 open! Core
 
-(* Shadow Float32_u with bitwise comparison for CSE correctness.
-   IEEE 754 treats -0.0 = +0.0, but they have different bit patterns
-   and different semantics (e.g., 1/+0 = +inf, 1/-0 = -inf), so the
-   expression tree's equality must distinguish them. *)
+(* Shadow Float32_u with bitwise comparison for CSE correctness. IEEE 754 treats -0.0 =
+   +0.0, but they have different bit patterns and different semantics (e.g., 1/+0 = +inf,
+   1/-0 = -inf), so the expression tree's equality must distinguish them. *)
 module Float32_u = struct
   include Float32_u
 
@@ -22,11 +21,10 @@ module Source_code_position = struct
   type t = Source_code_position.t [@@deriving sexp_of, hash]
 
   (* Ignore source positions in structural comparison so that CSE in
-     [Expr_graph.from_tree] can merge identical subexpressions regardless
-     of where they were defined. *)
+     [Expr_graph.from_tree] can merge identical subexpressions regardless of where they
+     were defined. *)
   let equal _ _ = true
   let compare _ _ = 0
-
   let quickcheck_generator = Quickcheck.Generator.return Stdlib.Lexing.dummy_pos
 
   let quickcheck_observer =

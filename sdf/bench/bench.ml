@@ -58,9 +58,7 @@ let run_one ~source ~filename ~strategy =
         done
       | Batch ->
         let register_bank =
-          Sdf.Expr_graph_batch_eval.create_register_bank
-            ~register_count
-            ~width:grid_width
+          Sdf.Expr_graph_batch_eval.create_register_bank ~register_count ~width:grid_width
         in
         let variable_bank =
           Sdf.Expr_graph_batch_eval.create_variable_bank ~num_vars ~width:grid_width
@@ -141,77 +139,86 @@ let () =
               eprintf "Unknown strategy: %s (expected pixel or batch)\n" s;
               exit 1
           in
-  let files = discover_neo_files dir in
-  if List.is_empty files
-  then (
-    eprintf "No .neo files found in %s\n" dir;
-    exit 1);
-  (* Estimation pass: run each benchmark once *)
-  eprintf "Running estimation pass...\n%!";
-  let benchmarks =
-    List.map files ~f:(fun path ->
-      let name = Filename.basename path in
-      let source = In_channel.read_all path in
-      let est = run_one ~source ~filename:path ~strategy in
-      let est_total = est.parse_and_compile_s +. est.tree_to_graph_s +. est.eval_grid_s in
-      eprintf "  %s: %.3fms\n%!" name (est_total *. 1e3);
-      name, source, path, est, est_total)
-  in
-  let total_est = List.sum (module Float) benchmarks ~f:(fun (_, _, _, _, t) -> t) in
-  let iterations = Int.max 1 (int_of_float (budget /. total_est)) in
-  eprintf
-    "Estimated time per pass: %.3fms\nRunning %d iterations...\n%!"
-    (total_est *. 1e3)
-    iterations;
-  (* Benchmark pass *)
-  let results =
-    List.map benchmarks ~f:(fun (name, source, path, est, _) ->
-      eprintf "  %s: %d iterations... %!" name iterations;
-      let timings = List.init iterations ~f:(fun _ -> run_one ~source ~filename:path ~strategy) in
-      eprintf "done\n%!";
-      let all_timings = est :: timings in
-      let n = List.length all_timings in
-      let parse_samples = List.map all_timings ~f:(fun t -> t.parse_and_compile_s) in
-      let graph_samples = List.map all_timings ~f:(fun t -> t.tree_to_graph_s) in
-      let eval_samples = List.map all_timings ~f:(fun t -> t.eval_grid_s) in
-      let total_samples =
-        List.map all_timings ~f:(fun t ->
-          t.parse_and_compile_s +. t.tree_to_graph_s +. t.eval_grid_s)
-      in
-      { Bench_types.Benchmark_result.name
-      ; iterations = n
-      ; parse_and_compile = compute_stats parse_samples
-      ; tree_to_graph = compute_stats graph_samples
-      ; eval_grid = compute_stats eval_samples
-      ; total = compute_stats total_samples
-      })
-  in
-  let suite =
-    { Bench_types.Suite_result.benchmarks = results
-    ; time_budget_s = budget
-    ; grid_width
-    ; grid_height
-    }
-  in
-  if dump_sexp
-  then print_s [%sexp (suite : Bench_types.Suite_result.t)]
-  else
-    List.iter results ~f:(fun b ->
-      printf "=== %s (%d iterations) ===\n" b.name b.iterations;
-      let print_stat label (s : Bench_types.Stats.t) =
-        printf
-          "  %-20s  mean: %10.3fms  stddev: %10.3fms  min: %10.3fms  max: \
-           %10.3fms  median: %10.3fms\n"
-          label
-          (s.mean_s *. 1e3)
-          (s.stddev_s *. 1e3)
-          (s.min_s *. 1e3)
-          (s.max_s *. 1e3)
-          (s.median_s *. 1e3)
-      in
-      print_stat "parse+compile" b.parse_and_compile;
-      print_stat "tree->graph" b.tree_to_graph;
-      print_stat "eval (1000x1000)" b.eval_grid;
-      print_stat "total" b.total;
-      printf "\n")))
+          let files = discover_neo_files dir in
+          if List.is_empty files
+          then (
+            eprintf "No .neo files found in %s\n" dir;
+            exit 1);
+          (* Estimation pass: run each benchmark once *)
+          eprintf "Running estimation pass...\n%!";
+          let benchmarks =
+            List.map files ~f:(fun path ->
+              let name = Filename.basename path in
+              let source = In_channel.read_all path in
+              let est = run_one ~source ~filename:path ~strategy in
+              let est_total =
+                est.parse_and_compile_s +. est.tree_to_graph_s +. est.eval_grid_s
+              in
+              eprintf "  %s: %.3fms\n%!" name (est_total *. 1e3);
+              name, source, path, est, est_total)
+          in
+          let total_est =
+            List.sum (module Float) benchmarks ~f:(fun (_, _, _, _, t) -> t)
+          in
+          let iterations = Int.max 1 (int_of_float (budget /. total_est)) in
+          eprintf
+            "Estimated time per pass: %.3fms\nRunning %d iterations...\n%!"
+            (total_est *. 1e3)
+            iterations;
+          (* Benchmark pass *)
+          let results =
+            List.map benchmarks ~f:(fun (name, source, path, est, _) ->
+              eprintf "  %s: %d iterations... %!" name iterations;
+              let timings =
+                List.init iterations ~f:(fun _ ->
+                  run_one ~source ~filename:path ~strategy)
+              in
+              eprintf "done\n%!";
+              let all_timings = est :: timings in
+              let n = List.length all_timings in
+              let parse_samples =
+                List.map all_timings ~f:(fun t -> t.parse_and_compile_s)
+              in
+              let graph_samples = List.map all_timings ~f:(fun t -> t.tree_to_graph_s) in
+              let eval_samples = List.map all_timings ~f:(fun t -> t.eval_grid_s) in
+              let total_samples =
+                List.map all_timings ~f:(fun t ->
+                  t.parse_and_compile_s +. t.tree_to_graph_s +. t.eval_grid_s)
+              in
+              { Bench_types.Benchmark_result.name
+              ; iterations = n
+              ; parse_and_compile = compute_stats parse_samples
+              ; tree_to_graph = compute_stats graph_samples
+              ; eval_grid = compute_stats eval_samples
+              ; total = compute_stats total_samples
+              })
+          in
+          let suite =
+            { Bench_types.Suite_result.benchmarks = results
+            ; time_budget_s = budget
+            ; grid_width
+            ; grid_height
+            }
+          in
+          if dump_sexp
+          then print_s [%sexp (suite : Bench_types.Suite_result.t)]
+          else
+            List.iter results ~f:(fun b ->
+              printf "=== %s (%d iterations) ===\n" b.name b.iterations;
+              let print_stat label (s : Bench_types.Stats.t) =
+                printf
+                  "  %-20s  mean: %10.3fms  stddev: %10.3fms  min: %10.3fms  max: \
+                   %10.3fms  median: %10.3fms\n"
+                  label
+                  (s.mean_s *. 1e3)
+                  (s.stddev_s *. 1e3)
+                  (s.min_s *. 1e3)
+                  (s.max_s *. 1e3)
+                  (s.median_s *. 1e3)
+              in
+              print_stat "parse+compile" b.parse_and_compile;
+              print_stat "tree->graph" b.tree_to_graph;
+              print_stat "eval (1000x1000)" b.eval_grid;
+              print_stat "total" b.total;
+              printf "\n")))
 ;;

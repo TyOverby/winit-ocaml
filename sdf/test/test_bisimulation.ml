@@ -13,11 +13,10 @@ let value_failwith msg =
   Value.of_bool false
 ;;
 
-(* Well-typed expression tree generators.
-   The derived [quickcheck] on [Expr_tree.t] is not exported (the types are private
-   in the .mli) and would produce ill-typed trees anyway (e.g. [Add] of two bools).
-   These generators produce only correctly-typed trees by construction, using the
-   smart constructors. *)
+(* Well-typed expression tree generators. The derived [quickcheck] on [Expr_tree.t] is not
+   exported (the types are private in the .mli) and would produce ill-typed trees anyway
+   (e.g. [Add] of two bools). These generators produce only correctly-typed trees by
+   construction, using the smart constructors. *)
 
 let rec gen_float_expr ~depth =
   let open Quickcheck.Generator.Let_syntax in
@@ -358,9 +357,9 @@ let%expect_test "div by zero in else branch, taking then branch" =
 ;;
 
 let%expect_test "original quickcheck failure - simplified" =
-  (* From the quickcheck counterexample: the outer cond's condition is true,
-     so we should get the then branch (x), but the graph evaluator returned
-     +infinity from the else branch. *)
+  (* From the quickcheck counterexample: the outer cond's condition is true, so we should
+     get the then branch (x), but the graph evaluator returned +infinity from the else
+     branch. *)
   let tree =
     cond
       ~condition:
@@ -386,10 +385,9 @@ let%expect_test "original quickcheck failure - simplified" =
   [%expect {| -0.267355561 |}]
 ;;
 
-(* Regression test: CSE must distinguish -0.0 from +0.0.
-   An expression using both -0.0 and +0.0 as literals must not have them
-   merged by CSE, since they produce different results via division
-   (1/+0 = +inf, 1/-0 = -inf). *)
+(* Regression test: CSE must distinguish -0.0 from +0.0. An expression using both -0.0 and
+   +0.0 as literals must not have them merged by CSE, since they produce different results
+   via division (1/+0 = +inf, 1/-0 = -inf). *)
 
 let pp tree =
   let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
@@ -445,18 +443,16 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
     |}]
 ;;
 
-(* Regression: an outer-scope variable used inside a cond branch must not
-   be freed by the branch. This tree compiles into two sequential Condition
-   instructions that both reference x's register:
+(* Regression: an outer-scope variable used inside a cond branch must not be freed by the
+   branch. This tree compiles into two sequential Condition instructions that both
+   reference x's register:
 
-     $x  <- var(0)
-     ...
-     $r1 <- cond ...          ← inner cond; then-branch uses $x then does more work
-     $r0 <- cond $r1          ← outer cond; then-branch uses $x via neg
+   $x <- var(0) ... $r1 <- cond ... ← inner cond; then-branch uses $x then does more work
+   $r0 <- cond $r1 ← outer cond; then-branch uses $x via neg
 
-   Without the fix, the inner then-branch would free $x after its last local
-   use, allowing later allocations inside the branch to clobber it. When the
-   outer then-branch reads $x for [neg], it gets the wrong value. *)
+   Without the fix, the inner then-branch would free $x after its last local use, allowing
+   later allocations inside the branch to clobber it. When the outer then-branch reads $x
+   for [neg], it gets the wrong value. *)
 let pp_minimized tree =
   let ~instructions, ~final_register, ~register_count, ~var_mapping:_ =
     Expr_graph.from_tree tree
@@ -480,8 +476,8 @@ let%expect_test "outer var survives register pressure in cond branch (minimized)
       ~then_:(neg x)
       ~else_:(f #0.0s)
   in
-  (* The minimized graph should keep $0 (x) alive through both conditions.
-     In the inner then-branch, $0 must NOT be freed and reused. *)
+  (* The minimized graph should keep $0 (x) alive through both conditions. In the inner
+     then-branch, $0 must NOT be freed and reused. *)
   pp_minimized tree;
   [%expect
     {|
