@@ -2,6 +2,7 @@ opam
 _opam
 target
 _build
+.DS_Store
 
 *.png
 !*.expected.png
