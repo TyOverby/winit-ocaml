@@ -161,11 +161,7 @@ and minimize_block state (instructions : Expr_graph.t) : Expr_graph.t =
     result := (new_out, new_instr) :: !result;
     (* Free registers whose last use is at this position *)
     Hashtbl.iteri last_use ~f:(fun ~key:reg ~data:last_pos ->
-      if last_pos = pos
-      then (
-        match Hashtbl.find state.mapping reg with
-        | Some phys -> free state phys
-        | None -> ())));
+      if last_pos = pos then Option.iter (Hashtbl.find state.mapping reg) ~f:(free state)));
   Iarray.of_list_rev !result
 ;;
 
