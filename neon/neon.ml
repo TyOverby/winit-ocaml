@@ -32,8 +32,8 @@ type compiled_sdf =
   { instructions : (int * Sdf.Expr_graph.instr) iarray
   ; final_register : int
   ; register_count : int
-  ; x_idx : int
-  ; y_idx : int
+  ; x_idx : int Option.t
+  ; y_idx : int Option.t
   ; num_vars : int
   }
 
@@ -50,8 +50,8 @@ let compile_sdf_from_source ~scene_file source =
       ~register_count
   in
   Printf.printf "registers after minimization:  %d\n%!" register_count;
-  let x_idx = Hashtbl.find_exn var_mapping "x" in
-  let y_idx = Hashtbl.find_exn var_mapping "y" in
+  let x_idx = Hashtbl.find var_mapping "x" in
+  let y_idx = Hashtbl.find var_mapping "y" in
   let num_vars = Hashtbl.length var_mapping in
   { instructions; final_register; register_count; x_idx; y_idx; num_vars }
 ;;
@@ -92,16 +92,18 @@ let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_schedu
       in
       let y_val = Sdf.Value.of_float (Float32_u.of_float (Float.of_int y)) in
       for x = 0 to width - 1 do
-        Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
-          variable_bank
-          ~var:y_idx
-          ~px:x
-          y_val;
-        Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
-          variable_bank
-          ~var:x_idx
-          ~px:x
-          (Sdf.Value.of_float (Float32_u.of_float (Float.of_int x)))
+        Option.iter y_idx ~f:(fun y_idx ->
+          Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
+            variable_bank
+            ~var:y_idx
+            ~px:x
+            y_val);
+        Option.iter x_idx ~f:(fun x_idx ->
+          Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
+            variable_bank
+            ~var:x_idx
+            ~px:x
+            (Sdf.Value.of_float (Float32_u.of_float (Float.of_int x))))
       done;
       Sdf.Expr_graph_batch_eval.run ~variable_bank ~instructions ~register_bank ~width;
       for x = 0 to width - 1 do
