@@ -492,8 +492,8 @@ let%expect_test "outer var survives register pressure in cond branch (minimized)
         $3 <- 3.
         $5 <- 4.
         $6 <- mul $3 $5
-        $3 <- lt $4 $6
-        $1 <- $3
+        $5 <- lt $4 $6
+        $1 <- $5
       else:
         $3 <- false
         $1 <- $3

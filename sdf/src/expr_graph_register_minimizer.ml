@@ -61,14 +61,14 @@ let compute_last_use (instructions : Expr_graph.t) : int Int.Table.t =
 
 type state =
   { mapping : int Int.Table.t
-  ; free_pool : Int.Set.t ref
+  ; free_pool : Int.Hash_set.t
   ; next_reg : int ref
   }
 
 let alloc state =
-  match Set.min_elt !(state.free_pool) with
+  match Hash_set.find state.free_pool ~f:(Fn.const true) with
   | Some r ->
-    state.free_pool := Set.remove !(state.free_pool) r;
+    Hash_set.remove state.free_pool r;
     r
   | None ->
     let r = !(state.next_reg) in
@@ -76,7 +76,7 @@ let alloc state =
     r
 ;;
 
-let free state r = state.free_pool := Set.add !(state.free_pool) r
+let free state r = Hash_set.add state.free_pool r
 
 let lookup state r =
   match Hashtbl.find state.mapping r with
@@ -123,7 +123,7 @@ let translate_instr state (instr : Expr_graph.instr) : Expr_graph.instr =
 let rec minimize_branch state (instructions : Expr_graph.t) : Expr_graph.t * int =
   let branch_state =
     { mapping = Hashtbl.copy state.mapping
-    ; free_pool = ref !(state.free_pool)
+    ; free_pool = Hash_set.copy state.free_pool
     ; next_reg = ref !(state.next_reg)
     }
   in
@@ -171,7 +171,10 @@ and minimize_block state (instructions : Expr_graph.t) : Expr_graph.t =
 
 let minimize ~instructions ~final_register ~register_count:_ =
   let state =
-    { mapping = Int.Table.create (); free_pool = ref Int.Set.empty; next_reg = ref 0 }
+    { mapping = Int.Table.create ()
+    ; free_pool = Int.Hash_set.create ()
+    ; next_reg = ref 0
+    }
   in
   let instructions = minimize_block state instructions in
   let final_register = lookup state final_register in
