@@ -1,13 +1,12 @@
-(*
-   WebGPU Fundamentals: Cameras - Step 2 (Camera Aim)
+(* WebGPU Fundamentals: Cameras - Step 2 (Camera Aim)
 
    This test demonstrates:
    - A circle of 5 F shapes rendered with perspective projection
    - A camera that orbits around but always aims at the first F
    - The cameraAim function computes a matrix that orients the camera toward a target
 
-   Instead of just rotating and translating, we compute where the camera should look
-   using eye position, target position, and up vector.
+   Instead of just rotating and translating, we compute where the camera should look using
+   eye position, target position, and up vector.
 *)
 
 open! Core
@@ -354,8 +353,8 @@ let perspective_matrix ~fov_y ~aspect ~z_near ~z_far =
     0.0
 ;;
 
-(* Camera aim matrix - positions camera at eye, oriented to look at target
-   For cameras, the Z axis points from target to eye (backward) *)
+(* Camera aim matrix - positions camera at eye, oriented to look at target For cameras,
+   the Z axis points from target to eye (backward) *)
 let camera_aim_matrix ~eye ~target ~up =
   let open Gg in
   let z_axis = V3.unit (V3.sub eye target) in

@@ -1,8 +1,7 @@
-(*
-   WebGPU Fundamentals: Simple Triangle with Uniforms
+(* WebGPU Fundamentals: Simple Triangle with Uniforms
 
-   This test demonstrates basic uniform buffer usage. A triangle's color, scale,
-   and offset are controlled via a uniform buffer rather than hardcoded in the shader.
+   This test demonstrates basic uniform buffer usage. A triangle's color, scale, and
+   offset are controlled via a uniform buffer rather than hardcoded in the shader.
 
    The uniform buffer contains:
    - color: vec4f (RGBA color)
@@ -23,8 +22,7 @@ let buffer_size = bytes_per_row * height
 (* Uniform buffer layout matching the shader struct:
    - color: vec4f (4 floats, 16 bytes)
    - scale: vec2f (2 floats, 8 bytes)
-   - offset: vec2f (2 floats, 8 bytes)
-   Total: 32 bytes *)
+   - offset: vec2f (2 floats, 8 bytes) Total: 32 bytes *)
 let num_uniform_floats = 8
 let uniform_buffer_size = num_uniform_floats * 4
 
@@ -89,8 +87,8 @@ let () =
   Bigarray.Array1.set uniform_data 1 1.0;
   Bigarray.Array1.set uniform_data 2 0.0;
   Bigarray.Array1.set uniform_data 3 1.0;
-  (* Scale: adjusted for aspect ratio. Width/height = 1.5, so scale x by 0.5/1.5 to maintain
-     proportions, and y by 0.5 *)
+  (* Scale: adjusted for aspect ratio. Width/height = 1.5, so scale x by 0.5/1.5 to
+     maintain proportions, and y by 0.5 *)
   let aspect = Float.of_int width /. Float.of_int height in
   Bigarray.Array1.set uniform_data 4 (0.5 /. aspect);
   Bigarray.Array1.set uniform_data 5 0.5;

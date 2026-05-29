@@ -1,19 +1,18 @@
-(*
-   WebGPU Fundamentals: Fragment Shader @builtin(position) - Direct Parameter
+(* WebGPU Fundamentals: Fragment Shader @builtin(position) - Direct Parameter
 
-   This test demonstrates that the fragment shader can receive @builtin(position)
-   directly as a function parameter, without needing a struct that matches
-   the vertex shader output.
+   This test demonstrates that the fragment shader can receive @builtin(position) directly
+   as a function parameter, without needing a struct that matches the vertex shader
+   output.
 
    This reinforces that:
    1. @builtin(position) means different things in VS vs FS
-   2. The vertex and fragment shaders are independent - they don't need
-      matching structs for builtins
-   3. Each shader entry point is compiled separately and only looks at
-      what it actually references
+   2. The vertex and fragment shaders are independent - they don't need matching structs
+      for builtins
+   3. Each shader entry point is compiled separately and only looks at what it actually
+      references
 
-   The checkerboard pattern is the same as the previous example, just
-   demonstrating a different way to declare the fragment shader input.
+   The checkerboard pattern is the same as the previous example, just demonstrating a
+   different way to declare the fragment shader input.
 *)
 
 open! Core
@@ -24,8 +23,8 @@ let bytes_per_pixel = 4
 let bytes_per_row = ((width * bytes_per_pixel) + 255) / 256 * 256
 let buffer_size = bytes_per_row * height
 
-(* Note: The vertex shader has a struct output, but the fragment shader
-   receives @builtin(position) directly - no struct needed *)
+(* Note: The vertex shader has a struct output, but the fragment shader receives
+   @builtin(position) directly - no struct needed *)
 let shader_code =
   {|
 struct OurVertexShaderOutput {

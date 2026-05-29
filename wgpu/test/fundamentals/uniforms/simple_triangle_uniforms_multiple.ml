@@ -1,18 +1,17 @@
-(*
-   WebGPU Fundamentals: Multiple Triangles with Uniforms
+(* WebGPU Fundamentals: Multiple Triangles with Uniforms
 
-   This test demonstrates drawing multiple objects, each with its own uniform buffer
-   and bind group. We create 100 triangles with random colors and positions, each
-   using its own uniform buffer.
+   This test demonstrates drawing multiple objects, each with its own uniform buffer and
+   bind group. We create 100 triangles with random colors and positions, each using its
+   own uniform buffer.
 
-   This pattern is essential for real applications where many objects need to be
-   drawn with different parameters. Each object has:
+   This pattern is essential for real applications where many objects need to be drawn
+   with different parameters. Each object has:
    - Its own uniform buffer with color/scale/offset
    - Its own bind group that references that buffer
    - Its own random scale value stored on the CPU side
 
-   At render time, we update each uniform buffer with the aspect-corrected scale,
-   then draw with the corresponding bind group.
+   At render time, we update each uniform buffer with the aspect-corrected scale, then
+   draw with the corresponding bind group.
 *)
 
 open! Core
@@ -26,8 +25,7 @@ let buffer_size = bytes_per_row * height
 (* Uniform buffer layout:
    - color: vec4f (4 floats, 16 bytes)
    - scale: vec2f (2 floats, 8 bytes)
-   - offset: vec2f (2 floats, 8 bytes)
-   Total: 32 bytes *)
+   - offset: vec2f (2 floats, 8 bytes) Total: 32 bytes *)
 let num_uniform_floats = 8
 let uniform_buffer_size = num_uniform_floats * 4
 let num_objects = 100

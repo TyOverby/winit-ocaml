@@ -1,15 +1,12 @@
-(*
-   WebGPU Fundamentals: Rotation via Unit Circle
+(* WebGPU Fundamentals: Rotation via Unit Circle
 
-   This test demonstrates the concept that rotation values (cos, sin) come
-   from points on the unit circle. The lesson explains that a unit circle
-   is a circle with radius 1, and any point on it has coordinates (cos(angle),
-   sin(angle)).
+   This test demonstrates the concept that rotation values (cos, sin) come from points on
+   the unit circle. The lesson explains that a unit circle is a circle with radius 1, and
+   any point on it has coordinates (cos(angle), sin(angle)).
 
-   This example is functionally identical to the rotation test but emphasizes the
-   unit circle concept by showing rotations at 0, 30, 60, and 90 degrees -
-   common angles that demonstrate how X and Y change as you move around
-   the unit circle.
+   This example is functionally identical to the rotation test but emphasizes the unit
+   circle concept by showing rotations at 0, 30, 60, and 90 degrees - common angles that
+   demonstrate how X and Y change as you move around the unit circle.
 *)
 
 open! Core
@@ -142,8 +139,7 @@ struct VSOutput {
    - resolution: vec2f (2 floats, 8 bytes)
    - translation: vec2f (2 floats, 8 bytes)
    - rotation: vec2f (2 floats, 8 bytes)
-   - padding: 8 bytes (to align to 16 bytes)
-   Total: 48 bytes *)
+   - padding: 8 bytes (to align to 16 bytes) Total: 48 bytes *)
 let num_uniform_floats = 12
 let uniform_buffer_size = num_uniform_floats * 4
 
@@ -437,8 +433,8 @@ let () =
            ())
       ()
   in
-  (* Render at different positions on the unit circle.
-     These demonstrate the key insight: rotation values come from the unit circle.
+  (* Render at different positions on the unit circle. These demonstrate the key insight:
+     rotation values come from the unit circle.
      - 0 degrees: (1, 0) - no rotation
      - 30 degrees: (0.866, 0.5) - slight rotation
      - 60 degrees: (0.5, 0.866) - more rotation

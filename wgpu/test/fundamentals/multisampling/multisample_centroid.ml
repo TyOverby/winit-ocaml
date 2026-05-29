@@ -1,14 +1,13 @@
-(*
-   WebGPU Fundamentals: Multisampling (Centroid Interpolation Fix)
+(* WebGPU Fundamentals: Multisampling (Centroid Interpolation Fix)
 
-   This test demonstrates the fix for the center interpolation issue using
-   centroid interpolation. By adding @interpolate(perspective, centroid) to
-   the inter-stage variable, the GPU interpolates values relative to the
-   centroid of the covered area within the pixel, rather than the pixel center.
+   This test demonstrates the fix for the center interpolation issue using centroid
+   interpolation. By adding @interpolate(perspective, centroid) to the inter-stage
+   variable, the GPU interpolates values relative to the centroid of the covered area
+   within the pixel, rather than the pixel center.
 
-   This ensures the barycentric coordinates are always within [0,1] even at
-   the triangle edges, eliminating the yellow "outside" pixels seen in the
-   center interpolation example.
+   This ensures the barycentric coordinates are always within [0,1] even at the triangle
+   edges, eliminating the yellow "outside" pixels seen in the center interpolation
+   example.
 
    This is rendered at low resolution to show the fix working correctly.
 *)

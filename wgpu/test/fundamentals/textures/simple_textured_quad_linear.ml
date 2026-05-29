@@ -1,12 +1,11 @@
-(*
-   WebGPU Fundamentals: Textured Quad with Linear Filtering
+(* WebGPU Fundamentals: Textured Quad with Linear Filtering
 
    This test demonstrates different sampler settings:
    - Linear mag filter (smooths magnification)
    - Different address modes (repeat vs clamp-to-edge)
 
-   We draw multiple quads showing different combinations to illustrate
-   how these settings affect texture sampling.
+   We draw multiple quads showing different combinations to illustrate how these settings
+   affect texture sampling.
 *)
 
 open! Core
@@ -127,11 +126,8 @@ type sampler_config =
   ; min_filter : Wgpu.Filter_mode.t
   }
 
-(* Grid of 4 quads showing different filter combinations:
-   Top-left: nearest + clamp
-   Top-right: linear + clamp
-   Bottom-left: nearest + repeat
-   Bottom-right: linear + repeat *)
+(* Grid of 4 quads showing different filter combinations: Top-left: nearest + clamp
+   Top-right: linear + clamp Bottom-left: nearest + repeat Bottom-right: linear + repeat *)
 let sampler_configs =
   [| (* nearest + clamp *)
      { address_u = Wgpu.Address_mode.Clamp_to_edge

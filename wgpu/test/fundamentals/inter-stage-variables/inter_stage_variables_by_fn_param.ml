@@ -1,13 +1,11 @@
-(*
-   WebGPU Fundamentals: Inter-Stage Variables - By Function Parameter
+(* WebGPU Fundamentals: Inter-Stage Variables - By Function Parameter
 
-   This test demonstrates that inter-stage variables connect by @location
-   index, not by struct type. The vertex shader outputs a struct with
-   @location(0), but the fragment shader receives it as a simple vec4f
-   parameter decorated with @location(0).
+   This test demonstrates that inter-stage variables connect by @location index, not by
+   struct type. The vertex shader outputs a struct with @location(0), but the fragment
+   shader receives it as a simple vec4f parameter decorated with @location(0).
 
-   This works because WebGPU matches inter-stage variables by their
-   location indices, not their names or containing types.
+   This works because WebGPU matches inter-stage variables by their location indices, not
+   their names or containing types.
 *)
 
 open! Core
@@ -18,9 +16,9 @@ let bytes_per_pixel = 4
 let bytes_per_row = ((width * bytes_per_pixel) + 255) / 256 * 256
 let buffer_size = bytes_per_row * height
 
-(* Note: The fragment shader uses @location(0) directly as a parameter
-   instead of receiving the struct. This demonstrates that inter-stage
-   variables are matched by location index. *)
+(* Note: The fragment shader uses @location(0) directly as a parameter instead of
+   receiving the struct. This demonstrates that inter-stage variables are matched by
+   location index. *)
 let shader_code =
   {|
 struct OurVertexShaderOutput {

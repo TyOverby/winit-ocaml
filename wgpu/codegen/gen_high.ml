@@ -254,7 +254,8 @@ let method_is_high_level (structs : Ir.struct_ list) (method_ : Ir.method_) : bo
       if all_simple
       then true
       else (
-        (* Check if all struct parameters are auto-generable input structs, with other parameters also directly convertible *)
+        (* Check if all struct parameters are auto-generable input structs, with other
+           parameters also directly convertible *)
         let non_struct_parameters_are_directly_convertible =
           List.for_all method_.args ~f:(fun arg ->
             match arg.type_ with
@@ -484,8 +485,8 @@ let rec collect_struct_params
       (* Check for optional pointer-to-struct (like depth_stencil and fragment) *)
       (match get_optional_pointer_struct_name member with
        | Some _nested_name ->
-         (* Optional pointer to struct - expose as a single optional parameter of record type.
-            Don't flatten - similar to array-of-structs handling. *)
+         (* Optional pointer to struct - expose as a single optional parameter of record
+            type. Don't flatten - similar to array-of-structs handling. *)
          let param_name = escape_keyword (prefix ^ member.name) in
          [ { param_name; member; is_optional = true; nested_var } ]
        | None ->
@@ -641,7 +642,8 @@ let generate_array_of_structs_conversion
                   ; {%string|    Wgpu_low.%{array_element_module}.%{array_element_struct.name}_set_%{member.name} e %{nested_array_var};|}
                   ])
            | None ->
-             (* Regular member - use entry_member_to_low_level for proper optional handling *)
+             (* Regular member - use entry_member_to_low_level for proper optional
+                handling *)
              let escaped_member = escape_keyword member.name in
              let field_access = {%string|entry.%{escaped_member}|} in
              let converted = entry_member_to_low_level field_access member in
@@ -767,7 +769,8 @@ let rec generate_struct_sets
                                 let elem_field_access =
                                   {%string|elem.%{elem_nm_escaped}|}
                                 in
-                                (* Check for inline struct or optional pointer-to-struct within array element *)
+                                (* Check for inline struct or optional pointer-to-struct
+                                   within array element *)
                                 let inline_name_opt =
                                   match get_inline_struct_name elem_nm.type_ with
                                   | Some name -> Some name
@@ -807,7 +810,8 @@ let rec generate_struct_sets
                                                get_inline_struct_name inner_nm.type_
                                              with
                                              | Some deep_name ->
-                                               (* Deep inline struct - create and populate it *)
+                                               (* Deep inline struct - create and populate
+                                                  it *)
                                                (match
                                                   List.find structs ~f:(fun s ->
                                                     String.equal s.name deep_name)
@@ -967,7 +971,8 @@ let gen_method_with_structs
       | Struct _ -> false
       | _ -> true)
   in
-  (* Build parameter list from all struct members + non-struct parameters (including nested) *)
+  (* Build parameter list from all struct members + non-struct parameters (including
+     nested) *)
   let struct_params =
     List.concat_map struct_parameters ~f:(fun (arg, struct_) ->
       let base_prefix = if use_prefix then arg.name ^ "_" else "" in
@@ -1298,10 +1303,9 @@ let gen_create_param
     then (
       match default_opt with
       | Some default ->
-        (* If the field type is already an option and default is None,
-           use bare ?field syntax to avoid double-wrapping.
-           This makes ?field:X.t in signature match ?field in impl,
-           where field has type X.t option inside the function. *)
+        (* If the field type is already an option and default is None, use bare ?field
+           syntax to avoid double-wrapping. This makes ?field:X.t in signature match
+           ?field in impl, where field has type X.t option inside the function. *)
         if String.is_suffix field_type ~suffix:" option" && String.equal default "None"
         then Some {%string|%{indent}?%{field_name}|}
         else Some {%string|%{indent}?(%{field_name} = %{default})|}

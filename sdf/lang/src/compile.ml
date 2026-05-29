@@ -178,8 +178,8 @@ and eval_builtin_var ~loc (env : env) (arg_exprs : Ast.expr list) : value Or_err
     let%bind.Or_error v = eval_expr env arg_expr in
     (match v with
      | String name ->
-       (* Type must come from context; we default to Float here.
-          The let-binding type annotation should override this. *)
+       (* Type must come from context; we default to Float here. The let-binding type
+          annotation should override this. *)
        let%map.Or_error e = Expr_tree.var ~loc name Expr_tree.Type.Float in
        Expr e
      | _ ->
@@ -288,8 +288,8 @@ and eval_partial_app (env : env) (func_expr : Ast.expr) (arg_exprs : Ast.expr li
       | Some v -> Map.set acc ~key:name ~data:v
       | None -> acc)
   in
-  (* Build the body that calls func with the processed arg names.
-     Synthetic AST nodes use dummy_loc since they don't correspond to source text. *)
+  (* Build the body that calls func with the processed arg names. Synthetic AST nodes use
+     dummy_loc since they don't correspond to source text. *)
   let mk e = { Ast.loc = dummy_loc; kind = e } in
   let body_arg_idents = List.map processed ~f:(fun (name, _, _) -> mk (Ident name)) in
   let body_expr =

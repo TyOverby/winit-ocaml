@@ -1,9 +1,7 @@
-(*
-   WebGPU Fundamentals: Multisampling (Simple)
+(* WebGPU Fundamentals: Multisampling (Simple)
 
-   This test demonstrates basic MSAA (Multi-Sample Anti-Aliasing) in WebGPU.
-   A simple red triangle is rendered using 4x MSAA to show smooth anti-aliased
-   edges.
+   This test demonstrates basic MSAA (Multi-Sample Anti-Aliasing) in WebGPU. A simple red
+   triangle is rendered using 4x MSAA to show smooth anti-aliased edges.
 
    Key concepts:
    1. Create a multisample texture with sample_count:4

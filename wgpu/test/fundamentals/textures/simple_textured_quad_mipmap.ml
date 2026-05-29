@@ -1,13 +1,12 @@
-(*
-   WebGPU Fundamentals: Textured Quad with Mipmaps
+(* WebGPU Fundamentals: Textured Quad with Mipmaps
 
    This test demonstrates mipmap generation and usage:
    - Creating textures with multiple mip levels
    - Generating mip levels via bilinear filtering
    - Using mipmapFilter for smooth mip level transitions
 
-   We display a texture mapped onto a quad that recedes into the distance
-   to show how different mip levels are selected based on screen coverage.
+   We display a texture mapped onto a quad that recedes into the distance to show how
+   different mip levels are selected based on screen coverage.
 *)
 
 open! Core
@@ -214,8 +213,8 @@ let upload_mip_levels ~device:_ ~queue ~texture ~mips =
 
 (* Create a simple 2D scale+offset matrix that stretches and positions the quad *)
 let create_2d_transform_matrix ~scale_x ~scale_y ~offset_x ~offset_y =
-  (* This creates a matrix that transforms the unit quad [0,1]x[0,1] to
-     screen clip space [-1,1]x[-1,1], with optional scale and offset *)
+  (* This creates a matrix that transforms the unit quad [0,1]x[0,1] to screen clip space
+     [-1,1]x[-1,1], with optional scale and offset *)
   Gg.M4.v
     scale_x
     0.0
@@ -240,8 +239,8 @@ let create_2d_transform_matrix ~scale_x ~scale_y ~offset_x ~offset_y =
 
 let matrix_to_bigarray m =
   let data = Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout 16 in
-  (* Gg stores matrices transposed relative to WebGPU's expected column-major format.
-     We transpose when uploading to WebGPU. *)
+  (* Gg stores matrices transposed relative to WebGPU's expected column-major format. We
+     transpose when uploading to WebGPU. *)
   for col = 0 to 3 do
     for row = 0 to 3 do
       let value = Gg.M4.el row col m in
@@ -435,9 +434,9 @@ let () =
       ~mapped_at_creation:false
       ()
   in
-  (* Create a simple 2D transform that fills most of the screen.
-     The shader stretches texture coordinates by 50 in Y, which will cause
-     different mip levels to be selected across the quad. *)
+  (* Create a simple 2D transform that fills most of the screen. The shader stretches
+     texture coordinates by 50 in Y, which will cause different mip levels to be selected
+     across the quad. *)
   let matrix =
     create_2d_transform_matrix ~scale_x:1.8 ~scale_y:1.8 ~offset_x:(-0.9) ~offset_y:(-0.9)
   in

@@ -1,8 +1,8 @@
 open! Core
 open Test_regression
 
-(* This module is just for testing that the regression test infrastructure works.
-   Don't add any real regression tests to this file! *)
+(* This module is just for testing that the regression test infrastructure works. Don't
+   add any real regression tests to this file! *)
 
 (** {2 Enum Tests} *)
 

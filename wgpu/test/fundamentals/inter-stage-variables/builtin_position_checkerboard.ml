@@ -1,14 +1,12 @@
-(*
-   WebGPU Fundamentals: Fragment Shader @builtin(position)
+(* WebGPU Fundamentals: Fragment Shader @builtin(position)
 
-   This test demonstrates that @builtin(position) has different meanings
-   in vertex vs fragment shaders:
+   This test demonstrates that @builtin(position) has different meanings in vertex vs
+   fragment shaders:
    - In vertex shader: the clip-space position output
    - In fragment shader: the pixel coordinates being processed
 
-   The fragment shader uses @builtin(position) to create a checkerboard
-   pattern based on pixel coordinates. The pattern is relative to the
-   canvas, not the triangle geometry.
+   The fragment shader uses @builtin(position) to create a checkerboard pattern based on
+   pixel coordinates. The pattern is relative to the canvas, not the triangle geometry.
 *)
 
 open! Core

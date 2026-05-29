@@ -1,13 +1,12 @@
-(*
-   WebGPU Fundamentals: Split Uniform Buffers
+(* WebGPU Fundamentals: Split Uniform Buffers
 
-   This test demonstrates using multiple uniform buffers to separate static and
-   dynamic data. This is an optimization pattern where:
+   This test demonstrates using multiple uniform buffers to separate static and dynamic
+   data. This is an optimization pattern where:
    - Static data (color, offset) is uploaded once at initialization
    - Dynamic data (scale) is uploaded every frame
 
-   By splitting the uniforms, we only upload the data that changes, reducing
-   the amount of data transferred to the GPU each frame.
+   By splitting the uniforms, we only upload the data that changes, reducing the amount of
+   data transferred to the GPU each frame.
 
    This example uses:
    - @binding(0): OurStruct with color (vec4f) and offset (vec2f)
@@ -25,15 +24,13 @@ let buffer_size = bytes_per_row * height
 (* Static uniform buffer layout (OurStruct):
    - color: vec4f (4 floats, 16 bytes)
    - offset: vec2f (2 floats, 8 bytes)
-   - padding: 8 bytes to align to 16 bytes
-   Total: 32 bytes *)
+   - padding: 8 bytes to align to 16 bytes Total: 32 bytes *)
 let num_static_floats = 8
 let static_uniform_buffer_size = num_static_floats * 4
 
 (* Dynamic uniform buffer layout (OtherStruct):
    - scale: vec2f (2 floats, 8 bytes)
-   - padding: 8 bytes to align to 16 bytes
-   Total: 16 bytes *)
+   - padding: 8 bytes to align to 16 bytes Total: 16 bytes *)
 let num_dynamic_floats = 4
 let dynamic_uniform_buffer_size = num_dynamic_floats * 4
 let num_objects = 100

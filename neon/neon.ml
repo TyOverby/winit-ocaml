@@ -29,11 +29,11 @@ let ensure_canvas_size state screen =
 ;;
 
 type compiled_sdf =
-  { instructions : (int * Sdf.Expr_graph.instr) list
+  { instructions : (int * Sdf.Expr_graph.instr) iarray
   ; final_register : int
   ; register_count : int
-  ; x_idx : int
-  ; y_idx : int
+  ; x_idx : int Option.t
+  ; y_idx : int Option.t
   ; num_vars : int
   }
 
@@ -50,8 +50,8 @@ let compile_sdf_from_source ~scene_file source =
       ~register_count
   in
   Printf.printf "registers after minimization:  %d\n%!" register_count;
-  let x_idx = Hashtbl.find_exn var_mapping "x" in
-  let y_idx = Hashtbl.find_exn var_mapping "y" in
+  let x_idx = Hashtbl.find var_mapping "x" in
+  let y_idx = Hashtbl.find var_mapping "y" in
   let num_vars = Hashtbl.length var_mapping in
   { instructions; final_register; register_count; x_idx; y_idx; num_vars }
 ;;
@@ -84,18 +84,49 @@ let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_schedu
   let num_vars = sdf.num_vars in
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
-      let variables = Sdf.Value.Array.create ~len:num_vars in
-      let registers = Sdf.Value.Array.create ~len:register_count in
-      Sdf.Value.Array.set_float variables y_idx (Float32_u.of_float (Float.of_int y));
+      let register_bank =
+        Sdf.Expr_graph_batch_eval.Register_bank.create ~register_count ~width
+      in
+      let variable_bank =
+        Sdf.Expr_graph_batch_eval.Variable_bank.create ~num_vars ~width
+      in
+      let y_val = Sdf.Value.of_float (Float32_u.of_float (Float.of_int y)) in
       for x = 0 to width - 1 do
-        Sdf.Value.Array.set_float variables x_idx (Float32_u.of_float (Float.of_int x));
-        Sdf.Expr_graph_eval.run ~variables ~instructions ~registers;
-        let value = Sdf.Value.Array.get registers final_register in
+        Option.iter y_idx ~f:(fun y_idx ->
+          Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
+            variable_bank
+            ~var:y_idx
+            ~px:x
+            y_val);
+        Option.iter x_idx ~f:(fun x_idx ->
+          Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
+            variable_bank
+            ~var:x_idx
+            ~px:x
+            (Sdf.Value.of_float (Float32_u.of_float (Float.of_int x))))
+      done;
+      Sdf.Expr_graph_batch_eval.run ~variable_bank ~instructions ~register_bank ~width;
+      for x = 0 to width - 1 do
+        let value =
+          Sdf.Expr_graph_batch_eval.Register_bank.get_result
+            register_bank
+            ~reg:final_register
+            ~px:x
+        in
         let dist = Float32_u.to_float (Sdf.Value.to_float value) in
         if Float.(dist <= 0.0)
         then Image_buf.set canvas ~x ~y #0xFF000000l
-        else if Float.(dist <= 8.0)
-        then Image_buf.set canvas ~x ~y #0xFF5384EDl
+        else if Float.(dist <= 1.0)
+        then (
+          let component = dist *. 255.0 |> Float.to_int |> Int32_u.of_int_trunc in
+          let color =
+            Int32_u.(
+              component
+              lor shift_left component 8
+              lor shift_left component 16
+              lor #0xFF000000l)
+          in
+          Image_buf.set canvas ~x ~y color)
         else Image_buf.set canvas ~x ~y #0xFFFFFFFFl
       done))
 ;;
@@ -109,7 +140,7 @@ let command =
      in
      fun () ->
        let window =
-         Winit.create ~window_level:Always_on_top ~title:"Neon" ~width:200 ~height:200 ()
+         Winit.create ~window_level:Always_on_top ~title:"Neon" ~width:400 ~height:400 ()
        in
        let surface = Softbuffer.create (Winit.get_handle window) in
        let state = create_state () in

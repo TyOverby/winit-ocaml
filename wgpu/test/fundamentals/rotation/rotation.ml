@@ -1,13 +1,10 @@
-(*
-   WebGPU Fundamentals: Rotation
+(* WebGPU Fundamentals: Rotation
 
-   This test demonstrates 2D rotation in WebGPU. The F shape is rotated
-   around its origin by computing cos/sin of the rotation angle and passing
-   them to the shader via a uniform buffer. The shader applies the 2D
-   rotation matrix:
+   This test demonstrates 2D rotation in WebGPU. The F shape is rotated around its origin
+   by computing cos/sin of the rotation angle and passing them to the shader via a uniform
+   buffer. The shader applies the 2D rotation matrix:
 
-     rotatedX = x * cos(angle) - y * sin(angle)
-     rotatedY = x * sin(angle) + y * cos(angle)
+   rotatedX = x * cos(angle) - y * sin(angle) rotatedY = x * sin(angle) + y * cos(angle)
 
    We render at 0, 45, 90, and 180 degrees to show the rotation in action.
 *)
@@ -136,8 +133,7 @@ struct VSOutput {
    - resolution: vec2f (2 floats, 8 bytes)
    - translation: vec2f (2 floats, 8 bytes)
    - rotation: vec2f (2 floats, 8 bytes)
-   - padding: 8 bytes (to align to 16 bytes)
-   Total: 48 bytes *)
+   - padding: 8 bytes (to align to 16 bytes) Total: 48 bytes *)
 let num_uniform_floats = 12
 let uniform_buffer_size = num_uniform_floats * 4
 

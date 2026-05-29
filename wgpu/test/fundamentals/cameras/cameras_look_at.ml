@@ -1,13 +1,12 @@
-(*
-   WebGPU Fundamentals: Cameras - Step 3 (Look At)
+(* WebGPU Fundamentals: Cameras - Step 3 (Look At)
 
    This test demonstrates:
    - The lookAt function which directly computes the view matrix
    - Functionally equivalent to computing cameraAim and then inverting it
    - A more common API pattern found in most math libraries
 
-   The lookAt matrix directly transforms world coordinates to view space,
-   positioning everything as if viewed from eye looking at target with up orientation.
+   The lookAt matrix directly transforms world coordinates to view space, positioning
+   everything as if viewed from eye looking at target with up orientation.
 *)
 
 open! Core
@@ -354,8 +353,8 @@ let perspective_matrix ~fov_y ~aspect ~z_near ~z_far =
     0.0
 ;;
 
-(* Look-at view matrix - directly computes the view matrix
-   This is functionally equivalent to inverse(cameraAim(eye, target, up)) *)
+(* Look-at view matrix - directly computes the view matrix This is functionally equivalent
+   to inverse(cameraAim(eye, target, up)) *)
 let look_at_matrix ~eye ~target ~up =
   let open Gg in
   let z = V3.unit (V3.sub eye target) in

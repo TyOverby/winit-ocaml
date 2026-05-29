@@ -52,11 +52,11 @@ let rec eval_float
   | Sqrt a ->
     (match eval_float ~env a with
      | Error _ as e -> e
-     | Ok a -> Ok (Float32_u.of_float (Float.sqrt (Float32_u.to_float a))))
+     | Ok a -> Ok (Float32_u.sqrt a))
   | Abs a ->
     (match eval_float ~env a with
      | Error _ as e -> e
-     | Ok a -> Ok (Float32_u.of_float (Float.abs (Float32_u.to_float a))))
+     | Ok a -> Ok (Float32_u.abs a))
   | Neg a ->
     (match eval_float ~env a with
      | Error _ as e -> e
@@ -65,40 +65,39 @@ let rec eval_float
     (match eval_float ~env a with
      | Error _ as e -> e
      | Ok a ->
-       let f = Float32_u.to_float a in
+       let zero = Float32_u.of_float 0.0 in
        Ok
-         (Float32_u.of_float
-            (if Float.( > ) f 0.0 then 1.0 else if Float.( < ) f 0.0 then -1.0 else 0.0)))
+         (if Float32_u.(a > zero)
+          then Float32_u.of_float 1.0
+          else if Float32_u.(a < zero)
+          then Float32_u.of_float (-1.0)
+          else zero))
   | Sin a ->
     (match eval_float ~env a with
      | Error _ as e -> e
-     | Ok a -> Ok (Float32_u.of_float (Float.sin (Float32_u.to_float a))))
+     | Ok a -> Ok (Float32_u.sin a))
   | Cos a ->
     (match eval_float ~env a with
      | Error _ as e -> e
-     | Ok a -> Ok (Float32_u.of_float (Float.cos (Float32_u.to_float a))))
+     | Ok a -> Ok (Float32_u.cos a))
   | Round a ->
     (match eval_float ~env a with
      | Error _ as e -> e
-     | Ok a -> Ok (Float32_u.of_float (Float.round_nearest (Float32_u.to_float a))))
+     | Ok a -> Ok (Float32_u.round_nearest a))
   | Min (a, b) ->
     (match eval_float ~env a with
      | Error _ as e -> e
      | Ok a ->
        (match eval_float ~env b with
         | Error _ as e -> e
-        | Ok b ->
-          Ok
-            (Float32_u.of_float (Float.min (Float32_u.to_float a) (Float32_u.to_float b)))))
+        | Ok b -> Ok (Float32_u.min a b)))
   | Max (a, b) ->
     (match eval_float ~env a with
      | Error _ as e -> e
      | Ok a ->
        (match eval_float ~env b with
         | Error _ as e -> e
-        | Ok b ->
-          Ok
-            (Float32_u.of_float (Float.max (Float32_u.to_float a) (Float32_u.to_float b)))))
+        | Ok b -> Ok (Float32_u.max a b)))
   | Cond { condition; then_; else_ } ->
     (match eval_bool ~env condition with
      | Error e -> Error e

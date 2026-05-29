@@ -1,9 +1,8 @@
-(*
-   WebGPU Fundamentals: Storage Buffers for Vertex Data
+(* WebGPU Fundamentals: Storage Buffers for Vertex Data
 
-   This test demonstrates using storage buffers to store vertex data,
-   an alternative to traditional vertex buffers. The shader accesses
-   vertex positions via storage buffer array indexing using vertex_index.
+   This test demonstrates using storage buffers to store vertex data, an alternative to
+   traditional vertex buffers. The shader accesses vertex positions via storage buffer
+   array indexing using vertex_index.
 
    Key concepts:
    - Storage buffer for vertex positions (instead of vertex buffer)
@@ -11,8 +10,8 @@
    - Combined with instancing for efficient multi-object rendering
    - Circle geometry generated from triangles
 
-   Note: This approach is gaining popularity but may be slower on some
-   older devices compared to traditional vertex buffers.
+   Note: This approach is gaining popularity but may be slower on some older devices
+   compared to traditional vertex buffers.
 *)
 
 open! Core
@@ -38,11 +37,7 @@ let create_circle_vertices ~radius ~inner_radius =
     Bigarray.Array1.set vertex_data (!offset + 1) y;
     offset := !offset + 2
   in
-  (* 2 triangles per subdivision:
-     0--1 4
-     | / /|
-     |/ / |
-     2 3--5 *)
+  (* 2 triangles per subdivision: 0--1 4 | / /| |/ / | 2 3--5 *)
   for i = 0 to num_subdivisions - 1 do
     let start_angle = 0.0 in
     let end_angle = Float.pi *. 2.0 in
@@ -119,13 +114,11 @@ struct VSOutput {
 (* Storage buffer layout for static data (color + offset):
    - color: vec4f (4 floats, 16 bytes)
    - offset: vec2f (2 floats, 8 bytes)
-   - padding: 8 bytes (struct alignment)
-   Total per object: 32 bytes *)
+   - padding: 8 bytes (struct alignment) Total per object: 32 bytes *)
 let static_unit_size = 32
 
 (* Storage buffer layout for dynamic data (scale):
-   - scale: vec2f (2 floats, 8 bytes)
-   Total per object: 8 bytes *)
+   - scale: vec2f (2 floats, 8 bytes) Total per object: 8 bytes *)
 let changing_unit_size = 8
 
 (* Random number in range [min, max) *)

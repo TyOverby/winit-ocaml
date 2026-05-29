@@ -1,12 +1,11 @@
-(*
-   WebGPU Fundamentals: Vertex Buffers with Index Buffer
+(* WebGPU Fundamentals: Vertex Buffers with Index Buffer
 
-   This test demonstrates index buffers in WebGPU. Instead of duplicating
-   vertices for each triangle, we store unique vertices and use an index
-   buffer to specify how they connect into triangles.
+   This test demonstrates index buffers in WebGPU. Instead of duplicating vertices for
+   each triangle, we store unique vertices and use an index buffer to specify how they
+   connect into triangles.
 
-   This saves memory (33%) and potentially GPU processing time since the
-   GPU can reuse already-computed vertices.
+   This saves memory (33%) and potentially GPU processing time since the GPU can reuse
+   already-computed vertices.
 
    This example uses:
    - Vertex buffers with per-vertex data (position + color as floats)
@@ -24,14 +23,12 @@ let buffer_size = bytes_per_row * height
 let num_objects = 100
 let num_subdivisions = 24
 
-(* Create circle vertices with per-vertex colors using index buffer approach.
-   Instead of 6 vertices per subdivision, we use 4 unique vertices and
-   6 indices to form 2 triangles.
+(* Create circle vertices with per-vertex colors using index buffer approach. Instead of 6
+   vertices per subdivision, we use 4 unique vertices and 6 indices to form 2 triangles.
 
-   Vertex layout (looking at the circle from above):
-   0  2  4  6  8 ...  (outer ring)
+   Vertex layout (looking at the circle from above): 0 2 4 6 8 ... (outer ring)
 
-   1  3  5  7  9 ...  (inner ring)
+   1 3 5 7 9 ... (inner ring)
 
    Triangles for each subdivision i:
    - Triangle 1: 2i, 2i+1, 2i+2
@@ -118,13 +115,11 @@ struct VSOutput {
 
 (* Static vertex buffer layout (color + offset):
    - color: vec4f (4 floats, 16 bytes)
-   - offset: vec2f (2 floats, 8 bytes)
-   Total per instance: 24 bytes *)
+   - offset: vec2f (2 floats, 8 bytes) Total per instance: 24 bytes *)
 let static_unit_size = 24
 
 (* Changing vertex buffer layout (scale):
-   - scale: vec2f (2 floats, 8 bytes)
-   Total per instance: 8 bytes *)
+   - scale: vec2f (2 floats, 8 bytes) Total per instance: 8 bytes *)
 let changing_unit_size = 8
 
 let init () =

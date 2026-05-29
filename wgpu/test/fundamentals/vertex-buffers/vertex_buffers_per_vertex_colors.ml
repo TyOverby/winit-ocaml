@@ -1,8 +1,7 @@
-(*
-   WebGPU Fundamentals: Vertex Buffers with Per-Vertex Colors
+(* WebGPU Fundamentals: Vertex Buffers with Per-Vertex Colors
 
-   This test demonstrates per-vertex colors in WebGPU. Each vertex of the
-   circle geometry has its own color, which is interpolated across the triangle.
+   This test demonstrates per-vertex colors in WebGPU. Each vertex of the circle geometry
+   has its own color, which is interpolated across the triangle.
    - Outer vertices are dark (0.1, 0.1, 0.1)
    - Inner vertices are white (1.0, 1.0, 1.0)
 
@@ -99,13 +98,11 @@ struct VSOutput {
 
 (* Static vertex buffer layout (color + offset):
    - color: vec4f (4 floats, 16 bytes)
-   - offset: vec2f (2 floats, 8 bytes)
-   Total per instance: 24 bytes *)
+   - offset: vec2f (2 floats, 8 bytes) Total per instance: 24 bytes *)
 let static_unit_size = 24
 
 (* Changing vertex buffer layout (scale):
-   - scale: vec2f (2 floats, 8 bytes)
-   Total per instance: 8 bytes *)
+   - scale: vec2f (2 floats, 8 bytes) Total per instance: 8 bytes *)
 let changing_unit_size = 8
 
 let init () =

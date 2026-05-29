@@ -1,13 +1,12 @@
-(*
-   WebGPU Fundamentals: Skybox with Environment-Mapped Cube
+(* WebGPU Fundamentals: Skybox with Environment-Mapped Cube
 
    This test demonstrates:
    - A reflective cube using environment mapping (cubemap reflections)
    - A skybox rendered behind the cube using depth testing
    - Two render pipelines sharing the same cubemap texture
 
-   The cube reflects the environment around it, while the skybox fills
-   the background wherever the cube doesn't appear.
+   The cube reflects the environment around it, while the skybox fills the background
+   wherever the cube doesn't appear.
 *)
 
 open! Core

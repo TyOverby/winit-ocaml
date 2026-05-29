@@ -23,16 +23,12 @@ let () =
               after.grid_width
               after.grid_height;
           let before_map =
-            List.map before.benchmarks ~f:(fun b -> b.name, b)
-            |> String.Map.of_alist_exn
+            List.map before.benchmarks ~f:(fun b -> b.name, b) |> String.Map.of_alist_exn
           in
           let after_map =
-            List.map after.benchmarks ~f:(fun b -> b.name, b)
-            |> String.Map.of_alist_exn
+            List.map after.benchmarks ~f:(fun b -> b.name, b) |> String.Map.of_alist_exn
           in
-          let all_names =
-            Set.union (Map.key_set before_map) (Map.key_set after_map)
-          in
+          let all_names = Set.union (Map.key_set before_map) (Map.key_set after_map) in
           Set.iter all_names ~f:(fun name ->
             match Map.find before_map name, Map.find after_map name with
             | Some b, Some a ->

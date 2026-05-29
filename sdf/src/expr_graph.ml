@@ -53,7 +53,7 @@ type instr =
   | Or of Register.t * Register.t
   | Xor of Register.t * Register.t
 
-and t = (Register.t * instr) list [@@deriving sexp_of, equal, compare]
+and t = (Register.t * instr) iarray [@@deriving sexp_of, equal, compare]
 
 module Bindings = struct
   type t =
@@ -92,8 +92,11 @@ let from_tree tree =
       incr next;
       r
   in
-  let rec loop (tree : Expr_tree.t) ~(instrs : t) ~(env : Bindings.t)
-    : instrs:t * env:Bindings.t * Register.t
+  let rec loop
+    (tree : Expr_tree.t)
+    ~(instrs : (Register.t * instr) list)
+    ~(env : Bindings.t)
+    : instrs:(Register.t * instr) list * env:Bindings.t * Register.t
     =
     match Bindings.lookup env tree with
     | Some register -> ~instrs, ~env, register
@@ -166,7 +169,10 @@ let from_tree tree =
           in
           let else_instrs = (output_register, Read else_) :: else_instrs in
           ( ~instr:(Condition
-                      { cond; then_ = List.rev then_instrs; else_ = List.rev else_instrs })
+                      { cond
+                      ; then_ = Iarray.of_list_rev then_instrs
+                      ; else_ = Iarray.of_list_rev else_instrs
+                      })
           , ~instrs
           , ~env )
         | Lt (a, b) ->
@@ -203,7 +209,7 @@ let from_tree tree =
       ~instrs, ~env, output_register
   in
   let ~instrs, ~env:_, register = loop tree ~instrs:[] ~env:(Bindings.empty ()) in
-  ( ~instructions:(List.rev instrs)
+  ( ~instructions:(Iarray.of_list_rev instrs)
   , ~final_register:register
   , ~register_count:(Register.count register_allocator)
   , ~var_mapping )
@@ -213,7 +219,7 @@ let pp_instructions instructions =
   let buf = Buffer.create 256 in
   let rec pp ~indent instrs =
     let pad = String.make (indent * 2) ' ' in
-    List.iter instrs ~f:(fun (out, instr) ->
+    Iarray.iter instrs ~f:(fun (out, instr) ->
       match (instr : instr) with
       | Float_literal f ->
         Buffer.add_string buf (sprintf "%s$%d <- %s\n" pad out (Float32_u.to_string f))

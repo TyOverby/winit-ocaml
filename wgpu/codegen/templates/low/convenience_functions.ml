@@ -279,7 +279,8 @@ external device_create_render_pipeline_with_depth
     "caml_wgpu_device_create_render_pipeline_with_depth"
 
 (* Begin render pass with optional depth attachment and optional resolve target *)
-(* depth_view_opt: texture_view option, depth_load_op: int, depth_store_op: int, depth_clear_value: float *)
+(* depth_view_opt: texture_view option, depth_load_op: int, depth_store_op: int,
+   depth_clear_value: float *)
 (* resolve_target_opt: texture_view option (for MSAA resolve) *)
 external command_encoder_begin_render_pass_with_depth
   :  command_encoder
