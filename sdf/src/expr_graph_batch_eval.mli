@@ -29,3 +29,10 @@ val run
   -> unit
 
 module Batched : Batch_backend_intf.S
+
+(** Grid-native ({!Batch_backend_intf.S_parallel}) wrapper over {!Batched}.
+
+    [@@ nonportable] because [S_parallel.Batch.run] drives the scheduler and so cannot be
+    portable; without it the enclosing [@@ portable] signature would demand a fully
+    portable module. *)
+module (Batch_parallel @@ nonportable) : Batch_backend_intf.S_parallel

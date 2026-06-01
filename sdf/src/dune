@@ -5,6 +5,8 @@
   base
   stdlib_upstream_compatible
   core
+  parallel
+  parallel.scheduler
   unboxed.float32_u
   unboxed.int32_u)
  (foreign_stubs

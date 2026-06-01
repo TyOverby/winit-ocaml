@@ -249,3 +249,7 @@ module Batched : Batch_backend_intf.S = struct
     ;;
   end
 end
+
+(* Grid-native wrapper over {!Batched}, evaluating a whole pixel grid scanline-by-scanline
+   across the supplied scheduler. *)
+module Batch_parallel = Batch_backend_intf.Make_parallel (Batched)

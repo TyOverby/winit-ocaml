@@ -33,10 +33,14 @@ let ensure_canvas_size state screen =
    its [Variable_idx], [Batch], and [Result] types) when it unpacks the value. *)
 type compiled_sdf =
   | Compiled :
-      (module Sdf.Batch_backend_intf.S with type Prepared.t = 'p) * 'p
+      (module Sdf.Batch_backend_intf.S_parallel with type Prepared.t = 'p) * 'p
       -> compiled_sdf
 
-let compile_sdf_from_source (module B : Sdf.Batch_backend_intf.S) ~scene_file source =
+let compile_sdf_from_source
+  (module B : Sdf.Batch_backend_intf.S_parallel)
+  ~scene_file
+  source
+  =
   let tree = Neo.compile ~filename:scene_file source |> Or_error.ok_exn in
   Compiled ((module B), B.Prepared.of_tree tree)
 ;;
@@ -63,26 +67,20 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
   let canvas = state.canvas in
-  let lookup_variable name =
-    match B.Prepared.lookup_variable prepared name with
-    | var -> Some var
-    | exception _ -> None
-  in
-  let x_idx = lookup_variable "x" in
-  let y_idx = lookup_variable "y" in
+  (* Evaluate the whole grid in one shot. [x] and [y] are the pixel coordinates, expressed
+     as affine functions of [(x, y)] so the backend never materialises per-pixel
+     coordinate buffers; the backend owns the parallel fan-out internally. *)
+  let batch = B.Batch.create prepared ~width ~height in
+  Option.iter (B.Prepared.lookup_variable prepared "x") ~f:(fun var ->
+    B.Batch.set_affine batch ~var ~base:0.0 ~dx:1.0 ~dy:0.0);
+  Option.iter (B.Prepared.lookup_variable prepared "y") ~f:(fun var ->
+    B.Batch.set_affine batch ~var ~base:0.0 ~dx:0.0 ~dy:1.0);
+  let result = B.Batch.run batch ~scheduler in
+  (* Colour the canvas from the host-resident result grid, in parallel over rows. *)
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
-      let batch = B.Batch.create prepared ~len:width in
-      let y_val = Sdf.Value.of_float (Float32_u.of_float (Float.of_int y)) in
       for x = 0 to width - 1 do
-        let x_val = Sdf.Value.of_float (Float32_u.of_float (Float.of_int x)) in
-        Option.iter y_idx ~f:(fun var -> B.Batch.set_variable batch ~var ~px:x y_val);
-        Option.iter x_idx ~f:(fun var -> B.Batch.set_variable batch ~var ~px:x x_val)
-      done;
-      let result = B.Batch.run batch in
-      for x = 0 to width - 1 do
-        let value = B.Result.get_output result ~px:x in
-        let dist = Float32_u.to_float (Sdf.Value.to_float value) in
+        let dist = Float32_u.to_float (Sdf.Value.to_float (B.Result.get result ~x ~y)) in
         if Float.(dist <= 0.0)
         then Image_buf.set canvas ~x ~y #0xFF000000l
         else if Float.(dist <= 1.0)
@@ -100,12 +98,12 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
       done))
 ;;
 
-(* The available evaluation backends, each a [(module Batch_backend_intf.S)], selected by
-   the [-backend] flag. *)
-let backends : (string * (module Sdf.Batch_backend_intf.S)) list =
-  [ "batch", (module Sdf.Expr_graph_batch_eval.Batched)
-  ; "graph", (module Sdf.Expr_graph_eval.Batched)
-  ; "tree", (module Sdf.Expr_tree_eval.Batched)
+(* The available evaluation backends, each a [(module Batch_backend_intf.S_parallel)],
+   selected by the [-backend] flag. *)
+let backends : (string * (module Sdf.Batch_backend_intf.S_parallel)) list =
+  [ "batch", (module Sdf.Expr_graph_batch_eval.Batch_parallel)
+  ; "graph", (module Sdf.Expr_graph_eval.Batch_parallel)
+  ; "tree", (module Sdf.Expr_tree_eval.Batch_parallel)
   ]
 ;;
 
