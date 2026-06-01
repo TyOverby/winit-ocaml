@@ -237,11 +237,14 @@ module Batched : Batch_backend_intf.S = struct
   end
 
   module Prepared = struct
+    (* [var_mapping] is an immutable association list (rather than a [Hashtbl]) so that
+       [t] mode-crosses contention and can be shared across parallel worker domains. *)
     type t =
       { instructions : Expr_graph.t
       ; final_register : int
       ; register_count : int
-      ; var_mapping : int String.Table.t
+      ; var_mapping : (string * int) list
+      ; num_vars : int
       }
 
     let of_tree tree =
@@ -251,10 +254,14 @@ module Batched : Batch_backend_intf.S = struct
       let ~instructions, ~final_register, ~register_count =
         Expr_graph_register_minimizer.minimize ~instructions ~final_register
       in
-      { instructions; final_register; register_count; var_mapping }
+      let num_vars = Hashtbl.length var_mapping in
+      let var_mapping = Hashtbl.to_alist var_mapping in
+      { instructions; final_register; register_count; var_mapping; num_vars }
     ;;
 
-    let lookup_variable { var_mapping; _ } s = Hashtbl.find_exn var_mapping s
+    let lookup_variable { var_mapping; _ } s =
+      List.Assoc.find_exn var_mapping s ~equal:String.equal
+    ;;
   end
 
   module Batch = struct
@@ -267,7 +274,7 @@ module Batched : Batch_backend_intf.S = struct
 
     let create (prepared : Prepared.t) ~len =
       let variables =
-        let num_vars = Hashtbl.length prepared.var_mapping in
+        let num_vars = prepared.num_vars in
         Variable_bank.create ~num_vars ~width:len
       in
       let registers =

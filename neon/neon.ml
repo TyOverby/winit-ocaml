@@ -28,38 +28,28 @@ let ensure_canvas_size state screen =
     state.canvas <- Image_buf.create ~width ~height #0xFFFFFFFl)
 ;;
 
+(* A compiled scene, ready to render. The chosen backend is packed together with its
+   prepared program so that [draw_shape] can recover the backend's full module (including
+   its [Variable_idx], [Batch], and [Result] types) when it unpacks the value. *)
 type compiled_sdf =
-  { instructions : (int * Sdf.Expr_graph.instr) iarray
-  ; final_register : int
-  ; register_count : int
-  ; x_idx : int Option.t
-  ; y_idx : int Option.t
-  ; num_vars : int
-  }
+  | Compiled :
+      (module Sdf.Batch_backend_intf.S with type Prepared.t = 'p) * 'p
+      -> compiled_sdf
 
-let compile_sdf_from_source ~scene_file source =
+let compile_sdf_from_source (module B : Sdf.Batch_backend_intf.S) ~scene_file source =
   let tree = Neo.compile ~filename:scene_file source |> Or_error.ok_exn in
-  let ~instructions, ~final_register, ~register_count, ~var_mapping =
-    Sdf.Expr_graph.from_tree tree
-  in
-  Printf.printf "registers before minimization: %d\n%!" register_count;
-  let ~instructions, ~final_register, ~register_count =
-    Sdf.Expr_graph_register_minimizer.minimize ~instructions ~final_register
-  in
-  Printf.printf "registers after minimization:  %d\n%!" register_count;
-  let x_idx = Hashtbl.find var_mapping "x" in
-  let y_idx = Hashtbl.find var_mapping "y" in
-  let num_vars = Hashtbl.length var_mapping in
-  { instructions; final_register; register_count; x_idx; y_idx; num_vars }
+  Compiled ((module B), B.Prepared.of_tree tree)
 ;;
 
-let maybe_recompile ~scene_file ~last_mtime ~current_sdf =
+let maybe_recompile backend ~scene_file ~last_mtime ~current_sdf =
   let stats = Core_unix.stat scene_file in
   let mtime = stats.st_mtime in
   if Float.( <> ) mtime last_mtime
   then (
     Printf.printf "File changed, recompiling...\n%!";
-    match compile_sdf_from_source ~scene_file (In_channel.read_all scene_file) with
+    match
+      compile_sdf_from_source backend ~scene_file (In_channel.read_all scene_file)
+    with
     | sdf ->
       Printf.printf "Recompiled successfully.\n%!";
       mtime, sdf
@@ -69,47 +59,29 @@ let maybe_recompile ~scene_file ~last_mtime ~current_sdf =
   else mtime, current_sdf
 ;;
 
-let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_scheduler.t) =
+let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
   let canvas = state.canvas in
-  let instructions = sdf.instructions in
-  let final_register = sdf.final_register in
-  let register_count = sdf.register_count in
-  let x_idx = sdf.x_idx in
-  let y_idx = sdf.y_idx in
-  let num_vars = sdf.num_vars in
+  let lookup_variable name =
+    match B.Prepared.lookup_variable prepared name with
+    | var -> Some var
+    | exception _ -> None
+  in
+  let x_idx = lookup_variable "x" in
+  let y_idx = lookup_variable "y" in
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
-      let register_bank =
-        Sdf.Expr_graph_batch_eval.Register_bank.create ~register_count ~width
-      in
-      let variable_bank =
-        Sdf.Expr_graph_batch_eval.Variable_bank.create ~num_vars ~width
-      in
+      let batch = B.Batch.create prepared ~len:width in
       let y_val = Sdf.Value.of_float (Float32_u.of_float (Float.of_int y)) in
       for x = 0 to width - 1 do
-        Option.iter y_idx ~f:(fun y_idx ->
-          Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
-            variable_bank
-            ~var:y_idx
-            ~px:x
-            y_val);
-        Option.iter x_idx ~f:(fun x_idx ->
-          Sdf.Expr_graph_batch_eval.Variable_bank.set_variable
-            variable_bank
-            ~var:x_idx
-            ~px:x
-            (Sdf.Value.of_float (Float32_u.of_float (Float.of_int x))))
+        let x_val = Sdf.Value.of_float (Float32_u.of_float (Float.of_int x)) in
+        Option.iter y_idx ~f:(fun var -> B.Batch.set_variable batch ~var ~px:x y_val);
+        Option.iter x_idx ~f:(fun var -> B.Batch.set_variable batch ~var ~px:x x_val)
       done;
-      Sdf.Expr_graph_batch_eval.run ~variable_bank ~instructions ~register_bank ~width;
+      let result = B.Batch.run batch in
       for x = 0 to width - 1 do
-        let value =
-          Sdf.Expr_graph_batch_eval.Register_bank.get_result
-            register_bank
-            ~reg:final_register
-            ~px:x
-        in
+        let value = B.Result.get_output result ~px:x in
         let dist = Float32_u.to_float (Sdf.Value.to_float value) in
         if Float.(dist <= 0.0)
         then Image_buf.set canvas ~x ~y #0xFF000000l
@@ -128,12 +100,40 @@ let draw_shape (state : state) (sdf : compiled_sdf) (scheduler : Parallel_schedu
       done))
 ;;
 
+(* The available evaluation backends, each a [(module Batch_backend_intf.S)], selected by
+   the [-backend] flag. *)
+let backends : (string * (module Sdf.Batch_backend_intf.S)) list =
+  [ "batch", (module Sdf.Expr_graph_batch_eval.Batched)
+  ; "graph", (module Sdf.Expr_graph_eval.Batched)
+  ; "tree", (module Sdf.Expr_tree_eval.Batched)
+  ]
+;;
+
+let backend_arg = Command.Arg_type.of_alist_exn backends
+
+(* Physical key codes (the [keyboard_types.Code] enum discriminants reported by winit) for
+   the keys that hot-swap the backend at runtime: b, g, and t on a US layout. *)
+let backend_for_key_code key_code =
+  match key_code with
+  | 20 (* KeyB *) -> Some "batch"
+  | 25 (* KeyG *) -> Some "graph"
+  | 38 (* KeyT *) -> Some "tree"
+  | _ -> None
+;;
+
 let command =
   Command.basic
     ~summary:"Neon SDF renderer"
     (let%map_open.Command scene_file = anon ("SCENE_FILE" %: string)
      and show_timings =
        flag "-timings" no_arg ~doc:" Print timing information for each frame"
+     and backend =
+       flag
+         "-backend"
+         (optional_with_default
+            (List.Assoc.find_exn backends "batch" ~equal:String.equal)
+            backend_arg)
+         ~doc:"BACKEND Evaluation backend: batch (default), graph, or tree"
      in
      fun () ->
        let window =
@@ -142,14 +142,34 @@ let command =
        let surface = Softbuffer.create (Winit.get_handle window) in
        let state = create_state () in
        let source = In_channel.read_all scene_file in
-       let sdf = ref (compile_sdf_from_source ~scene_file source) in
+       (* The active backend can be hot-swapped at runtime via the b/g/t keys. Switching
+          re-derives the prepared program (which is backend-specific) from the current
+          scene source. *)
+       let current_backend = ref backend in
+       let sdf = ref (compile_sdf_from_source !current_backend ~scene_file source) in
        let last_mtime = ref (Core_unix.stat scene_file).st_mtime in
        let scheduler = Parallel_scheduler.create () in
        let should_exit = ref false in
+       let switch_backend label =
+         match List.Assoc.find backends label ~equal:String.equal with
+         | None -> ()
+         | Some backend ->
+           Printf.printf "Switching to %s backend\n%!" label;
+           current_backend := backend;
+           sdf
+           := compile_sdf_from_source
+                backend
+                ~scene_file
+                (In_channel.read_all scene_file)
+       in
        while not !should_exit do
          (* Check for file changes *)
          let new_mtime, new_sdf =
-           maybe_recompile ~scene_file ~last_mtime:!last_mtime ~current_sdf:!sdf
+           maybe_recompile
+             !current_backend
+             ~scene_file
+             ~last_mtime:!last_mtime
+             ~current_sdf:!sdf
          in
          last_mtime := new_mtime;
          sdf := new_sdf;
@@ -161,6 +181,8 @@ let command =
            | Winit.CloseRequested -> should_exit := true
            | Winit.SurfaceResized { width; height } ->
              Softbuffer.resize surface ~width ~height
+           | Winit.KeyPressed { key_code; repeat = false; _ } ->
+             Option.iter (backend_for_key_code key_code) ~f:switch_backend
            | Winit.PointerButtonPressed _ -> state.is_drawing <- true
            | Winit.PointerButtonReleased _ ->
              state.is_drawing <- false;
