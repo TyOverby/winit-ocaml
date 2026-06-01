@@ -1,4 +1,3 @@
-
 // A circle SDF centered at (cx, cy) with radius r.
 // Returns a function (x, y) -> distance.
 fn circle(cx, cy, r) {

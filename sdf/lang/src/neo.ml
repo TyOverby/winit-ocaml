@@ -1,11 +1,10 @@
 open! Core
 open Sdf
-
 module Ast = Ast
 module Compile = Compile
 
 let pos_to_string (pos : Lexing.position) : string =
-  sprintf "%s:%d:%d" pos.pos_fname (pos.pos_lnum) (pos.pos_cnum - pos.pos_bol)
+  sprintf "%s:%d:%d" pos.pos_fname pos.pos_lnum (pos.pos_cnum - pos.pos_bol)
 ;;
 
 let parse ?(filename = "<string>") (source : string) : Ast.program Or_error.t =
@@ -61,11 +60,7 @@ let format_error ~source (error : Error.t) : string =
             then List.nth_exn source_lines (line_num - 1)
             else ""
           in
-          let caret =
-            if col_num >= 0
-            then String.make col_num ' ' ^ "^"
-            else ""
-          in
+          let caret = if col_num >= 0 then String.make col_num ' ' ^ "^" else "" in
           sprintf
             "error: %s\n --> %s:%d:%d\n  |\n%d | %s\n  | %s"
             msg

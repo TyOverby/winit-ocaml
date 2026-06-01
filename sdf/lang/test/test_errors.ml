@@ -78,7 +78,8 @@ let%expect_test "compile: wrong arg count (user fn)" =
 
 let%expect_test "compile: wrong arg count (builtin)" =
   compile_error {| export sqrt(1, 2); |};
-  [%expect {|
+  [%expect
+    {|
     ("wrong number of arguments to 'sqrt': expected 1 but got 2"
      (loc <string>:1:8))
     |}]
@@ -94,7 +95,8 @@ let%expect_test "compile: function as expression" =
     fn f(x) { x }
     export f;
   |};
-  [%expect {|
+  [%expect
+    {|
     ("cannot use function as a value; did you forget to call it?"
      (loc <string>:3:11))
     |}]
@@ -125,7 +127,8 @@ let%expect_test "type error: float op on bool (rhs)" =
     let a : bool = var("a");
     export 1 + a;
   |};
-  [%expect {|
+  [%expect
+    {|
     ("type error in addition: right-hand side is bool, expected float"
      (loc <string>:2:19))
     |}]
@@ -136,19 +139,22 @@ let%expect_test "type error: float op on bool (lhs)" =
     let a : bool = var("a");
     export a + 1;
   |};
-  [%expect {|
+  [%expect
+    {|
     ("type error in addition: left-hand side is bool, expected float"
      (loc <string>:2:19))
     |}]
 ;;
 
 let%expect_test "type error: float op on both bools" =
-  compile_error {|
+  compile_error
+    {|
     let a : bool = var("a");
     let b : bool = var("b");
     export a + b;
   |};
-  [%expect {|
+  [%expect
+    {|
     ("type error in addition: both arguments are bool, expected float"
      (lhs_loc <string>:2:19) (rhs_loc <string>:3:19))
     |}]
@@ -159,7 +165,8 @@ let%expect_test "type error: bool op on float (rhs)" =
     let a : bool = var("a");
     export a && 1;
   |};
-  [%expect {|
+  [%expect
+    {|
     ("type error in and: right-hand side is float, expected bool"
      (loc <string>:3:16))
     |}]
@@ -170,19 +177,22 @@ let%expect_test "type error: bool op on float (lhs)" =
     let a : bool = var("a");
     export 1 && a;
   |};
-  [%expect {|
+  [%expect
+    {|
     ("type error in and: left-hand side is float, expected bool"
      (loc <string>:3:11))
     |}]
 ;;
 
 let%expect_test "type error: bool op on both floats" =
-  compile_error {|
+  compile_error
+    {|
     let x : float = var("x");
     let y : float = var("y");
     export x && y;
   |};
-  [%expect {|
+  [%expect
+    {|
     ("type error in and: both arguments are float, expected bool"
      (lhs_loc <string>:2:20) (rhs_loc <string>:3:20))
     |}]
@@ -193,7 +203,8 @@ let%expect_test "type error: unary float op on bool" =
     let a : bool = var("a");
     export sqrt(a);
   |};
-  [%expect {|
+  [%expect
+    {|
     ("type error: 'sqrt' expects a float argument but got bool"
      (loc <string>:2:19))
     |}]
@@ -212,7 +223,8 @@ let%expect_test "type error: if-arms disagree" =
     let a : bool = var("a");
     export if a { 1 } else { true };
   |};
-  [%expect {|
+  [%expect
+    {|
     ("type error: if-arms disagree; then-branch is float but else-branch is bool"
      (then_loc <string>:3:18) (else_loc <string>:3:29))
     |}]
@@ -228,7 +240,8 @@ let format_error_test source =
 
 let%expect_test "format_error: unbound variable" =
   format_error_test "export foo;";
-  [%expect {|
+  [%expect
+    {|
     error: unbound variable 'foo'
      --> test.neo:1:7
       |
@@ -239,7 +252,8 @@ let%expect_test "format_error: unbound variable" =
 
 let%expect_test "format_error: type error" =
   format_error_test "let a : bool = var(\"a\");\nexport 1 + a;";
-  [%expect {|
+  [%expect
+    {|
     error: type error in addition: right-hand side is bool, expected float
      --> test.neo:1:15
       |
