@@ -101,7 +101,7 @@ end
 
 module Callback_mode : sig
   (** The callback mode controls how a callback for an asynchronous operation may be
-      fired. See \@ref Asynchronous-Operations for how these are used. *)
+      fired. See @ref Asynchronous-Operations for how these are used. *)
   type t =
     | Wait_any_only
     | Allow_process_events
@@ -209,7 +209,7 @@ module Error_type : sig
 end
 
 module Feature_level : sig
-  (** See \@ref WGPURequestAdapterOptions::featureLevel. *)
+  (** See @ref WGPURequestAdapterOptions::featureLevel. *)
   type t =
     | Compatibility
     | Core
@@ -415,7 +415,7 @@ end
 
 module Status : sig
   (** Status code returned (synchronously) from many operations. Generally indicates an
-      invalid input like an unknown enum value or \@ref OutStructChainError. Read the
+      invalid input like an unknown enum value or @ref OutStructChainError. Read the
       function's documentation for specific error conditions. *)
   type t =
     | Success

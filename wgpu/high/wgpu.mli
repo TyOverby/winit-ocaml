@@ -1122,8 +1122,8 @@ module Adapter : sig
 end
 
 module Surface : sig
-  (** An object used to continuously present image data to the user, see \@ref Surfaces
-      for more details. *)
+  (** An object used to continuously present image data to the user, see @ref Surfaces for
+      more details. *)
 
   type t
 
