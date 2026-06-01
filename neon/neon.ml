@@ -157,10 +157,7 @@ let command =
            Printf.printf "Switching to %s backend\n%!" label;
            current_backend := backend;
            sdf
-           := compile_sdf_from_source
-                backend
-                ~scene_file
-                (In_channel.read_all scene_file)
+           := compile_sdf_from_source backend ~scene_file (In_channel.read_all scene_file)
        in
        while not !should_exit do
          (* Check for file changes *)

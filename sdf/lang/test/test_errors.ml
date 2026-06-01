@@ -47,7 +47,8 @@ let%expect_test "parser: missing export" =
 
 let%expect_test "parser: if with 'then' keyword (OCaml-style)" =
   parse_error {| export if true then { 1 } else { 2 }; |};
-  [%expect {|
+  [%expect
+    {|
     ("expected '{' after 'if' condition (Neo uses 'if cond { ... } else { ... }', not 'if cond then ...')"
      (loc <string>:1:16))
     |}]
@@ -55,7 +56,8 @@ let%expect_test "parser: if with 'then' keyword (OCaml-style)" =
 
 let%expect_test "parser: if missing opening brace" =
   parse_error {| export if true 1 else { 2 }; |};
-  [%expect {|
+  [%expect
+    {|
     ("expected '{' after 'if' condition (Neo uses 'if cond { ... } else { ... }', not 'if cond then ...')"
      (loc <string>:1:16))
     |}]
@@ -63,7 +65,8 @@ let%expect_test "parser: if missing opening brace" =
 
 let%expect_test "parser: else missing opening brace" =
   parse_error {| export if true { 1 } else 2; |};
-  [%expect {|
+  [%expect
+    {|
     ("expected '{' after 'else' (Neo requires braces: 'if cond { ... } else { ... }')"
      (loc <string>:1:27))
     |}]

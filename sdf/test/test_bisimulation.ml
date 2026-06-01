@@ -156,10 +156,7 @@ let assert_bisimulation tree ~x ~y =
         Expr_graph.from_tree tree
       in
       let graph_asm =
-        sprintf
-          "result: $%d\n%s"
-          final_register
-          (Expr_graph.pp_instructions instructions)
+        sprintf "result: $%d\n%s" final_register (Expr_graph.pp_instructions instructions)
       in
       let ~instructions:minimized, ~final_register:min_final, ~register_count:_ =
         Expr_graph_register_minimizer.minimize ~instructions ~final_register

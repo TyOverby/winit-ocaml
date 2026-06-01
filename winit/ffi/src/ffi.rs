@@ -39,7 +39,12 @@ pub struct EventCollector {
 }
 
 impl EventCollector {
-    pub fn new(window_level: winit::window::WindowLevel, title: String, width: u32, height: u32) -> Self {
+    pub fn new(
+        window_level: winit::window::WindowLevel,
+        title: String,
+        width: u32,
+        height: u32,
+    ) -> Self {
         Self {
             window: None,
             events: Vec::new(),
@@ -58,7 +63,12 @@ impl EventCollector {
 
 impl Default for EventCollector {
     fn default() -> Self {
-        Self::new(winit::window::WindowLevel::Normal, "OCaml Window".to_string(), 800, 600)
+        Self::new(
+            winit::window::WindowLevel::Normal,
+            "OCaml Window".to_string(),
+            800,
+            600,
+        )
     }
 }
 
@@ -447,7 +457,12 @@ pub struct WinitWindow {
 }
 
 impl WinitWindow {
-    pub fn new(window_level: winit::window::WindowLevel, title: String, width: u32, height: u32) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(
+        window_level: winit::window::WindowLevel,
+        title: String,
+        width: u32,
+        height: u32,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let event_loop = EventLoop::new()?;
         let collector = EventCollector::new(window_level, title, width, height);
 

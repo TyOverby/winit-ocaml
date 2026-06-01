@@ -5,11 +5,11 @@ module type S = sig @@ portable
     (* [Prepared.t] and [Variable_idx.t] mode-cross portability and contention so that a
        prepared program (and the variable indices looked up from it) can be shared across
        the worker domains of a parallel render. *)
-    type t : value mod portable contended
+    type t : value mod contended portable
   end
 
   module Prepared : sig
-    type t : value mod portable contended
+    type t : value mod contended portable
 
     val of_tree : Expr_tree.t -> t
     val lookup_variable : t -> string -> Variable_idx.t
