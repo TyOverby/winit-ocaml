@@ -1,0 +1,97 @@
+rule error_message = parse error (program)
+
+(* === if/else errors === *)
+
+(* missing 'else' branch after if *)
+| _*; IF; expr; LBRACE; block; RBRACE / _* . ELSE _*
+    { "expected 'else' branch after 'if' body" }
+
+(* === block closing errors === *)
+
+(* missing '}' — block body expression is complete *)
+| _*; LBRACE; [expr / block: _* .]
+    { "expected '}' to close block" }
+
+(* === let binding errors === *)
+
+(* 'let' with no identifier *)
+| _*; LET / _* . IDENT _*
+    { "expected identifier after 'let'" }
+
+(* 'let x :' but no type *)
+| _*; LET; IDENT; COLON / _* . type_annot _*
+    { "expected type ('float' or 'bool') after ':'" }
+
+(* 'let x : bool/float' — type read, expecting '=' *)
+| _*; LET; IDENT; COLON; BOOL_TYPE / type_annot: _* .
+| _*; LET; IDENT; COLON; FLOAT_TYPE / type_annot: _* .
+    { "expected '=' after type annotation" }
+
+(* 'let x' but no '=' or ':' *)
+| _*; LET; IDENT / _* . EQUALS _*
+    { "expected '=' or ':' after identifier in let binding" }
+
+(* 'let x =' but no expression *)
+| _*; EQUALS / _* . expr _*
+    { "expected expression after '='" }
+
+(* let binding complete but missing ';' *)
+| _*; LET; _*; EQUALS; [expr]
+    { "expected ';' after let binding" }
+
+(* === fn errors === *)
+
+(* fn: name seen, expecting '(' *)
+| _*; FN; IDENT / _* . LPAREN _*
+    { "expected '(' after function name" }
+
+(* fn: params closed, expecting '{' *)
+| _*; FN; _*; RPAREN / _* . LBRACE _*
+    { "expected '{' to open function body" }
+
+(* === binary operator errors === *)
+
+(* operator with missing right-hand side *)
+| _*; PLUS / _* . mul_expr _*
+| _*; MINUS / _* . mul_expr _*
+| _*; STAR / _* . unary_expr _*
+| _*; SLASH / _* . unary_expr _*
+| _*; LT / _* . add_expr _*
+| _*; GT / _* . add_expr _*
+| _*; LTE / _* . add_expr _*
+| _*; GTE / _* . add_expr _*
+| _*; AND / _* . cmp_expr _*
+| _*; OR / _* . and_expr _*
+    { "expected expression after operator" }
+
+(* === method/call errors === *)
+
+(* dot without method name *)
+| _*; DOT / _* . IDENT _*
+    { "expected method name after '.'" }
+
+(* method name without '(' *)
+| _*; DOT; IDENT / _* . LPAREN _*
+    { "expected '(' after method name" }
+
+(* === export errors === *)
+
+(* 'export' keyword with no expression *)
+| _*; EXPORT / _* . expr _*
+    { "expected expression after 'export'" }
+
+(* extra content after 'export expr;' — expected EOF *)
+| _*; EXPORT; expr; SEMI / _* . EOF
+    { "unexpected content after 'export ...;' (expected end of file)" }
+
+(* export expr is complete but missing semicolon *)
+| _*; EXPORT; [expr]
+    { "expected ';' after export expression" }
+
+(* expected 'export' or top-level declaration *)
+| / _* . program
+    { "expected 'export' statement or top-level declaration (let, fn)" }
+
+(* Catch-all: matches any error state *)
+| _*
+    { "syntax error" }

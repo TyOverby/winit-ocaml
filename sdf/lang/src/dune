@@ -1,10 +1,17 @@
 (menhir
- (modules parser))
+ (modules parser)
+ (flags :standard --inspection --table --cmly))
 
 (ocamllex lexer)
 
+(rule
+ (targets errors.ml)
+ (deps parser.cmly errors.lrgrep)
+ (action
+  (run lrgrep compile -s errors.lrgrep -g parser.cmly -o errors.ml)))
+
 (library
  (name neo)
- (libraries sdf core)
+ (libraries sdf core menhirLib lrgrep.runtime)
  (preprocess
   (pps ppx_jane)))

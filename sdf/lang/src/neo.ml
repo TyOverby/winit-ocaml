@@ -7,17 +7,44 @@ let pos_to_string (pos : Lexing.position) : string =
   sprintf "%s:%d:%d" pos.pos_fname pos.pos_lnum (pos.pos_cnum - pos.pos_bol)
 ;;
 
+module I = Parser.MenhirInterpreter
+
 let parse ?(filename = "<string>") (source : string) : Ast.program Or_error.t =
   let lexbuf = Lexing.from_string source in
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = filename };
-  try Ok (Parser.program Lexer.token lexbuf) with
+  let supplier = I.lexer_lexbuf_to_supplier Lexer.token lexbuf in
+  let last_triple = ref (Parser.EOF, lexbuf.lex_curr_p, lexbuf.lex_curr_p) in
+  let supplier () =
+    let triple = supplier () in
+    last_triple := triple;
+    triple
+  in
+  let start = Parser.Incremental.program lexbuf.lex_curr_p in
+  try
+    I.loop_handle_undo
+      (fun result -> Ok result)
+      (fun before _after ->
+        match before with
+        | I.InputNeeded env ->
+          let triple = !last_triple in
+          let msg =
+            match Errors.error_message env triple with
+            | Some msg -> msg
+            | None -> "syntax error"
+          in
+          let _, startp, _ = triple in
+          let loc = pos_to_string startp in
+          Or_error.error_s [%message msg ~loc]
+        | _ ->
+          let pos = lexbuf.lex_curr_p in
+          let loc = pos_to_string pos in
+          Or_error.error_s [%message "syntax error" ~loc])
+      supplier
+      start
+  with
   | Lexer.Syntax_error (msg, pos) ->
     let loc = pos_to_string pos in
     Or_error.error_s [%message msg ~loc]
-  | Parser.Error ->
-    let pos = lexbuf.lex_curr_p in
-    let loc = pos_to_string pos in
-    Or_error.error_s [%message "syntax error" ~loc]
 ;;
 
 let compile ?(filename = "<string>") (source : string) : Expr_tree.t Or_error.t =

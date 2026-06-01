@@ -33,22 +33,115 @@ let%expect_test "lexer: invalid escape in string" =
 
 let%expect_test "parser: missing semicolon" =
   parse_error {| export 42 |};
-  [%expect {| ("syntax error" (loc <string>:1:11)) |}]
+  [%expect {| ("expected ';' after export expression" (loc <string>:1:11)) |}]
 ;;
 
 let%expect_test "parser: missing export" =
   parse_error {| 42; |};
-  [%expect {| ("syntax error" (loc <string>:1:3)) |}]
+  [%expect
+    {|
+    ("expected 'export' statement or top-level declaration (let, fn)"
+     (loc <string>:1:1))
+    |}]
 ;;
 
 let%expect_test "parser: missing else" =
   parse_error {| export if true { 1 }; |};
-  [%expect {| ("syntax error" (loc <string>:1:22)) |}]
+  [%expect {| ("expected 'else' branch after 'if' body" (loc <string>:1:21)) |}]
 ;;
 
 let%expect_test "parser: missing closing brace" =
   parse_error {| export if true { 1 else { 2 }; |};
-  [%expect {| ("syntax error" (loc <string>:1:24)) |}]
+  [%expect {| ("expected '}' to close block" (loc <string>:1:20)) |}]
+;;
+
+let%expect_test "parser: let with no identifier" =
+  parse_error {| let = 1; export 0; |};
+  [%expect {| ("expected identifier after 'let'" (loc <string>:1:5)) |}]
+;;
+
+let%expect_test "parser: let with no '='" =
+  parse_error {| let x 1; export 0; |};
+  [%expect
+    {| ("expected '=' or ':' after identifier in let binding" (loc <string>:1:7)) |}]
+;;
+
+let%expect_test "parser: let with no expression after '='" =
+  parse_error {| let x = ; export 0; |};
+  [%expect {| ("expected expression after '='" (loc <string>:1:9)) |}]
+;;
+
+let%expect_test "parser: let binding missing semicolon" =
+  parse_error {| let x = 1 export 0; |};
+  [%expect {| ("expected ';' after let binding" (loc <string>:1:11)) |}]
+;;
+
+let%expect_test "parser: let with type annotation missing '='" =
+  parse_error {| let x : float 1; export 0; |};
+  [%expect {| ("expected '=' after type annotation" (loc <string>:1:15)) |}]
+;;
+
+let%expect_test "parser: let with bad type annotation" =
+  parse_error {| let x : foo = 1; export 0; |};
+  [%expect {| ("expected type ('float' or 'bool') after ':'" (loc <string>:1:9)) |}]
+;;
+
+let%expect_test "parser: binary operator missing rhs" =
+  parse_error {| export 1 + ; |};
+  [%expect {| ("expected expression after operator" (loc <string>:1:12)) |}]
+;;
+
+let%expect_test "parser: comparison operator missing rhs" =
+  parse_error {| export 1 < ; |};
+  [%expect {| ("expected expression after operator" (loc <string>:1:12)) |}]
+;;
+
+let%expect_test "parser: logical operator missing rhs" =
+  parse_error {| export true && ; |};
+  [%expect {| ("expected expression after operator" (loc <string>:1:16)) |}]
+;;
+
+let%expect_test "parser: dot without method name" =
+  parse_error {| export 1.(); |};
+  [%expect {| ("expected method name after '.'" (loc <string>:1:10)) |}]
+;;
+
+let%expect_test "parser: method name without '('" =
+  parse_error {| export 1.foo; |};
+  [%expect {| ("expected '(' after method name" (loc <string>:1:13)) |}]
+;;
+
+let%expect_test "parser: fn missing '(' after name" =
+  parse_error {| fn foo { 1 } export 0; |};
+  [%expect {| ("expected '(' after function name" (loc <string>:1:8)) |}]
+;;
+
+let%expect_test "parser: fn missing '{' after ')'" =
+  parse_error {| export fn() 1; |};
+  [%expect {| ("expected '{' to open function body" (loc <string>:1:13)) |}]
+;;
+
+let%expect_test "parser: empty input" =
+  parse_error {||};
+  [%expect
+    {|
+    ("expected 'export' statement or top-level declaration (let, fn)"
+     (loc <string>:1:0))
+    |}]
+;;
+
+let%expect_test "parser: export with no expression" =
+  parse_error {| export ; |};
+  [%expect {| ("expected expression after 'export'" (loc <string>:1:8)) |}]
+;;
+
+let%expect_test "parser: extra content after export" =
+  parse_error {| export 1; let x = 2; |};
+  [%expect
+    {|
+    ("unexpected content after 'export ...;' (expected end of file)"
+     (loc <string>:1:11))
+    |}]
 ;;
 
 (* === Compile errors === *)
