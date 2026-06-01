@@ -8,11 +8,6 @@ let ok = Or_error.ok_exn
 (* [nf x] builds a negative float literal: [nf #1.0s] is [-1.0s] *)
 let nf x = f Float32_u.(neg x)
 
-let value_failwith msg =
-  if true then failwith msg;
-  Value.of_bool false
-;;
-
 (* Well-typed expression tree generators. The derived [quickcheck] on [Expr_tree.t] is not
    exported (the types are private in the .mli) and would produce ill-typed trees anyway
    (e.g. [Add] of two bools). These generators produce only correctly-typed trees by
@@ -106,73 +101,26 @@ let gen_expr ~depth (type_ : Expr_tree.Type.t) =
 
 (* --- Shared bisimulation infrastructure --- *)
 
-let make_env ~x ~y =
-  String.Map.of_alist_exn
-    [ "x", Value.Boxed.T (Value.of_float (Float32_u.of_float x))
-    ; "y", Value.Boxed.T (Value.of_float (Float32_u.of_float y))
-    ]
+let backends : (string * (module Batch_backend_intf.S)) list =
+  [ "graph", (module Expr_graph_eval.Batched)
+  ; "batch", (module Expr_graph_batch_eval.Batched)
+  ; "tree", (module Expr_tree_eval.Batched)
+  ]
 ;;
 
-let eval_with_graph tree ~x ~y =
-  let ~var_mapping, ~run = Expr_graph_eval.run_tree tree in
-  let variables = Value.Array.create ~len:(Hashtbl.length var_mapping) in
-  Hashtbl.iteri var_mapping ~f:(fun ~key ~data:idx ->
-    let value =
-      match key with
-      | "x" -> Value.of_float (Float32_u.of_float x)
-      | "y" -> Value.of_float (Float32_u.of_float y)
-      | other -> value_failwith ("unexpected variable: " ^ other)
-    in
-    Value.Array.set variables idx value);
-  run ~variables
-;;
-
-let eval_with_minimized_graph tree ~x ~y =
-  let ~instructions, ~final_register, ~register_count:_, ~var_mapping =
-    Expr_graph.from_tree tree
+let eval_with_backend backend tree ~x ~y =
+  let module B = (val (backend : (module Batch_backend_intf.S))) in
+  let prepared = B.Prepared.of_tree tree in
+  let batch = B.Batch.create prepared ~len:1 in
+  let try_set_var name value =
+    match B.Prepared.lookup_variable prepared name with
+    | var -> B.Batch.set_variable batch ~var ~px:0 value
+    | exception _ -> ()
   in
-  let ~instructions, ~final_register, ~register_count =
-    Expr_graph_register_minimizer.minimize ~instructions ~final_register
-  in
-  let registers = Value.Array.create ~len:register_count in
-  let variables = Value.Array.create ~len:(Hashtbl.length var_mapping) in
-  Hashtbl.iteri var_mapping ~f:(fun ~key ~data:idx ->
-    let value =
-      match key with
-      | "x" -> Value.of_float (Float32_u.of_float x)
-      | "y" -> Value.of_float (Float32_u.of_float y)
-      | other -> value_failwith ("unexpected variable: " ^ other)
-    in
-    Value.Array.set variables idx value);
-  Expr_graph_eval.run ~variables ~instructions ~registers;
-  Value.Array.get registers final_register
-;;
-
-let eval_with_batch tree ~x ~y =
-  let ~instructions, ~final_register, ~register_count:_, ~var_mapping =
-    Expr_graph.from_tree tree
-  in
-  let ~instructions, ~final_register, ~register_count =
-    Expr_graph_register_minimizer.minimize ~instructions ~final_register
-  in
-  let register_bank =
-    Expr_graph_batch_eval.Register_bank.create ~register_count ~width:1
-  in
-  let variable_bank =
-    Expr_graph_batch_eval.Variable_bank.create
-      ~num_vars:(Hashtbl.length var_mapping)
-      ~width:1
-  in
-  Hashtbl.iteri var_mapping ~f:(fun ~key ~data:idx ->
-    let value =
-      match key with
-      | "x" -> Value.of_float (Float32_u.of_float x)
-      | "y" -> Value.of_float (Float32_u.of_float y)
-      | other -> value_failwith ("unexpected variable: " ^ other)
-    in
-    Expr_graph_batch_eval.Variable_bank.set_variable variable_bank ~var:idx ~px:0 value);
-  Expr_graph_batch_eval.run ~variable_bank ~instructions ~register_bank ~width:1;
-  Expr_graph_batch_eval.Register_bank.get_result register_bank ~reg:final_register ~px:0
+  try_set_var "x" (Value.of_float (Float32_u.of_float x));
+  try_set_var "y" (Value.of_float (Float32_u.of_float y));
+  let result = B.Batch.run batch in
+  B.Result.get_output result ~px:0
 ;;
 
 let format_value v (type_ : Expr_tree.Type.t) =
@@ -181,73 +129,55 @@ let format_value v (type_ : Expr_tree.Type.t) =
   | Bool -> Bool.to_string (Value.to_bool v)
 ;;
 
-(** Print the results of tree and minimized-graph evaluators. On mismatch, prints the
-    minimized value. *)
-let check_minimized tree ~x ~y =
-  let minimized_result = eval_with_minimized_graph tree ~x ~y in
-  match Expr_tree_eval.eval ~env:(make_env ~x ~y) tree with
-  | Error err -> printf !"tree eval error: %{Error#hum}\n" err
-  | Ok tree_value ->
-    let type_ = tree.type_ in
-    printf "%s\n" (format_value tree_value type_);
-    if not (Value.equal tree_value minimized_result)
-    then printf "MISMATCH: minimized=%s\n" (format_value minimized_result type_)
-;;
-
-(** Print the results of both evaluators. On mismatch, prints both values. *)
+(** Evaluate [tree] with every backend and print the reference result. On mismatch with
+    any backend, prints the mismatched value and label. *)
 let check tree ~x ~y =
-  let graph_result = eval_with_graph tree ~x ~y in
-  match Expr_tree_eval.eval ~env:(make_env ~x ~y) tree with
-  | Error err -> printf !"tree eval error: %{Error#hum}\n" err
-  | Ok tree_value ->
-    let type_ = tree.type_ in
-    printf "%s\n" (format_value tree_value type_);
-    if not (Value.equal tree_value graph_result)
-    then printf "MISMATCH: graph=%s\n" (format_value graph_result type_)
+  let tree_backend : (module Batch_backend_intf.S) = (module Expr_tree_eval.Batched) in
+  let reference = eval_with_backend tree_backend tree ~x ~y in
+  let type_ = tree.type_ in
+  printf "%s\n" (format_value reference type_);
+  List.iter backends ~f:(fun (label, backend) ->
+    let result = eval_with_backend backend tree ~x ~y in
+    if not (Value.equal reference result)
+    then printf "MISMATCH: %s=%s\n" label (format_value result type_))
 ;;
 
-(** Assert bisimulation holds. Raises on mismatch. For use in quickcheck. *)
+(** Assert bisimulation holds across all backends. Raises on mismatch. For use in
+    quickcheck. *)
 let assert_bisimulation tree ~x ~y =
-  let graph_result = eval_with_graph tree ~x ~y in
-  let minimized_result = eval_with_minimized_graph tree ~x ~y in
-  let batch_result = eval_with_batch tree ~x ~y in
-  match Expr_tree_eval.eval ~env:(make_env ~x ~y) tree with
-  | Error err -> Error.raise err
-  | Ok tree_value ->
-    let type_ = tree.type_ in
-    let check_match ~label result =
-      if not (Value.equal tree_value result)
-      then (
-        let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
-          Expr_graph.from_tree tree
-        in
-        let graph_asm =
-          sprintf
-            "result: $%d\n%s"
-            final_register
-            (Expr_graph.pp_instructions instructions)
-        in
-        let ~instructions:minimized, ~final_register:min_final, ~register_count:_ =
-          Expr_graph_register_minimizer.minimize ~instructions ~final_register
-        in
-        let minimized_asm =
-          sprintf "result: $%d\n%s" min_final (Expr_graph.pp_instructions minimized)
-        in
-        Error.raise_s
-          [%message
-            "bisimulation failure"
-              ~evaluator:(label : string)
-              ~tree:(Expr_tree.sexp_of_t tree : Sexp.t)
-              ~tree_result:(format_value tree_value type_ : string)
-              ~other_result:(format_value result type_ : string)
-              ~graph_asm:(graph_asm : string)
-              ~minimized_asm:(minimized_asm : string)
-              ~x:(x : float)
-              ~y:(y : float)])
-    in
-    check_match ~label:"graph" graph_result;
-    check_match ~label:"minimized_graph" minimized_result;
-    check_match ~label:"batch" batch_result
+  let tree_backend : (module Batch_backend_intf.S) = (module Expr_tree_eval.Batched) in
+  let reference = eval_with_backend tree_backend tree ~x ~y in
+  let type_ = tree.type_ in
+  List.iter backends ~f:(fun (label, backend) ->
+    let result = eval_with_backend backend tree ~x ~y in
+    if not (Value.equal reference result)
+    then (
+      let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
+        Expr_graph.from_tree tree
+      in
+      let graph_asm =
+        sprintf
+          "result: $%d\n%s"
+          final_register
+          (Expr_graph.pp_instructions instructions)
+      in
+      let ~instructions:minimized, ~final_register:min_final, ~register_count:_ =
+        Expr_graph_register_minimizer.minimize ~instructions ~final_register
+      in
+      let minimized_asm =
+        sprintf "result: $%d\n%s" min_final (Expr_graph.pp_instructions minimized)
+      in
+      Error.raise_s
+        [%message
+          "bisimulation failure"
+            ~evaluator:(label : string)
+            ~tree:(Expr_tree.sexp_of_t tree : Sexp.t)
+            ~tree_result:(format_value reference type_ : string)
+            ~other_result:(format_value result type_ : string)
+            ~graph_asm:(graph_asm : string)
+            ~minimized_asm:(minimized_asm : string)
+            ~x:(x : float)
+            ~y:(y : float)]))
 ;;
 
 (* --- Hardcoded bisimulation tests --- *)
@@ -502,7 +432,7 @@ let%expect_test "outer var survives register pressure in cond branch (minimized)
         $7 <- 0.
         $2 <- $7
     |}];
-  check_minimized tree ~x:5.0 ~y:0.0;
+  check tree ~x:5.0 ~y:0.0;
   [%expect {| -5. |}]
 ;;
 

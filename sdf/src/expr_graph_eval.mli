@@ -11,3 +11,5 @@ val run
 val run_tree
   :  Expr_tree.t
   -> var_mapping:int String.Table.t * run:(variables:Value.Array.t -> Value.t)
+
+module Batched : Batch_backend_intf.S

@@ -237,8 +237,8 @@ module Batched : Batch_backend_intf.S = struct
       for i = 0 to len - 1 do
         let vars = Hashtbl.find_exn variables i in
         let value =
-          match eval_float ~env:vars tree with
-          | Ok v -> Value.of_float v
+          match eval ~env:vars tree with
+          | Ok v -> v
           | Error e ->
             if true then Error.raise e;
             Value.of_bool false

@@ -1,4 +1,5 @@
 open! Core
+module Batch_backend_intf = Batch_backend_intf
 module Expr_tree = Expr_tree
 module Expr_tree_eval = Expr_tree_eval
 module Expr_graph = Expr_graph
