@@ -2,6 +2,14 @@ rule error_message = parse error (program)
 
 (* === if/else errors === *)
 
+(* missing '{' after 'if' condition — e.g. OCaml-style 'if cond then ...' *)
+| _*; IF; [expr]
+    { "expected '{' after 'if' condition (Neo uses 'if cond { ... } else { ... }', not 'if cond then ...')" }
+
+(* missing '{' after 'else' — e.g. 'if cond { ... } else expr' *)
+| _*; IF; expr; LBRACE; block; RBRACE; ELSE
+    { "expected '{' after 'else' (Neo requires braces: 'if cond { ... } else { ... }')" }
+
 (* missing 'else' branch after if *)
 | _*; IF; expr; LBRACE; block; RBRACE / _* . ELSE _*
     { "expected 'else' branch after 'if' body" }
