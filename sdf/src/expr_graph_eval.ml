@@ -111,3 +111,71 @@ let run_tree tree =
   in
   ~var_mapping, ~run:(run' ~instructions ~final_register ~register_count)
 ;;
+
+module Batched : Batch_backend_intf.S = struct
+  module Variable_idx = struct
+    type t = int
+  end
+
+  module Prepared = struct
+    type t =
+      { instructions : Expr_graph.t
+      ; final_register : int
+      ; register_count : int
+      ; var_mapping : int String.Table.t
+      }
+
+    let of_tree tree =
+      let ~instructions, ~final_register, ~register_count:_, ~var_mapping =
+        Expr_graph.from_tree tree
+      in
+      let ~instructions, ~final_register, ~register_count =
+        Expr_graph_register_minimizer.minimize ~instructions ~final_register
+      in
+      { instructions; final_register; register_count; var_mapping }
+    ;;
+
+    let lookup_variable { var_mapping; _ } s = Hashtbl.find_exn var_mapping s
+  end
+
+  module Result = struct
+    type t = Value.Array.t
+
+    let get_output t ~px = Value.Array.get t px
+  end
+
+  module Batch = struct
+    type t =
+      { prepared : Prepared.t
+      ; variables : Value.Array.t iarray
+      ; registers : Value.Array.t iarray
+      ; len : int
+      }
+
+    let create (prepared : Prepared.t) ~len =
+      let variables =
+        let variable_count = Hashtbl.length prepared.var_mapping in
+        Iarray.init len ~f:(fun _ -> Value.Array.create ~len:variable_count)
+      in
+      let registers =
+        Iarray.init len ~f:(fun _ -> Value.Array.create ~len:prepared.register_count)
+      in
+      { prepared; variables; registers; len }
+    ;;
+
+    let set_variable t ~var ~px value =
+      Value.Array.set (Iarray.get t.variables px) var value
+    ;;
+
+    let run { prepared = { instructions; final_register; _ }; variables; registers; len } =
+      let out = Value.Array.create ~len in
+      for i = 0 to len - 1 do
+        let variables = Iarray.get variables i in
+        let registers = Iarray.get registers i in
+        run ~variables ~instructions ~registers;
+        Value.Array.set out i (Value.Array.get registers final_register)
+      done;
+      out
+    ;;
+  end
+end

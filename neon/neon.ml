@@ -44,10 +44,7 @@ let compile_sdf_from_source ~scene_file source =
   in
   Printf.printf "registers before minimization: %d\n%!" register_count;
   let ~instructions, ~final_register, ~register_count =
-    Sdf.Expr_graph_register_minimizer.minimize
-      ~instructions
-      ~final_register
-      ~register_count
+    Sdf.Expr_graph_register_minimizer.minimize ~instructions ~final_register
   in
   Printf.printf "registers after minimization:  %d\n%!" register_count;
   let x_idx = Hashtbl.find var_mapping "x" in

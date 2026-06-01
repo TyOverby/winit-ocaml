@@ -165,7 +165,7 @@ and minimize_block state (instructions : Expr_graph.t) : Expr_graph.t =
   Iarray.of_list_rev !result
 ;;
 
-let minimize ~instructions ~final_register ~register_count:_ =
+let minimize ~instructions ~final_register =
   let state =
     { mapping = Int.Table.create ()
     ; free_pool = Int.Hash_set.create ()

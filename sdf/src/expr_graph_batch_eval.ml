@@ -230,3 +230,69 @@ let run ~variable_bank ~instructions ~register_bank ~width =
       done
     done)
 ;;
+
+module Batched : Batch_backend_intf.S = struct
+  module Variable_idx = struct
+    type t = int
+  end
+
+  module Prepared = struct
+    type t =
+      { instructions : Expr_graph.t
+      ; final_register : int
+      ; register_count : int
+      ; var_mapping : int String.Table.t
+      }
+
+    let of_tree tree =
+      let ~instructions, ~final_register, ~register_count:_, ~var_mapping =
+        Expr_graph.from_tree tree
+      in
+      let ~instructions, ~final_register, ~register_count =
+        Expr_graph_register_minimizer.minimize ~instructions ~final_register
+      in
+      { instructions; final_register; register_count; var_mapping }
+    ;;
+
+    let lookup_variable { var_mapping; _ } s = Hashtbl.find_exn var_mapping s
+  end
+
+  module Batch = struct
+    type t =
+      { prepared : Prepared.t
+      ; variables : Variable_bank.t
+      ; registers : Register_bank.t
+      ; len : int
+      }
+
+    let create (prepared : Prepared.t) ~len =
+      let variables =
+        let num_vars = Hashtbl.length prepared.var_mapping in
+        Variable_bank.create ~num_vars ~width:len
+      in
+      let registers =
+        let register_count = prepared.register_count in
+        Register_bank.create ~register_count ~width:len
+      in
+      { prepared; variables; registers; len }
+    ;;
+
+    let set_variable t ~var ~px value =
+      Variable_bank.set_variable t.variables ~var ~px value
+    ;;
+
+    let run ({ prepared = { instructions; _ }; variables; registers; len } as t) =
+      run ~instructions ~variable_bank:variables ~register_bank:registers ~width:len;
+      t
+    ;;
+  end
+
+  module Result = struct
+    type t = Batch.t
+
+    let get_output t ~px =
+      let reg = t.Batch.prepared.final_register in
+      Register_bank.get_result t.registers ~reg ~px
+    ;;
+  end
+end

@@ -27,3 +27,5 @@ val run
   -> register_bank:Register_bank.t
   -> width:int
   -> unit
+
+module Batched : Batch_backend_intf.S

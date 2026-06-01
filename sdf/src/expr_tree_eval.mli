@@ -10,3 +10,5 @@ module Result : sig
 end
 
 val eval : env:Value.Boxed.t String.Map.t -> Expr_tree.t -> Result.t
+
+module Batched : Batch_backend_intf.S

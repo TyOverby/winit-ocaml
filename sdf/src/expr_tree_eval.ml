@@ -199,3 +199,53 @@ let eval ~env (t : Expr_tree.t) : Result.t =
      | Ok f -> Ok (Value.of_bool f)
      | Error e -> Error e)
 ;;
+
+module Batched : Batch_backend_intf.S = struct
+  module Variable_idx = String
+
+  module Prepared = struct
+    type t = { tree : Expr_tree.t }
+
+    let of_tree tree = { tree }
+    let lookup_variable _ s = s
+  end
+
+  module Result = struct
+    type t = Value.Array.t
+
+    let get_output t ~px = Value.Array.get t px
+  end
+
+  module Batch = struct
+    type t =
+      { tree : Expr_tree.t
+      ; variables : Value.Boxed.t Variable_idx.Map.t Int.Table.t
+      ; len : int
+      }
+
+    let create { Prepared.tree } ~len = { tree; len; variables = Int.Table.create () }
+
+    let set_variable { variables; _ } ~var ~px value =
+      let value = Value.Boxed.T value in
+      Hashtbl.update variables px ~f:(function
+        | None -> String.Map.singleton var value
+        | Some map -> Map.set map ~key:var ~data:value)
+    ;;
+
+    let run { tree; len; variables } =
+      let out = Value.Array.create ~len in
+      for i = 0 to len - 1 do
+        let vars = Hashtbl.find_exn variables i in
+        let value =
+          match eval_float ~env:vars tree with
+          | Ok v -> Value.of_float v
+          | Error e ->
+            if true then Error.raise e;
+            Value.of_bool false
+        in
+        Value.Array.set out i value
+      done;
+      out
+    ;;
+  end
+end

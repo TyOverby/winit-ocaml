@@ -26,14 +26,11 @@ let run_one ~source ~filename ~strategy =
   in
   let (instructions, _final_register, register_count, x_idx, y_idx, num_vars), graph_s =
     measure (fun () ->
-      let ~instructions, ~final_register, ~register_count, ~var_mapping =
+      let ~instructions, ~final_register, ~register_count:_, ~var_mapping =
         Sdf.Expr_graph.from_tree tree
       in
       let ~instructions, ~final_register, ~register_count =
-        Sdf.Expr_graph_register_minimizer.minimize
-          ~instructions
-          ~final_register
-          ~register_count
+        Sdf.Expr_graph_register_minimizer.minimize ~instructions ~final_register
       in
       let x_idx = Hashtbl.find_exn var_mapping "x" in
       let y_idx = Hashtbl.find_exn var_mapping "y" in

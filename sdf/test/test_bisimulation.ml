@@ -128,11 +128,11 @@ let eval_with_graph tree ~x ~y =
 ;;
 
 let eval_with_minimized_graph tree ~x ~y =
-  let ~instructions, ~final_register, ~register_count, ~var_mapping =
+  let ~instructions, ~final_register, ~register_count:_, ~var_mapping =
     Expr_graph.from_tree tree
   in
   let ~instructions, ~final_register, ~register_count =
-    Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count
+    Expr_graph_register_minimizer.minimize ~instructions ~final_register
   in
   let registers = Value.Array.create ~len:register_count in
   let variables = Value.Array.create ~len:(Hashtbl.length var_mapping) in
@@ -149,11 +149,11 @@ let eval_with_minimized_graph tree ~x ~y =
 ;;
 
 let eval_with_batch tree ~x ~y =
-  let ~instructions, ~final_register, ~register_count, ~var_mapping =
+  let ~instructions, ~final_register, ~register_count:_, ~var_mapping =
     Expr_graph.from_tree tree
   in
   let ~instructions, ~final_register, ~register_count =
-    Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count
+    Expr_graph_register_minimizer.minimize ~instructions ~final_register
   in
   let register_bank =
     Expr_graph_batch_eval.Register_bank.create ~register_count ~width:1
@@ -228,10 +228,7 @@ let assert_bisimulation tree ~x ~y =
             (Expr_graph.pp_instructions instructions)
         in
         let ~instructions:minimized, ~final_register:min_final, ~register_count:_ =
-          Expr_graph_register_minimizer.minimize
-            ~instructions
-            ~final_register
-            ~register_count:0
+          Expr_graph_register_minimizer.minimize ~instructions ~final_register
         in
         let minimized_asm =
           sprintf "result: $%d\n%s" min_final (Expr_graph.pp_instructions minimized)
@@ -454,11 +451,11 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
    later allocations inside the branch to clobber it. When the outer then-branch reads $x
    for [neg], it gets the wrong value. *)
 let pp_minimized tree =
-  let ~instructions, ~final_register, ~register_count, ~var_mapping:_ =
+  let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
     Expr_graph.from_tree tree
   in
   let ~instructions, ~final_register, ~register_count:_ =
-    Expr_graph_register_minimizer.minimize ~instructions ~final_register ~register_count
+    Expr_graph_register_minimizer.minimize ~instructions ~final_register
   in
   printf "result: $%d\n" final_register;
   print_string (Expr_graph.pp_instructions instructions)
