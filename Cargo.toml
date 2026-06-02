@@ -1,5 +1,5 @@
 [workspace]
-members = ["winit/ffi", "softbuffer/ffi", "examples/prototype"]
+members = ["winit/ffi", "softbuffer/ffi", "examples/prototype", "vendor/wgpu-native", "combined_ffi"]
 exclude = ["vendor/softbuffer", "vendor/winit"]
 resolver = "3"
 

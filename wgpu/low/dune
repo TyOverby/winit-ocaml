@@ -6,8 +6,11 @@
  (deps
   (source_tree ../../vendor/wgpu-native/src)
   (source_tree ../../vendor/wgpu-native/ffi)
+  (source_tree ../../combined_ffi/src)
+  (source_tree ../../softbuffer/ffi/src)
   ../../vendor/wgpu-native/Cargo.toml
-  ../../vendor/wgpu-native/Cargo.lock
+  ../../Cargo.toml
+  ../../combined_ffi/Cargo.toml
   build_wgpu_native.sh)
  (action
   (no-infer
