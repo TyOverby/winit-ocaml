@@ -1480,7 +1480,6 @@ module Device = struct
   let create_shader_module t ?(label = "") ~wgsl () =
     (* Create the WGSL source extension struct *)
     let wgsl_source = Wgpu_low.Shader_source_wgsl.shader_source_WGSL_create () in
-    Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_code wgsl_source wgsl;
     Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_chain_stype
       wgsl_source
       (S_type.to_int S_type.Shader_source_wgsl);
@@ -1491,7 +1490,13 @@ module Device = struct
     Wgpu_low.Shader_module_descriptor.shader_module_descriptor_set_next_in_chain
       desc
       chained;
-    (* Create the shader module *)
+    (* [set_code] stores a raw pointer into the OCaml [wgsl] string rather than copying
+       it, so it must be the last thing before [device_create_shader_module]: any OCaml
+       allocation in between (e.g. the boxed nativeints above) could trigger a minor GC
+       that relocates the string and leaves the stored pointer dangling, which surfaces as
+       a corrupted-source parse error under allocation pressure. With no allocation
+       between these two calls the string stays put for the duration of the C read. *)
+    Wgpu_low.Shader_source_wgsl.shader_source_WGSL_set_code wgsl_source wgsl;
     let shader = Wgpu_low.device_create_shader_module t.handle desc in
     (* Free the descriptor structs *)
     Wgpu_low.Shader_module_descriptor.shader_module_descriptor_free desc;

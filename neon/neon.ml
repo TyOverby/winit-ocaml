@@ -104,18 +104,20 @@ let backends : (string * (module Sdf.Batch_backend_intf.S_parallel)) list =
   [ "batch", (module Sdf.Expr_graph_batch_eval.Batch_parallel)
   ; "graph", (module Sdf.Expr_graph_eval.Batch_parallel)
   ; "tree", (module Sdf.Expr_tree_eval.Batch_parallel)
+  ; "gpu", (module Sdf_gpu)
   ]
 ;;
 
 let backend_arg = Command.Arg_type.of_alist_exn backends
 
 (* Physical key codes (the [keyboard_types.Code] enum discriminants reported by winit) for
-   the keys that hot-swap the backend at runtime: b, g, and t on a US layout. *)
+   the keys that hot-swap the backend at runtime: b, g, t, and u on a US layout. *)
 let backend_for_key_code key_code =
   match key_code with
   | 20 (* KeyB *) -> Some "batch"
   | 25 (* KeyG *) -> Some "graph"
   | 38 (* KeyT *) -> Some "tree"
+  | 39 (* KeyU *) -> Some "gpu"
   | _ -> None
 ;;
 
@@ -131,7 +133,7 @@ let command =
          (optional_with_default
             (List.Assoc.find_exn backends "batch" ~equal:String.equal)
             backend_arg)
-         ~doc:"BACKEND Evaluation backend: batch (default), graph, or tree"
+         ~doc:"BACKEND Evaluation backend: batch (default), graph, tree, or gpu"
      in
      fun () ->
        let window =
