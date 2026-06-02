@@ -162,6 +162,9 @@ members:
       CAMLparam1(handle);
       WGPUBufferDescriptor *s = (WGPUBufferDescriptor*)Nativeint_val(handle);
       if (s != NULL) {
+        if (s->label.data != NULL) {
+          free((void *)s->label.data);
+        }
         free(s);
       }
       CAMLreturn(Val_unit);
@@ -170,9 +173,15 @@ members:
     CAMLprim value caml_wgpu_buffer_descriptor_set_label(value handle, value val) {
       CAMLparam2(handle, val);
       WGPUBufferDescriptor *s = (WGPUBufferDescriptor*)Nativeint_val(handle);
-      const char *str = String_val(val);
-      s->label.data = str;
-      s->label.length = strlen(str);
+      size_t len = caml_string_length(val);
+      char *copy = malloc(len + 1);
+      memcpy(copy, String_val(val), len);
+      copy[len] = '\0';
+      if (s->label.data != NULL) {
+        free((void *)s->label.data);
+      }
+      s->label.data = copy;
+      s->label.length = len;
       CAMLreturn(Val_unit);
     }
 
@@ -436,6 +445,9 @@ members:
       CAMLparam1(handle);
       WGPUBindGroupLayoutDescriptor *s = (WGPUBindGroupLayoutDescriptor*)Nativeint_val(handle);
       if (s != NULL) {
+        if (s->label.data != NULL) {
+          free((void *)s->label.data);
+        }
         free(s);
       }
       CAMLreturn(Val_unit);
@@ -444,9 +456,15 @@ members:
     CAMLprim value caml_wgpu_bind_group_layout_descriptor_set_label(value handle, value val) {
       CAMLparam2(handle, val);
       WGPUBindGroupLayoutDescriptor *s = (WGPUBindGroupLayoutDescriptor*)Nativeint_val(handle);
-      const char *str = String_val(val);
-      s->label.data = str;
-      s->label.length = strlen(str);
+      size_t len = caml_string_length(val);
+      char *copy = malloc(len + 1);
+      memcpy(copy, String_val(val), len);
+      copy[len] = '\0';
+      if (s->label.data != NULL) {
+        free((void *)s->label.data);
+      }
+      s->label.data = copy;
+      s->label.length = len;
       CAMLreturn(Val_unit);
     }
 
@@ -564,6 +582,9 @@ members:
       CAMLparam1(handle);
       WGPUTextureDescriptor *s = (WGPUTextureDescriptor*)Nativeint_val(handle);
       if (s != NULL) {
+        if (s->label.data != NULL) {
+          free((void *)s->label.data);
+        }
         free(s);
       }
       CAMLreturn(Val_unit);
@@ -572,9 +593,15 @@ members:
     CAMLprim value caml_wgpu_texture_descriptor_set_label(value handle, value val) {
       CAMLparam2(handle, val);
       WGPUTextureDescriptor *s = (WGPUTextureDescriptor*)Nativeint_val(handle);
-      const char *str = String_val(val);
-      s->label.data = str;
-      s->label.length = strlen(str);
+      size_t len = caml_string_length(val);
+      char *copy = malloc(len + 1);
+      memcpy(copy, String_val(val), len);
+      copy[len] = '\0';
+      if (s->label.data != NULL) {
+        free((void *)s->label.data);
+      }
+      s->label.data = copy;
+      s->label.length = len;
       CAMLreturn(Val_unit);
     }
 

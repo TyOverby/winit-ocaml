@@ -206,6 +206,23 @@ let gen_mli_bitflag (bitflag : Ir.bitflag) : string = gen_bitflag Interface bitf
 let gen_c_struct_create_free (struct_ : Ir.struct_) : string =
   let c_name = c_type_name struct_.name in
   let struct_lower = String.lowercase struct_.name in
+  (* String setters copy their argument into C-owned memory (see [gen_c_struct_setter]),
+     so the free function must release those copies before freeing the struct itself. *)
+  let free_string_fields =
+    List.filter_map struct_.members ~f:(fun member ->
+      match member.type_ with
+      | Primitive (String | Out_string | String_with_default_empty) ->
+        let c_field = to_camel_case member.name in
+        Some
+          {%string|    if (s->%{c_field}.data != NULL) {
+      free((void *)s->%{c_field}.data);
+    }|}
+      | _ -> None)
+    |> String.concat ~sep:"\n"
+  in
+  let free_string_fields =
+    if String.is_empty free_string_fields then "" else free_string_fields ^ "\n"
+  in
   {%string|/* Struct: %{c_name} */
 CAMLprim value caml_wgpu_%{struct_lower}_create(value unit) {
   CAMLparam1(unit);
@@ -218,7 +235,7 @@ CAMLprim value caml_wgpu_%{struct_lower}_free(value handle) {
   CAMLparam1(handle);
   %{c_name} *s = (%{c_name}*)Nativeint_val(handle);
   if (s != NULL) {
-    free(s);
+%{free_string_fields}    free(s);
   }
   CAMLreturn(Val_unit);
 }
@@ -255,9 +272,22 @@ let gen_c_struct_setter (struct_ : Ir.struct_) (member : Ir.struct_member) : str
     | Primitive Float64 -> {%string|  s->%{c_field} = Double_val(val);|}
     | Primitive Usize -> {%string|  s->%{c_field} = (size_t)Int64_val(val);|}
     | Primitive (String | Out_string | String_with_default_empty) ->
-      {%string|  const char *str = String_val(val);
-  s->%{c_field}.data = str;
-  s->%{c_field}.length = strlen(str);|}
+      (* The struct outlives this call (it is read later by wgpu, e.g. during
+         [device_create_shader_module]), so we must NOT store a raw pointer into the
+         OCaml-managed string: a minor GC could relocate it and leave the stored pointer
+         dangling. Copy into C-owned memory instead and store that. Any previous copy is
+         freed first to avoid leaking when a setter is called more than once. The matching
+         [_free] function frees the final copy. We use [caml_string_length] rather than
+         [strlen] so the length is correct even with embedded NULs. *)
+      {%string|  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->%{c_field}.data != NULL) {
+    free((void *)s->%{c_field}.data);
+  }
+  s->%{c_field}.data = copy;
+  s->%{c_field}.length = len;|}
     | Primitive C_void -> {%string|  s->%{c_field} = (void*)Nativeint_val(val);|}
     | Enum _ -> {%string|  s->%{c_field} = Int_val(val);|}
     | Bitflag _ -> {%string|  s->%{c_field} = Int_val(val);|}
