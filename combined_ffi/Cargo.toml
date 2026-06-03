@@ -1,0 +1,11 @@
+[package]
+name = "combined_ffi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+softbuffer_ffi = { path = "../softbuffer/ffi" }
+wgpu-native = { path = "../vendor/wgpu-native" }

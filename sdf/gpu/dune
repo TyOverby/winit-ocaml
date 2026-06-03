@@ -1,0 +1,15 @@
+(library
+ (name sdf_gpu)
+ (libraries
+  bigarray
+  base
+  core
+  stdlib_upstream_compatible
+  parallel
+  parallel.scheduler
+  unboxed.float32_u
+  unboxed.int32_u
+  wgpu
+  sdf)
+ (preprocess
+  (pps ppx_jane ppx_builtin)))

@@ -7,9 +7,13 @@
   (source_tree ../ffi/src)
   (source_tree ../../winit/ffi/src)
   (source_tree ../../vendor)
+  (source_tree ../../combined_ffi/src)
+  (source_tree ../../vendor/wgpu-native/src)
+  (source_tree ../../vendor/wgpu-native/ffi)
   ../ffi/Cargo.toml
   ../../winit/ffi/Cargo.toml
   ../../Cargo.toml
+  ../../combined_ffi/Cargo.toml
   build_softbuffer_ffi.sh)
  (action
   (no-infer

@@ -2153,6 +2153,18 @@ CAMLprim value caml_wgpu_adapter_info_free(value handle) {
   CAMLparam1(handle);
   WGPUAdapterInfo *s = (WGPUAdapterInfo *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->vendor.data != NULL) {
+      free((void *)s->vendor.data);
+    }
+    if (s->architecture.data != NULL) {
+      free((void *)s->architecture.data);
+    }
+    if (s->device.data != NULL) {
+      free((void *)s->device.data);
+    }
+    if (s->description.data != NULL) {
+      free((void *)s->description.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -2161,9 +2173,15 @@ CAMLprim value caml_wgpu_adapter_info_free(value handle) {
 CAMLprim value caml_wgpu_adapter_info_set_vendor(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUAdapterInfo *s = (WGPUAdapterInfo *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->vendor.data = str;
-  s->vendor.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->vendor.data != NULL) {
+    free((void *)s->vendor.data);
+  }
+  s->vendor.data = copy;
+  s->vendor.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -2171,27 +2189,45 @@ CAMLprim value caml_wgpu_adapter_info_set_architecture(value handle,
                                                        value val) {
   CAMLparam2(handle, val);
   WGPUAdapterInfo *s = (WGPUAdapterInfo *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->architecture.data = str;
-  s->architecture.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->architecture.data != NULL) {
+    free((void *)s->architecture.data);
+  }
+  s->architecture.data = copy;
+  s->architecture.length = len;
   CAMLreturn(Val_unit);
 }
 
 CAMLprim value caml_wgpu_adapter_info_set_device(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUAdapterInfo *s = (WGPUAdapterInfo *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->device.data = str;
-  s->device.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->device.data != NULL) {
+    free((void *)s->device.data);
+  }
+  s->device.data = copy;
+  s->device.length = len;
   CAMLreturn(Val_unit);
 }
 
 CAMLprim value caml_wgpu_adapter_info_set_description(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUAdapterInfo *s = (WGPUAdapterInfo *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->description.data = str;
-  s->description.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->description.data != NULL) {
+    free((void *)s->description.data);
+  }
+  s->description.data = copy;
+  s->description.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -2311,6 +2347,9 @@ CAMLprim value caml_wgpu_bind_group_descriptor_free(value handle) {
   CAMLparam1(handle);
   WGPUBindGroupDescriptor *s = (WGPUBindGroupDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -2320,9 +2359,15 @@ CAMLprim value caml_wgpu_bind_group_descriptor_set_label(value handle,
                                                          value val) {
   CAMLparam2(handle, val);
   WGPUBindGroupDescriptor *s = (WGPUBindGroupDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -2501,6 +2546,9 @@ CAMLprim value caml_wgpu_bind_group_layout_descriptor_free(value handle) {
   WGPUBindGroupLayoutDescriptor *s =
       (WGPUBindGroupLayoutDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -2511,9 +2559,15 @@ CAMLprim value caml_wgpu_bind_group_layout_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPUBindGroupLayoutDescriptor *s =
       (WGPUBindGroupLayoutDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -2882,6 +2936,9 @@ CAMLprim value caml_wgpu_buffer_descriptor_free(value handle) {
   CAMLparam1(handle);
   WGPUBufferDescriptor *s = (WGPUBufferDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -2890,9 +2947,15 @@ CAMLprim value caml_wgpu_buffer_descriptor_free(value handle) {
 CAMLprim value caml_wgpu_buffer_descriptor_set_label(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUBufferDescriptor *s = (WGPUBufferDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -3108,6 +3171,9 @@ CAMLprim value caml_wgpu_command_buffer_descriptor_free(value handle) {
   WGPUCommandBufferDescriptor *s =
       (WGPUCommandBufferDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -3118,9 +3184,15 @@ CAMLprim value caml_wgpu_command_buffer_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPUCommandBufferDescriptor *s =
       (WGPUCommandBufferDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -3159,6 +3231,9 @@ CAMLprim value caml_wgpu_command_encoder_descriptor_free(value handle) {
   WGPUCommandEncoderDescriptor *s =
       (WGPUCommandEncoderDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -3169,9 +3244,15 @@ CAMLprim value caml_wgpu_command_encoder_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPUCommandEncoderDescriptor *s =
       (WGPUCommandEncoderDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -3258,6 +3339,9 @@ CAMLprim value caml_wgpu_compilation_message_free(value handle) {
   CAMLparam1(handle);
   WGPUCompilationMessage *s = (WGPUCompilationMessage *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->message.data != NULL) {
+      free((void *)s->message.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -3267,9 +3351,15 @@ CAMLprim value caml_wgpu_compilation_message_set_message(value handle,
                                                          value val) {
   CAMLparam2(handle, val);
   WGPUCompilationMessage *s = (WGPUCompilationMessage *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->message.data = str;
-  s->message.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->message.data != NULL) {
+    free((void *)s->message.data);
+  }
+  s->message.data = copy;
+  s->message.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -3375,6 +3465,9 @@ CAMLprim value caml_wgpu_compute_pass_descriptor_free(value handle) {
   WGPUComputePassDescriptor *s =
       (WGPUComputePassDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -3385,9 +3478,15 @@ CAMLprim value caml_wgpu_compute_pass_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPUComputePassDescriptor *s =
       (WGPUComputePassDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -3518,6 +3617,9 @@ CAMLprim value caml_wgpu_compute_pipeline_descriptor_free(value handle) {
   WGPUComputePipelineDescriptor *s =
       (WGPUComputePipelineDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -3528,9 +3630,15 @@ CAMLprim value caml_wgpu_compute_pipeline_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPUComputePipelineDescriptor *s =
       (WGPUComputePipelineDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -3600,6 +3708,9 @@ CAMLprim value caml_wgpu_constant_entry_free(value handle) {
   CAMLparam1(handle);
   WGPUConstantEntry *s = (WGPUConstantEntry *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->key.data != NULL) {
+      free((void *)s->key.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -3608,9 +3719,15 @@ CAMLprim value caml_wgpu_constant_entry_free(value handle) {
 CAMLprim value caml_wgpu_constant_entry_set_key(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUConstantEntry *s = (WGPUConstantEntry *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->key.data = str;
-  s->key.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->key.data != NULL) {
+    free((void *)s->key.data);
+  }
+  s->key.data = copy;
+  s->key.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -3833,6 +3950,9 @@ CAMLprim value caml_wgpu_device_descriptor_free(value handle) {
   CAMLparam1(handle);
   WGPUDeviceDescriptor *s = (WGPUDeviceDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -3841,9 +3961,15 @@ CAMLprim value caml_wgpu_device_descriptor_free(value handle) {
 CAMLprim value caml_wgpu_device_descriptor_set_label(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUDeviceDescriptor *s = (WGPUDeviceDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -4019,6 +4145,9 @@ CAMLprim value caml_wgpu_fragment_state_free(value handle) {
   CAMLparam1(handle);
   WGPUFragmentState *s = (WGPUFragmentState *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->entryPoint.data != NULL) {
+      free((void *)s->entryPoint.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -4035,9 +4164,15 @@ CAMLprim value caml_wgpu_fragment_state_set_entry_point(value handle,
                                                         value val) {
   CAMLparam2(handle, val);
   WGPUFragmentState *s = (WGPUFragmentState *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->entryPoint.data = str;
-  s->entryPoint.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->entryPoint.data != NULL) {
+    free((void *)s->entryPoint.data);
+  }
+  s->entryPoint.data = copy;
+  s->entryPoint.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -4906,6 +5041,9 @@ CAMLprim value caml_wgpu_pipeline_layout_descriptor_free(value handle) {
   WGPUPipelineLayoutDescriptor *s =
       (WGPUPipelineLayoutDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -4916,9 +5054,15 @@ CAMLprim value caml_wgpu_pipeline_layout_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPUPipelineLayoutDescriptor *s =
       (WGPUPipelineLayoutDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -5079,6 +5223,9 @@ CAMLprim value caml_wgpu_programmable_stage_descriptor_free(value handle) {
   WGPUProgrammableStageDescriptor *s =
       (WGPUProgrammableStageDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->entryPoint.data != NULL) {
+      free((void *)s->entryPoint.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -5098,9 +5245,15 @@ CAMLprim value caml_wgpu_programmable_stage_descriptor_set_entry_point(
   CAMLparam2(handle, val);
   WGPUProgrammableStageDescriptor *s =
       (WGPUProgrammableStageDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->entryPoint.data = str;
-  s->entryPoint.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->entryPoint.data != NULL) {
+    free((void *)s->entryPoint.data);
+  }
+  s->entryPoint.data = copy;
+  s->entryPoint.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -5172,6 +5325,9 @@ CAMLprim value caml_wgpu_query_set_descriptor_free(value handle) {
   CAMLparam1(handle);
   WGPUQuerySetDescriptor *s = (WGPUQuerySetDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -5181,9 +5337,15 @@ CAMLprim value caml_wgpu_query_set_descriptor_set_label(value handle,
                                                         value val) {
   CAMLparam2(handle, val);
   WGPUQuerySetDescriptor *s = (WGPUQuerySetDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -5247,6 +5409,9 @@ CAMLprim value caml_wgpu_queue_descriptor_free(value handle) {
   CAMLparam1(handle);
   WGPUQueueDescriptor *s = (WGPUQueueDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -5255,9 +5420,15 @@ CAMLprim value caml_wgpu_queue_descriptor_free(value handle) {
 CAMLprim value caml_wgpu_queue_descriptor_set_label(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUQueueDescriptor *s = (WGPUQueueDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -5294,6 +5465,9 @@ CAMLprim value caml_wgpu_render_bundle_descriptor_free(value handle) {
   WGPURenderBundleDescriptor *s =
       (WGPURenderBundleDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -5304,9 +5478,15 @@ CAMLprim value caml_wgpu_render_bundle_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPURenderBundleDescriptor *s =
       (WGPURenderBundleDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -5346,6 +5526,9 @@ CAMLprim value caml_wgpu_render_bundle_encoder_descriptor_free(value handle) {
   WGPURenderBundleEncoderDescriptor *s =
       (WGPURenderBundleEncoderDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -5356,9 +5539,15 @@ caml_wgpu_render_bundle_encoder_descriptor_set_label(value handle, value val) {
   CAMLparam2(handle, val);
   WGPURenderBundleEncoderDescriptor *s =
       (WGPURenderBundleEncoderDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -5813,6 +6002,9 @@ CAMLprim value caml_wgpu_render_pass_descriptor_free(value handle) {
   WGPURenderPassDescriptor *s =
       (WGPURenderPassDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -5823,9 +6015,15 @@ CAMLprim value caml_wgpu_render_pass_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPURenderPassDescriptor *s =
       (WGPURenderPassDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -6071,6 +6269,9 @@ CAMLprim value caml_wgpu_render_pipeline_descriptor_free(value handle) {
   WGPURenderPipelineDescriptor *s =
       (WGPURenderPipelineDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -6081,9 +6282,15 @@ CAMLprim value caml_wgpu_render_pipeline_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPURenderPipelineDescriptor *s =
       (WGPURenderPipelineDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -6384,6 +6591,9 @@ CAMLprim value caml_wgpu_sampler_descriptor_free(value handle) {
   CAMLparam1(handle);
   WGPUSamplerDescriptor *s = (WGPUSamplerDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -6392,9 +6602,15 @@ CAMLprim value caml_wgpu_sampler_descriptor_free(value handle) {
 CAMLprim value caml_wgpu_sampler_descriptor_set_label(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSamplerDescriptor *s = (WGPUSamplerDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -6571,6 +6787,9 @@ CAMLprim value caml_wgpu_shader_module_descriptor_free(value handle) {
   WGPUShaderModuleDescriptor *s =
       (WGPUShaderModuleDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -6581,9 +6800,15 @@ CAMLprim value caml_wgpu_shader_module_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPUShaderModuleDescriptor *s =
       (WGPUShaderModuleDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -6682,6 +6907,9 @@ CAMLprim value caml_wgpu_shader_source_wgsl_free(value handle) {
   CAMLparam1(handle);
   WGPUShaderSourceWGSL *s = (WGPUShaderSourceWGSL *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->code.data != NULL) {
+      free((void *)s->code.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -6690,9 +6918,15 @@ CAMLprim value caml_wgpu_shader_source_wgsl_free(value handle) {
 CAMLprim value caml_wgpu_shader_source_wgsl_set_code(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUShaderSourceWGSL *s = (WGPUShaderSourceWGSL *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->code.data = str;
-  s->code.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->code.data != NULL) {
+    free((void *)s->code.data);
+  }
+  s->code.data = copy;
+  s->code.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -7246,6 +7480,9 @@ CAMLprim value caml_wgpu_surface_descriptor_free(value handle) {
   CAMLparam1(handle);
   WGPUSurfaceDescriptor *s = (WGPUSurfaceDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -7254,9 +7491,15 @@ CAMLprim value caml_wgpu_surface_descriptor_free(value handle) {
 CAMLprim value caml_wgpu_surface_descriptor_set_label(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUSurfaceDescriptor *s = (WGPUSurfaceDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -8018,6 +8261,9 @@ CAMLprim value caml_wgpu_texture_descriptor_free(value handle) {
   CAMLparam1(handle);
   WGPUTextureDescriptor *s = (WGPUTextureDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -8026,9 +8272,15 @@ CAMLprim value caml_wgpu_texture_descriptor_free(value handle) {
 CAMLprim value caml_wgpu_texture_descriptor_set_label(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUTextureDescriptor *s = (WGPUTextureDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -8170,6 +8422,9 @@ CAMLprim value caml_wgpu_texture_view_descriptor_free(value handle) {
   WGPUTextureViewDescriptor *s =
       (WGPUTextureViewDescriptor *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->label.data != NULL) {
+      free((void *)s->label.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -8180,9 +8435,15 @@ CAMLprim value caml_wgpu_texture_view_descriptor_set_label(value handle,
   CAMLparam2(handle, val);
   WGPUTextureViewDescriptor *s =
       (WGPUTextureViewDescriptor *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->label.data = str;
-  s->label.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->label.data != NULL) {
+    free((void *)s->label.data);
+  }
+  s->label.data = copy;
+  s->label.length = len;
   CAMLreturn(Val_unit);
 }
 
@@ -8477,6 +8738,9 @@ CAMLprim value caml_wgpu_vertex_state_free(value handle) {
   CAMLparam1(handle);
   WGPUVertexState *s = (WGPUVertexState *)Nativeint_val(handle);
   if (s != NULL) {
+    if (s->entryPoint.data != NULL) {
+      free((void *)s->entryPoint.data);
+    }
     free(s);
   }
   CAMLreturn(Val_unit);
@@ -8492,9 +8756,15 @@ CAMLprim value caml_wgpu_vertex_state_set_module(value handle, value val) {
 CAMLprim value caml_wgpu_vertex_state_set_entry_point(value handle, value val) {
   CAMLparam2(handle, val);
   WGPUVertexState *s = (WGPUVertexState *)Nativeint_val(handle);
-  const char *str = String_val(val);
-  s->entryPoint.data = str;
-  s->entryPoint.length = strlen(str);
+  size_t len = caml_string_length(val);
+  char *copy = malloc(len + 1);
+  memcpy(copy, String_val(val), len);
+  copy[len] = '\0';
+  if (s->entryPoint.data != NULL) {
+    free((void *)s->entryPoint.data);
+  }
+  s->entryPoint.data = copy;
+  s->entryPoint.length = len;
   CAMLreturn(Val_unit);
 }
 
