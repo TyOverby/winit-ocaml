@@ -19,7 +19,6 @@ module Prepared = struct
         -> t
 
   let sample (T { computed; exec; oracles; x_var_idx; y_var_idx }) ~x ~y =
-    print_endline "sampling passthrough";
     let module E = (val exec.portended) in
     E.Single.run
       computed
