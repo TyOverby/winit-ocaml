@@ -4,11 +4,15 @@ open Helpers
 
 module Make_tests (Implementation : Executor.S_single) = struct
   let default_env t =
-    Implementation.Variable_idx.Map.of_alist_exn
-      [ Implementation.lookup_variable t "x", Value.Boxed.T (Value.of_float #1.0s)
-      ; Implementation.lookup_variable t "y", Value.Boxed.T (Value.of_float #1.0s)
-      ; Implementation.lookup_variable t "b", Value.Boxed.T (Value.of_bool true)
-      ]
+    let add_var name value map =
+      match Implementation.lookup_variable t name with
+      | idx -> Map.set map ~key:idx ~data:value
+      | exception _ -> map
+    in
+    Implementation.Variable_idx.Map.empty
+    |> add_var "x" (Value.Boxed.T (Value.of_float #1.0s))
+    |> add_var "y" (Value.Boxed.T (Value.of_float #1.0s))
+    |> add_var "b" (Value.Boxed.T (Value.of_bool true))
   ;;
 
   let eval_float tree =
@@ -212,6 +216,57 @@ module Make_tests (Implementation : Executor.S_single) = struct
     [%expect {| 42 |}]
   ;;
 
+  let%expect_test "float variable" =
+    let v = ok (Expr_tree.var ~loc:here "x" Float) in
+    eval_float v;
+    [%expect {| 1 |}]
+  ;;
+
+  let%expect_test "multiple bound variables" =
+    let v = add (var "y" Float) (var "x" Float) in
+    eval_float (add (f #1.s) v);
+    [%expect {| 3 |}]
+  ;;
+
+  let%expect_test "top-level bool expression " =
+    eval_bool (b true);
+    [%expect {| true |}]
+  ;;
+
+  let%expect_test "top-level comparison " =
+    eval_bool (lt (f #1.s) (f #2.s));
+    [%expect {| true |}]
+  ;;
+end
+
+module _ = Make_tests (Expr_tree_eval.Single)
+module _ = Make_tests (Expr_graph_eval.Single)
+
+(* Error-behavior tests specific to the tree evaluator (the graph evaluator does not
+   produce errors for unbound variables; it silently returns zero). *)
+module Tree_eval_error_tests = struct
+  module Implementation = Expr_tree_eval.Single
+
+  let default_env t =
+    Implementation.Variable_idx.Map.of_alist_exn
+      [ Implementation.lookup_variable t "x", Value.Boxed.T (Value.of_float #1.0s)
+      ; Implementation.lookup_variable t "y", Value.Boxed.T (Value.of_float #1.0s)
+      ; Implementation.lookup_variable t "b", Value.Boxed.T (Value.of_bool true)
+      ]
+  ;;
+
+  let eval_float tree =
+    let t = Implementation.of_tree tree in
+    let value =
+      Or_error.try_with (fun () ->
+        Value.box
+          (Implementation.run ~vars:(default_env t) ~oracles:Oracle.Key.Map.empty t))
+    in
+    match value with
+    | Ok v -> v |> Value.unbox |> Value.to_float |> Float32_u.sexp_of_t |> print_s
+    | Error e -> print_s (Error.sexp_of_t e)
+  ;;
+
   let%expect_test "unbound float variable" =
     let v = ok (Expr_tree.var ~loc:here "sdf" Float) in
     eval_float v;
@@ -229,34 +284,4 @@ module Make_tests (Implementation : Executor.S_single) = struct
     eval_float (cond ~condition:v ~then_:(f #1.s) ~else_:(f #2.s));
     [%expect {| ("unbound variable" (name c) (loc :0:-1)) |}]
   ;;
-
-  let%expect_test "float variable" =
-    let v = ok (Expr_tree.var ~loc:here "x" Float) in
-    eval_float v;
-    [%expect {| 1 |}]
-  ;;
-
-  let%expect_test "multiple bound variables" =
-    let v = add (var "y" Float) (var "x" Float) in
-    eval_float (add (f #1.s) v);
-    [%expect {| 3 |}]
-  ;;
-
-  let%expect_test "unbound bool variable inside cond" =
-    let v = ok (Expr_tree.var ~loc:here "c" Bool) in
-    eval_float (cond ~condition:v ~then_:(f #1.s) ~else_:(f #2.s));
-    [%expect {| ("unbound variable" (name c) (loc :0:-1)) |}]
-  ;;
-
-  let%expect_test "top-level bool expression " =
-    eval_bool (b true);
-    [%expect {| true |}]
-  ;;
-
-  let%expect_test "top-level comparison " =
-    eval_bool (lt (f #1.s) (f #2.s));
-    [%expect {| true |}]
-  ;;
 end
-
-module _ = Make_tests (Expr_tree_eval.Single)

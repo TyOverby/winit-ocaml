@@ -2,7 +2,6 @@
  (names bench compare)
  (libraries
   sdf
-  sdf_gpu
   neo
   core
   core_unix.sys_unix

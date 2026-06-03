@@ -97,10 +97,10 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
 (* The available evaluation backends, each a [(module Batch_backend_intf.S_parallel)],
    selected by the [-backend] flag. *)
 let backends : (string * (module Sdf.Executor.S_parallel)) list =
-  [ "tree", (module Sdf.Expr_tree_eval.Parallel) ]
+  [ "graph", (module Sdf.Expr_graph_eval.Parallel)
+  ; "tree", (module Sdf.Expr_tree_eval.Parallel)
+  ]
 ;;
-
-(* [ "batch", (module Sdf.Expr_graph_batch_eval.Batch_parallel) ; "graph", (module Sdf.Expr_graph_eval.Batch_parallel) ; "tree", (module Sdf.Expr_tree_eval.Batch_parallel) ; "gpu", (module Sdf_gpu) ] *)
 
 let backend_arg = Command.Arg_type.of_alist_exn backends
 

@@ -57,8 +57,9 @@ module Batch_to_single (B : S_batch) : S_single = struct
   let run t ~vars ~oracles =
     let batch = B.Batch.create t ~len:1 in
     Map.iteri vars ~f:(fun ~key ~data ->
-      let var = B.Prepared.lookup_variable t key in
-      B.Batch.set_variable batch ~var ~px:0 (Value.unbox data));
+      match B.Prepared.lookup_variable t key with
+      | var -> B.Batch.set_variable batch ~var ~px:0 (Value.unbox data)
+      | exception _ -> ());
     let result = B.Batch.run batch ~oracles in
     B.Result.get_output result ~px:0
   ;;
