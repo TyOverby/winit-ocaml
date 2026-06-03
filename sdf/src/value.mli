@@ -20,6 +20,9 @@ module Boxed : sig
   type nonrec t = T of t
 end
 
+val box : t -> Boxed.t
+val unbox : Boxed.t -> t
+
 module Array : sig
   type value := t
   type t

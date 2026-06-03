@@ -1,0 +1,6 @@
+(library
+ (name sdf_test_oracle_deps)
+ (libraries sdf core)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

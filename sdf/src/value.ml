@@ -18,6 +18,9 @@ module Boxed = struct
   type nonrec t = T of t
 end
 
+let box t = Boxed.T t
+let unbox (Boxed.T t) = t
+
 module Array = struct
   type t = Int32_u.t array
 

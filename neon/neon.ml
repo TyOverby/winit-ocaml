@@ -75,7 +75,7 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
     B.Batch.set_affine batch ~var ~base:0.0 ~dx:1.0 ~dy:0.0);
   Option.iter (B.Prepared.lookup_variable prepared "y") ~f:(fun var ->
     B.Batch.set_affine batch ~var ~base:0.0 ~dx:0.0 ~dy:1.0);
-  let result = B.Batch.run batch ~scheduler in
+  let result = B.Batch.run batch ~scheduler ~oracles:Sdf.Oracle.Key.Map.empty in
   (* Colour the canvas from the host-resident result grid, in parallel over rows. *)
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
@@ -101,12 +101,10 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
 (* The available evaluation backends, each a [(module Batch_backend_intf.S_parallel)],
    selected by the [-backend] flag. *)
 let backends : (string * (module Sdf.Batch_backend_intf.S_parallel)) list =
-  [ "batch", (module Sdf.Expr_graph_batch_eval.Batch_parallel)
-  ; "graph", (module Sdf.Expr_graph_eval.Batch_parallel)
-  ; "tree", (module Sdf.Expr_tree_eval.Batch_parallel)
-  ; "gpu", (module Sdf_gpu)
-  ]
+  [ "tree", (module Sdf.Expr_tree_eval.Batch_parallel) ]
 ;;
+
+(* [ "batch", (module Sdf.Expr_graph_batch_eval.Batch_parallel) ; "graph", (module Sdf.Expr_graph_eval.Batch_parallel) ; "tree", (module Sdf.Expr_tree_eval.Batch_parallel) ; "gpu", (module Sdf_gpu) ] *)
 
 let backend_arg = Command.Arg_type.of_alist_exn backends
 
@@ -131,7 +129,7 @@ let command =
        flag
          "-backend"
          (optional_with_default
-            (List.Assoc.find_exn backends "batch" ~equal:String.equal)
+            (List.Assoc.find_exn backends "tree" ~equal:String.equal)
             backend_arg)
          ~doc:"BACKEND Evaluation backend: batch (default), graph, tree, or gpu"
      in
