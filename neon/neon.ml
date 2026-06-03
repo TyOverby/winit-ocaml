@@ -126,7 +126,7 @@ let command =
        flag
          "-backend"
          (optional_with_default
-            (List.Assoc.find_exn backends "tree" ~equal:String.equal)
+            (List.Assoc.find_exn backends "batch" ~equal:String.equal)
             backend_arg)
          ~doc:"BACKEND Evaluation backend: batch (default), graph, tree, or gpu"
      in
