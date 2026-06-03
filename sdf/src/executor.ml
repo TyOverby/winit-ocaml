@@ -35,7 +35,7 @@ module Single_to_batch (S : S_single) : S_batch = struct
         | Some map -> Map.set map ~key:var ~data:boxed)
     ;;
 
-    let run t ~oracles =
+    let (run @ portable) t ~oracles =
       let out = Value.Array.create ~len:t.len in
       for i = 0 to t.len - 1 do
         let vars = Hashtbl.find_exn t.variables i in

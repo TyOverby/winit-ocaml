@@ -1,10 +1,10 @@
 open! Core
 
-type t = { toposorted : Executor.Oracle.Key.t list list }
+type t = { toposorted : Oracle_key.t list list }
 
 (* Collect all unique oracle keys from an expression tree. *)
 let collect_oracles tree =
-  let seen = Set.empty (module Executor.Oracle.Key) in
+  let seen = Set.empty (module Oracle_key) in
   let rec go acc t =
     match (t : Expr_tree.t).kind with
     | Oracle (name, args) ->
@@ -35,7 +35,7 @@ let collect_oracles tree =
 let oracles_in_args args =
   List.fold
     args
-    ~init:(Set.empty (module Oracle.Key))
+    ~init:(Set.empty (module Oracle_key))
     ~f:(fun acc arg -> Set.union acc (collect_oracles arg))
 ;;
 
@@ -45,7 +45,7 @@ let extract_deps tree =
   let deps =
     Set.fold
       all_oracles
-      ~init:(Map.empty (module Oracle.Key))
+      ~init:(Map.empty (module Oracle_key))
       ~f:(fun acc key ->
         let _name, args = key in
         let dep_keys = oracles_in_args args in

@@ -13,7 +13,7 @@ module Var_name : sig
   type t = string [@@deriving sexp_of, equal, compare, hash]
 end
 
-type t = private
+type t : immutable_data = private
   { loc : Source_code_position.t
   ; kind : kind
   ; type_ : Type.t

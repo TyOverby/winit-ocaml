@@ -16,7 +16,7 @@ end
 
 let rec eval_float
   : ( env:(string, Value.Boxed.t, String.comparator_witness) Map.t
-   -> oracles:Oracle.Prepared.t Oracle.Key.Map.t -> Expr_tree.t -> Float_result.t)
+   -> oracles:Prepared_oracle.t Oracle_key.Map.t -> Expr_tree.t -> Float_result.t)
   @ portable
   =
   fun ~env ~oracles t ->
@@ -108,7 +108,7 @@ let rec eval_float
     let oracle = Map.find_exn oracles (name, exprs) in
     let x = Map.find_exn env "x" |> Value.unbox |> Value.to_float
     and y = Map.find_exn env "y" |> Value.unbox |> Value.to_float in
-    Oracle.Prepared.sample oracle ~x ~y |> Ok
+    Prepared_oracle.sample oracle ~x ~y |> Ok
   | Var (name, _) ->
     (match Map.find env name with
      | Some (T value) -> Ok (Value.to_float value)
@@ -124,7 +124,7 @@ let rec eval_float
 
 and eval_bool
   : ( env:(string, Value.Boxed.t, String.comparator_witness) Map.t
-   -> oracles:Oracle.Prepared.t Oracle.Key.Map.t -> Expr_tree.t -> bool Or_error.t)
+   -> oracles:Prepared_oracle.t Oracle_key.Map.t -> Expr_tree.t -> bool Or_error.t)
   @ portable
   =
   fun ~env ~oracles t ->
@@ -203,7 +203,7 @@ and eval_bool
 
 let (eval @ portable)
   ~env
-  ~(oracles : Oracle.Prepared.t Oracle.Key.Map.t)
+  ~(oracles : Prepared_oracle.t Oracle_key.Map.t)
   (t : Expr_tree.t)
   : Result.t
   =

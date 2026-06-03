@@ -1,53 +1,6 @@
 open! Core
 
-module Oracle = struct
-  module type S_prepared = sig
-    type t : value mod contended portable
-
-    val sample : t -> exec:(module Executor.S) -> x:float32# -> y:float32# -> float32#
-  end
-
-  module type S = sig
-    type t [@@deriving equal, hash, compare, sexp_of]
-
-    include Comparable.S_plain with type t := t
-    module Prepared : S_prepared
-
-    val create : Expr_tree.t -> t
-
-    val prepare
-      :  t
-      -> range_x:#(float32# * float32#)
-      -> range_y:#(float32# * float32#)
-      -> Prepared.t
-      @@ portable
-  end
-
-  module type Intf = sig
-    module type S_prepared = S_prepared
-    module type S = S
-
-    module Key : sig
-      type t = string * Expr_tree.t list [@@deriving compare, equal, sexp_of]
-
-      include Comparable.S_plain [@mode portable] with type t := t
-    end
-
-    module Prepared : sig
-      type t : value mod contended portable
-
-      val wrap
-        : ('a : value mod contended portable).
-        (module S_prepared with type t = 'a) @ portable -> 'a -> t
-
-      val sample : t -> x:float32# -> y:float32# -> float32# @@ portable
-    end
-  end
-end
-
 module type S_single = sig @@ portable
-  module Oracle : Oracle.Intf
-
   type t : value mod contended portable
 
   module Variable_idx : sig
@@ -62,13 +15,11 @@ module type S_single = sig @@ portable
   val run
     :  t
     -> vars:Value.Boxed.t Variable_idx.Map.t
-    -> oracles:Oracle.Prepared.t Oracle.Key.Map.t @ shareable
+    -> oracles:Prepared_oracle.t Oracle_key.Map.t
     -> Value.t
 end
 
 module type S_batch = sig @@ portable
-  module Oracle : Oracle.Intf
-
   module Variable_idx : sig
     type t : value mod contended portable
   end
@@ -91,13 +42,11 @@ module type S_batch = sig @@ portable
 
     val create : Prepared.t -> len:int -> t
     val set_variable : t -> var:Variable_idx.t -> px:int -> Value.t -> unit
-    val run : t -> oracles:Oracle.Prepared.t Oracle.Key.Map.t @ shareable -> Result.t
+    val run : t -> oracles:Prepared_oracle.t Oracle_key.Map.t -> Result.t
   end
 end
 
 module type S_parallel = sig @@ portable
-  module Oracle : Oracle.Intf
-
   module Variable_idx : sig
     type t : value mod contended portable
   end
@@ -137,7 +86,7 @@ module type S_parallel = sig @@ portable
     val run
       :  t
       -> par:Parallel.t
-      -> oracles:Oracle.Prepared.t Oracle.Key.Map.t @ shareable
+      -> oracles:Prepared_oracle.t Oracle_key.Map.t
       -> Result.t
   end
 end
@@ -148,9 +97,9 @@ module type S = sig
   module Parallel : S_parallel
 end
 
-module type Executor = sig
-  module Oracle : Oracle.Intf
+(* Defined after [S] so that [prepare] can reference [(module S)]. *)
 
+module type Executor = sig
   module type S_single = S_single
   module type S_batch = S_batch
   module type S_parallel = S_parallel
