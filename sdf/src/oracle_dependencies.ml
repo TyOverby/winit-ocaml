@@ -1,7 +1,5 @@
 open! Core
 
-type t = { toposorted : Oracle_key.t list list }
-
 (* Collect all unique oracle keys from an expression tree. *)
 let collect_oracles tree =
   let seen = Set.empty (module Oracle_key) in
@@ -70,5 +68,5 @@ let extract_deps tree =
         let remaining = List.fold level ~init:remaining ~f:(fun m k -> Map.remove m k) in
         toposort remaining (level :: acc)))
   in
-  { toposorted = toposort deps [] }
+  toposort deps []
 ;;

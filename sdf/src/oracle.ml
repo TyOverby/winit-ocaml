@@ -5,11 +5,12 @@ module type S = sig
 
   include Comparable.S_plain with type t := t
 
-  val create : Expr_tree.t -> t
+  val create : Expr_tree.t list -> t
 
   val prepare
     :  t
     -> exec:(module Executor.S) @ portable
+    -> oracles:Prepared_oracle.t Oracle_key.Map.t
     -> range_x:#(float32# * float32#)
     -> range_y:#(float32# * float32#)
     -> Prepared_oracle.t

@@ -91,7 +91,7 @@ module type S_parallel = sig @@ portable
   end
 end
 
-module type S = sig
+module type S = sig @@ portable
   module Single : S_single
   module Batch : S_batch
   module Parallel : S_parallel

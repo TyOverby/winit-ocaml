@@ -1,6 +1,6 @@
 (library
  (name sdf_test)
- (libraries sdf base)
+ (libraries sdf sdf_oracles base)
  (inline_tests)
  (preprocess
   (pps ppx_jane)))
