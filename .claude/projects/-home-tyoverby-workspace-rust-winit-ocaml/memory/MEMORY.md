@@ -1,1 +1,0 @@
-- [GPU SDF backend divergence](gpu-sdf-backend-divergence.md) — why the GPU bisimulation is exact-on-selection + tolerance-on-arithmetic, and the shader-string GC fix
