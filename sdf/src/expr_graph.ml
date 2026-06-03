@@ -229,7 +229,16 @@ let from_tree tree =
       ~instrs, ~env, output_register
   in
   let ~instrs, ~env:_, register = loop tree ~instrs:[] ~env:(Bindings.empty ()) in
+  (* Oracle sampling needs x/y coordinates from the variable bank. Ensure they are always
+     allocated when the graph contains oracles, even if the main expression doesn't
+     reference them directly (they may only appear inside oracle args). *)
   let num_oracles = Map.length !oracle_mapping in
+  if num_oracles > 0
+  then (
+    if not (Hashtbl.mem var_mapping "x")
+    then Hashtbl.set var_mapping ~key:"x" ~data:(next_var ());
+    if not (Hashtbl.mem var_mapping "y")
+    then Hashtbl.set var_mapping ~key:"y" ~data:(next_var ()));
   let oracle_keys_arr = Array.create ~len:num_oracles ("", []) in
   Map.iteri !oracle_mapping ~f:(fun ~key ~data -> oracle_keys_arr.(data) <- key);
   ( ~instructions:(Iarray.of_list_rev instrs)

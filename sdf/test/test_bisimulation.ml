@@ -102,7 +102,8 @@ let gen_expr ~depth (type_ : Expr_tree.Type.t) =
 (* --- Shared bisimulation infrastructure --- *)
 
 let backends : (string * (module Executor.S_single)) list =
-  [ "graph", (module Expr_graph_eval.Single)
+  [ "tree", (module Expr_tree_eval.Single)
+  ; "graph", (module Expr_graph_eval.Single)
   ; "batch", (module Expr_graph_batch_eval.Single)
   ]
 ;;
@@ -131,9 +132,7 @@ let format_value v (type_ : Expr_tree.Type.t) =
 (** Evaluate [tree] with every backend and print the reference result. On mismatch with
     any backend, prints the mismatched value and label. *)
 let check tree ~x ~y =
-  let reference =
-    eval_with_single (module Expr_tree_eval.Single) tree ~x ~y
-  in
+  let reference = eval_with_single (module Expr_tree_eval.Single) tree ~x ~y in
   let type_ = tree.type_ in
   printf "%s\n" (format_value reference type_);
   List.iter backends ~f:(fun (label, backend) ->
@@ -145,15 +144,18 @@ let check tree ~x ~y =
 (** Assert bisimulation holds across all backends. Raises on mismatch. For use in
     quickcheck. *)
 let assert_bisimulation tree ~x ~y =
-  let reference =
-    eval_with_single (module Expr_tree_eval.Single) tree ~x ~y
-  in
+  let reference = eval_with_single (module Expr_tree_eval.Single) tree ~x ~y in
   let type_ = tree.type_ in
   List.iter backends ~f:(fun (label, backend) ->
     let result = eval_with_single backend tree ~x ~y in
     if not (Value.equal reference result)
     then (
-      let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_, ~oracle_keys:_ =
+      let ( ~instructions
+          , ~final_register
+          , ~register_count:_
+          , ~var_mapping:_
+          , ~oracle_keys:_ )
+        =
         Expr_graph.from_tree tree
       in
       let graph_asm =
