@@ -102,7 +102,9 @@ let gen_expr ~depth (type_ : Expr_tree.Type.t) =
 (* --- Shared bisimulation infrastructure --- *)
 
 let backends : (string * (module Executor.S_single)) list =
-  [ "graph", (module Expr_graph_eval.Single) ]
+  [ "graph", (module Expr_graph_eval.Single)
+  ; "batch", (module Expr_graph_batch_eval.Single)
+  ]
 ;;
 
 let eval_with_single (module S : Executor.S_single) tree ~x ~y =

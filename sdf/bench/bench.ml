@@ -86,7 +86,8 @@ let discover_neo_files dir =
 ;;
 
 let parallel_backends : (string * (module Sdf.Executor.S_parallel)) list =
-  [ "graph-parallel", (module Sdf.Expr_graph_eval.Parallel)
+  [ "batch-parallel", (module Sdf.Expr_graph_batch_eval.Parallel)
+  ; "graph-parallel", (module Sdf.Expr_graph_eval.Parallel)
   ; "tree-parallel", (module Sdf.Expr_tree_eval.Parallel)
   ]
 ;;
