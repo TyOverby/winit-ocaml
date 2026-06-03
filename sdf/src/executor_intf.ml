@@ -65,7 +65,7 @@ module type S_parallel = sig @@ portable
   end
 
   module Batch : sig
-    type t
+    type t : value
 
     val create : Prepared.t -> width:int -> height:int -> t
 
@@ -85,7 +85,7 @@ module type S_parallel = sig @@ portable
 
     val run
       :  t
-      -> par:Parallel.t
+      -> par:Parallel.t @ local
       -> oracles:Prepared_oracle.t Oracle_key.Map.t
       -> Result.t
   end

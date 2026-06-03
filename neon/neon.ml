@@ -33,14 +33,10 @@ let ensure_canvas_size state screen =
    its [Variable_idx], [Batch], and [Result] types) when it unpacks the value. *)
 type compiled_sdf =
   | Compiled :
-      (module Sdf.Batch_backend_intf.S_parallel with type Prepared.t = 'p) * 'p
+      (module Sdf.Executor.S_parallel with type Prepared.t = 'p) * 'p
       -> compiled_sdf
 
-let compile_sdf_from_source
-  (module B : Sdf.Batch_backend_intf.S_parallel)
-  ~scene_file
-  source
-  =
+let compile_sdf_from_source (module B : Sdf.Executor.S_parallel) ~scene_file source =
   let tree = Neo.compile ~filename:scene_file source |> Or_error.ok_exn in
   Compiled ((module B), B.Prepared.of_tree tree)
 ;;
@@ -70,14 +66,14 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
   (* Evaluate the whole grid in one shot. [x] and [y] are the pixel coordinates, expressed
      as affine functions of [(x, y)] so the backend never materialises per-pixel
      coordinate buffers; the backend owns the parallel fan-out internally. *)
-  let batch = B.Batch.create prepared ~width ~height in
-  Option.iter (B.Prepared.lookup_variable prepared "x") ~f:(fun var ->
-    B.Batch.set_affine batch ~var ~base:0.0 ~dx:1.0 ~dy:0.0);
-  Option.iter (B.Prepared.lookup_variable prepared "y") ~f:(fun var ->
-    B.Batch.set_affine batch ~var ~base:0.0 ~dx:0.0 ~dy:1.0);
-  let result = B.Batch.run batch ~scheduler ~oracles:Sdf.Oracle.Key.Map.empty in
   (* Colour the canvas from the host-resident result grid, in parallel over rows. *)
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
+    let batch = B.Batch.create prepared ~width ~height in
+    Option.iter (B.Prepared.lookup_variable prepared "x") ~f:(fun var ->
+      B.Batch.set_affine batch ~var ~base:0.0 ~dx:1.0 ~dy:0.0);
+    Option.iter (B.Prepared.lookup_variable prepared "y") ~f:(fun var ->
+      B.Batch.set_affine batch ~var ~base:0.0 ~dx:0.0 ~dy:1.0);
+    let result = B.Batch.run batch ~par ~oracles:Sdf.Oracle.Key.Map.empty in
     Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
       for x = 0 to width - 1 do
         let dist = Float32_u.to_float (Sdf.Value.to_float (B.Result.get result ~x ~y)) in
@@ -100,8 +96,8 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
 
 (* The available evaluation backends, each a [(module Batch_backend_intf.S_parallel)],
    selected by the [-backend] flag. *)
-let backends : (string * (module Sdf.Batch_backend_intf.S_parallel)) list =
-  [ "tree", (module Sdf.Expr_tree_eval.Batch_parallel) ]
+let backends : (string * (module Sdf.Executor.S_parallel)) list =
+  [ "tree", (module Sdf.Expr_tree_eval.Parallel) ]
 ;;
 
 (* [ "batch", (module Sdf.Expr_graph_batch_eval.Batch_parallel) ; "graph", (module Sdf.Expr_graph_eval.Batch_parallel) ; "tree", (module Sdf.Expr_tree_eval.Batch_parallel) ; "gpu", (module Sdf_gpu) ] *)
