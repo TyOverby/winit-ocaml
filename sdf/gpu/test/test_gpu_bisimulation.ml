@@ -219,6 +219,23 @@ let exact_matches a b =
   Int32.equal a b || (Float.is_nan (to_float a) && Float.is_nan (to_float b))
 ;;
 
+(* The GPU backend now computes affine variable values inline on-device using float32
+   arithmetic, while the CPU reference materializes them in float64 and rounds to float32.
+   The float32 multiply-add in [base + dx*col + dy*row] can accumulate up to ~2 ULPs of
+   error relative to the float64 path. Operations in the selection subset (min, max, abs,
+   neg, sign, comparisons, conditionals) propagate that difference without amplification,
+   so we accept a tolerance of ~3 float32 ULPs (~4e-7 relative). *)
+let near_exact a b =
+  exact_matches a b
+  || (let af = to_float a
+      and bf = to_float b in
+      (not (Float.is_nan af))
+      && (not (Float.is_nan bf))
+      && Float.( <= )
+           (Float.abs (af -. bf))
+           (4e-7 *. Float.max 1.0 (Float.max (Float.abs af) (Float.abs bf))))
+;;
+
 let%test_unit "exact bisimulation: GPU == CPU on the selection subset" =
   let rng = Random.State.make [| 0x5d; 0xf; 0x6 |] in
   let width = 8
@@ -233,7 +250,7 @@ let%test_unit "exact bisimulation: GPU == CPU on the selection subset" =
     let cpu = grid (module Expr_tree_eval.Batch_parallel) in
     let gpu = grid (module Sdf_gpu) in
     Array.iteri cpu ~f:(fun i c ->
-      if not (exact_matches c gpu.(i))
+      if not (near_exact c gpu.(i))
       then
         raise_s
           [%message

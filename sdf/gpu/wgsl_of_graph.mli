@@ -1,13 +1,22 @@
 open! Core
 open Sdf
 
+(* How each input variable is accessed inside the shader. *)
+type var_kind =
+  | Storage_buffer of { binding : int }
+  (** Read from a [var<storage, read> varN: array<u32>] at the given binding index. *)
+  | Inline_u32 of string
+  (** Embed the given WGSL expression (which must produce a [u32]) directly at each use
+      site. Callers use this to compute uniform, affine, or other constant variables
+      on-device without uploading a per-pixel buffer. *)
+
 (* Compiles a register-based {!Expr_graph} program into the source of a WGSL compute
    shader that evaluates it for one pixel per GPU invocation.
 
-   The shader exposes one [read_write] storage buffer (binding 0) for the output and one
-   [read] storage buffer per input variable (bindings [1 .. num_vars]). Each buffer is a
-   flat [array<u32>] indexed by the linear pixel index ([global_invocation_id.x]); a
-   variable's value at that pixel is read from [var{i}[index]].
+   The shader exposes one [read_write] storage buffer (binding 0) for the output. Input
+   variables are accessed according to the [var_kinds] array: [Storage_buffer] entries get
+   a [var<storage, read>] declaration at their binding index; [Inline_u32] entries are
+   evaluated inline and need no buffer.
 
    Every SDF register is represented as a [u32] holding the raw bits of a {!Value.t} —
    exactly the host-side representation — and float operations [bitcast] to/from [f32]
@@ -18,7 +27,7 @@ val of_graph
   :  instructions:Expr_graph.t
   -> final_register:int
   -> register_count:int
-  -> num_vars:int
+  -> var_kinds:var_kind array
   -> string
 
 (* The size of the 1-D compute workgroup the generated shader declares; callers dispatch

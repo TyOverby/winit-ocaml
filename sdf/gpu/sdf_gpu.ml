@@ -8,10 +8,12 @@ end
 module Prepared = struct
   (* Everything here is immutable (and holds no GPU handles), so [t] mode-crosses
      contention and can be shared across the worker domains a caller might read the result
-     from. The compiled WGSL is just a string; the GPU pipeline it maps to is built lazily
-     and cached in the (non-portable) [Context], keyed by that string. *)
+     from. The GPU pipeline for a given binding configuration is built lazily and cached in
+     the (non-portable) [Context], keyed by the WGSL source string. *)
   type t =
-    { wgsl : string
+    { instructions : Expr_graph.t
+    ; final_register : int
+    ; register_count : int
     ; num_vars : int
     ; var_mapping : (string * int) list
     }
@@ -24,16 +26,28 @@ module Prepared = struct
       Expr_graph_register_minimizer.minimize ~instructions ~final_register
     in
     let num_vars = Hashtbl.length var_mapping in
-    let wgsl =
-      Wgsl_of_graph.of_graph ~instructions ~final_register ~register_count ~num_vars
-    in
-    { wgsl; num_vars; var_mapping = Hashtbl.to_alist var_mapping }
+    { instructions; final_register; register_count; num_vars
+    ; var_mapping = Hashtbl.to_alist var_mapping
+    }
   ;;
 
   let lookup_variable t name = List.Assoc.find t.var_mapping name ~equal:String.equal
 end
 
-let wgsl_of_tree tree = (Prepared.of_tree tree).wgsl
+(* Generate WGSL with all variables as storage buffers — the original code-gen path, used
+   by [wgsl_of_tree] for tests and debugging. *)
+let wgsl_of_tree tree =
+  let p = Prepared.of_tree tree in
+  let var_kinds =
+    Array.init p.num_vars ~f:(fun i ->
+      Wgsl_of_graph.Storage_buffer { binding = i + 1 })
+  in
+  Wgsl_of_graph.of_graph
+    ~instructions:p.instructions
+    ~final_register:p.final_register
+    ~register_count:p.register_count
+    ~var_kinds
+;;
 
 (* The result grid. Identical in spirit to the one [Make_parallel] builds: an [int32]
    bigarray (each element the raw bits of a {!Value.t}) wrapped in [Modes.Portended.t] so
@@ -84,17 +98,27 @@ let binding_var = function
 (* One lazily-initialised, process-wide GPU context. Building a [wgpu] device is expensive
    and there is no reason to have more than one; [run] is non-portable, so a shared
    non-portable context (with a mutable pipeline cache) is fine. Pipelines are cached by
-   WGSL source so re-running the same scene across frames doesn't recompile the shader. *)
+   WGSL source so re-running the same scene across frames doesn't recompile the shader.
+
+   The context also caches the output and readback buffers (keyed by byte size) so that
+   repeated dispatches on the same grid dimensions avoid per-run buffer allocation. *)
 module Context = struct
   type pipeline =
     { bind_group_layout : Wgpu.Bind_group_layout.t
     ; pipeline : Wgpu.Compute_pipeline.t
     }
 
+  type cached_bufs =
+    { byte_size : int64
+    ; output_buf : Wgpu.Buffer.t
+    ; readback_buf : Wgpu.Buffer.t
+    }
+
   type t =
     { device : Wgpu.Device.t
     ; queue : Wgpu.Queue.t
     ; pipelines : (string, pipeline) Hashtbl.t
+    ; mutable cached_bufs : cached_bufs option
     }
 
   let create () =
@@ -102,7 +126,7 @@ module Context = struct
     let adapter = Wgpu.Instance.request_adapter instance () in
     let device = Wgpu.Adapter.request_device adapter in
     let queue = Wgpu.Device.get_queue device in
-    { device; queue; pipelines = Hashtbl.create (module String) }
+    { device; queue; pipelines = Hashtbl.create (module String); cached_bufs = None }
   ;;
 
   let storage_entry ~binding ~read_only =
@@ -121,12 +145,13 @@ module Context = struct
       ()
   ;;
 
-  let pipeline t ~wgsl ~num_vars =
+  let pipeline t ~wgsl ~num_storage_bindings =
     Hashtbl.find_or_add t.pipelines wgsl ~default:(fun () ->
       let shader = Wgpu.Device.create_shader_module t.device ~wgsl () in
       let entries =
         storage_entry ~binding:0 ~read_only:false
-        :: List.init num_vars ~f:(fun i -> storage_entry ~binding:(i + 1) ~read_only:true)
+        :: List.init num_storage_bindings ~f:(fun i ->
+             storage_entry ~binding:(i + 1) ~read_only:true)
       in
       let bind_group_layout = Wgpu.Device.create_bind_group_layout t.device ~entries () in
       let layout =
@@ -145,9 +170,43 @@ module Context = struct
       in
       { bind_group_layout; pipeline })
   ;;
+
+  (* Return (output_buf, readback_buf) for the given byte size, creating them if the
+     cached pair is absent or has a different size. *)
+  let get_buffers t ~byte_size =
+    match t.cached_bufs with
+    | Some c when Int64.equal c.byte_size byte_size -> c.output_buf, c.readback_buf
+    | _ ->
+      Option.iter t.cached_bufs ~f:(fun c ->
+        Wgpu.Buffer.release c.output_buf;
+        Wgpu.Buffer.release c.readback_buf);
+      let output_buf =
+        Wgpu.Device.create_buffer
+          t.device
+          ~usage:[ Wgpu.Buffer_usage.Item.Storage; Wgpu.Buffer_usage.Item.Copy_src ]
+          ~size:byte_size
+          ~mapped_at_creation:false
+          ()
+      in
+      let readback_buf =
+        Wgpu.Device.create_buffer
+          t.device
+          ~usage:[ Wgpu.Buffer_usage.Item.Map_read; Wgpu.Buffer_usage.Item.Copy_dst ]
+          ~size:byte_size
+          ~mapped_at_creation:false
+          ()
+      in
+      t.cached_bufs <- Some { byte_size; output_buf; readback_buf };
+      output_buf, readback_buf
+  ;;
 end
 
 let context = lazy (Context.create ())
+
+(* A hex [u32] literal holding the float32 bit-pattern of a float64 value. *)
+let f32_hex (f : float) =
+  sprintf "0x%lxu" (Int32_u.to_int32 (Float32_u.to_bits (Float32_u.of_float f)))
+;;
 
 module Batch = struct
   type t =
@@ -170,70 +229,68 @@ module Batch = struct
     add t (Grid_input (var, { Modes.Portended.portended = data }))
   ;;
 
-  (* Materialise variable [var]'s value at every pixel as a row-major [int32] bigarray of
-     raw {!Value.t} bits, ready to upload. The arithmetic here is byte-for-byte what
-     [Make_parallel] does on the CPU, so the GPU shader sees identical inputs and the only
-     thing the bisimulation is exercising is the on-device evaluation. *)
-  let materialize_variable bindings ~var ~width ~height =
-    let len = width * height in
-    let data = Bigarray.Array1.create Bigarray.Int32 Bigarray.C_layout len in
-    Bigarray.Array1.fill data 0l;
-    (match List.find bindings ~f:(fun b -> binding_var b = var) with
-     | None -> ()
-     | Some (Uniform (_, bits)) -> Bigarray.Array1.fill data bits
-     | Some (Affine (_, base, dx, dy)) ->
-       for y = 0 to height - 1 do
-         let row_term = dy *. Float.of_int y in
-         for x = 0 to width - 1 do
-           let v = base +. (dx *. Float.of_int x) +. row_term in
-           let bits =
-             Int32_u.to_int32 (Value.to_int (Value.of_float (Float32_u.of_float v)))
-           in
-           Bigarray.Array1.set data ((y * width) + x) bits
-         done
-       done
-     | Some (Grid_input (_, ba)) ->
-       let src = Stdlib.Obj.magic_uncontended ba.Modes.Portended.portended in
-       Bigarray.Array1.blit src data);
-    data
-  ;;
-
   let run t ~scheduler:_ =
-    let { prepared = { wgsl; num_vars; var_mapping = _ }; width; height; bindings } = t in
+    let { prepared; width; height; bindings } = t in
     let len = width * height in
     let ctx = Lazy.force context in
-    let { Context.bind_group_layout; pipeline } = Context.pipeline ctx ~wgsl ~num_vars in
     let byte_size = Int64.of_int (len * 4) in
-    let output_buf =
-      Wgpu.Device.create_buffer
-        ctx.device
-        ~usage:[ Wgpu.Buffer_usage.Item.Storage; Wgpu.Buffer_usage.Item.Copy_src ]
-        ~size:byte_size
-        ~mapped_at_creation:false
-        ()
+    (* Build the per-variable access strategy. Affine and uniform variables are computed
+       inline on-device (no buffer upload); only [Grid_input] variables need a storage
+       buffer. *)
+    let grid_inputs = Queue.create () in
+    let next_binding = ref 1 in
+    let var_kinds =
+      Array.init prepared.num_vars ~f:(fun var ->
+        match List.find bindings ~f:(fun b -> binding_var b = var) with
+        | None -> Wgsl_of_graph.Inline_u32 "0u"
+        | Some (Uniform (_, bits)) ->
+          Wgsl_of_graph.Inline_u32 (sprintf "0x%lxu" bits)
+        | Some (Affine (_, base, dx, dy)) ->
+          let expr =
+            sprintf
+              "bitcast<u32>(bitcast<f32>(%s) + bitcast<f32>(%s) * f32(index %% %du) + \
+               bitcast<f32>(%s) * f32(index / %du))"
+              (f32_hex base)
+              (f32_hex dx)
+              width
+              (f32_hex dy)
+              width
+          in
+          Wgsl_of_graph.Inline_u32 expr
+        | Some (Grid_input (_, ba)) ->
+          let binding = !next_binding in
+          incr next_binding;
+          let src = Stdlib.Obj.magic_uncontended ba.Modes.Portended.portended in
+          Queue.enqueue grid_inputs src;
+          Wgsl_of_graph.Storage_buffer { binding })
     in
-    let readback_buf =
-      Wgpu.Device.create_buffer
-        ctx.device
-        ~usage:[ Wgpu.Buffer_usage.Item.Map_read; Wgpu.Buffer_usage.Item.Copy_dst ]
-        ~size:byte_size
-        ~mapped_at_creation:false
-        ()
+    let num_storage_bindings = !next_binding - 1 in
+    let wgsl =
+      Wgsl_of_graph.of_graph
+        ~instructions:prepared.instructions
+        ~final_register:prepared.final_register
+        ~register_count:prepared.register_count
+        ~var_kinds
     in
-    (* Upload one storage buffer per variable. *)
+    let { Context.bind_group_layout; pipeline } =
+      Context.pipeline ctx ~wgsl ~num_storage_bindings
+    in
+    let output_buf, readback_buf = Context.get_buffers ctx ~byte_size in
+    (* Upload one storage buffer per grid-input variable. *)
     let var_bufs =
-      Array.init num_vars ~f:(fun var ->
-        let data = materialize_variable bindings ~var ~width ~height in
-        let buf =
-          Wgpu.Device.create_buffer
-            ctx.device
-            ~usage:[ Wgpu.Buffer_usage.Item.Storage; Wgpu.Buffer_usage.Item.Copy_dst ]
-            ~size:byte_size
-            ~mapped_at_creation:false
-            ()
-        in
-        Wgpu.Queue.write_buffer ctx.queue ~buffer:buf ~offset:0L ~data;
-        buf)
+      Queue.to_array grid_inputs
+      |> Array.map ~f:(fun data ->
+           let buf =
+             Wgpu.Device.create_buffer
+               ctx.device
+               ~usage:
+                 [ Wgpu.Buffer_usage.Item.Storage; Wgpu.Buffer_usage.Item.Copy_dst ]
+               ~size:byte_size
+               ~mapped_at_creation:false
+               ()
+           in
+           Wgpu.Queue.write_buffer ctx.queue ~buffer:buf ~offset:0L ~data;
+           buf)
     in
     let bind_group =
       let entry ~binding buffer =
@@ -244,7 +301,8 @@ module Batch = struct
         ~layout:bind_group_layout
         ~entries:
           (entry ~binding:0 output_buf
-           :: List.init num_vars ~f:(fun i -> entry ~binding:(i + 1) var_bufs.(i)))
+           :: Array.to_list
+                (Array.mapi var_bufs ~f:(fun i buf -> entry ~binding:(i + 1) buf)))
         ()
     in
     let encoder = Wgpu.Device.create_command_encoder ctx.device () in
@@ -293,11 +351,9 @@ module Batch = struct
       Bigarray.Array1.blit mapped dst;
       Wgpu.Buffer.unmap readback_buf
     in
-    let ( (* release per-run GPU resources (the pipeline is cached and kept) *) ) =
+    let ( (* release per-run GPU resources; output/readback buffers are cached *) ) =
       Wgpu.Bind_group.release bind_group;
       Array.iter var_bufs ~f:Wgpu.Buffer.release;
-      Wgpu.Buffer.release readback_buf;
-      Wgpu.Buffer.release output_buf;
       Wgpu.Command_buffer.release command_buffer;
       Wgpu.Compute_pass_encoder.release compute_pass;
       Wgpu.Command_encoder.release encoder

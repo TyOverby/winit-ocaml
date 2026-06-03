@@ -3,6 +3,10 @@ open Sdf
 
 let workgroup_size = 256
 
+type var_kind =
+  | Storage_buffer of { binding : int }
+  | Inline_u32 of string
+
 (* A WGSL [u32] literal holding the raw bits of a float32. We emit the bit pattern as a
    hex literal rather than printing the float decimally, so the GPU register starts with
    exactly the same bits the CPU backends would load — no decimal round-trip in between. *)
@@ -17,13 +21,13 @@ let fref reg = sprintf "bitcast<f32>(r%d)" reg
 (* Emit the body statements for one instruction list into [buf]. [next_temp] hands out
    fresh names for the [let] bindings a [Condition] needs to stash its then-branch value
    before the else-branch overwrites the shared output register. *)
-let rec emit_instrs buf ~next_temp instructions =
+let rec emit_instrs buf ~next_temp ~var_kinds instructions =
   for i = 0 to Iarray.length instructions - 1 do
     let out, instr = Iarray.unsafe_get instructions i in
-    emit_instr buf ~next_temp ~out instr
+    emit_instr buf ~next_temp ~var_kinds ~out instr
   done
 
-and emit_instr buf ~next_temp ~out (instr : Expr_graph.instr) =
+and emit_instr buf ~next_temp ~var_kinds ~out (instr : Expr_graph.instr) =
   let line s = Buffer.add_string buf ("  " ^ s ^ "\n") in
   (* float-producing ops store [bitcast<u32>(...)]; comparisons store a 0u/1u flag. *)
   let store_f expr = line (sprintf "r%d = bitcast<u32>(%s);" out expr) in
@@ -36,7 +40,10 @@ and emit_instr buf ~next_temp ~out (instr : Expr_graph.instr) =
   match instr with
   | Float_literal f -> line (sprintf "r%d = %s;" out (f32_bits_literal f))
   | Bool_literal b -> line (sprintf "r%d = %du;" out (Bool.to_int b))
-  | Var idx -> line (sprintf "r%d = var%d[index];" out idx)
+  | Var idx ->
+    (match var_kinds.(idx) with
+     | Storage_buffer _ -> line (sprintf "r%d = var%d[index];" out idx)
+     | Inline_u32 expr -> line (sprintf "r%d = %s;" out expr))
   | Read reg -> line (sprintf "r%d = r%d;" out reg)
   | Add (a, b) -> fbin "+" a b
   | Sub (a, b) -> fbin "-" a b
@@ -66,21 +73,26 @@ and emit_instr buf ~next_temp ~out (instr : Expr_graph.instr) =
     (* Evaluate both branches eagerly (no side effects), then pick. Both write the shared
        output register [out]; stash the then-value before the else-branch clobbers it.
        This mirrors the SIMD backend, which also evaluates both arms and blends. *)
-    emit_instrs buf ~next_temp then_;
+    emit_instrs buf ~next_temp ~var_kinds then_;
     let tmp = next_temp () in
     line (sprintf "let t%d = r%d;" tmp out);
-    emit_instrs buf ~next_temp else_;
+    emit_instrs buf ~next_temp ~var_kinds else_;
     line (sprintf "r%d = select(r%d, t%d, r%d != 0u);" out out tmp cond)
 ;;
 
-let of_graph ~instructions ~final_register ~register_count ~num_vars =
+let of_graph ~instructions ~final_register ~register_count ~var_kinds =
   let buf = Buffer.create 1024 in
   let add = Buffer.add_string buf in
   add "@group(0) @binding(0) var<storage, read_write> output_buf: array<u32>;\n";
-  for i = 0 to num_vars - 1 do
-    add
-      (sprintf "@group(0) @binding(%d) var<storage, read> var%d: array<u32>;\n" (i + 1) i)
-  done;
+  Array.iteri var_kinds ~f:(fun idx kind ->
+    match kind with
+    | Storage_buffer { binding } ->
+      add
+        (sprintf
+           "@group(0) @binding(%d) var<storage, read> var%d: array<u32>;\n"
+           binding
+           idx)
+    | Inline_u32 _ -> ());
   add (sprintf "\n@compute @workgroup_size(%d)\n" workgroup_size);
   add "fn main(@builtin(global_invocation_id) gid: vec3<u32>) {\n";
   add "  let index = gid.x;\n";
@@ -97,7 +109,7 @@ let of_graph ~instructions ~final_register ~register_count ~num_vars =
       incr counter;
       n
   in
-  emit_instrs buf ~next_temp instructions;
+  emit_instrs buf ~next_temp ~var_kinds instructions;
   add (sprintf "  output_buf[index] = r%d;\n" final_register);
   add "}\n";
   Buffer.contents buf
