@@ -347,8 +347,7 @@ module Batch_impl : Executor.S_batch = struct
     ;;
 
     let run
-      ({ prepared =
-           { instructions; oracle_keys; x_var_idx; y_var_idx; _ }
+      ({ prepared = { instructions; oracle_keys; x_var_idx; y_var_idx; _ }
        ; variables
        ; registers
        ; len

@@ -1,11 +1,9 @@
-
 open! Core
 module F = Float32_u
 
 (* Number of segments packed into a single leaf. Leaves are scanned linearly, so a small
    value keeps the branch-and-bound pruning tight; a value > 1 keeps the tree shallow. *)
 let leaf_size = 4
-
 let zero = #0.s
 let half = #0.5s
 let one = #1.s
@@ -50,12 +48,13 @@ let empty =
   ; ncount = i
   ; seg_count = 0
   }
+;;
 
 let build (coords : float32# array) ~length : t =
   let n = length in
   if n <= 0
   then empty
-  else begin
+  else (
     (* Per-segment bounding boxes and centroids, indexed by *original* segment id. *)
     let segminx = Array.create ~len:n zero in
     let segminy = Array.create ~len:n zero in
@@ -108,12 +107,11 @@ let build (coords : float32# array) ~length : t =
         Array.set nmaxy id (F.max (Array.get nmaxy id) (Array.get segmaxy s))
       done;
       if hi - lo <= leaf_size
-      then begin
+      then (
         Array.set nleft id (-1);
         Array.set nstart id lo;
-        Array.set ncount id (hi - lo)
-      end
-      else begin
+        Array.set ncount id (hi - lo))
+      else (
         (* Centroid bounds, to choose the split axis. *)
         Array.set cb 0 (Array.get cx s0);
         Array.set cb 1 (Array.get cy s0);
@@ -142,11 +140,10 @@ let build (coords : float32# array) ~length : t =
           let c = if axis_x then Array.get cx s else Array.get cy s in
           if F.compare c mid < 0
           then incr i
-          else begin
+          else (
             Array.set perm !i (Array.get perm !j);
             Array.set perm !j s;
-            decr j
-          end
+            decr j)
         done;
         let split = !i in
         (* Degenerate split (e.g. all centroids coincide): fall back to a halfway cut so
@@ -156,8 +153,7 @@ let build (coords : float32# array) ~length : t =
         let r = build_node split hi in
         Array.set nleft id l;
         Array.set nright id r;
-        Array.set nstart id (-1)
-      end;
+        Array.set nstart id (-1));
       id
     in
     let (_root : int) = build_node 0 n in
@@ -186,8 +182,8 @@ let build (coords : float32# array) ~length : t =
     ; nstart
     ; ncount
     ; seg_count = n
-    }
-  end
+    })
+;;
 
 (* Squared distance from [(px, py)] to a node's bounding box. This is a *lower bound* on
    the distance to any segment in the node (the box contains the segments), so it is safe
@@ -196,6 +192,7 @@ let[@inline] aabb_dist2 px py minx miny maxx maxy =
   let dx = F.max zero (F.max (F.sub minx px) (F.sub px maxx)) in
   let dy = F.max zero (F.max (F.sub miny py) (F.sub py maxy)) in
   F.add (F.mul dx dx) (F.mul dy dy)
+;;
 
 (* Scan a leaf's segments, updating the running best. [best] holds the best squared
    distance at index 0 and the sign (+1 / -1) of that segment at index 1. *)
@@ -214,17 +211,16 @@ let scan_leaf t s c px py best =
     (* Project the point onto the segment, clamping to the endpoints. *)
     let tparam =
       if F.compare len2 zero > 0
-      then begin
+      then (
         let q = F.div dot len2 in
-        if F.compare q zero < 0 then zero else if F.compare q one > 0 then one else q
-      end
+        if F.compare q zero < 0 then zero else if F.compare q one > 0 then one else q)
       else zero
     in
     let dx = F.sub px (F.add x1 (F.mul tparam abx)) in
     let dy = F.sub py (F.add y1 (F.mul tparam aby)) in
     let d2 = F.add (F.mul dx dx) (F.mul dy dy) in
     if F.compare d2 (Array.get best 0) < 0
-    then begin
+    then (
       (* Sidedness from the cross product of the directed segment with the point. For
          contours wound clockwise on screen (image coords, y down) around solid regions,
          cross > 0 is the inside, so it gets a negative sign: negative inside, positive
@@ -232,43 +228,51 @@ let scan_leaf t s c px py best =
       let cross = F.sub (F.mul abx apy) (F.mul aby apx) in
       let sign = if F.compare cross zero > 0 then neg_one else one in
       Array.set best 0 d2;
-      Array.set best 1 sign
-    end
+      Array.set best 1 sign)
   done
+;;
 
 let rec visit t node px py best =
   let left = Array.get t.nleft node in
   if left < 0
   then scan_leaf t (Array.get t.nstart node) (Array.get t.ncount node) px py best
-  else begin
+  else (
     let right = Array.get t.nright node in
     let dl =
-      aabb_dist2 px py (Array.get t.nminx left) (Array.get t.nminy left)
-        (Array.get t.nmaxx left) (Array.get t.nmaxy left)
+      aabb_dist2
+        px
+        py
+        (Array.get t.nminx left)
+        (Array.get t.nminy left)
+        (Array.get t.nmaxx left)
+        (Array.get t.nmaxy left)
     in
     let dr =
-      aabb_dist2 px py (Array.get t.nminx right) (Array.get t.nminy right)
-        (Array.get t.nmaxx right) (Array.get t.nmaxy right)
+      aabb_dist2
+        px
+        py
+        (Array.get t.nminx right)
+        (Array.get t.nminy right)
+        (Array.get t.nmaxx right)
+        (Array.get t.nmaxy right)
     in
     (* Descend into the nearer child first to tighten [best] before pruning the other.
        Re-read [best] for the second child since the first may have improved it. *)
     if F.compare dl dr <= 0
-    then begin
+    then (
       if F.compare dl (Array.get best 0) < 0 then visit t left px py best;
-      if F.compare dr (Array.get best 0) < 0 then visit t right px py best
-    end
-    else begin
+      if F.compare dr (Array.get best 0) < 0 then visit t right px py best)
+    else (
       if F.compare dr (Array.get best 0) < 0 then visit t right px py best;
-      if F.compare dl (Array.get best 0) < 0 then visit t left px py best
-    end
-  end
+      if F.compare dl (Array.get best 0) < 0 then visit t left px py best))
+;;
 
 let query t ~x ~y =
   if t.seg_count = 0
   then F.infinity
-  else begin
+  else (
     let best = Array.create ~len:2 F.infinity in
     Array.set best 1 one;
     visit t 0 x y best;
-    F.mul (Array.get best 1) (F.sqrt (Array.get best 0))
-  end
+    F.mul (Array.get best 1) (F.sqrt (Array.get best 0)))
+;;

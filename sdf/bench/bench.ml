@@ -33,7 +33,9 @@ let eval_parallel (Prepared_parallel ((module B), prepared)) ~scheduler =
     B.Batch.set_affine batch ~var ~base:0.0 ~dx:1.0 ~dy:0.0);
   Option.iter (B.Prepared.lookup_variable prepared "y") ~f:(fun var ->
     B.Batch.set_affine batch ~var ~base:0.0 ~dx:0.0 ~dy:1.0);
-  let (_ : B.Result.t) = B.Batch.run batch ~par:scheduler ~oracles:Sdf.Oracle.Key.Map.empty in
+  let (_ : B.Result.t) =
+    B.Batch.run batch ~par:scheduler ~oracles:Sdf.Oracle.Key.Map.empty
+  in
   ()
 ;;
 
@@ -111,8 +113,7 @@ let () =
           flag
             "-strategy"
             (optional_with_default "graph-parallel" string)
-            ~doc:
-              "STRATEGY evaluation strategy: graph-parallel (default), tree-parallel"
+            ~doc:"STRATEGY evaluation strategy: graph-parallel (default), tree-parallel"
         in
         fun () ->
           let backend =
@@ -122,8 +123,7 @@ let () =
               eprintf
                 "Unknown strategy: %s (expected %s)\n"
                 strategy
-                (String.concat ~sep:", "
-                   (List.map parallel_backends ~f:fst));
+                (String.concat ~sep:", " (List.map parallel_backends ~f:fst));
               exit 1
           in
           let files = discover_neo_files dir in
@@ -162,8 +162,7 @@ let () =
             List.map benchmarks ~f:(fun (name, source, path, est, _) ->
               eprintf "  %s: %d iterations... %!" name iterations;
               let timings =
-                List.init iterations ~f:(fun _ ->
-                  run_one ~source ~filename:path backend)
+                List.init iterations ~f:(fun _ -> run_one ~source ~filename:path backend)
               in
               eprintf "done\n%!";
               let all_timings = est :: timings in

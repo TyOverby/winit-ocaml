@@ -14,15 +14,15 @@ let seg_dist2 px py x1 y1 x2 y2 =
   let dot = F.add (F.mul apx abx) (F.mul apy aby) in
   let tparam =
     if F.compare len2 #0.s > 0
-    then begin
+    then (
       let q = F.div dot len2 in
-      if F.compare q #0.s < 0 then #0.s else if F.compare q #1.s > 0 then #1.s else q
-    end
+      if F.compare q #0.s < 0 then #0.s else if F.compare q #1.s > 0 then #1.s else q)
     else #0.s
   in
   let dx = F.sub px (F.add x1 (F.mul tparam abx)) in
   let dy = F.sub py (F.add y1 (F.mul tparam aby)) in
   F.add (F.mul dx dx) (F.mul dy dy)
+;;
 
 let seg_sign px py x1 y1 x2 y2 =
   let abx = F.sub x2 x1 in
@@ -31,6 +31,7 @@ let seg_sign px py x1 y1 x2 y2 =
   let apy = F.sub py y1 in
   let cross = F.sub (F.mul abx apy) (F.mul aby apx) in
   if F.compare cross #0.s > 0 then -1.0 else 1.0
+;;
 
 (* Naively compute, for the query point, the minimum squared distance over the first
    [length] segments and the signed distances of every segment achieving that minimum
@@ -57,6 +58,7 @@ let naive coords ~length px py =
       else None)
   in
   !min_d2, candidates
+;;
 
 let coords_of_floats (fs : float array) : float32# array =
   let len = Array.length fs in
@@ -65,6 +67,7 @@ let coords_of_floats (fs : float array) : float32# array =
     Array.set out i (F.of_float (Array.get fs i))
   done;
   out
+;;
 
 (* Generate [m] real segments followed by [pad] segments of junk that [build] must ignore
    because they sit past [~length:m]. *)
@@ -80,6 +83,7 @@ let gen =
   let%bind qx = Float.gen_incl (-150.0) 150.0 in
   let%map qy = Float.gen_incl (-150.0) 150.0 in
   Array.of_list (segs @ tail), m, qx, qy
+;;
 
 let%test_unit "spatial index matches naive nearest-segment scan" =
   Quickcheck.test
@@ -108,11 +112,13 @@ let%test_unit "spatial index matches naive nearest-segment scan" =
               (qxf : float)
               (qyf : float)
               (coords_floats : float array)])
+;;
 
 (* A couple of concrete sanity checks pin down the sign convention. *)
 
 let one_seg x1 y1 x2 y2 =
   Nearest_seg.build (coords_of_floats [| x1; y1; x2; y2 |]) ~length:1
+;;
 
 let%expect_test "sign: point to the right of an upward segment is positive" =
   (* Segment pointing +y; the point (1, 0) is to its right in math orientation. *)
@@ -120,12 +126,14 @@ let%expect_test "sign: point to the right of an upward segment is positive" =
   let d = F.to_float (Nearest_seg.query t ~x:(F.of_float 1.0) ~y:#0.s) in
   printf "%.4f" d;
   [%expect {| 1.0000 |}]
+;;
 
 let%expect_test "sign: point to the left of an upward segment is negative" =
   let t = one_seg 0.0 (-1.0) 0.0 1.0 in
   let d = F.to_float (Nearest_seg.query t ~x:(F.of_float (-1.0)) ~y:#0.s) in
   printf "%.4f" d;
   [%expect {| -1.0000 |}]
+;;
 
 let%expect_test "distance clamps to the nearer endpoint" =
   (* Closest point to (5, 0) on this segment is the endpoint (1, 0): distance 4. *)
@@ -133,3 +141,4 @@ let%expect_test "distance clamps to the nearer endpoint" =
   let d = F.to_float (Nearest_seg.query t ~x:(F.of_float 5.0) ~y:#0.s) in
   printf "%.4f" (Float.abs d);
   [%expect {| 4.0000 |}]
+;;

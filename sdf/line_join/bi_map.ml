@@ -41,7 +41,8 @@ let remove t id =
       match Hashtbl.find tbl key with
       | Some ids ->
         let ids = List.filter ids ~f:(fun i -> not (Id.equal i id)) in
-        if List.is_empty ids then Hashtbl.remove tbl key
+        if List.is_empty ids
+        then Hashtbl.remove tbl key
         else Hashtbl.set tbl ~key ~data:ids
       | None -> ()
     in

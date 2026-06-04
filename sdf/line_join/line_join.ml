@@ -1,5 +1,4 @@
 open! Core
-
 module Point = Point
 module Connected = Connected
 

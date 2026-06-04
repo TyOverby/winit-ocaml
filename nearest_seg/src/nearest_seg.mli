@@ -1,4 +1,3 @@
-
 (** A spatial-partitioning index (a bounding-volume hierarchy) over a fixed set of 2D line
     segments, specialised for nearest-segment queries.
 

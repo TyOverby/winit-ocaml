@@ -73,10 +73,7 @@ let color_grayscale (dist : float) : Int32_u.t =
   then (
     let component = dist *. 255.0 |> Float.to_int |> Int32_u.of_int_trunc in
     Int32_u.(
-      component
-      lor shift_left component 8
-      lor shift_left component 16
-      lor #0xFF000000l))
+      component lor shift_left component 8 lor shift_left component 16 lor #0xFF000000l))
   else #0xFFFFFFFFl
 ;;
 

@@ -189,9 +189,7 @@ module Batch_impl : Executor.S_batch = struct
       }
       ~oracles
       =
-      let oracles =
-        Iarray.map oracle_keys ~f:(fun key -> Map.find_exn oracles key)
-      in
+      let oracles = Iarray.map oracle_keys ~f:(fun key -> Map.find_exn oracles key) in
       let out = Value.Array.create ~len in
       for i = 0 to len - 1 do
         let variables = Iarray.get variables i in
