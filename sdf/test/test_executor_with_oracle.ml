@@ -15,7 +15,7 @@ let make_test (module Executor : Executor.S) =
     ;;
 
     let oracle_registry : (string * (module Oracle.S)) list =
-      [ "passthrough", (module Sdf_oracles.Passthrough) ]
+      [ "passthrough", (module Sdf_passthrough_oracle) ]
     ;;
 
     let run tree =
