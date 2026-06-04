@@ -47,7 +47,10 @@ let command =
          Array.create ~len:(width * height * 2 * 4) #0.0s
        in
        let count = March.run grid march_output width height in
+       let shapes = Line_join.f march_output ~length:count in
        let stroke_width = Float.min dx dy *. 0.5 in
+       let world_x px = min_x +. (px *. dx) in
+       let world_y py = min_y +. (py *. dy) in
        Out_channel.with_file output_file ~f:(fun oc ->
          Printf.fprintf
            oc
@@ -57,25 +60,40 @@ let command =
            min_y
            (max_x -. min_x)
            (max_y -. min_y);
-         for i = 0 to count - 1 do
-           let px1 = Float32_u.to_float march_output.(i * 4) in
-           let py1 = Float32_u.to_float march_output.((i * 4) + 1) in
-           let px2 = Float32_u.to_float march_output.((i * 4) + 2) in
-           let py2 = Float32_u.to_float march_output.((i * 4) + 3) in
-           let wx1 = min_x +. (px1 *. dx) in
-           let wy1 = min_y +. (py1 *. dy) in
-           let wx2 = min_x +. (px2 *. dx) in
-           let wy2 = min_y +. (py2 *. dy) in
-           Printf.fprintf
-             oc
-             {|  <line x1="%f" y1="%f" x2="%f" y2="%f" stroke="black" stroke-width="%f"/>
+         List.iter shapes ~f:(fun shape ->
+           let points =
+             match shape with
+             | Line_join.Connected.Joined pts | Disjoint pts -> pts
+           in
+           let is_closed =
+             match shape with
+             | Joined _ -> true
+             | Disjoint _ -> false
+           in
+           let points_str =
+             List.map points ~f:(fun { Line_join.Point.x; y } ->
+               sprintf "%f,%f" (world_x x) (world_y y))
+             |> String.concat ~sep:" "
+           in
+           if is_closed
+           then
+             Printf.fprintf
+               oc
+               {|  <polygon points="%s" fill="black" stroke="black" stroke-width="%f"/>
 |}
-             wx1
-             wy1
-             wx2
-             wy2
-             stroke_width
-         done;
+               points_str
+               stroke_width
+           else
+             Printf.fprintf
+               oc
+               {|  <polyline points="%s" fill="none" stroke="black" stroke-width="%f"/>
+|}
+               points_str
+               stroke_width);
          Printf.fprintf oc "</svg>\n");
-       printf "Wrote %d line segments to %s\n" count output_file)
+       printf
+         "Wrote %d shapes (%d line segments) to %s\n"
+         (List.length shapes)
+         count
+         output_file)
 ;;
