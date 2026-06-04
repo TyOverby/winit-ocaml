@@ -51,9 +51,9 @@ let empty =
   ; seg_count = 0
   }
 
-let build (coords : float32# array) : t =
-  let n = Array.length coords / 4 in
-  if n = 0
+let build (coords : float32# array) ~length : t =
+  let n = length in
+  if n <= 0
   then empty
   else begin
     (* Per-segment bounding boxes and centroids, indexed by *original* segment id. *)

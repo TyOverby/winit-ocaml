@@ -7,10 +7,13 @@
 
 type t
 
-(** [build coords] indexes the segments described by [coords]. The array is a flat,
-    interleaved list of endpoints in the order [x1; y1; x2; y2] per segment, repeating, so
-    its length must be a multiple of 4. Building is O(n log n). *)
-val build : float32# array -> t
+(** [build coords ~length] indexes the first [length] segments described by [coords].
+    [coords] is a flat, interleaved list of endpoints in the order [x1; y1; x2; y2] per
+    segment, repeating; only the leading [length * 4] entries are read, so the buffer may
+    be over-allocated (e.g. the partially-filled output of [sdf/march], whose returned
+    count is exactly this [length]). Requires [length * 4 <= Array.length coords].
+    Building is O(length log length). *)
+val build : float32# array -> length:int -> t
 
 (** [query t ~x ~y] returns the signed distance from the point [(x, y)] to the nearest
     line segment in [t].
