@@ -18,12 +18,7 @@ module Prepared = struct
 
   let sample (T { computed; exec; oracles }) ~x ~y =
     let module E = (val exec.portended) in
-    E.Single.run
-      computed
-      ~vars:(E.Single.Variable_idx.Map.of_alist_exn [])
-      ~oracles
-      ~x
-      ~y
+    E.Single.run computed ~vars:(E.Single.Variable_idx.Map.of_alist_exn []) ~oracles ~x ~y
     |> Value.to_float
   ;;
 end

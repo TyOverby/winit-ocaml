@@ -29,9 +29,16 @@ let command =
        let dy = (max_y -. min_y) /. Float.of_int height in
        let grid =
          Parallel_scheduler.parallel scheduler ~f:(fun par ->
-           let batch = B.Batch.create prepared ~width ~height in
-           B.Batch.set_x_affine batch ~base:min_x ~dx ~dy:0.0;
-           B.Batch.set_y_affine batch ~base:min_y ~dx:0.0 ~dy;
+           let region =
+             { Sdf.Sample_region.start_x = Float32_u.of_float min_x
+             ; end_x = Float32_u.of_float max_x
+             ; samples_x = width
+             ; start_y = Float32_u.of_float min_y
+             ; end_y = Float32_u.of_float max_y
+             ; samples_y = height
+             }
+           in
+           let batch = B.Batch.create prepared region in
            let result = B.Batch.run batch ~par ~oracles:Sdf.Oracle.Key.Map.empty in
            let grid : float32# array = Array.create ~len:(width * height) #0.0s in
            for y = 0 to height - 1 do

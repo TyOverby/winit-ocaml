@@ -22,19 +22,12 @@ module Single_to_batch (S : S_single) : S_batch = struct
   module Batch = struct
     type t =
       { prepared : S.t
-      ; len : int
+      ; region : Sample_region.t
       ; mutable variables : Value.Boxed.t S.Variable_idx.Map.t
-      ; x_coords : float32# array
-      ; y_coords : float32# array
       }
 
-    let create prepared ~len =
-      { prepared
-      ; len
-      ; variables = S.Variable_idx.Map.of_alist_exn []
-      ; x_coords = Array.create ~len #0.0s
-      ; y_coords = Array.create ~len #0.0s
-      }
+    let create prepared region =
+      { prepared; region; variables = S.Variable_idx.Map.of_alist_exn [] }
     ;;
 
     let set_variable t ~var value =
@@ -42,14 +35,15 @@ module Single_to_batch (S : S_single) : S_batch = struct
       t.variables <- Map.set t.variables ~key:var ~data:boxed
     ;;
 
-    let set_x t ~px value = Array.set t.x_coords px (Value.to_float value)
-    let set_y t ~px value = Array.set t.y_coords px (Value.to_float value)
-
     let (run @ portable) t ~oracles =
-      let out = Value.Array.create ~len:t.len in
-      for i = 0 to t.len - 1 do
-        let x = Array.get t.x_coords i in
-        let y = Array.get t.y_coords i in
+      let region = t.region in
+      let len = region.samples_x * region.samples_y in
+      let out = Value.Array.create ~len in
+      for i = 0 to len - 1 do
+        let col = i mod region.samples_x in
+        let row = i / region.samples_x in
+        let x = Sample_region.x_at region col in
+        let y = Sample_region.y_at region row in
         Value.Array.set out i (S.run t.prepared ~vars:t.variables ~oracles ~x ~y)
       done;
       out
@@ -66,9 +60,7 @@ module Batch_to_single (B : S_batch) : S_single = struct
   let lookup_variable _t name = name
 
   let run t ~vars ~oracles ~x ~y =
-    let batch = B.Batch.create t ~len:1 in
-    B.Batch.set_x batch ~px:0 (Value.of_float x);
-    B.Batch.set_y batch ~px:0 (Value.of_float y);
+    let batch = B.Batch.create t (Sample_region.point ~x ~y) in
     Map.iteri vars ~f:(fun ~key ~data ->
       match B.Prepared.lookup_variable t key with
       | var -> B.Batch.set_variable batch ~var (Value.unbox data)
@@ -139,34 +131,14 @@ module Batch_to_parallel (B : S_batch) : S_parallel = struct
     let get = Grid.get
   end
 
-  type xy_affine =
-    { base : float
-    ; dx : float
-    ; dy : float
-    }
-
   module Batch = struct
     type t =
       { prepared : Prepared.t
-      ; width : int
-      ; height : int
+      ; region : Sample_region.t
       ; mutable variables : (Variable_idx.t * int32) list
-      ; mutable x_affine : xy_affine
-      ; mutable y_affine : xy_affine
       }
 
-    let create prepared ~width ~height =
-      { prepared
-      ; width
-      ; height
-      ; variables = []
-      ; x_affine = { base = 0.0; dx = 0.0; dy = 0.0 }
-      ; y_affine = { base = 0.0; dx = 0.0; dy = 0.0 }
-      }
-    ;;
-
-    let set_x_affine t ~base ~dx ~dy = t.x_affine <- { base; dx; dy }
-    let set_y_affine t ~base ~dx ~dy = t.y_affine <- { base; dx; dy }
+    let create prepared region = { prepared; region; variables = [] }
 
     let set_variable t ~var value =
       t.variables <- (var, Int32_u.to_int32 (Value.to_int value)) :: t.variables
@@ -178,24 +150,13 @@ module Batch_to_parallel (B : S_batch) : S_parallel = struct
         B.Batch.set_variable b ~var value)
     ;;
 
-    let apply_xy_coords b ~width ~y ~x_affine ~y_affine =
-      let x_row_term = x_affine.dy *. Float.of_int y in
-      let y_row_term = y_affine.dy *. Float.of_int y in
-      for px = 0 to width - 1 do
-        let fpx = Float.of_int px in
-        let xv = x_affine.base +. (x_affine.dx *. fpx) +. x_row_term in
-        B.Batch.set_x b ~px (Value.of_float (Float32_u.of_float xv));
-        let yv = y_affine.base +. (y_affine.dx *. fpx) +. y_row_term in
-        B.Batch.set_y b ~px (Value.of_float (Float32_u.of_float yv))
-      done
-    ;;
-
     let (run @ portable) t ~par ~oracles =
-      let { prepared; width; height; variables; x_affine; y_affine } = t in
+      let { prepared; region; variables } = t in
+      let width = region.samples_x in
+      let height = region.samples_y in
       let result = Grid.create ~width ~height in
       Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
-        let b = B.Batch.create prepared ~len:width in
-        apply_xy_coords b ~width ~y ~x_affine ~y_affine;
+        let b = B.Batch.create prepared (Sample_region.row region y) in
         apply_variables b variables;
         let row = B.Batch.run b ~oracles in
         for x = 0 to width - 1 do

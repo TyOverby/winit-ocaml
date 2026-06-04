@@ -14,10 +14,7 @@ module Variable_bank = struct
   type t = int32# array
 
   let create ~num_vars = Array.create ~len:num_vars #0l
-
-  let set_variable t ~var value =
-    Array.unsafe_set t var (Value.to_int value)
-  ;;
+  let set_variable t ~var value = Array.unsafe_set t var (Value.to_int value)
 end
 
 (* SIMD helpers: load/store 4 pixels at a time *)
@@ -311,27 +308,25 @@ module Batch_impl : Executor.S_batch = struct
       ; len : int
       }
 
-    let create (prepared : Prepared.t) ~len =
+    let create (prepared : Prepared.t) (region : Sample_region.t) =
+      let len = region.samples_x * region.samples_y in
       let variables = Variable_bank.create ~num_vars:prepared.num_vars in
       let registers =
         let register_count = prepared.register_count in
         Register_bank.create ~register_count ~width:len
       in
-      { prepared
-      ; variables
-      ; registers
-      ; x_coords = Array.create ~len #0l
-      ; y_coords = Array.create ~len #0l
-      ; len
-      }
+      let x_coords = Array.create ~len #0l in
+      let y_coords = Array.create ~len #0l in
+      for i = 0 to len - 1 do
+        let col = i mod region.samples_x in
+        let row = i / region.samples_x in
+        Array.set x_coords i (Float32_u.to_bits (Sample_region.x_at region col));
+        Array.set y_coords i (Float32_u.to_bits (Sample_region.y_at region row))
+      done;
+      { prepared; variables; registers; x_coords; y_coords; len }
     ;;
 
-    let set_variable t ~var value =
-      Variable_bank.set_variable t.variables ~var value
-    ;;
-
-    let set_x t ~px value = Array.set t.x_coords px (Value.to_int value)
-    let set_y t ~px value = Array.set t.y_coords px (Value.to_int value)
+    let set_variable t ~var value = Variable_bank.set_variable t.variables ~var value
 
     let run
       ({ prepared = { instructions; oracle_keys; _ }

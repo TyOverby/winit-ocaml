@@ -117,9 +117,16 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
      coordinate buffers; the backend owns the parallel fan-out internally. *)
   (* Colour the canvas from the host-resident result grid, in parallel over rows. *)
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
-    let batch = B.Batch.create prepared ~width ~height in
-    B.Batch.set_x_affine batch ~base:0.0 ~dx:1.0 ~dy:0.0;
-    B.Batch.set_y_affine batch ~base:0.0 ~dx:0.0 ~dy:1.0;
+    let region =
+      { Sdf.Sample_region.start_x = #0.0s
+      ; end_x = Float32_u.of_float (Float.of_int width)
+      ; samples_x = width
+      ; start_y = #0.0s
+      ; end_y = Float32_u.of_float (Float.of_int height)
+      ; samples_y = height
+      }
+    in
+    let batch = B.Batch.create prepared region in
     let result = B.Batch.run batch ~par ~oracles:Sdf.Oracle.Key.Map.empty in
     let color_pixel =
       match state.render_mode with

@@ -42,10 +42,8 @@ module type S_batch = sig @@ portable
   module Batch : sig
     type t
 
-    val create : Prepared.t -> len:int -> t
+    val create : Prepared.t -> Sample_region.t -> t
     val set_variable : t -> var:Variable_idx.t -> Value.t -> unit
-    val set_x : t -> px:int -> Value.t -> unit
-    val set_y : t -> px:int -> Value.t -> unit
     val run : t -> oracles:Prepared_oracle.t Oracle_key.Map.t -> Result.t
   end
 end
@@ -71,13 +69,7 @@ module type S_parallel = sig @@ portable
   module Batch : sig
     type t : value
 
-    val create : Prepared.t -> width:int -> height:int -> t
-
-    (* Set x/y coordinates as affine functions of pixel position:
-       value at pixel (px, py) = base +. dx *. px +. dy *. py *)
-    val set_x_affine : t -> base:float -> dx:float -> dy:float -> unit
-    val set_y_affine : t -> base:float -> dx:float -> dy:float -> unit
-
+    val create : Prepared.t -> Sample_region.t -> t
     val set_variable : t -> var:Variable_idx.t -> Value.t -> unit
 
     val run

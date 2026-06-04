@@ -154,24 +154,24 @@ module Batch_impl : Executor.S_batch = struct
       ; len : int
       }
 
-    let create (prepared : Prepared.t) ~len =
+    let create (prepared : Prepared.t) (region : Sample_region.t) =
+      let len = region.samples_x * region.samples_y in
       let variables = Value.Array.create ~len:prepared.num_vars in
       let registers =
         Iarray.init len ~f:(fun _ -> Value.Array.create ~len:prepared.register_count)
       in
-      { prepared
-      ; variables
-      ; registers
-      ; x_coords = Array.create ~len #0l
-      ; y_coords = Array.create ~len #0l
-      ; len
-      }
+      let x_coords = Array.create ~len #0l in
+      let y_coords = Array.create ~len #0l in
+      for i = 0 to len - 1 do
+        let col = i mod region.samples_x in
+        let row = i / region.samples_x in
+        Array.set x_coords i (Float32_u.to_bits (Sample_region.x_at region col));
+        Array.set y_coords i (Float32_u.to_bits (Sample_region.y_at region row))
+      done;
+      { prepared; variables; registers; x_coords; y_coords; len }
     ;;
 
     let set_variable t ~var value = Value.Array.set t.variables var value
-
-    let set_x t ~px value = Array.set t.x_coords px (Value.to_int value)
-    let set_y t ~px value = Array.set t.y_coords px (Value.to_int value)
 
     let run
       { prepared = { instructions; final_register; oracle_keys; _ }

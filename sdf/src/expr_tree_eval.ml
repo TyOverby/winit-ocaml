@@ -16,12 +16,8 @@ end
 
 let rec eval_float
   : ( env:(string, Value.Boxed.t, String.comparator_witness) Map.t
-   -> oracles:Prepared_oracle.t Oracle_key.Map.t
-   -> x:Float32_u.t
-   -> y:Float32_u.t
-   -> Expr_tree.t
-   -> Float_result.t)
-  @ portable
+   -> oracles:Prepared_oracle.t Oracle_key.Map.t -> x:Float32_u.t -> y:Float32_u.t
+   -> Expr_tree.t -> Float_result.t) @ portable
   =
   fun ~env ~oracles ~x ~y t ->
   match t.kind with
@@ -130,12 +126,8 @@ let rec eval_float
 
 and eval_bool
   : ( env:(string, Value.Boxed.t, String.comparator_witness) Map.t
-   -> oracles:Prepared_oracle.t Oracle_key.Map.t
-   -> x:Float32_u.t
-   -> y:Float32_u.t
-   -> Expr_tree.t
-   -> bool Or_error.t)
-  @ portable
+   -> oracles:Prepared_oracle.t Oracle_key.Map.t -> x:Float32_u.t -> y:Float32_u.t
+   -> Expr_tree.t -> bool Or_error.t) @ portable
   =
   fun ~env ~oracles ~x ~y t ->
   match t.kind with

@@ -190,16 +190,16 @@ and eval_builtin_var ~loc (env : env) (arg_exprs : Ast.expr list) : value Or_err
     (match v with
      | String name ->
        if String.equal name "x"
-       then
+       then (
          let%map.Or_error e = Expr_tree.coord_x ~loc in
-         Expr e
+         Expr e)
        else if String.equal name "y"
-       then
+       then (
          let%map.Or_error e = Expr_tree.coord_y ~loc in
-         Expr e
-       else
+         Expr e)
+       else (
          let%map.Or_error e = Expr_tree.var ~loc name Expr_tree.Type.Float in
-         Expr e
+         Expr e)
      | _ ->
        Or_error.error_s
          [%message "var() expects a string argument" ~loc:(loc : Source_code_position.t)])
@@ -382,14 +382,14 @@ and eval_let
   | Call ({ kind = Ident "var"; _ }, [ { kind = String_lit var_name; _ } ]) ->
     let loc = value_expr.loc in
     if String.equal var_name "x"
-    then
+    then (
       let%map.Or_error e = Expr_tree.coord_x ~loc in
-      Expr e
+      Expr e)
     else if String.equal var_name "y"
-    then
+    then (
       let%map.Or_error e = Expr_tree.coord_y ~loc in
-      Expr e
-    else
+      Expr e)
+    else (
       let type_ =
         match type_annot with
         | Some Float_type -> Expr_tree.Type.Float
@@ -397,7 +397,7 @@ and eval_let
         | None -> Expr_tree.Type.Float
       in
       let%map.Or_error e = Expr_tree.var ~loc var_name type_ in
-      Expr e
+      Expr e)
   | _ -> eval_expr env value_expr
 ;;
 

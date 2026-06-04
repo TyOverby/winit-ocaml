@@ -28,9 +28,16 @@ let prepare_parallel (module B : Sdf.Executor.S_parallel) tree =
 ;;
 
 let eval_parallel (Prepared_parallel ((module B), prepared)) ~scheduler =
-  let batch = B.Batch.create prepared ~width:grid_width ~height:grid_height in
-  B.Batch.set_x_affine batch ~base:0.0 ~dx:1.0 ~dy:0.0;
-  B.Batch.set_y_affine batch ~base:0.0 ~dx:0.0 ~dy:1.0;
+  let region =
+    { Sdf.Sample_region.start_x = #0.0s
+    ; end_x = Float32_u.of_float (Float.of_int grid_width)
+    ; samples_x = grid_width
+    ; start_y = #0.0s
+    ; end_y = Float32_u.of_float (Float.of_int grid_height)
+    ; samples_y = grid_height
+    }
+  in
+  let batch = B.Batch.create prepared region in
   let (_ : B.Result.t) =
     B.Batch.run batch ~par:scheduler ~oracles:Sdf.Oracle.Key.Map.empty
   in

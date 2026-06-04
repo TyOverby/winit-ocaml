@@ -44,12 +44,7 @@ let make_test (module Executor : Executor.S) =
       let value =
         Or_error.try_with (fun () ->
           Value.box
-            (Implementation.run
-               ~vars:(default_env t)
-               ~oracles
-               ~x:#1.0s
-               ~y:#5.0s
-               t))
+            (Implementation.run ~vars:(default_env t) ~oracles ~x:#1.0s ~y:#5.0s t))
       in
       match value with
       | Ok v -> v |> Value.unbox |> Value.to_float |> Float32_u.sexp_of_t |> print_s

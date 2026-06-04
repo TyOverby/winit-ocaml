@@ -1,0 +1,17 @@
+@@ portable
+
+type t =
+  { start_x : float32#
+  ; end_x : float32#
+  ; samples_x : int
+  ; start_y : float32#
+  ; end_y : float32#
+  ; samples_y : int
+  }
+
+val step_x : t -> float
+val step_y : t -> float
+val x_at : t -> int -> float32#
+val y_at : t -> int -> float32#
+val row : t -> int -> t
+val point : x:float32# -> y:float32# -> t

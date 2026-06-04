@@ -111,7 +111,12 @@ let backends : (string * (module Executor.S_single)) list =
 let eval_with_single (module S : Executor.S_single) tree ~x ~y =
   let t = S.of_tree tree in
   let vars = S.Variable_idx.Map.empty in
-  S.run t ~vars ~oracles:Oracle.Key.Map.empty ~x:(Float32_u.of_float x) ~y:(Float32_u.of_float y)
+  S.run
+    t
+    ~vars
+    ~oracles:Oracle.Key.Map.empty
+    ~x:(Float32_u.of_float x)
+    ~y:(Float32_u.of_float y)
 ;;
 
 let format_value v (type_ : Expr_tree.Type.t) =
@@ -232,9 +237,7 @@ let%expect_test "computed condition with nested else cond" =
 ;;
 
 let%expect_test "shared var across both cond branches" =
-  let tree =
-    cond ~condition:(b true) ~then_:coord_x ~else_:(add coord_x (f #1.0s))
-  in
+  let tree = cond ~condition:(b true) ~then_:coord_x ~else_:(add coord_x (f #1.0s)) in
   check tree ~x:42.0 ~y:0.0;
   [%expect {| 42. |}]
 ;;
@@ -244,8 +247,7 @@ let%expect_test "shared var with nested cond in else" =
     cond
       ~condition:(b true)
       ~then_:coord_x
-      ~else_:
-        (cond ~condition:(b true) ~then_:(mul coord_x (f #2.0s)) ~else_:(f #3.0s))
+      ~else_:(cond ~condition:(b true) ~then_:(mul coord_x (f #2.0s)) ~else_:(f #3.0s))
   in
   check tree ~x:42.0 ~y:0.0;
   [%expect {| 42. |}]
@@ -264,9 +266,7 @@ let%expect_test "computed condition, var in then, nested cond with ops in else" 
 ;;
 
 let%expect_test "div by zero in else branch, taking then branch" =
-  let tree =
-    cond ~condition:(b true) ~then_:coord_x ~else_:(div coord_y (f #0.0s))
-  in
+  let tree = cond ~condition:(b true) ~then_:coord_x ~else_:(div coord_y (f #0.0s)) in
   check tree ~x:7.0 ~y:1.0;
   [%expect {| 7. |}]
 ;;
