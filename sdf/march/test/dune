@@ -1,0 +1,6 @@
+(library
+ (name march_test)
+ (libraries march core unboxed.float32_u)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))
