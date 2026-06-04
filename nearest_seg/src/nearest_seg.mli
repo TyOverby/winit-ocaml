@@ -16,10 +16,19 @@ val build : float32# array -> t
     line segment in [t].
 
     The magnitude is the Euclidean distance to the closest point of the closest segment.
-    The sign is taken from the side of that (directed) segment the query point lies on:
-    positive if on the right of the directed segment [(x1,y1) -> (x2,y2)] (i.e. the segment
-    winds clockwise around the point), negative if on the left. Sidedness is measured in a
-    standard math orientation (x right, y up).
+    The sign is taken from the side of that (directed) segment the query point lies on,
+    chosen to give standard signed-distance-field semantics: negative inside, positive
+    outside.
+
+    Concretely, the index is built from contours wound clockwise (as drawn on screen, in
+    image coordinates with x rightward and y downward) around solid regions, so that the
+    inside sits on the right of each directed segment [(x1,y1) -> (x2,y2)] — this is the
+    winding that [sdf/march] emits. With that input, [query] returns a negative distance
+    for the right side (inside) and a positive distance for the left side (outside).
+
+    The underlying rule is purely the sign of the 2D cross product
+    [(x2-x1)*(y-y1) - (y2-y1)*(x-x1)]: it is negative when that cross product is positive.
+    Feeding in segments wound the other way flips the sign of the whole field.
 
     Returns [+inf] for an empty index. Runs in O(log n) on well-distributed inputs. *)
 val query : t -> x:float32# -> y:float32# -> float32#

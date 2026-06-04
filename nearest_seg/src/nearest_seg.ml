@@ -225,8 +225,10 @@ let scan_leaf t s c px py best =
     let d2 = F.add (F.mul dx dx) (F.mul dy dy) in
     if F.compare d2 (Array.get best 0) < 0
     then begin
-      (* Sidedness from the cross product of the directed segment with the point. In math
-         orientation, cross > 0 means the point is to the left. *)
+      (* Sidedness from the cross product of the directed segment with the point. For
+         contours wound clockwise on screen (image coords, y down) around solid regions,
+         cross > 0 is the inside, so it gets a negative sign: negative inside, positive
+         outside, the standard SDF convention. See [query] in the .mli. *)
       let cross = F.sub (F.mul abx apy) (F.mul aby apx) in
       let sign = if F.compare cross zero > 0 then neg_one else one in
       Array.set best 0 d2;
