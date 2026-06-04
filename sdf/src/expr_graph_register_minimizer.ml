@@ -2,7 +2,7 @@ open! Core
 
 let instr_inputs (instr : Expr_graph.instr) : Expr_graph.Register.t list =
   match instr with
-  | Float_literal _ | Bool_literal _ | Var _ | Oracle _ -> []
+  | Float_literal _ | Bool_literal _ | Coord_x | Coord_y | Var _ | Oracle _ -> []
   | Read r | Sqrt r | Abs r | Neg r | Sign r | Sin r | Cos r | Round r -> [ r ]
   | Add (a, b)
   | Mul (a, b)
@@ -89,7 +89,7 @@ let lookup state r =
 let translate_instr state (instr : Expr_graph.instr) : Expr_graph.instr =
   let l = lookup state in
   match instr with
-  | Float_literal _ | Bool_literal _ | Var _ | Oracle _ -> instr
+  | Float_literal _ | Bool_literal _ | Coord_x | Coord_y | Var _ | Oracle _ -> instr
   | Read r -> Read (l r)
   | Sqrt r -> Sqrt (l r)
   | Abs r -> Abs (l r)

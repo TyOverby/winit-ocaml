@@ -29,10 +29,8 @@ let prepare_parallel (module B : Sdf.Executor.S_parallel) tree =
 
 let eval_parallel (Prepared_parallel ((module B), prepared)) ~scheduler =
   let batch = B.Batch.create prepared ~width:grid_width ~height:grid_height in
-  Option.iter (B.Prepared.lookup_variable prepared "x") ~f:(fun var ->
-    B.Batch.set_affine batch ~var ~base:0.0 ~dx:1.0 ~dy:0.0);
-  Option.iter (B.Prepared.lookup_variable prepared "y") ~f:(fun var ->
-    B.Batch.set_affine batch ~var ~base:0.0 ~dx:0.0 ~dy:1.0);
+  B.Batch.set_x_affine batch ~base:0.0 ~dx:1.0 ~dy:0.0;
+  B.Batch.set_y_affine batch ~base:0.0 ~dx:0.0 ~dy:1.0;
   let (_ : B.Result.t) =
     B.Batch.run batch ~par:scheduler ~oracles:Sdf.Oracle.Key.Map.empty
   in

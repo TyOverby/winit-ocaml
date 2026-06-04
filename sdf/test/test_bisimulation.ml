@@ -19,8 +19,8 @@ let rec gen_float_expr ~depth =
     Quickcheck.Generator.union
       [ (let%map f = Float.quickcheck_generator in
          ok (Expr_tree.float_literal ~loc (Float32_u.of_float f)))
-      ; return (ok (Expr_tree.var ~loc "x" Float))
-      ; return (ok (Expr_tree.var ~loc "y" Float))
+      ; return (ok (Expr_tree.coord_x ~loc))
+      ; return (ok (Expr_tree.coord_y ~loc))
       ]
   in
   if depth <= 0
@@ -110,17 +110,8 @@ let backends : (string * (module Executor.S_single)) list =
 
 let eval_with_single (module S : Executor.S_single) tree ~x ~y =
   let t = S.of_tree tree in
-  let add_var name value map =
-    match S.lookup_variable t name with
-    | idx -> Map.set map ~key:idx ~data:value
-    | exception _ -> map
-  in
-  let vars =
-    S.Variable_idx.Map.empty
-    |> add_var "x" (Value.Boxed.T (Value.of_float (Float32_u.of_float x)))
-    |> add_var "y" (Value.Boxed.T (Value.of_float (Float32_u.of_float y)))
-  in
-  S.run t ~vars ~oracles:Oracle.Key.Map.empty
+  let vars = S.Variable_idx.Map.empty in
+  S.run t ~vars ~oracles:Oracle.Key.Map.empty ~x:(Float32_u.of_float x) ~y:(Float32_u.of_float y)
 ;;
 
 let format_value v (type_ : Expr_tree.Type.t) =
@@ -188,7 +179,7 @@ let%expect_test "literal" =
 ;;
 
 let%expect_test "variable" =
-  check (var "x" Float) ~x:42.0 ~y:0.0;
+  check coord_x ~x:42.0 ~y:0.0;
   [%expect {| 42. |}]
 ;;
 
@@ -203,10 +194,7 @@ let%expect_test "simple cond, false branch" =
 ;;
 
 let%expect_test "cond with var in then branch" =
-  check
-    (cond ~condition:(b true) ~then_:(var "x" Float) ~else_:(f #999.0s))
-    ~x:42.0
-    ~y:0.0;
+  check (cond ~condition:(b true) ~then_:coord_x ~else_:(f #999.0s)) ~x:42.0 ~y:0.0;
   [%expect {| 42. |}]
 ;;
 
@@ -214,7 +202,7 @@ let%expect_test "nested cond in else, taking then branch" =
   let tree =
     cond
       ~condition:(b true)
-      ~then_:(var "x" Float)
+      ~then_:coord_x
       ~else_:(cond ~condition:(b true) ~then_:(f #1.0s) ~else_:(f #2.0s))
   in
   check tree ~x:42.0 ~y:0.0;
@@ -225,7 +213,7 @@ let%expect_test "nested cond in else, taking else branch" =
   let tree =
     cond
       ~condition:(b false)
-      ~then_:(var "x" Float)
+      ~then_:coord_x
       ~else_:(cond ~condition:(b true) ~then_:(f #1.0s) ~else_:(f #2.0s))
   in
   check tree ~x:42.0 ~y:0.0;
@@ -235,7 +223,7 @@ let%expect_test "nested cond in else, taking else branch" =
 let%expect_test "computed condition with nested else cond" =
   let tree =
     cond
-      ~condition:(lt (var "x" Float) (f #0.0s))
+      ~condition:(lt coord_x (f #0.0s))
       ~then_:(f #1.0s)
       ~else_:(cond ~condition:(b true) ~then_:(f #2.0s) ~else_:(f #3.0s))
   in
@@ -245,7 +233,7 @@ let%expect_test "computed condition with nested else cond" =
 
 let%expect_test "shared var across both cond branches" =
   let tree =
-    cond ~condition:(b true) ~then_:(var "x" Float) ~else_:(add (var "x" Float) (f #1.0s))
+    cond ~condition:(b true) ~then_:coord_x ~else_:(add coord_x (f #1.0s))
   in
   check tree ~x:42.0 ~y:0.0;
   [%expect {| 42. |}]
@@ -255,9 +243,9 @@ let%expect_test "shared var with nested cond in else" =
   let tree =
     cond
       ~condition:(b true)
-      ~then_:(var "x" Float)
+      ~then_:coord_x
       ~else_:
-        (cond ~condition:(b true) ~then_:(mul (var "x" Float) (f #2.0s)) ~else_:(f #3.0s))
+        (cond ~condition:(b true) ~then_:(mul coord_x (f #2.0s)) ~else_:(f #3.0s))
   in
   check tree ~x:42.0 ~y:0.0;
   [%expect {| 42. |}]
@@ -267,7 +255,7 @@ let%expect_test "computed condition, var in then, nested cond with ops in else" 
   let tree =
     cond
       ~condition:(lt (f #1.0s) (f #2.0s))
-      ~then_:(var "x" Float)
+      ~then_:coord_x
       ~else_:
         (cond ~condition:(b true) ~then_:(mul (nf #1.0s) (nf #1.0s)) ~else_:(f #999.0s))
   in
@@ -277,7 +265,7 @@ let%expect_test "computed condition, var in then, nested cond with ops in else" 
 
 let%expect_test "div by zero in else branch, taking then branch" =
   let tree =
-    cond ~condition:(b true) ~then_:(var "x" Float) ~else_:(div (var "y" Float) (f #0.0s))
+    cond ~condition:(b true) ~then_:coord_x ~else_:(div coord_y (f #0.0s))
   in
   check tree ~x:7.0 ~y:1.0;
   [%expect {| 7. |}]
@@ -291,22 +279,22 @@ let%expect_test "original quickcheck failure - simplified" =
     cond
       ~condition:
         (lt
-           (add (nf #0.0s) (div (var "x" Float) (var "x" Float)))
+           (add (nf #0.0s) (div coord_x coord_x))
            (sub
-              (div (var "y" Float) (f #0.0s))
-              (cond ~condition:(b false) ~then_:(var "x" Float) ~else_:(f #1.45220733s))))
-      ~then_:(var "x" Float)
+              (div coord_y (f #0.0s))
+              (cond ~condition:(b false) ~then_:coord_x ~else_:(f #1.45220733s))))
+      ~then_:coord_x
       ~else_:
         (cond
            ~condition:(b true)
            ~then_:
              (mul
-                (div (nf #1.26763916s) (var "y" Float))
+                (div (nf #1.26763916s) coord_y)
                 (cond
                    ~condition:(b false)
                    ~then_:(nf #0.0s)
                    ~else_:(f Float32_u.(-#1.0s / #0.0s))))
-           ~else_:(add (div (var "y" Float) (nf #0.0s)) (mul (var "x" Float) (nf #0.0s))))
+           ~else_:(add (div coord_y (nf #0.0s)) (mul coord_x (nf #0.0s))))
   in
   check tree ~x:(-0.267355561256) ~y:2.9582283945787943e-31;
   [%expect {| -0.267355561 |}]
@@ -327,7 +315,7 @@ let pp tree =
 let%expect_test "CSE distinguishes -0.0 and +0.0: evaluation" =
   let tree =
     cond
-      ~condition:(lt (add (nf #0.0s) (f #1.0s)) (div (var "y" Float) (f #0.0s)))
+      ~condition:(lt (add (nf #0.0s) (f #1.0s)) (div coord_y (f #0.0s)))
       ~then_:(f #1.0s)
       ~else_:(f #2.0s)
   in
@@ -341,8 +329,8 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
     cond
       ~condition:
         (lt
-           (add (nf #0.0s) (div (var "x" Float) (var "x" Float)))
-           (sub (div (var "y" Float) (f #0.0s)) (f #1.45220733s)))
+           (add (nf #0.0s) (div coord_x coord_x))
+           (sub (div coord_y (f #0.0s)) (f #1.45220733s)))
       ~then_:(f #1.0s)
       ~else_:(f #2.0s)
   in
@@ -351,10 +339,10 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
     {|
     result: $0
     $3 <- -0.
-    $5 <- var(0)
+    $5 <- coord_x
     $4 <- div $5 $5
     $2 <- add $3 $4
-    $8 <- var(1)
+    $8 <- coord_y
     $9 <- 0.
     $7 <- div $8 $9
     $10 <- 1.45220733
@@ -374,7 +362,7 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
    branch. This tree compiles into two sequential Condition instructions that both
    reference x's register:
 
-   $x <- var(0) ... $r1 <- cond ... ← inner cond; then-branch uses $x then does more work
+   $x <- coord_x ... $r1 <- cond ... ← inner cond; then-branch uses $x then does more work
    $r0 <- cond $r1 ← outer cond; then-branch uses $x via neg
 
    Without the fix, the inner then-branch would free $x after its last local use, allowing
@@ -392,7 +380,7 @@ let pp_minimized tree =
 ;;
 
 let%expect_test "outer var survives register pressure in cond branch (minimized)" =
-  let x = var "x" Float in
+  let x = coord_x in
   let tree =
     cond
       ~condition:
@@ -409,7 +397,7 @@ let%expect_test "outer var survives register pressure in cond branch (minimized)
   [%expect
     {|
     result: $2
-    $0 <- var(0)
+    $0 <- coord_x
     $1 <- 10.
     $2 <- lt $0 $1
     $1 <- cond $2

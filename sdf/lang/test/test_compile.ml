@@ -52,7 +52,7 @@ let%expect_test "var binding" =
     {|
     ((loc <string>:1:34)
      (kind
-      (Add ((loc <string>:1:17) (kind (Var x Float)) (type_ Float))
+      (Add ((loc <string>:1:17) (kind Coord_x) (type_ Float))
        ((loc <string>:1:38) (kind (Float_literal 1)) (type_ Float))))
      (type_ Float))
     |}]
@@ -126,19 +126,19 @@ let%expect_test "if with runtime condition" =
        (condition
         ((loc <string>:3:14)
          (kind
-          (Lt ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))
+          (Lt ((loc <string>:2:20) (kind Coord_x) (type_ Float))
            ((loc <string>:3:18) (kind (Float_literal 10)) (type_ Float))))
          (type_ Bool)))
        (then_
         ((loc <string>:3:23)
          (kind
-          (Add ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))
+          (Add ((loc <string>:2:20) (kind Coord_x) (type_ Float))
            ((loc <string>:3:27) (kind (Float_literal 1)) (type_ Float))))
          (type_ Float)))
        (else_
         ((loc <string>:3:38)
          (kind
-          (Sub ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))
+          (Sub ((loc <string>:2:20) (kind Coord_x) (type_ Float))
            ((loc <string>:3:42) (kind (Float_literal 1)) (type_ Float))))
          (type_ Float)))))
      (type_ Float))
@@ -250,13 +250,13 @@ let%expect_test "dynamic if with closures (lifted)" =
        (then_
         ((loc <string>:4:30)
          (kind
-          (Add ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))
+          (Add ((loc <string>:2:20) (kind Coord_x) (type_ Float))
            ((loc <string>:4:34) (kind (Float_literal 1)) (type_ Float))))
          (type_ Float)))
        (else_
         ((loc <string>:4:55)
          (kind
-          (Sub ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))
+          (Sub ((loc <string>:2:20) (kind Coord_x) (type_ Float))
            ((loc <string>:4:59) (kind (Float_literal 1)) (type_ Float))))
          (type_ Float)))))
      (type_ Float))
@@ -341,48 +341,42 @@ let%expect_test "all builtins" =
                          ((loc <string>:4:12)
                           (kind
                            (Abs
-                            ((loc <string>:2:20) (kind (Var x Float))
-                             (type_ Float))))
+                            ((loc <string>:2:20) (kind Coord_x) (type_ Float))))
                           (type_ Float))
                          ((loc <string>:5:12)
                           (kind
                            (Neg
-                            ((loc <string>:3:20) (kind (Var y Float))
-                             (type_ Float))))
+                            ((loc <string>:3:20) (kind Coord_y) (type_ Float))))
                           (type_ Float))))
                        (type_ Float))
                       ((loc <string>:6:12)
                        (kind
-                        (Sign
-                         ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))))
+                        (Sign ((loc <string>:2:20) (kind Coord_x) (type_ Float))))
                        (type_ Float))))
                     (type_ Float))
                    ((loc <string>:7:12)
                     (kind
-                     (Sin
-                      ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))))
+                     (Sin ((loc <string>:2:20) (kind Coord_x) (type_ Float))))
                     (type_ Float))))
                  (type_ Float))
                 ((loc <string>:8:12)
-                 (kind
-                  (Cos ((loc <string>:3:20) (kind (Var y Float)) (type_ Float))))
+                 (kind (Cos ((loc <string>:3:20) (kind Coord_y) (type_ Float))))
                  (type_ Float))))
               (type_ Float))
              ((loc <string>:9:12)
-              (kind
-               (Round ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))))
+              (kind (Round ((loc <string>:2:20) (kind Coord_x) (type_ Float))))
               (type_ Float))))
            (type_ Float))
           ((loc <string>:10:12)
            (kind
-            (Min ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))
-             ((loc <string>:3:20) (kind (Var y Float)) (type_ Float))))
+            (Min ((loc <string>:2:20) (kind Coord_x) (type_ Float))
+             ((loc <string>:3:20) (kind Coord_y) (type_ Float))))
            (type_ Float))))
         (type_ Float))
        ((loc <string>:11:12)
         (kind
-         (Max ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))
-          ((loc <string>:3:20) (kind (Var y Float)) (type_ Float))))
+         (Max ((loc <string>:2:20) (kind Coord_x) (type_ Float))
+          ((loc <string>:3:20) (kind Coord_y) (type_ Float))))
         (type_ Float))))
      (type_ Float))
     |}]
@@ -463,14 +457,14 @@ let%expect_test "example.neo circle shape" =
                   (Sub
                    ((loc <string>:13:26) (kind (Float_literal 100))
                     (type_ Float))
-                   ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))))
+                   ((loc <string>:2:20) (kind Coord_x) (type_ Float))))
                  (type_ Float))
                 ((loc <string>:7:17)
                  (kind
                   (Sub
                    ((loc <string>:13:26) (kind (Float_literal 100))
                     (type_ Float))
-                   ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))))
+                   ((loc <string>:2:20) (kind Coord_x) (type_ Float))))
                  (type_ Float))))
               (type_ Float))
              ((loc <string>:9:23)
@@ -481,14 +475,14 @@ let%expect_test "example.neo circle shape" =
                   (Sub
                    ((loc <string>:13:31) (kind (Float_literal 100))
                     (type_ Float))
-                   ((loc <string>:3:20) (kind (Var y Float)) (type_ Float))))
+                   ((loc <string>:3:20) (kind Coord_y) (type_ Float))))
                  (type_ Float))
                 ((loc <string>:8:17)
                  (kind
                   (Sub
                    ((loc <string>:13:31) (kind (Float_literal 100))
                     (type_ Float))
-                   ((loc <string>:3:20) (kind (Var y Float)) (type_ Float))))
+                   ((loc <string>:3:20) (kind Coord_y) (type_ Float))))
                  (type_ Float))))
               (type_ Float))))
            (type_ Float))))
@@ -552,8 +546,7 @@ let%expect_test "example.neo with modulate" =
                     (type_ Float))
                    ((loc <string>:15:16)
                     (kind
-                     (Add
-                      ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))
+                     (Add ((loc <string>:2:20) (kind Coord_x) (type_ Float))
                       ((loc <string>:15:20)
                        (kind
                         (Mul
@@ -563,8 +556,7 @@ let%expect_test "example.neo with modulate" =
                             ((loc <string>:15:24)
                              (kind
                               (Div
-                               ((loc <string>:3:20) (kind (Var y Float))
-                                (type_ Float))
+                               ((loc <string>:3:20) (kind Coord_y) (type_ Float))
                                ((loc <string>:24:20) (kind (Float_literal 20))
                                 (type_ Float))))
                              (type_ Float))))
@@ -581,8 +573,7 @@ let%expect_test "example.neo with modulate" =
                     (type_ Float))
                    ((loc <string>:15:16)
                     (kind
-                     (Add
-                      ((loc <string>:2:20) (kind (Var x Float)) (type_ Float))
+                     (Add ((loc <string>:2:20) (kind Coord_x) (type_ Float))
                       ((loc <string>:15:20)
                        (kind
                         (Mul
@@ -592,8 +583,7 @@ let%expect_test "example.neo with modulate" =
                             ((loc <string>:15:24)
                              (kind
                               (Div
-                               ((loc <string>:3:20) (kind (Var y Float))
-                                (type_ Float))
+                               ((loc <string>:3:20) (kind Coord_y) (type_ Float))
                                ((loc <string>:24:20) (kind (Float_literal 20))
                                 (type_ Float))))
                              (type_ Float))))
@@ -614,8 +604,7 @@ let%expect_test "example.neo with modulate" =
                     (type_ Float))
                    ((loc <string>:16:16)
                     (kind
-                     (Add
-                      ((loc <string>:3:20) (kind (Var y Float)) (type_ Float))
+                     (Add ((loc <string>:3:20) (kind Coord_y) (type_ Float))
                       ((loc <string>:16:20)
                        (kind
                         (Mul
@@ -628,7 +617,7 @@ let%expect_test "example.neo with modulate" =
                                ((loc <string>:15:16)
                                 (kind
                                  (Add
-                                  ((loc <string>:2:20) (kind (Var x Float))
+                                  ((loc <string>:2:20) (kind Coord_x)
                                    (type_ Float))
                                   ((loc <string>:15:20)
                                    (kind
@@ -639,8 +628,8 @@ let%expect_test "example.neo with modulate" =
                                         ((loc <string>:15:24)
                                          (kind
                                           (Div
-                                           ((loc <string>:3:20)
-                                            (kind (Var y Float)) (type_ Float))
+                                           ((loc <string>:3:20) (kind Coord_y)
+                                            (type_ Float))
                                            ((loc <string>:24:20)
                                             (kind (Float_literal 20))
                                             (type_ Float))))
@@ -666,8 +655,7 @@ let%expect_test "example.neo with modulate" =
                     (type_ Float))
                    ((loc <string>:16:16)
                     (kind
-                     (Add
-                      ((loc <string>:3:20) (kind (Var y Float)) (type_ Float))
+                     (Add ((loc <string>:3:20) (kind Coord_y) (type_ Float))
                       ((loc <string>:16:20)
                        (kind
                         (Mul
@@ -680,7 +668,7 @@ let%expect_test "example.neo with modulate" =
                                ((loc <string>:15:16)
                                 (kind
                                  (Add
-                                  ((loc <string>:2:20) (kind (Var x Float))
+                                  ((loc <string>:2:20) (kind Coord_x)
                                    (type_ Float))
                                   ((loc <string>:15:20)
                                    (kind
@@ -691,8 +679,8 @@ let%expect_test "example.neo with modulate" =
                                         ((loc <string>:15:24)
                                          (kind
                                           (Div
-                                           ((loc <string>:3:20)
-                                            (kind (Var y Float)) (type_ Float))
+                                           ((loc <string>:3:20) (kind Coord_y)
+                                            (type_ Float))
                                            ((loc <string>:24:20)
                                             (kind (Float_literal 20))
                                             (type_ Float))))

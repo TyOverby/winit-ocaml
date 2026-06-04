@@ -9,6 +9,8 @@ end
 type instr =
   | Float_literal of Float32_u.t
   | Bool_literal of bool
+  | Coord_x
+  | Coord_y
   | Var of int
   | Read of Register.t
   | Add of Register.t * Register.t

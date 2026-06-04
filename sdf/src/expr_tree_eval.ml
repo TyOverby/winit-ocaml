@@ -16,54 +16,60 @@ end
 
 let rec eval_float
   : ( env:(string, Value.Boxed.t, String.comparator_witness) Map.t
-   -> oracles:Prepared_oracle.t Oracle_key.Map.t -> Expr_tree.t -> Float_result.t)
+   -> oracles:Prepared_oracle.t Oracle_key.Map.t
+   -> x:Float32_u.t
+   -> y:Float32_u.t
+   -> Expr_tree.t
+   -> Float_result.t)
   @ portable
   =
-  fun ~env ~oracles t ->
+  fun ~env ~oracles ~x ~y t ->
   match t.kind with
+  | Coord_x -> Float_result.Ok x
+  | Coord_y -> Float_result.Ok y
   | Float_literal v -> Float_result.Ok v
   | Add (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error _ as e -> e
         | Ok b -> Ok Float32_u.O.(a + b)))
   | Sub (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error _ as e -> e
         | Ok b -> Ok Float32_u.O.(a - b)))
   | Mul (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error _ as e -> e
         | Ok b -> Ok Float32_u.O.(a * b)))
   | Div (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error _ as e -> e
         | Ok b -> Ok Float32_u.O.(a / b)))
   | Sqrt a ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a -> Ok (Float32_u.sqrt a))
   | Abs a ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a -> Ok (Float32_u.abs a))
   | Neg a ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a -> Ok (Float32_u.neg a))
   | Sign a ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a ->
        let zero = Float32_u.of_float 0.0 in
@@ -74,40 +80,40 @@ let rec eval_float
           then Float32_u.of_float (-1.0)
           else zero))
   | Sin a ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a -> Ok (Float32_u.sin a))
   | Cos a ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a -> Ok (Float32_u.cos a))
   | Round a ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a -> Ok (Float32_u.round_nearest a))
   | Min (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error _ as e -> e
         | Ok b -> Ok (Float32_u.min a b)))
   | Max (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error _ as e -> e
         | Ok b -> Ok (Float32_u.max a b)))
   | Cond { condition; then_; else_ } ->
-    (match eval_bool ~env ~oracles condition with
+    (match eval_bool ~env ~oracles ~x ~y condition with
      | Error e -> Error e
      | Ok c ->
-       if c then eval_float ~env ~oracles then_ else eval_float ~env ~oracles else_)
+       if c
+       then eval_float ~env ~oracles ~x ~y then_
+       else eval_float ~env ~oracles ~x ~y else_)
   | Oracle (name, exprs) ->
     let oracle = Map.find_exn oracles (name, exprs) in
-    let x = Map.find_exn env "x" |> Value.unbox |> Value.to_float
-    and y = Map.find_exn env "y" |> Value.unbox |> Value.to_float in
     Prepared_oracle.sample oracle ~x ~y |> Ok
   | Var (name, _) ->
     (match Map.find env name with
@@ -124,55 +130,59 @@ let rec eval_float
 
 and eval_bool
   : ( env:(string, Value.Boxed.t, String.comparator_witness) Map.t
-   -> oracles:Prepared_oracle.t Oracle_key.Map.t -> Expr_tree.t -> bool Or_error.t)
+   -> oracles:Prepared_oracle.t Oracle_key.Map.t
+   -> x:Float32_u.t
+   -> y:Float32_u.t
+   -> Expr_tree.t
+   -> bool Or_error.t)
   @ portable
   =
-  fun ~env ~oracles t ->
+  fun ~env ~oracles ~x ~y t ->
   match t.kind with
   | Bool_literal v -> Ok v
   | Lt (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error e -> Error e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error e -> Error e
         | Ok b -> Ok Float32_u.O.(a < b)))
   | Gt (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error e -> Error e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error e -> Error e
         | Ok b -> Ok Float32_u.O.(a > b)))
   | Lte (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error e -> Error e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error e -> Error e
         | Ok b -> Ok Float32_u.O.(a <= b)))
   | Gte (a, b) ->
-    (match eval_float ~env ~oracles a with
+    (match eval_float ~env ~oracles ~x ~y a with
      | Error e -> Error e
      | Ok a ->
-       (match eval_float ~env ~oracles b with
+       (match eval_float ~env ~oracles ~x ~y b with
         | Error e -> Error e
         | Ok b -> Ok Float32_u.O.(a >= b)))
   | And (a, b) ->
-    let%bind.Or_error a = eval_bool ~env ~oracles a in
-    let%map.Or_error b = eval_bool ~env ~oracles b in
+    let%bind.Or_error a = eval_bool ~env ~oracles ~x ~y a in
+    let%map.Or_error b = eval_bool ~env ~oracles ~x ~y b in
     a && b
   | Or (a, b) ->
-    let%bind.Or_error a = eval_bool ~env ~oracles a in
-    let%map.Or_error b = eval_bool ~env ~oracles b in
+    let%bind.Or_error a = eval_bool ~env ~oracles ~x ~y a in
+    let%map.Or_error b = eval_bool ~env ~oracles ~x ~y b in
     a || b
   | Xor (a, b) ->
-    let%bind.Or_error a = eval_bool ~env ~oracles a in
-    let%map.Or_error b = eval_bool ~env ~oracles b in
+    let%bind.Or_error a = eval_bool ~env ~oracles ~x ~y a in
+    let%map.Or_error b = eval_bool ~env ~oracles ~x ~y b in
     Bool.( <> ) a b
   | Cond { condition; then_; else_ } ->
-    let%bind.Or_error c = eval_bool ~env ~oracles condition in
-    if c then eval_bool ~env ~oracles then_ else eval_bool ~env ~oracles else_
+    let%bind.Or_error c = eval_bool ~env ~oracles ~x ~y condition in
+    if c then eval_bool ~env ~oracles ~x ~y then_ else eval_bool ~env ~oracles ~x ~y else_
   | Var (name, _) ->
     (match Map.find env name with
      | Some (T value) -> Ok (Value.to_bool value)
@@ -181,6 +191,8 @@ and eval_bool
          (Error.create_s
             [%message
               "unbound variable" (name : string) ~loc:(t.loc : Source_code_position.t)]))
+  | Coord_x
+  | Coord_y
   | Oracle _
   | Float_literal _
   | Add _
@@ -204,16 +216,18 @@ and eval_bool
 let (eval @ portable)
   ~env
   ~(oracles : Prepared_oracle.t Oracle_key.Map.t)
+  ~(x : Float32_u.t)
+  ~(y : Float32_u.t)
   (t : Expr_tree.t)
   : Result.t
   =
   match t.type_ with
   | Float ->
-    (match eval_float ~oracles ~env t with
+    (match eval_float ~oracles ~env ~x ~y t with
      | Ok f -> Ok (Value.of_float f)
      | Error e -> Error e)
   | Bool ->
-    (match eval_bool ~oracles ~env t with
+    (match eval_bool ~oracles ~env ~x ~y t with
      | Ok f -> Ok (Value.of_bool f)
      | Error e -> Error e)
 ;;
@@ -227,8 +241,8 @@ module Single : Executor.S_single = struct
   let of_tree = Fn.id
   let lookup_variable _ s = s
 
-  let run t ~vars ~oracles =
-    match eval t ~env:vars ~oracles with
+  let run t ~vars ~oracles ~x ~y =
+    match eval t ~env:vars ~oracles ~x ~y with
     | Ok v -> v
     | Error e ->
       if true then Error.raise e;

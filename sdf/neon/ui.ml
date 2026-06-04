@@ -118,10 +118,8 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
   (* Colour the canvas from the host-resident result grid, in parallel over rows. *)
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     let batch = B.Batch.create prepared ~width ~height in
-    Option.iter (B.Prepared.lookup_variable prepared "x") ~f:(fun var ->
-      B.Batch.set_affine batch ~var ~base:0.0 ~dx:1.0 ~dy:0.0);
-    Option.iter (B.Prepared.lookup_variable prepared "y") ~f:(fun var ->
-      B.Batch.set_affine batch ~var ~base:0.0 ~dx:0.0 ~dy:1.0);
+    B.Batch.set_x_affine batch ~base:0.0 ~dx:1.0 ~dy:0.0;
+    B.Batch.set_y_affine batch ~base:0.0 ~dx:0.0 ~dy:1.0;
     let result = B.Batch.run batch ~par ~oracles:Sdf.Oracle.Key.Map.empty in
     let color_pixel =
       match state.render_mode with

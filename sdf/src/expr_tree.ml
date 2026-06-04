@@ -38,7 +38,7 @@ end
 module Var_name = struct
   type t = string [@@deriving sexp_of, equal, compare, hash]
 
-  let quickcheck_generator = Quickcheck.Generator.of_list [ "x"; "y" ]
+  let quickcheck_generator = Quickcheck.Generator.of_list [ "a"; "b" ]
 
   let quickcheck_observer =
     Quickcheck.Observer.create (fun s ~size:_ ~hash -> hash_fold_t hash s)
@@ -56,6 +56,8 @@ type t =
 and kind =
   | Float_literal of Float32_u.t
   | Bool_literal of bool
+  | Coord_x
+  | Coord_y
   | Var of Var_name.t * Type.t
   | Add of t * t
   | Mul of t * t
@@ -137,6 +139,8 @@ let both_bool name a b =
 
 let float_literal ~loc v = Ok { loc; kind = Float_literal v; type_ = Type.Float }
 let bool_literal ~loc v = Ok { loc; kind = Bool_literal v; type_ = Type.Bool }
+let coord_x ~loc = Ok { loc; kind = Coord_x; type_ = Type.Float }
+let coord_y ~loc = Ok { loc; kind = Coord_y; type_ = Type.Float }
 let var ~loc name type_ = Ok { loc; kind = Var (name, type_); type_ }
 
 let add ~loc a b =
@@ -271,6 +275,8 @@ let oracle ~loc name trees = Ok { loc; kind = Oracle (name, trees); type_ = Type
 module Direct = struct
   let float_literal ~(loc : [%call_pos]) v = Or_error.ok_exn (float_literal ~loc v)
   let bool_literal ~(loc : [%call_pos]) v = Or_error.ok_exn (bool_literal ~loc v)
+  let coord_x ~(loc : [%call_pos]) () = Or_error.ok_exn (coord_x ~loc)
+  let coord_y ~(loc : [%call_pos]) () = Or_error.ok_exn (coord_y ~loc)
   let var ~(loc : [%call_pos]) name type_ = Or_error.ok_exn (var ~loc name type_)
   let add ~(loc : [%call_pos]) a b = Or_error.ok_exn (add ~loc a b)
   let mul ~(loc : [%call_pos]) a b = Or_error.ok_exn (mul ~loc a b)

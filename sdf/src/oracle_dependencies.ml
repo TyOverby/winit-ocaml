@@ -9,7 +9,7 @@ let collect_oracles tree =
       let key = name, args in
       let acc = List.fold args ~init:acc ~f:go in
       Set.add acc key
-    | Float_literal _ | Bool_literal _ | Var _ -> acc
+    | Float_literal _ | Bool_literal _ | Coord_x | Coord_y | Var _ -> acc
     | Add (a, b)
     | Mul (a, b)
     | Sub (a, b)

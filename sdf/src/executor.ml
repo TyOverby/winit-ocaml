@@ -23,23 +23,34 @@ module Single_to_batch (S : S_single) : S_batch = struct
     type t =
       { prepared : S.t
       ; len : int
-      ; variables : Value.Boxed.t S.Variable_idx.Map.t Int.Table.t
+      ; mutable variables : Value.Boxed.t S.Variable_idx.Map.t
+      ; x_coords : float32# array
+      ; y_coords : float32# array
       }
 
-    let create prepared ~len = { prepared; len; variables = Int.Table.create () }
-
-    let set_variable t ~var ~px value =
-      let boxed = Value.box value in
-      Hashtbl.update t.variables px ~f:(function
-        | None -> S.Variable_idx.Map.singleton var boxed
-        | Some map -> Map.set map ~key:var ~data:boxed)
+    let create prepared ~len =
+      { prepared
+      ; len
+      ; variables = S.Variable_idx.Map.of_alist_exn []
+      ; x_coords = Array.create ~len #0.0s
+      ; y_coords = Array.create ~len #0.0s
+      }
     ;;
+
+    let set_variable t ~var value =
+      let boxed = Value.box value in
+      t.variables <- Map.set t.variables ~key:var ~data:boxed
+    ;;
+
+    let set_x t ~px value = Array.set t.x_coords px (Value.to_float value)
+    let set_y t ~px value = Array.set t.y_coords px (Value.to_float value)
 
     let (run @ portable) t ~oracles =
       let out = Value.Array.create ~len:t.len in
       for i = 0 to t.len - 1 do
-        let vars = Hashtbl.find_exn t.variables i in
-        Value.Array.set out i (S.run t.prepared ~vars ~oracles)
+        let x = Array.get t.x_coords i in
+        let y = Array.get t.y_coords i in
+        Value.Array.set out i (S.run t.prepared ~vars:t.variables ~oracles ~x ~y)
       done;
       out
     ;;
@@ -54,11 +65,13 @@ module Batch_to_single (B : S_batch) : S_single = struct
   let of_tree = B.Prepared.of_tree
   let lookup_variable _t name = name
 
-  let run t ~vars ~oracles =
+  let run t ~vars ~oracles ~x ~y =
     let batch = B.Batch.create t ~len:1 in
+    B.Batch.set_x batch ~px:0 (Value.of_float x);
+    B.Batch.set_y batch ~px:0 (Value.of_float y);
     Map.iteri vars ~f:(fun ~key ~data ->
       match B.Prepared.lookup_variable t key with
-      | var -> B.Batch.set_variable batch ~var ~px:0 (Value.unbox data)
+      | var -> B.Batch.set_variable batch ~var (Value.unbox data)
       | exception _ -> ());
     let result = B.Batch.run batch ~oracles in
     B.Result.get_output result ~px:0
@@ -126,70 +139,64 @@ module Batch_to_parallel (B : S_batch) : S_parallel = struct
     let get = Grid.get
   end
 
-  (* How a single variable is bound across the whole grid. Payloads are boxed (and grid
-     buffers wrapped in [Portended.t]) so that the binding list mode-crosses contention
-     and can be shared with the worker domains. *)
-  type binding =
-    | Uniform of Variable_idx.t * int32
-    | Affine of Variable_idx.t * float * float * float
-    | Grid_input of
-        Variable_idx.t
-        * (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t
-            Modes.Portended.t
+  type xy_affine =
+    { base : float
+    ; dx : float
+    ; dy : float
+    }
 
   module Batch = struct
     type t =
       { prepared : Prepared.t
       ; width : int
       ; height : int
-      ; mutable bindings : binding list
+      ; mutable variables : (Variable_idx.t * int32) list
+      ; mutable x_affine : xy_affine
+      ; mutable y_affine : xy_affine
       }
 
-    let create prepared ~width ~height = { prepared; width; height; bindings = [] }
-    let add t binding = t.bindings <- binding :: t.bindings
-
-    let set_uniform t ~var value =
-      add t (Uniform (var, Int32_u.to_int32 (Value.to_int value)))
+    let create prepared ~width ~height =
+      { prepared
+      ; width
+      ; height
+      ; variables = []
+      ; x_affine = { base = 0.0; dx = 0.0; dy = 0.0 }
+      ; y_affine = { base = 0.0; dx = 0.0; dy = 0.0 }
+      }
     ;;
 
-    let set_affine t ~var ~base ~dx ~dy = add t (Affine (var, base, dx, dy))
+    let set_x_affine t ~base ~dx ~dy = t.x_affine <- { base; dx; dy }
+    let set_y_affine t ~base ~dx ~dy = t.y_affine <- { base; dx; dy }
 
-    let set_grid t ~var data =
-      add t (Grid_input (var, { Modes.Portended.portended = data }))
+    let set_variable t ~var value =
+      t.variables <- (var, Int32_u.to_int32 (Value.to_int value)) :: t.variables
     ;;
 
-    (* Apply [binding] across one row [y] of a freshly created [S] batch [b] of length
-       [width]. *)
-    let apply_binding b ~width ~y binding =
-      match binding with
-      | Uniform (var, bits) ->
+    let apply_variables b variables =
+      List.iter variables ~f:(fun (var, bits) ->
         let value = Value.of_int (Int32_u.of_int32 bits) in
-        for px = 0 to width - 1 do
-          B.Batch.set_variable b ~var ~px value
-        done
-      | Affine (var, base, dx, dy) ->
-        let row_term = dy *. Float.of_int y in
-        for px = 0 to width - 1 do
-          let v = base +. (dx *. Float.of_int px) +. row_term in
-          B.Batch.set_variable b ~var ~px (Value.of_float (Float32_u.of_float v))
-        done
-      | Grid_input (var, data) ->
-        let data = Stdlib.Obj.magic_uncontended data.Modes.Portended.portended in
-        let row = y * width in
-        for px = 0 to width - 1 do
-          let bits = Int32_u.of_int32 (Bigarray.Array1.get data (row + px)) in
-          B.Batch.set_variable b ~var ~px (Value.of_int bits)
-        done
+        B.Batch.set_variable b ~var value)
+    ;;
+
+    let apply_xy_coords b ~width ~y ~x_affine ~y_affine =
+      let x_row_term = x_affine.dy *. Float.of_int y in
+      let y_row_term = y_affine.dy *. Float.of_int y in
+      for px = 0 to width - 1 do
+        let fpx = Float.of_int px in
+        let xv = x_affine.base +. (x_affine.dx *. fpx) +. x_row_term in
+        B.Batch.set_x b ~px (Value.of_float (Float32_u.of_float xv));
+        let yv = y_affine.base +. (y_affine.dx *. fpx) +. y_row_term in
+        B.Batch.set_y b ~px (Value.of_float (Float32_u.of_float yv))
+      done
     ;;
 
     let (run @ portable) t ~par ~oracles =
-      (* Snapshot the (immutable) binding list so the parallel closure captures it rather
-         than the mutable [t], keeping the closure shareable across domains. *)
-      let { prepared; width; height; bindings } = t in
+      let { prepared; width; height; variables; x_affine; y_affine } = t in
       let result = Grid.create ~width ~height in
       Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
         let b = B.Batch.create prepared ~len:width in
-        List.iter bindings ~f:(apply_binding b ~width ~y);
+        apply_xy_coords b ~width ~y ~x_affine ~y_affine;
+        apply_variables b variables;
         let row = B.Batch.run b ~oracles in
         for x = 0 to width - 1 do
           Grid.set result ~x ~y (B.Result.get_output row ~px:x)

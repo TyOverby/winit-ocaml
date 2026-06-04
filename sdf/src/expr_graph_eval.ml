@@ -1,6 +1,6 @@
 open! Core
 
-let rec run ~variables ~instructions ~registers ~oracles ~x_var_idx ~y_var_idx =
+let rec run ~variables ~instructions ~registers ~oracles ~x ~y =
   let len = Iarray.length instructions in
   for i = 0 to len - 1 do
     let out, instruction = Iarray.unsafe_get instructions i in
@@ -8,16 +8,16 @@ let rec run ~variables ~instructions ~registers ~oracles ~x_var_idx ~y_var_idx =
       match (instruction : Expr_graph.instr) with
       | Float_literal f -> Value.of_float f
       | Bool_literal b -> Value.of_bool b
+      | Coord_x -> Value.of_float x
+      | Coord_y -> Value.of_float y
       | Var i -> Value.Array.get variables i
       | Oracle i ->
         let oracle = Iarray.get oracles i in
-        let x = Value.Array.get_float variables x_var_idx in
-        let y = Value.Array.get_float variables y_var_idx in
         Value.of_float (Prepared_oracle.sample oracle ~x ~y)
       | Condition { cond; then_; else_ } ->
         if Value.Array.get_bool registers cond
-        then run ~variables ~instructions:then_ ~registers ~oracles ~x_var_idx ~y_var_idx
-        else run ~variables ~instructions:else_ ~registers ~oracles ~x_var_idx ~y_var_idx;
+        then run ~variables ~instructions:then_ ~registers ~oracles ~x ~y
+        else run ~variables ~instructions:else_ ~registers ~oracles ~x ~y;
         Value.Array.get registers out
       | Read input_register -> Value.Array.get registers input_register
       | Add (a, b) ->
@@ -110,8 +110,6 @@ module Batch_impl : Executor.S_batch = struct
   end
 
   module Prepared = struct
-    (* [var_mapping] is an immutable association list (rather than a [Hashtbl]) so that
-       [t] mode-crosses contention and can be shared across parallel worker domains. *)
     type t =
       { instructions : Expr_graph.t
       ; final_register : int
@@ -119,8 +117,6 @@ module Batch_impl : Executor.S_batch = struct
       ; var_mapping : (string * int) list
       ; num_vars : int
       ; oracle_keys : Oracle_key.t iarray
-      ; x_var_idx : int
-      ; y_var_idx : int
       }
 
     let of_tree tree =
@@ -131,18 +127,8 @@ module Batch_impl : Executor.S_batch = struct
         Expr_graph_register_minimizer.minimize ~instructions ~final_register
       in
       let num_vars = Hashtbl.length var_mapping in
-      let x_var_idx = Hashtbl.find var_mapping "x" |> Option.value ~default:0 in
-      let y_var_idx = Hashtbl.find var_mapping "y" |> Option.value ~default:0 in
       let var_mapping = Hashtbl.to_alist var_mapping in
-      { instructions
-      ; final_register
-      ; register_count
-      ; var_mapping
-      ; num_vars
-      ; oracle_keys
-      ; x_var_idx
-      ; y_var_idx
-      }
+      { instructions; final_register; register_count; var_mapping; num_vars; oracle_keys }
     ;;
 
     let lookup_variable { var_mapping; _ } s =
@@ -161,30 +147,38 @@ module Batch_impl : Executor.S_batch = struct
   module Batch = struct
     type t =
       { prepared : Prepared.t
-      ; variables : Value.Array.t iarray
+      ; variables : Value.Array.t
       ; registers : Value.Array.t iarray
+      ; x_coords : int32# array
+      ; y_coords : int32# array
       ; len : int
       }
 
     let create (prepared : Prepared.t) ~len =
-      let variables =
-        let variable_count = prepared.num_vars in
-        Iarray.init len ~f:(fun _ -> Value.Array.create ~len:variable_count)
-      in
+      let variables = Value.Array.create ~len:prepared.num_vars in
       let registers =
         Iarray.init len ~f:(fun _ -> Value.Array.create ~len:prepared.register_count)
       in
-      { prepared; variables; registers; len }
-    ;;
-
-    let set_variable t ~var ~px value =
-      Value.Array.set (Iarray.get t.variables px) var value
-    ;;
-
-    let run
-      { prepared = { instructions; final_register; oracle_keys; x_var_idx; y_var_idx; _ }
+      { prepared
       ; variables
       ; registers
+      ; x_coords = Array.create ~len #0l
+      ; y_coords = Array.create ~len #0l
+      ; len
+      }
+    ;;
+
+    let set_variable t ~var value = Value.Array.set t.variables var value
+
+    let set_x t ~px value = Array.set t.x_coords px (Value.to_int value)
+    let set_y t ~px value = Array.set t.y_coords px (Value.to_int value)
+
+    let run
+      { prepared = { instructions; final_register; oracle_keys; _ }
+      ; variables
+      ; registers
+      ; x_coords
+      ; y_coords
       ; len
       }
       ~oracles
@@ -192,9 +186,10 @@ module Batch_impl : Executor.S_batch = struct
       let oracles = Iarray.map oracle_keys ~f:(fun key -> Map.find_exn oracles key) in
       let out = Value.Array.create ~len in
       for i = 0 to len - 1 do
-        let variables = Iarray.get variables i in
         let registers = Iarray.get registers i in
-        run ~variables ~instructions ~registers ~oracles ~x_var_idx ~y_var_idx;
+        let x = Float32_u.of_bits (Array.get x_coords i) in
+        let y = Float32_u.of_bits (Array.get y_coords i) in
+        run ~variables ~instructions ~registers ~oracles ~x ~y;
         Value.Array.set out i (Value.Array.get registers final_register)
       done;
       out

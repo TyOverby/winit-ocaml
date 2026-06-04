@@ -13,21 +13,17 @@ module Prepared = struct
               portended
         ; computed : 'a
         ; oracles : Oracle.Prepared.t Oracle.Key.Map.t
-        ; x_var_idx : 'b
-        ; y_var_idx : 'b
         }
         -> t
 
-  let sample (T { computed; exec; oracles; x_var_idx; y_var_idx }) ~x ~y =
+  let sample (T { computed; exec; oracles }) ~x ~y =
     let module E = (val exec.portended) in
     E.Single.run
       computed
-      ~vars:
-        (E.Single.Variable_idx.Map.of_alist_exn
-           [ x_var_idx, x |> Value.of_float |> Value.box
-           ; y_var_idx, y |> Value.of_float |> Value.box
-           ])
+      ~vars:(E.Single.Variable_idx.Map.of_alist_exn [])
       ~oracles
+      ~x
+      ~y
     |> Value.to_float
   ;;
 end
@@ -47,11 +43,9 @@ let make
   =
   let module E = (val exec) in
   let computed = E.Single.of_tree tree in
-  let x_var_idx = E.Single.lookup_variable computed "x" in
-  let y_var_idx = E.Single.lookup_variable computed "y" in
   Oracle.Prepared.wrap
     (module Prepared)
-    (Prepared.T { computed; exec = { portended = exec }; oracles; x_var_idx; y_var_idx })
+    (Prepared.T { computed; exec = { portended = exec }; oracles })
 ;;
 
 let prepare tree ~(exec : (module Executor.S)) ~oracles ~range_x ~range_y =

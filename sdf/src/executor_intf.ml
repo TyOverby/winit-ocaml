@@ -16,6 +16,8 @@ module type S_single = sig @@ portable
     :  t
     -> vars:Value.Boxed.t Variable_idx.Map.t
     -> oracles:Prepared_oracle.t Oracle_key.Map.t
+    -> x:Float32_u.t
+    -> y:Float32_u.t
     -> Value.t
 end
 
@@ -41,7 +43,9 @@ module type S_batch = sig @@ portable
     type t
 
     val create : Prepared.t -> len:int -> t
-    val set_variable : t -> var:Variable_idx.t -> px:int -> Value.t -> unit
+    val set_variable : t -> var:Variable_idx.t -> Value.t -> unit
+    val set_x : t -> px:int -> Value.t -> unit
+    val set_y : t -> px:int -> Value.t -> unit
     val run : t -> oracles:Prepared_oracle.t Oracle_key.Map.t -> Result.t
   end
 end
@@ -69,19 +73,12 @@ module type S_parallel = sig @@ portable
 
     val create : Prepared.t -> width:int -> height:int -> t
 
-    (* A variable that is constant across the whole grid. *)
-    val set_uniform : t -> var:Variable_idx.t -> Value.t -> unit
+    (* Set x/y coordinates as affine functions of pixel position:
+       value at pixel (px, py) = base +. dx *. px +. dy *. py *)
+    val set_x_affine : t -> base:float -> dx:float -> dy:float -> unit
+    val set_y_affine : t -> base:float -> dx:float -> dy:float -> unit
 
-    (* A variable whose value at pixel [(x, y)] is [base +. dx *. x +. dy *. y]. *)
-    val set_affine : t -> var:Variable_idx.t -> base:float -> dx:float -> dy:float -> unit
-
-    (* A general per-pixel variable, supplied as a row-major buffer of raw {!Value.t} bits
-       ([width * height] elements). *)
-    val set_grid
-      :  t
-      -> var:Variable_idx.t
-      -> (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t
-      -> unit
+    val set_variable : t -> var:Variable_idx.t -> Value.t -> unit
 
     val run
       :  t

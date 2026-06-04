@@ -22,6 +22,8 @@ type t : immutable_data = private
 and kind = private
   | Float_literal of Float32_u.t
   | Bool_literal of bool
+  | Coord_x
+  | Coord_y
   | Var of Var_name.t * Type.t
   | Add of t * t
   | Mul of t * t
@@ -55,6 +57,8 @@ include Comparator.S [@portable] with type t := t
 
 val float_literal : loc:Source_code_position.t -> float32# -> t Or_error.t
 val bool_literal : loc:Source_code_position.t -> bool -> t Or_error.t
+val coord_x : loc:Source_code_position.t -> t Or_error.t
+val coord_y : loc:Source_code_position.t -> t Or_error.t
 val var : loc:Source_code_position.t -> string -> Type.t -> t Or_error.t
 val add : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val mul : loc:Source_code_position.t -> t -> t -> t Or_error.t
@@ -84,6 +88,8 @@ val oracle : loc:Source_code_position.t -> string -> t list -> t Or_error.t
 module Direct : sig
   val float_literal : loc:[%call_pos] -> float32# -> t
   val bool_literal : loc:[%call_pos] -> bool -> t
+  val coord_x : loc:[%call_pos] -> unit -> t
+  val coord_y : loc:[%call_pos] -> unit -> t
   val var : loc:[%call_pos] -> string -> Type.t -> t
   val add : loc:[%call_pos] -> t -> t -> t
   val mul : loc:[%call_pos] -> t -> t -> t

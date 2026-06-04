@@ -10,8 +10,6 @@ module Make_tests (Implementation : Executor.S_single) = struct
       | exception _ -> map
     in
     Implementation.Variable_idx.Map.empty
-    |> add_var "x" (Value.Boxed.T (Value.of_float #1.0s))
-    |> add_var "y" (Value.Boxed.T (Value.of_float #1.0s))
     |> add_var "b" (Value.Boxed.T (Value.of_bool true))
   ;;
 
@@ -20,7 +18,12 @@ module Make_tests (Implementation : Executor.S_single) = struct
     let value =
       Or_error.try_with (fun () ->
         Value.box
-          (Implementation.run ~vars:(default_env t) ~oracles:Oracle.Key.Map.empty t))
+          (Implementation.run
+             ~vars:(default_env t)
+             ~oracles:Oracle.Key.Map.empty
+             ~x:#1.0s
+             ~y:#1.0s
+             t))
     in
     match value with
     | Ok v -> v |> Value.unbox |> Value.to_float |> Float32_u.sexp_of_t |> print_s
@@ -32,7 +35,12 @@ module Make_tests (Implementation : Executor.S_single) = struct
     let value =
       Or_error.try_with (fun () ->
         Value.box
-          (Implementation.run ~vars:(default_env t) ~oracles:Oracle.Key.Map.empty t))
+          (Implementation.run
+             ~vars:(default_env t)
+             ~oracles:Oracle.Key.Map.empty
+             ~x:#1.0s
+             ~y:#1.0s
+             t))
     in
     match value with
     | Ok v -> v |> Value.unbox |> Value.to_bool |> Bool.sexp_of_t |> print_s
@@ -217,13 +225,12 @@ module Make_tests (Implementation : Executor.S_single) = struct
   ;;
 
   let%expect_test "float variable" =
-    let v = ok (Expr_tree.var ~loc:here "x" Float) in
-    eval_float v;
+    eval_float coord_x;
     [%expect {| 1 |}]
   ;;
 
   let%expect_test "multiple bound variables" =
-    let v = add (var "y" Float) (var "x" Float) in
+    let v = add coord_y coord_x in
     eval_float (add (f #1.s) v);
     [%expect {| 3 |}]
   ;;
@@ -249,11 +256,13 @@ module Tree_eval_error_tests = struct
   module Implementation = Expr_tree_eval.Single
 
   let default_env t =
-    Implementation.Variable_idx.Map.of_alist_exn
-      [ Implementation.lookup_variable t "x", Value.Boxed.T (Value.of_float #1.0s)
-      ; Implementation.lookup_variable t "y", Value.Boxed.T (Value.of_float #1.0s)
-      ; Implementation.lookup_variable t "b", Value.Boxed.T (Value.of_bool true)
-      ]
+    let add_var name value map =
+      match Implementation.lookup_variable t name with
+      | idx -> Map.set map ~key:idx ~data:value
+      | exception _ -> map
+    in
+    Implementation.Variable_idx.Map.empty
+    |> add_var "b" (Value.Boxed.T (Value.of_bool true))
   ;;
 
   let eval_float tree =
@@ -261,7 +270,12 @@ module Tree_eval_error_tests = struct
     let value =
       Or_error.try_with (fun () ->
         Value.box
-          (Implementation.run ~vars:(default_env t) ~oracles:Oracle.Key.Map.empty t))
+          (Implementation.run
+             ~vars:(default_env t)
+             ~oracles:Oracle.Key.Map.empty
+             ~x:#1.0s
+             ~y:#1.0s
+             t))
     in
     match value with
     | Ok v -> v |> Value.unbox |> Value.to_float |> Float32_u.sexp_of_t |> print_s

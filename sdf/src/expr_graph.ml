@@ -25,6 +25,8 @@ end
 type instr =
   | Float_literal of Float32_u.t
   | Bool_literal of bool
+  | Coord_x
+  | Coord_y
   | Var of int
   | Read of Register.t
   | Add of Register.t * Register.t
@@ -115,6 +117,8 @@ let from_tree tree =
         match tree.kind with
         | Float_literal f -> ~instr:(Float_literal f), ~instrs, ~env
         | Bool_literal b -> ~instr:(Bool_literal b), ~instrs, ~env
+        | Coord_x -> ~instr:Coord_x, ~instrs, ~env
+        | Coord_y -> ~instr:Coord_y, ~instrs, ~env
         | Var (name, _) ->
           (match Hashtbl.find var_mapping name with
            | None ->
@@ -229,16 +233,7 @@ let from_tree tree =
       ~instrs, ~env, output_register
   in
   let ~instrs, ~env:_, register = loop tree ~instrs:[] ~env:(Bindings.empty ()) in
-  (* Oracle sampling needs x/y coordinates from the variable bank. Ensure they are always
-     allocated when the graph contains oracles, even if the main expression doesn't
-     reference them directly (they may only appear inside oracle args). *)
   let num_oracles = Map.length !oracle_mapping in
-  if num_oracles > 0
-  then (
-    if not (Hashtbl.mem var_mapping "x")
-    then Hashtbl.set var_mapping ~key:"x" ~data:(next_var ());
-    if not (Hashtbl.mem var_mapping "y")
-    then Hashtbl.set var_mapping ~key:"y" ~data:(next_var ()));
   let oracle_keys_arr = Array.create ~len:num_oracles ("", []) in
   Map.iteri !oracle_mapping ~f:(fun ~key ~data -> oracle_keys_arr.(data) <- key);
   ( ~instructions:(Iarray.of_list_rev instrs)
@@ -257,6 +252,8 @@ let pp_instructions instructions =
       | Float_literal f ->
         Buffer.add_string buf (sprintf "%s$%d <- %s\n" pad out (Float32_u.to_string f))
       | Bool_literal b -> Buffer.add_string buf (sprintf "%s$%d <- %b\n" pad out b)
+      | Coord_x -> Buffer.add_string buf (sprintf "%s$%d <- coord_x\n" pad out)
+      | Coord_y -> Buffer.add_string buf (sprintf "%s$%d <- coord_y\n" pad out)
       | Var i -> Buffer.add_string buf (sprintf "%s$%d <- var(%d)\n" pad out i)
       | Read r -> Buffer.add_string buf (sprintf "%s$%d <- $%d\n" pad out r)
       | Add (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- add $%d $%d\n" pad out a b)

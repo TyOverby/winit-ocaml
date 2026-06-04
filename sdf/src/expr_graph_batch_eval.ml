@@ -11,14 +11,12 @@ module Register_bank = struct
 end
 
 module Variable_bank = struct
-  type t = int32# array array
+  type t = int32# array
 
-  let create ~num_vars ~width =
-    Array.init num_vars ~f:(fun _ -> Array.create ~len:width #0l)
-  ;;
+  let create ~num_vars = Array.create ~len:num_vars #0l
 
-  let set_variable t ~var ~px value =
-    Array.unsafe_set (Array.unsafe_get t var) px (Value.to_int value)
+  let set_variable t ~var value =
+    Array.unsafe_set t var (Value.to_int value)
   ;;
 end
 
@@ -67,8 +65,8 @@ let rec run_simd
   ~(register_bank : Register_bank.t)
   ~width
   ~oracles
-  ~x_var_idx
-  ~y_var_idx
+  ~x_coords
+  ~y_coords
   =
   let len = Iarray.length instructions in
   for i = 0 to len - 1 do
@@ -82,17 +80,19 @@ let rec run_simd
       let bits = if b then #1l else #0l in
       let v = Simd.i32x4_set1 bits in
       simd_loop ~width (fun px -> store_i out_arr px v)
+    | Coord_x -> copy_array x_coords out_arr ~width
+    | Coord_y -> copy_array y_coords out_arr ~width
     | Var idx ->
-      let src = Array.unsafe_get variable_bank idx in
-      copy_array src out_arr ~width
+      let v = Simd.i32x4_set1 (Array.unsafe_get variable_bank idx) in
+      simd_loop ~width (fun px -> store_i out_arr px v)
     | Read reg ->
       let src = Array.unsafe_get register_bank reg in
       copy_array src out_arr ~width
     | Oracle idx ->
       let oracle = Iarray.get oracles idx in
       for px = 0 to width - 1 do
-        let x = get_sf (Array.unsafe_get variable_bank x_var_idx) px in
-        let y = get_sf (Array.unsafe_get variable_bank y_var_idx) px in
+        let x = get_sf x_coords px in
+        let y = get_sf y_coords px in
         set_sf out_arr px (Prepared_oracle.sample oracle ~x ~y)
       done
     | Add (a, b) ->
@@ -211,8 +211,8 @@ let rec run_simd
         ~register_bank
         ~width
         ~oracles
-        ~x_var_idx
-        ~y_var_idx;
+        ~x_coords
+        ~y_coords;
       let then_results = Array.create ~len:width #0l in
       copy_array out_arr then_results ~width;
       run_simd
@@ -221,8 +221,8 @@ let rec run_simd
         ~register_bank
         ~width
         ~oracles
-        ~x_var_idx
-        ~y_var_idx;
+        ~x_coords
+        ~y_coords;
       let one_i = Simd.i32x4_set1 #1l in
       simd_loop ~width (fun px ->
         let c = load_i cond_arr px in
@@ -233,7 +233,7 @@ let rec run_simd
   done
 ;;
 
-let run ~variable_bank ~instructions ~register_bank ~width ~oracles ~x_var_idx ~y_var_idx =
+let run ~variable_bank ~instructions ~register_bank ~width ~oracles ~x_coords ~y_coords =
   let simd_width = width land lnot 3 in
   if simd_width > 0
   then
@@ -243,28 +243,21 @@ let run ~variable_bank ~instructions ~register_bank ~width ~oracles ~x_var_idx ~
       ~register_bank
       ~width:simd_width
       ~oracles
-      ~x_var_idx
-      ~y_var_idx;
+      ~x_coords
+      ~y_coords;
   if simd_width < width
   then (
     let num_vars = Array.length variable_bank in
     let register_count = Array.length register_bank in
     let variables = Value.Array.create ~len:num_vars in
+    for v = 0 to num_vars - 1 do
+      Value.Array.set_int variables v (Array.unsafe_get variable_bank v)
+    done;
     let registers = Value.Array.create ~len:register_count in
     for px = simd_width to width - 1 do
-      for v = 0 to num_vars - 1 do
-        Value.Array.set_int
-          variables
-          v
-          (Array.unsafe_get (Array.unsafe_get variable_bank v) px)
-      done;
-      Expr_graph_eval.run
-        ~variables
-        ~instructions
-        ~registers
-        ~oracles
-        ~x_var_idx
-        ~y_var_idx;
+      let x = Float32_u.of_bits (Array.unsafe_get x_coords px) in
+      let y = Float32_u.of_bits (Array.unsafe_get y_coords px) in
+      Expr_graph_eval.run ~variables ~instructions ~registers ~oracles ~x ~y;
       for r = 0 to register_count - 1 do
         Array.unsafe_set
           (Array.unsafe_get register_bank r)
@@ -280,8 +273,6 @@ module Batch_impl : Executor.S_batch = struct
   end
 
   module Prepared = struct
-    (* [var_mapping] is an immutable association list (rather than a [Hashtbl]) so that
-       [t] mode-crosses contention and can be shared across parallel worker domains. *)
     type t =
       { instructions : Expr_graph.t
       ; final_register : int
@@ -289,8 +280,6 @@ module Batch_impl : Executor.S_batch = struct
       ; var_mapping : (string * int) list
       ; num_vars : int
       ; oracle_keys : Oracle_key.t iarray
-      ; x_var_idx : int
-      ; y_var_idx : int
       }
 
     let of_tree tree =
@@ -301,18 +290,8 @@ module Batch_impl : Executor.S_batch = struct
         Expr_graph_register_minimizer.minimize ~instructions ~final_register
       in
       let num_vars = Hashtbl.length var_mapping in
-      let x_var_idx = Hashtbl.find var_mapping "x" |> Option.value ~default:0 in
-      let y_var_idx = Hashtbl.find var_mapping "y" |> Option.value ~default:0 in
       let var_mapping = Hashtbl.to_alist var_mapping in
-      { instructions
-      ; final_register
-      ; register_count
-      ; var_mapping
-      ; num_vars
-      ; oracle_keys
-      ; x_var_idx
-      ; y_var_idx
-      }
+      { instructions; final_register; register_count; var_mapping; num_vars; oracle_keys }
     ;;
 
     let lookup_variable { var_mapping; _ } s =
@@ -327,29 +306,39 @@ module Batch_impl : Executor.S_batch = struct
       { prepared : Prepared.t
       ; variables : Variable_bank.t
       ; registers : Register_bank.t
+      ; x_coords : int32# array
+      ; y_coords : int32# array
       ; len : int
       }
 
     let create (prepared : Prepared.t) ~len =
-      let variables =
-        let num_vars = prepared.num_vars in
-        Variable_bank.create ~num_vars ~width:len
-      in
+      let variables = Variable_bank.create ~num_vars:prepared.num_vars in
       let registers =
         let register_count = prepared.register_count in
         Register_bank.create ~register_count ~width:len
       in
-      { prepared; variables; registers; len }
+      { prepared
+      ; variables
+      ; registers
+      ; x_coords = Array.create ~len #0l
+      ; y_coords = Array.create ~len #0l
+      ; len
+      }
     ;;
 
-    let set_variable t ~var ~px value =
-      Variable_bank.set_variable t.variables ~var ~px value
+    let set_variable t ~var value =
+      Variable_bank.set_variable t.variables ~var value
     ;;
+
+    let set_x t ~px value = Array.set t.x_coords px (Value.to_int value)
+    let set_y t ~px value = Array.set t.y_coords px (Value.to_int value)
 
     let run
-      ({ prepared = { instructions; oracle_keys; x_var_idx; y_var_idx; _ }
+      ({ prepared = { instructions; oracle_keys; _ }
        ; variables
        ; registers
+       ; x_coords
+       ; y_coords
        ; len
        } as t)
       ~oracles
@@ -361,8 +350,8 @@ module Batch_impl : Executor.S_batch = struct
         ~register_bank:registers
         ~width:len
         ~oracles
-        ~x_var_idx
-        ~y_var_idx;
+        ~x_coords
+        ~y_coords;
       t
     ;;
   end
