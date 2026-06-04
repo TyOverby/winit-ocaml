@@ -1,0 +1,6 @@
+(library
+ (name nearest_seg_test)
+ (libraries nearest_seg core)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))
