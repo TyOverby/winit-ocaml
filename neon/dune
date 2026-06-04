@@ -10,7 +10,6 @@
   core_unix.command_unix
   image_buf
   sdf
-  ;  sdf_gpu
   neo
   parallel
   parallel.scheduler)
