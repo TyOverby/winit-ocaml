@@ -13,7 +13,7 @@ module Var_name : sig
   type t = string [@@deriving sexp_of, equal, compare, hash]
 end
 
-type t = private
+type t : immutable_data = private
   { loc : Source_code_position.t
   ; kind : kind
   ; type_ : Type.t
@@ -48,6 +48,7 @@ and kind = private
   | And of t * t
   | Or of t * t
   | Xor of t * t
+  | Oracle of string * t list
 [@@deriving sexp_of, equal, compare]
 
 include Comparator.S [@portable] with type t := t
@@ -76,6 +77,7 @@ val gte : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val and_ : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val or_ : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val xor : loc:Source_code_position.t -> t -> t -> t Or_error.t
+val oracle : loc:Source_code_position.t -> string -> t list -> t Or_error.t
 
 (** Raising variants of the constructors. Type errors raise instead of returning
     [Or_error.t]. The [loc] parameter is automatically filled by [[%call_pos]]. *)
@@ -114,4 +116,5 @@ module Direct : sig
   val ( >= ) : loc:[%call_pos] -> t -> t -> t
   val ( && ) : loc:[%call_pos] -> t -> t -> t
   val ( || ) : loc:[%call_pos] -> t -> t -> t
+  val oracle : loc:[%call_pos] -> string -> t list -> t
 end

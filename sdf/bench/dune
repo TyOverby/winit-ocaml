@@ -1,5 +1,13 @@
 (executables
  (names bench compare)
- (libraries sdf neo core core_unix.sys_unix core_unix.command_unix core_unix)
+ (libraries
+  sdf
+  neo
+  core
+  core_unix.sys_unix
+  core_unix.command_unix
+  core_unix
+  parallel
+  parallel.scheduler)
  (preprocess
   (pps ppx_jane)))

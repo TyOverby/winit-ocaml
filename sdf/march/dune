@@ -1,0 +1,10 @@
+(library
+ (name march)
+ (modules march)
+ (libraries)
+ (foreign_stubs
+  (language c)
+  (names march)
+  (flags :standard -O1))
+ (preprocess
+  (pps ppx_jane)))

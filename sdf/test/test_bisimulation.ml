@@ -101,26 +101,26 @@ let gen_expr ~depth (type_ : Expr_tree.Type.t) =
 
 (* --- Shared bisimulation infrastructure --- *)
 
-let backends : (string * (module Batch_backend_intf.S)) list =
-  [ "graph", (module Expr_graph_eval.Batched)
-  ; "batch", (module Expr_graph_batch_eval.Batched)
-  ; "tree", (module Expr_tree_eval.Batched)
+let backends : (string * (module Executor.S_single)) list =
+  [ "tree", (module Expr_tree_eval.Single)
+  ; "graph", (module Expr_graph_eval.Single)
+  ; "batch", (module Expr_graph_batch_eval.Single)
   ]
 ;;
 
-let eval_with_backend backend tree ~x ~y =
-  let module B = (val (backend : (module Batch_backend_intf.S))) in
-  let prepared = B.Prepared.of_tree tree in
-  let batch = B.Batch.create prepared ~len:1 in
-  let try_set_var name value =
-    match B.Prepared.lookup_variable prepared name with
-    | var -> B.Batch.set_variable batch ~var ~px:0 value
-    | exception _ -> ()
+let eval_with_single (module S : Executor.S_single) tree ~x ~y =
+  let t = S.of_tree tree in
+  let add_var name value map =
+    match S.lookup_variable t name with
+    | idx -> Map.set map ~key:idx ~data:value
+    | exception _ -> map
   in
-  try_set_var "x" (Value.of_float (Float32_u.of_float x));
-  try_set_var "y" (Value.of_float (Float32_u.of_float y));
-  let result = B.Batch.run batch in
-  B.Result.get_output result ~px:0
+  let vars =
+    S.Variable_idx.Map.empty
+    |> add_var "x" (Value.Boxed.T (Value.of_float (Float32_u.of_float x)))
+    |> add_var "y" (Value.Boxed.T (Value.of_float (Float32_u.of_float y)))
+  in
+  S.run t ~vars ~oracles:Oracle.Key.Map.empty
 ;;
 
 let format_value v (type_ : Expr_tree.Type.t) =
@@ -132,12 +132,11 @@ let format_value v (type_ : Expr_tree.Type.t) =
 (** Evaluate [tree] with every backend and print the reference result. On mismatch with
     any backend, prints the mismatched value and label. *)
 let check tree ~x ~y =
-  let tree_backend : (module Batch_backend_intf.S) = (module Expr_tree_eval.Batched) in
-  let reference = eval_with_backend tree_backend tree ~x ~y in
+  let reference = eval_with_single (module Expr_tree_eval.Single) tree ~x ~y in
   let type_ = tree.type_ in
   printf "%s\n" (format_value reference type_);
   List.iter backends ~f:(fun (label, backend) ->
-    let result = eval_with_backend backend tree ~x ~y in
+    let result = eval_with_single backend tree ~x ~y in
     if not (Value.equal reference result)
     then printf "MISMATCH: %s=%s\n" label (format_value result type_))
 ;;
@@ -145,14 +144,18 @@ let check tree ~x ~y =
 (** Assert bisimulation holds across all backends. Raises on mismatch. For use in
     quickcheck. *)
 let assert_bisimulation tree ~x ~y =
-  let tree_backend : (module Batch_backend_intf.S) = (module Expr_tree_eval.Batched) in
-  let reference = eval_with_backend tree_backend tree ~x ~y in
+  let reference = eval_with_single (module Expr_tree_eval.Single) tree ~x ~y in
   let type_ = tree.type_ in
   List.iter backends ~f:(fun (label, backend) ->
-    let result = eval_with_backend backend tree ~x ~y in
+    let result = eval_with_single backend tree ~x ~y in
     if not (Value.equal reference result)
     then (
-      let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
+      let ( ~instructions
+          , ~final_register
+          , ~register_count:_
+          , ~var_mapping:_
+          , ~oracle_keys:_ )
+        =
         Expr_graph.from_tree tree
       in
       let graph_asm =
@@ -314,7 +317,7 @@ let%expect_test "original quickcheck failure - simplified" =
    via division (1/+0 = +inf, 1/-0 = -inf). *)
 
 let pp tree =
-  let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
+  let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_, ~oracle_keys:_ =
     Expr_graph.from_tree tree
   in
   printf "result: $%d\n" final_register;
@@ -378,7 +381,7 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" 
    later allocations inside the branch to clobber it. When the outer then-branch reads $x
    for [neg], it gets the wrong value. *)
 let pp_minimized tree =
-  let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_ =
+  let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_, ~oracle_keys:_ =
     Expr_graph.from_tree tree
   in
   let ~instructions, ~final_register, ~register_count:_ =

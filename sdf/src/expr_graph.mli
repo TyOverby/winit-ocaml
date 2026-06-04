@@ -36,6 +36,7 @@ type instr =
   | And of Register.t * Register.t
   | Or of Register.t * Register.t
   | Xor of Register.t * Register.t
+  | Oracle of int
 
 (* an array containing each instruction and the register that the instruction writes into *)
 and t = (Register.t * instr) iarray [@@deriving sexp_of, equal, compare]
@@ -46,5 +47,6 @@ val from_tree
      * final_register:int
      * register_count:int
      * var_mapping:int String.Table.t
+     * oracle_keys:Oracle_key.t iarray
 
 val pp_instructions : t -> string

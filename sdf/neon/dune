@@ -12,6 +12,9 @@
   sdf
   neo
   parallel
-  parallel.scheduler)
+  parallel.scheduler
+  march
+  line_join
+  unboxed.float32_u)
  (preprocess
   (pps ppx_jane)))

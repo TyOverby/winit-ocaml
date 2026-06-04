@@ -82,6 +82,7 @@ and kind =
   | And of t * t
   | Or of t * t
   | Xor of t * t
+  | Oracle of string * t list
 [@@deriving sexp_of, equal, compare, quickcheck]
 
 include functor Comparator.Make [@mode portable]
@@ -265,6 +266,8 @@ let xor ~loc a b =
   { loc; kind = Xor (a, b); type_ = Type.Bool }
 ;;
 
+let oracle ~loc name trees = Ok { loc; kind = Oracle (name, trees); type_ = Type.Float }
+
 module Direct = struct
   let float_literal ~(loc : [%call_pos]) v = Or_error.ok_exn (float_literal ~loc v)
   let bool_literal ~(loc : [%call_pos]) v = Or_error.ok_exn (bool_literal ~loc v)
@@ -304,4 +307,5 @@ module Direct = struct
   let ( >= ) = gte
   let ( && ) = and_
   let ( || ) = or_
+  let oracle ~(loc : [%call_pos]) name trees = Or_error.ok_exn (oracle ~loc name trees)
 end

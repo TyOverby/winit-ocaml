@@ -1,6 +1,6 @@
 open! Core
 
-let rec run ~variables ~instructions ~registers =
+let rec run ~variables ~instructions ~registers ~oracles ~x_var_idx ~y_var_idx =
   let len = Iarray.length instructions in
   for i = 0 to len - 1 do
     let out, instruction = Iarray.unsafe_get instructions i in
@@ -9,10 +9,15 @@ let rec run ~variables ~instructions ~registers =
       | Float_literal f -> Value.of_float f
       | Bool_literal b -> Value.of_bool b
       | Var i -> Value.Array.get variables i
+      | Oracle i ->
+        let oracle = Iarray.get oracles i in
+        let x = Value.Array.get_float variables x_var_idx in
+        let y = Value.Array.get_float variables y_var_idx in
+        Value.of_float (Prepared_oracle.sample oracle ~x ~y)
       | Condition { cond; then_; else_ } ->
         if Value.Array.get_bool registers cond
-        then run ~variables ~instructions:then_ ~registers
-        else run ~variables ~instructions:else_ ~registers;
+        then run ~variables ~instructions:then_ ~registers ~oracles ~x_var_idx ~y_var_idx
+        else run ~variables ~instructions:else_ ~registers ~oracles ~x_var_idx ~y_var_idx;
         Value.Array.get registers out
       | Read input_register -> Value.Array.get registers input_register
       | Add (a, b) ->
@@ -99,20 +104,7 @@ let rec run ~variables ~instructions ~registers =
   done
 ;;
 
-let run' ~instructions ~variables ~final_register ~register_count =
-  let registers = Value.Array.create ~len:register_count in
-  run ~instructions ~variables ~registers;
-  Value.Array.get registers final_register
-;;
-
-let run_tree tree =
-  let ~instructions, ~final_register, ~register_count, ~var_mapping =
-    Expr_graph.from_tree tree
-  in
-  ~var_mapping, ~run:(run' ~instructions ~final_register ~register_count)
-;;
-
-module Batched : Batch_backend_intf.S = struct
+module Batch_impl : Executor.S_batch = struct
   module Variable_idx = struct
     type t = int
   end
@@ -126,22 +118,37 @@ module Batched : Batch_backend_intf.S = struct
       ; register_count : int
       ; var_mapping : (string * int) list
       ; num_vars : int
+      ; oracle_keys : Oracle_key.t iarray
+      ; x_var_idx : int
+      ; y_var_idx : int
       }
 
     let of_tree tree =
-      let ~instructions, ~final_register, ~register_count:_, ~var_mapping =
+      let ~instructions, ~final_register, ~register_count:_, ~var_mapping, ~oracle_keys =
         Expr_graph.from_tree tree
       in
       let ~instructions, ~final_register, ~register_count =
         Expr_graph_register_minimizer.minimize ~instructions ~final_register
       in
       let num_vars = Hashtbl.length var_mapping in
+      let x_var_idx = Hashtbl.find var_mapping "x" |> Option.value ~default:0 in
+      let y_var_idx = Hashtbl.find var_mapping "y" |> Option.value ~default:0 in
       let var_mapping = Hashtbl.to_alist var_mapping in
-      { instructions; final_register; register_count; var_mapping; num_vars }
+      { instructions
+      ; final_register
+      ; register_count
+      ; var_mapping
+      ; num_vars
+      ; oracle_keys
+      ; x_var_idx
+      ; y_var_idx
+      }
     ;;
 
     let lookup_variable { var_mapping; _ } s =
-      List.Assoc.find_exn var_mapping s ~equal:String.equal
+      match List.Assoc.find var_mapping s ~equal:String.equal with
+      | Some v -> v
+      | None -> raise_s [%message "variable not found" (s : string)]
     ;;
   end
 
@@ -174,12 +181,22 @@ module Batched : Batch_backend_intf.S = struct
       Value.Array.set (Iarray.get t.variables px) var value
     ;;
 
-    let run { prepared = { instructions; final_register; _ }; variables; registers; len } =
+    let run
+      { prepared = { instructions; final_register; oracle_keys; x_var_idx; y_var_idx; _ }
+      ; variables
+      ; registers
+      ; len
+      }
+      ~oracles
+      =
+      let oracles =
+        Iarray.map oracle_keys ~f:(fun key -> Map.find_exn oracles key)
+      in
       let out = Value.Array.create ~len in
       for i = 0 to len - 1 do
         let variables = Iarray.get variables i in
         let registers = Iarray.get registers i in
-        run ~variables ~instructions ~registers;
+        run ~variables ~instructions ~registers ~oracles ~x_var_idx ~y_var_idx;
         Value.Array.set out i (Value.Array.get registers final_register)
       done;
       out
@@ -187,6 +204,6 @@ module Batched : Batch_backend_intf.S = struct
   end
 end
 
-(* Grid-native wrapper over {!Batched}, evaluating a whole pixel grid scanline-by-scanline
-   across the supplied scheduler. *)
-module Batch_parallel = Batch_backend_intf.Make_parallel (Batched)
+module Single : Executor.S_single = Executor.Batch_to_single (Batch_impl)
+module Batch : Executor.S_batch = Batch_impl
+module Parallel : Executor.S_parallel = Executor.Batch_to_parallel (Batch_impl)

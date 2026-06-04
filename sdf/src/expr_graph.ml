@@ -52,6 +52,7 @@ type instr =
   | And of Register.t * Register.t
   | Or of Register.t * Register.t
   | Xor of Register.t * Register.t
+  | Oracle of int
 
 and t = (Register.t * instr) iarray [@@deriving sexp_of, equal, compare]
 
@@ -85,7 +86,15 @@ end
 let from_tree tree =
   let register_allocator = Register.create_allocator () in
   let var_mapping = Hashtbl.create (module String) in
+  let oracle_mapping = ref (Map.empty (module Oracle_key)) in
   let next_var =
+    let next = ref 0 in
+    fun () ->
+      let r = !next in
+      incr next;
+      r
+  in
+  let next_oracle =
     let next = ref 0 in
     fun () ->
       let r = !next in
@@ -113,6 +122,17 @@ let from_tree tree =
              Hashtbl.set var_mapping ~key:name ~data:i;
              ~instr:(Var i), ~instrs, ~env
            | Some i -> ~instr:(Var i), ~instrs, ~env)
+        | Oracle (name, args) ->
+          let key = name, args in
+          let idx =
+            match Map.find !oracle_mapping key with
+            | Some i -> i
+            | None ->
+              let i = next_oracle () in
+              oracle_mapping := Map.set !oracle_mapping ~key ~data:i;
+              i
+          in
+          ~instr:(Oracle idx), ~instrs, ~env
         | Add (a, b) ->
           let ~instrs, ~env, a = loop a ~instrs ~env in
           let ~instrs, ~env, b = loop b ~instrs ~env in
@@ -209,10 +229,23 @@ let from_tree tree =
       ~instrs, ~env, output_register
   in
   let ~instrs, ~env:_, register = loop tree ~instrs:[] ~env:(Bindings.empty ()) in
+  (* Oracle sampling needs x/y coordinates from the variable bank. Ensure they are always
+     allocated when the graph contains oracles, even if the main expression doesn't
+     reference them directly (they may only appear inside oracle args). *)
+  let num_oracles = Map.length !oracle_mapping in
+  if num_oracles > 0
+  then (
+    if not (Hashtbl.mem var_mapping "x")
+    then Hashtbl.set var_mapping ~key:"x" ~data:(next_var ());
+    if not (Hashtbl.mem var_mapping "y")
+    then Hashtbl.set var_mapping ~key:"y" ~data:(next_var ()));
+  let oracle_keys_arr = Array.create ~len:num_oracles ("", []) in
+  Map.iteri !oracle_mapping ~f:(fun ~key ~data -> oracle_keys_arr.(data) <- key);
   ( ~instructions:(Iarray.of_list_rev instrs)
   , ~final_register:register
   , ~register_count:(Register.count register_allocator)
-  , ~var_mapping )
+  , ~var_mapping
+  , ~oracle_keys:(Iarray.of_array oracle_keys_arr) )
 ;;
 
 let pp_instructions instructions =
@@ -246,6 +279,7 @@ let pp_instructions instructions =
       | And (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- and $%d $%d\n" pad out a b)
       | Or (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- or $%d $%d\n" pad out a b)
       | Xor (a, b) -> Buffer.add_string buf (sprintf "%s$%d <- xor $%d $%d\n" pad out a b)
+      | Oracle i -> Buffer.add_string buf (sprintf "%s$%d <- oracle(%d)\n" pad out i)
       | Condition { cond; then_; else_ } ->
         Buffer.add_string buf (sprintf "%s$%d <- cond $%d\n" pad out cond);
         Buffer.add_string buf (sprintf "%s  then:\n" pad);

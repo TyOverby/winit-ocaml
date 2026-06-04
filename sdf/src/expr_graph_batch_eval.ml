@@ -61,7 +61,15 @@ let copy_array (src : int32# array) (dst : int32# array) ~width =
 ;;
 
 (* SIMD-only run: assumes width is a multiple of 4 *)
-let rec run_simd ~variable_bank ~instructions ~(register_bank : Register_bank.t) ~width =
+let rec run_simd
+  ~variable_bank
+  ~instructions
+  ~(register_bank : Register_bank.t)
+  ~width
+  ~oracles
+  ~x_var_idx
+  ~y_var_idx
+  =
   let len = Iarray.length instructions in
   for i = 0 to len - 1 do
     let out, instruction = Iarray.unsafe_get instructions i in
@@ -80,6 +88,13 @@ let rec run_simd ~variable_bank ~instructions ~(register_bank : Register_bank.t)
     | Read reg ->
       let src = Array.unsafe_get register_bank reg in
       copy_array src out_arr ~width
+    | Oracle idx ->
+      let oracle = Iarray.get oracles idx in
+      for px = 0 to width - 1 do
+        let x = get_sf (Array.unsafe_get variable_bank x_var_idx) px in
+        let y = get_sf (Array.unsafe_get variable_bank y_var_idx) px in
+        set_sf out_arr px (Prepared_oracle.sample oracle ~x ~y)
+      done
     | Add (a, b) ->
       let a_arr = Array.unsafe_get register_bank a in
       let b_arr = Array.unsafe_get register_bank b in
@@ -190,10 +205,24 @@ let rec run_simd ~variable_bank ~instructions ~(register_bank : Register_bank.t)
         store_i out_arr px (Simd.i32x4_xor (load_i a_arr px) (load_i b_arr px)))
     | Condition { cond; then_; else_ } ->
       let cond_arr = Array.unsafe_get register_bank cond in
-      run_simd ~variable_bank ~instructions:then_ ~register_bank ~width;
+      run_simd
+        ~variable_bank
+        ~instructions:then_
+        ~register_bank
+        ~width
+        ~oracles
+        ~x_var_idx
+        ~y_var_idx;
       let then_results = Array.create ~len:width #0l in
       copy_array out_arr then_results ~width;
-      run_simd ~variable_bank ~instructions:else_ ~register_bank ~width;
+      run_simd
+        ~variable_bank
+        ~instructions:else_
+        ~register_bank
+        ~width
+        ~oracles
+        ~x_var_idx
+        ~y_var_idx;
       let one_i = Simd.i32x4_set1 #1l in
       simd_loop ~width (fun px ->
         let c = load_i cond_arr px in
@@ -204,10 +233,18 @@ let rec run_simd ~variable_bank ~instructions ~(register_bank : Register_bank.t)
   done
 ;;
 
-let run ~variable_bank ~instructions ~register_bank ~width =
+let run ~variable_bank ~instructions ~register_bank ~width ~oracles ~x_var_idx ~y_var_idx =
   let simd_width = width land lnot 3 in
   if simd_width > 0
-  then run_simd ~variable_bank ~instructions ~register_bank ~width:simd_width;
+  then
+    run_simd
+      ~variable_bank
+      ~instructions
+      ~register_bank
+      ~width:simd_width
+      ~oracles
+      ~x_var_idx
+      ~y_var_idx;
   if simd_width < width
   then (
     let num_vars = Array.length variable_bank in
@@ -221,7 +258,13 @@ let run ~variable_bank ~instructions ~register_bank ~width =
           v
           (Array.unsafe_get (Array.unsafe_get variable_bank v) px)
       done;
-      Expr_graph_eval.run ~variables ~instructions ~registers;
+      Expr_graph_eval.run
+        ~variables
+        ~instructions
+        ~registers
+        ~oracles
+        ~x_var_idx
+        ~y_var_idx;
       for r = 0 to register_count - 1 do
         Array.unsafe_set
           (Array.unsafe_get register_bank r)
@@ -231,7 +274,7 @@ let run ~variable_bank ~instructions ~register_bank ~width =
     done)
 ;;
 
-module Batched : Batch_backend_intf.S = struct
+module Batch_impl : Executor.S_batch = struct
   module Variable_idx = struct
     type t = int
   end
@@ -245,22 +288,37 @@ module Batched : Batch_backend_intf.S = struct
       ; register_count : int
       ; var_mapping : (string * int) list
       ; num_vars : int
+      ; oracle_keys : Oracle_key.t iarray
+      ; x_var_idx : int
+      ; y_var_idx : int
       }
 
     let of_tree tree =
-      let ~instructions, ~final_register, ~register_count:_, ~var_mapping =
+      let ~instructions, ~final_register, ~register_count:_, ~var_mapping, ~oracle_keys =
         Expr_graph.from_tree tree
       in
       let ~instructions, ~final_register, ~register_count =
         Expr_graph_register_minimizer.minimize ~instructions ~final_register
       in
       let num_vars = Hashtbl.length var_mapping in
+      let x_var_idx = Hashtbl.find var_mapping "x" |> Option.value ~default:0 in
+      let y_var_idx = Hashtbl.find var_mapping "y" |> Option.value ~default:0 in
       let var_mapping = Hashtbl.to_alist var_mapping in
-      { instructions; final_register; register_count; var_mapping; num_vars }
+      { instructions
+      ; final_register
+      ; register_count
+      ; var_mapping
+      ; num_vars
+      ; oracle_keys
+      ; x_var_idx
+      ; y_var_idx
+      }
     ;;
 
     let lookup_variable { var_mapping; _ } s =
-      List.Assoc.find_exn var_mapping s ~equal:String.equal
+      match List.Assoc.find var_mapping s ~equal:String.equal with
+      | Some v -> v
+      | None -> raise_s [%message "variable not found" (s : string)]
     ;;
   end
 
@@ -288,8 +346,24 @@ module Batched : Batch_backend_intf.S = struct
       Variable_bank.set_variable t.variables ~var ~px value
     ;;
 
-    let run ({ prepared = { instructions; _ }; variables; registers; len } as t) =
-      run ~instructions ~variable_bank:variables ~register_bank:registers ~width:len;
+    let run
+      ({ prepared =
+           { instructions; oracle_keys; x_var_idx; y_var_idx; _ }
+       ; variables
+       ; registers
+       ; len
+       } as t)
+      ~oracles
+      =
+      let oracles = Iarray.map oracle_keys ~f:(fun key -> Map.find_exn oracles key) in
+      run
+        ~instructions
+        ~variable_bank:variables
+        ~register_bank:registers
+        ~width:len
+        ~oracles
+        ~x_var_idx
+        ~y_var_idx;
       t
     ;;
   end
@@ -304,6 +378,6 @@ module Batched : Batch_backend_intf.S = struct
   end
 end
 
-(* Grid-native wrapper over {!Batched}, evaluating a whole pixel grid scanline-by-scanline
-   across the supplied scheduler. *)
-module Batch_parallel = Batch_backend_intf.Make_parallel (Batched)
+module Single : Executor.S_single = Executor.Batch_to_single (Batch_impl)
+module Batch : Executor.S_batch = Batch_impl
+module Parallel : Executor.S_parallel = Executor.Batch_to_parallel (Batch_impl)
