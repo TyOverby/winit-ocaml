@@ -41,7 +41,7 @@ fn smooth_union(a, b, k) {
 
 let c1 = circle(150, 150, 80);
 let c2 = circle(250, 200, 80);
-let scene = smooth_union(c1, c2, 1.0); //.modulate(0.1, 10);
+let scene = smooth_union(c1, c2, 5.0); //.modulate(0.1, 10);
 
 let x : float = var("x");
 let y : float = var("y");
