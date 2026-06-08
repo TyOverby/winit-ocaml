@@ -35,8 +35,7 @@ let make_test (module Executor : Executor.S) =
                  |> M.prepare
                       ~exec:(module Executor)
                       ~oracles:prepared
-                      ~range_x:#(#0.0s, #0.0s)
-                      ~range_y:#(#0.0s, #0.0s)
+                      ~sample_region:(Sdf.Sample_region.point ~x:#0.0s ~y:#0.0s)
                in
                Map.set prepared ~key:oracle_key ~data:p)
       in

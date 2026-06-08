@@ -33,8 +33,7 @@ let make
   tree
   ~(exec : (module Executor.S with type Single.t = a and type Single.Variable_idx.t = b))
   ~oracles
-  ~range_x:_
-  ~range_y:_
+  ~sample_region:_
   =
   let module E = (val exec) in
   let computed = E.Single.of_tree tree in
@@ -43,6 +42,6 @@ let make
     (Prepared.T { computed; exec = { portended = exec }; oracles })
 ;;
 
-let prepare tree ~(exec : (module Executor.S)) ~oracles ~range_x ~range_y =
-  make tree ~exec:(Obj.magic Obj.magic_portable exec) ~oracles ~range_x ~range_y
+let prepare tree ~(exec : (module Executor.S)) ~oracles ~sample_region =
+  make tree ~exec:(Obj.magic Obj.magic_portable exec) ~oracles ~sample_region
 ;;

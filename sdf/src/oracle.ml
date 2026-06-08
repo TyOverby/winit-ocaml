@@ -11,8 +11,7 @@ module type S = sig
     :  t
     -> exec:(module Executor.S) @ portable
     -> oracles:Prepared_oracle.t Oracle_key.Map.t
-    -> range_x:#(float32# * float32#)
-    -> range_y:#(float32# * float32#)
+    -> sample_region:Sample_region.t
     -> Prepared_oracle.t
 end
 

@@ -3,9 +3,9 @@
 type t =
   { start_x : float32#
   ; end_x : float32#
-  ; samples_x : int
   ; start_y : float32#
   ; end_y : float32#
+  ; samples_x : int
   ; samples_y : int
   }
 
