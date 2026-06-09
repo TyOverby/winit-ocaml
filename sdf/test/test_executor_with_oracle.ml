@@ -132,3 +132,4 @@ let make_test (module Executor : Executor.S) =
 
 let () = make_test (module Sdf.Expr_tree_eval : Executor.S)
 let () = make_test (module Sdf.Expr_graph_eval : Executor.S)
+let () = make_test (module Sdf.Expr_graph_batch_eval : Executor.S)

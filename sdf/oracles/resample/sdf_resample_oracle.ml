@@ -33,10 +33,11 @@ let make
   tree
   ~(exec : (module Executor.S with type Single.t = a and type Single.Variable_idx.t = b))
   ~oracles
-  ~sample_region:_
+  ~sample_region
   =
   let module E = (val exec) in
   let computed = E.Single.of_tree tree in
+  let _sample_region = Sample_region.expand sample_region ~by_:2 in
   Oracle.Prepared.wrap
     (module Prepared)
     (Prepared.T { computed; exec = { portended = exec }; oracles })

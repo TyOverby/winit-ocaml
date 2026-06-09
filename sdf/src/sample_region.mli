@@ -15,3 +15,6 @@ val x_at : t -> int -> float32#
 val y_at : t -> int -> float32#
 val row : t -> int -> t
 val point : x:float32# -> y:float32# -> t
+
+(* Expand the region by [by_] samples in all directions. *)
+val expand : t -> by_:int -> t
