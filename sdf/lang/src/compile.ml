@@ -11,6 +11,7 @@ type value =
       ; body : Ast.block
       ; env : env
       }
+  | Oracle of string
   | Cond of
       { condition : Expr_tree.t
       ; then_ : value
@@ -44,6 +45,9 @@ let rec force_expr ~(loc : Source_code_position.t) (v : value) : Expr_tree.t Or_
       [%message
         "cannot use function as a value; did you forget to call it?"
           ~loc:(loc : Source_code_position.t)]
+  | Oracle s ->
+    Or_error.error_s
+      [%message "unevaluated oracle" ~loc:(loc : Source_code_position.t) ~oracle:s]
   | Cond { condition; then_; else_ } ->
     let cond_loc = condition.loc in
     let%bind.Or_error then_ = force_expr ~loc then_ in
@@ -72,6 +76,12 @@ let rec call_value ~(loc : Source_code_position.t) (func : value) (args : value 
               (List.length params)
               (List.length args))
              ~loc:(loc : Source_code_position.t)])
+  | Oracle oracle_name ->
+    let%bind.Or_error arg_trees =
+      Or_error.all (List.map args ~f:(fun expr -> force_expr ~loc expr))
+    in
+    let%bind.Or_error oracle = Expr_tree.oracle ~loc oracle_name arg_trees in
+    Ok (Expr oracle)
   | Cond { condition; then_; else_ } ->
     let%bind.Or_error then_ = call_value ~loc then_ args in
     let%map.Or_error else_ = call_value ~loc else_ args in
@@ -401,8 +411,13 @@ and eval_let
   | _ -> eval_expr env value_expr
 ;;
 
-let compile_program (program : Ast.program) : Expr_tree.t Or_error.t =
-  let env = Map.empty (module String) in
+let compile_program ~oracle_names (program : Ast.program) : Expr_tree.t Or_error.t =
+  let env =
+    Set.fold
+      oracle_names
+      ~init:(Map.empty (module String))
+      ~f:(fun env name -> Map.set env ~key:name ~data:(Oracle name))
+  in
   let loc = program.export.loc in
   let%bind.Or_error env = eval_stmts env program.stmts in
   let%bind.Or_error export_val = eval_expr env program.export in

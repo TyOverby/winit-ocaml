@@ -41,6 +41,8 @@ let make
       Array.create ~len:(width * height * 2 * 4) #0.0s
     in
     let length = March.run grid march_output width height in
+    (* print_s [%message (tree : Sdf.Expr_tree.t) (length : int)]; *)
+    print_s [%message (sample_region : Sample_region.t)];
     Nearest_seg.build march_output ~length
   in
   Oracle.Prepared.wrap (module Prepared) { Prepared.segments }

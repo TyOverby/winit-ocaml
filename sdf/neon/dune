@@ -6,6 +6,8 @@
   unix
   bigarray
   core
+  sdf_passthrough_oracle
+  sdf_resample_oracle
   core_unix
   core_unix.command_unix
   image_buf

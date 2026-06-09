@@ -40,12 +40,35 @@ let ensure_canvas_size state screen =
    its [Variable_idx], [Batch], and [Result] types) when it unpacks the value. *)
 type compiled_sdf =
   | Compiled :
-      (module Sdf.Executor.S_parallel with type Prepared.t = 'p) * 'p
+      { executor : (module Sdf.Executor.S) portended
+      ; vtable : (module Sdf.Executor.S_parallel with type Prepared.t = 'p) portended
+      ; state : 'p
+      ; tree : Sdf.Expr_tree.t
+      }
       -> compiled_sdf
 
-let compile_sdf_from_source (module B : Sdf.Executor.S_parallel) ~scene_file source =
-  let tree = Neo.compile ~filename:scene_file source |> Or_error.ok_exn in
-  Compiled ((module B), B.Prepared.of_tree tree)
+let oracle_registry : (unit -> (string * (module Sdf.Oracle.S)) list) @ portable =
+  fun () ->
+  [ "passthrough", (module Sdf_passthrough_oracle)
+  ; "resample", (module Sdf_resample_oracle)
+  ]
+;;
+
+let compile_sdf_from_source
+  (executor : (module Sdf.Executor.S) portended)
+  ~scene_file
+  source
+  =
+  let module Executor = (val executor.portended) in
+  let oracles = oracle_registry () in
+  let oracle_names = List.map ~f:fst oracles |> String.Set.of_list in
+  let tree = Neo.compile ~oracle_names ~filename:scene_file source |> Or_error.ok_exn in
+  Compiled
+    { executor
+    ; vtable = { portended = (module Executor.Parallel) }
+    ; state = Executor.Parallel.Prepared.of_tree tree
+    ; tree
+    }
 ;;
 
 let maybe_recompile backend ~scene_file ~last_mtime ~current_sdf =
@@ -108,7 +131,16 @@ let color_rings (dist : float) : Int32_u.t =
     lor #0xFF000000l)
 ;;
 
-let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
+let draw_shape
+  (state : state)
+  (Compiled
+    { executor = { portended = (module Executor) }
+    ; vtable = { portended = (module B) }
+    ; state = prepared
+    ; tree
+    })
+  scheduler
+  =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
   let canvas = state.canvas in
@@ -126,8 +158,28 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
       ; samples_y = height
       }
     in
+    let oracles =
+      let oracle_registry = oracle_registry () in
+      Sdf.Oracle_dependencies.extract_deps tree
+      |> List.join
+      |> List.fold
+           ~init:(Sdf.Oracle.Key.Map.of_alist_exn [])
+           ~f:(fun prepared ((key, tree) as oracle_key) ->
+             let module M =
+               (val List.Assoc.find_exn oracle_registry ~equal:String.equal key)
+             in
+             let p =
+               M.create tree
+               |> M.prepare
+                    ~exec:(Obj.magic Obj.magic (module Executor : Sdf.Executor.S))
+                    ~par
+                    ~oracles:prepared
+                    ~sample_region:region
+             in
+             Map.set prepared ~key:oracle_key ~data:p)
+    in
     let batch = B.Batch.create prepared region in
-    let result = B.Batch.run batch ~par ~oracles:Sdf.Oracle.Key.Map.empty in
+    let result = B.Batch.run batch ~par ~oracles in
     let color_pixel =
       match state.render_mode with
       | Grayscale -> color_grayscale
@@ -142,10 +194,10 @@ let draw_shape (state : state) (Compiled ((module B), prepared)) scheduler =
 
 (* The available evaluation backends, each a [(module Batch_backend_intf.S_parallel)],
    selected by the [-backend] flag. *)
-let backends : (string * (module Sdf.Executor.S_parallel)) list =
-  [ "batch", (module Sdf.Expr_graph_batch_eval.Parallel)
-  ; "graph", (module Sdf.Expr_graph_eval.Parallel)
-  ; "tree", (module Sdf.Expr_tree_eval.Parallel)
+let backends : (string * (module Sdf.Executor.S) portended) list =
+  [ "batch", { portended = (module Sdf.Expr_graph_batch_eval) }
+  ; "graph", { portended = (module Sdf.Expr_graph_eval) }
+  ; "tree", { portended = (module Sdf.Expr_tree_eval) }
   ]
 ;;
 
@@ -187,9 +239,9 @@ let command =
           re-derives the prepared program (which is backend-specific) from the current
           scene source. *)
        let current_backend = ref backend in
+       let scheduler = Parallel_scheduler.create () in
        let sdf = ref (compile_sdf_from_source !current_backend ~scene_file source) in
        let last_mtime = ref (Core_unix.stat scene_file).st_mtime in
-       let scheduler = Parallel_scheduler.create () in
        let should_exit = ref false in
        let switch_backend label =
          match List.Assoc.find backends label ~equal:String.equal with

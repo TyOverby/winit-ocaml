@@ -45,4 +45,9 @@ let scene = smooth_union(c1, c2, 5.0);//.modulate(5.0, 5.0);
 
 let x : float = var("x");
 let y : float = var("y");
-export scene(x / 2 + 10, y / 2);
+
+fn id (x) { x } 
+
+let f = if false { id } else { resample };
+
+export f(scene(x, y));

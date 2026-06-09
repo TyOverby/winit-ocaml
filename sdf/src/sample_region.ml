@@ -1,13 +1,14 @@
 open! Core
 
 type t =
-  { start_x : float32#
-  ; end_x : float32#
-  ; start_y : float32#
-  ; end_y : float32#
+  { start_x : Float32_u.t
+  ; end_x : Float32_u.t
+  ; start_y : Float32_u.t
+  ; end_y : Float32_u.t
   ; samples_x : int
   ; samples_y : int
   }
+[@@deriving sexp_of]
 
 let expand { start_x; end_x; start_y; end_y; samples_x; samples_y } ~by_ =
   let new_samples_x = samples_x + (by_ * 2) in
