@@ -13,6 +13,7 @@
   image_buf
   sdf
   neo
+  sdf_runner
   parallel
   parallel.scheduler
   march

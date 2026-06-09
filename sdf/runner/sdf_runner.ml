@@ -37,10 +37,19 @@ let set_executor t ((module E : Executor.S) @ portable) =
 
 let run
   :  _ -> region:_ -> filename:_ -> _
-  -> f:('a. 'a @ portable -> ('a -> x:int -> y:int -> Value.t) @ portable -> unit) -> unit
+  -> f:
+       ('a.
+        Parallel.t @ local
+        -> 'a @ contended portable
+        -> ('a -> x:int -> y:int -> Value.t) @ portable
+        -> unit)
+     @ once shareable
+  -> unit
   =
   fun { inner = T { vtable; state }; _ } ~region ~filename source ~f ->
   let module B = (val vtable) in
   let result = B.run state ~region ~filename source in
-  f result B.E.Parallel.Result.get
+  let scheduler = B.scheduler state in
+  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+    f par result B.E.Parallel.Result.get)
 ;;

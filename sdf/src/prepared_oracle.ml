@@ -1,5 +1,6 @@
 open! Core
 include Prepared_oracle_intf
+module Key = Prepared_oracle_key
 
 module type S = sig
   type t : value mod contended portable

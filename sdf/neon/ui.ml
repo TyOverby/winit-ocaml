@@ -35,58 +35,19 @@ let ensure_canvas_size state screen =
     state.canvas <- Image_buf.create ~width ~height #0xFFFFFFFl)
 ;;
 
-(* A compiled scene, ready to render. The chosen backend is packed together with its
-   prepared program so that [draw_shape] can recover the backend's full module (including
-   its [Variable_idx], [Batch], and [Result] types) when it unpacks the value. *)
-type compiled_sdf =
-  | Compiled :
-      { executor : (module Sdf.Executor.S) portended
-      ; vtable : (module Sdf.Executor.S_parallel with type Prepared.t = 'p) portended
-      ; state : 'p
-      ; tree : Sdf.Expr_tree.t
-      }
-      -> compiled_sdf
-
-let oracle_registry : (unit -> (string * (module Sdf.Oracle.S)) list) @ portable =
+let oracle_registry : unit -> (string * (module Sdf.Oracle.S) portable) list =
   fun () ->
-  [ "passthrough", (module Sdf_passthrough_oracle)
-  ; "resample", (module Sdf_resample_oracle)
+  [ "passthrough", { portable = (module Sdf_passthrough_oracle) }
+  ; "resample", { portable = (module Sdf_resample_oracle) }
   ]
 ;;
 
-let compile_sdf_from_source
-  (executor : (module Sdf.Executor.S) portended)
-  ~scene_file
-  source
-  =
-  let module Executor = (val executor.portended) in
-  let oracles = oracle_registry () in
-  let oracle_names = List.map ~f:fst oracles |> String.Set.of_list in
-  let tree = Neo.compile ~oracle_names ~filename:scene_file source |> Or_error.ok_exn in
-  Compiled
-    { executor
-    ; vtable = { portended = (module Executor.Parallel) }
-    ; state = Executor.Parallel.Prepared.of_tree tree
-    ; tree
-    }
-;;
-
-let maybe_recompile backend ~scene_file ~last_mtime ~current_sdf =
+let read_source ~scene_file ~last_mtime ~current_source =
   let stats = Core_unix.stat scene_file in
   let mtime = stats.st_mtime in
   if Float.( <> ) mtime last_mtime
-  then (
-    Printf.printf "File changed, recompiling...\n%!";
-    match
-      compile_sdf_from_source backend ~scene_file (In_channel.read_all scene_file)
-    with
-    | sdf ->
-      Printf.printf "Recompiled successfully.\n%!";
-      mtime, sdf
-    | exception exn ->
-      Printf.printf "Compilation error: %s\n%!" (Exn.to_string exn);
-      mtime, current_sdf)
-  else mtime, current_sdf
+  then mtime, In_channel.read_all scene_file
+  else mtime, current_source
 ;;
 
 let color_grayscale (dist : float) : Int32_u.t =
@@ -131,73 +92,46 @@ let color_rings (dist : float) : Int32_u.t =
     lor #0xFF000000l)
 ;;
 
-let draw_shape
-  (state : state)
-  (Compiled
-    { executor = { portended = (module Executor) }
-    ; vtable = { portended = (module B) }
-    ; state = prepared
-    ; tree
-    })
-  scheduler
-  =
+let draw_shape' (state : state) runner ~filename ~source ~show_timings =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
   let canvas = state.canvas in
-  (* Evaluate the whole grid in one shot. [x] and [y] are the pixel coordinates, expressed
-     as affine functions of [(x, y)] so the backend never materialises per-pixel
-     coordinate buffers; the backend owns the parallel fan-out internally. *)
-  (* Colour the canvas from the host-resident result grid, in parallel over rows. *)
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
-    let region =
-      { Sdf.Sample_region.start_x = #0.0s
-      ; end_x = Float32_u.of_float (Float.of_int width)
-      ; samples_x = width
-      ; start_y = #0.0s
-      ; end_y = Float32_u.of_float (Float.of_int height)
-      ; samples_y = height
-      }
-    in
-    let oracles =
-      let oracle_registry = oracle_registry () in
-      Sdf.Oracle_dependencies.extract_deps tree
-      |> List.join
-      |> List.fold
-           ~init:(Sdf.Oracle.Key.Map.of_alist_exn [])
-           ~f:(fun prepared ((key, tree) as oracle_key) ->
-             let module M =
-               (val List.Assoc.find_exn oracle_registry ~equal:String.equal key)
-             in
-             let p =
-               M.create tree
-               |> M.prepare
-                    ~exec:(Obj.magic Obj.magic (module Executor : Sdf.Executor.S))
-                    ~par
-                    ~oracles:prepared
-                    ~sample_region:region
-             in
-             Map.set prepared ~key:oracle_key ~data:p)
-    in
-    let batch = B.Batch.create prepared region in
-    let result = B.Batch.run batch ~par ~oracles in
+  let region =
+    { Sdf.Sample_region.start_x = #0.0s
+    ; end_x = Float32_u.of_float (Float.of_int width)
+    ; samples_x = width
+    ; start_y = #0.0s
+    ; end_y = Float32_u.of_float (Float.of_int height)
+    ; samples_y = height
+    }
+  in
+  Sdf_runner.run runner ~region ~filename source ~f:(fun par result get ->
     let color_pixel =
       match state.render_mode with
       | Grayscale -> color_grayscale
       | Rings -> color_rings
     in
+    let before = Core.Time_ns.now () in
     Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
       for x = 0 to width - 1 do
-        let dist = Float32_u.to_float (Sdf.Value.to_float (B.Result.get result ~x ~y)) in
+        let dist =
+          Float32_u.to_float (Sdf.Value.to_float (get (Obj.magic Obj.magic result) ~x ~y))
+        in
         Image_buf.set canvas ~x ~y (color_pixel dist)
-      done))
+      done);
+    let after = Core.Time_ns.now () in
+    if show_timings
+    then
+      print_s
+        [%message "" ~copy_pixels:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)])
 ;;
 
 (* The available evaluation backends, each a [(module Batch_backend_intf.S_parallel)],
    selected by the [-backend] flag. *)
-let backends : (string * (module Sdf.Executor.S) portended) list =
-  [ "batch", { portended = (module Sdf.Expr_graph_batch_eval) }
-  ; "graph", { portended = (module Sdf.Expr_graph_eval) }
-  ; "tree", { portended = (module Sdf.Expr_tree_eval) }
+let backends : (string * (module Sdf.Executor.S) portable) list =
+  [ "batch", { portable = (module Sdf.Expr_graph_batch_eval) }
+  ; "graph", { portable = (module Sdf.Expr_graph_eval) }
+  ; "tree", { portable = (module Sdf.Expr_tree_eval) }
   ]
 ;;
 
@@ -234,35 +168,28 @@ let command =
        in
        let surface = Softbuffer.create (Winit.get_handle window) in
        let state = create_state () in
-       let source = In_channel.read_all scene_file in
-       (* The active backend can be hot-swapped at runtime via the b/g/t keys. Switching
-          re-derives the prepared program (which is backend-specific) from the current
-          scene source. *)
-       let current_backend = ref backend in
-       let scheduler = Parallel_scheduler.create () in
-       let sdf = ref (compile_sdf_from_source !current_backend ~scene_file source) in
+       let runner = Sdf_runner.create backend.portable in
+       List.iter (oracle_registry ()) ~f:(fun (name, { portable = oracle }) ->
+         Sdf_runner.add_oracle runner ~name oracle);
        let last_mtime = ref (Core_unix.stat scene_file).st_mtime in
+       let last_source = ref (In_channel.read_all scene_file) in
        let should_exit = ref false in
        let switch_backend label =
          match List.Assoc.find backends label ~equal:String.equal with
          | None -> ()
-         | Some backend ->
+         | Some { portable = backend } ->
            Printf.printf "Switching to %s backend\n%!" label;
-           current_backend := backend;
-           sdf
-           := compile_sdf_from_source backend ~scene_file (In_channel.read_all scene_file)
+           Sdf_runner.set_executor runner backend
        in
        while not !should_exit do
-         (* Check for file changes *)
-         let new_mtime, new_sdf =
-           maybe_recompile
-             !current_backend
-             ~scene_file
-             ~last_mtime:!last_mtime
-             ~current_sdf:!sdf
+         let () =
+           let mtime, source =
+             read_source ~scene_file ~last_mtime:!last_mtime ~current_source:!last_source
+           in
+           last_mtime := mtime;
+           last_source := source;
+           ()
          in
-         last_mtime := new_mtime;
-         sdf := new_sdf;
          (* Pump events *)
          let events = Winit.pump_events window in
          (* Process events *)
@@ -299,15 +226,14 @@ let command =
          (* Ensure canvas is the right size *)
          ensure_canvas_size state screen;
          (* Draw and present *)
+         let before = Core.Time_ns.now () in
+         draw_shape' state runner ~filename:scene_file ~source:!last_source ~show_timings;
+         let after = Core.Time_ns.now () in
          if show_timings
-         then (
-           let before = Core.Time_ns.now () in
-           draw_shape state !sdf scheduler;
-           let after = Core.Time_ns.now () in
+         then
            print_s
              [%message
-               "" ~time_to_draw:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)])
-         else draw_shape state !sdf scheduler;
+               "" ~time_to_draw:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)];
          Image_buf.blit
            ~from:state.canvas
            ~to_:screen

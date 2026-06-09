@@ -7,8 +7,8 @@ module type S = sig
   type t
 
   val create : unit -> t
-
-  val add_oracle : t -> name:string -> (module Oracle.S) @ portable  -> unit
+  val add_oracle : t -> name:string -> (module Oracle.S) @ portable -> unit
+  val scheduler : t -> Parallel_scheduler.t
 
   val run
     :  t
@@ -19,13 +19,15 @@ module type S = sig
 end
 
 module Make (E : Executor.S @ portable) : S with module E = E = struct
-  module E = E 
+  module E = E
+
   type inner =
     { mutable source : string
     ; mutable tree : Expr_tree.t
     ; mutable region : Sample_region.t
     ; mutable prepared : E.Parallel.Prepared.t
     ; mutable output : E.Parallel.Result.t option
+    ; mutable oracles : Oracle.Prepared.t Map.M(Oracle.Prepared.Key).t
     }
 
   type t =
@@ -43,6 +45,7 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
     }
   ;;
 
+  let scheduler t = t.scheduler
   let oracles t : (string * (module Oracle.S)) list = t.oracles.portable
 
   let add_oracle t ~name oracle =
@@ -71,6 +74,7 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
         ; tree
         ; prepared
         ; output = None
+        ; oracles = Map.empty (module Oracle.Prepared.Key)
         }
       in
       t.last_run <- Some inner;
@@ -97,38 +101,49 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
     match t.dirty, last_run with
     | false, { region = last_region; output = Some output; _ }
       when Sample_region.equal last_region region -> output
-    | _, { tree; prepared; _ } ->
+    | _, { tree; prepared; oracles = prev_oracles; _ } ->
       last_run.region <- region;
       let oracles = oracles t in
-      let result = 
-      Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
-        let oracles =
-          Sdf.Oracle_dependencies.extract_deps tree
-          |> List.join
-          |> List.fold
-               ~init:(Sdf.Oracle.Key.Map.of_alist_exn [])
-               ~f:(fun prepared ((key, tree) as oracle_key) ->
-                 let module M =
-                   (val (List.Assoc.find_exn
-                           (Obj.magic Obj.magic oracles)
-                           ~equal:String.equal
-                           key
-                         : (module Oracle.S)))
-                 in
-                 let p =
-                   M.create tree
-                   |> M.prepare
-                        ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
-                        ~par
-                        ~oracles:prepared
-                        ~sample_region:region
-                 in
-                 Map.set prepared ~key:oracle_key ~data:p)
-        in
-        let batch = E.Parallel.Batch.create prepared region in
-        let result = E.Parallel.Batch.run batch ~par ~oracles in
-        result) in
-        last_run.output <- Some result;
-        result
+      let result, oracles_with_region =
+        Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
+          (* [oracles_with_region] is separate from [oracles] because we're caching the prepared oracles 
+             between frames, we care about the region that they're cached inside of. *)
+          let oracles, oracles_with_region =
+            Sdf.Oracle_dependencies.extract_deps tree
+            (* perf: don't do this join, instead process all independent oracles in parallel *)
+            |> List.join
+            |> List.fold
+                 ~init:
+                   (Map.empty (module Oracle.Key), Map.empty (module Oracle.Prepared.Key))
+                 ~f:(fun (prepared, prepared_with_region) ((key, tree) as oracle_key) ->
+                   let p =
+                     match Map.find prev_oracles (region, oracle_key) with
+                     | Some oracle -> oracle
+                     | None ->
+                       let module M =
+                         (val (List.Assoc.find_exn
+                                 (Obj.magic Obj.magic oracles)
+                                 ~equal:String.equal
+                                 key
+                               : (module Oracle.S)))
+                       in
+                       M.create tree
+                       |> M.prepare
+                            ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
+                            ~par
+                            ~oracles:prepared
+                            ~sample_region:region
+                   in
+                   ( Map.set prepared ~key:oracle_key ~data:p
+                   , Map.set prepared_with_region ~key:(region, oracle_key) ~data:p ))
+          in
+          let batch = E.Parallel.Batch.create prepared region in
+          let result = E.Parallel.Batch.run batch ~par ~oracles in
+          result, oracles_with_region)
+      in
+      last_run.oracles <- oracles_with_region;
+      last_run.output <- Some result;
+      t.dirty <- false;
+      result
   ;;
 end

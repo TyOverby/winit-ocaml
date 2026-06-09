@@ -12,5 +12,11 @@ val run
   -> region:Sample_region.t
   -> filename:string
   -> string
-  -> f:('a. 'a @ portable -> ('a -> x:int -> y:int -> Value.t) @ portable -> unit)
+  -> f:
+       ('a.
+        Parallel.t @ local
+        -> 'a @ contended portable
+        -> ('a -> x:int -> y:int -> Value.t) @ portable
+        -> unit)
+     @ once shareable
   -> unit
