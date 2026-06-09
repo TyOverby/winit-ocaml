@@ -6,7 +6,7 @@ module type S_single = sig @@ portable
   module Variable_idx : sig
     type t : value mod contended portable
 
-    include Comparable.S [@mode portable] with type t := t
+    include Comparator.S [@mode portable] with type t := t
   end
 
   val of_tree : Expr_tree.t -> t
@@ -14,8 +14,8 @@ module type S_single = sig @@ portable
 
   val run
     :  t
-    -> vars:Value.Boxed.t Variable_idx.Map.t
-    -> oracles:Prepared_oracle.t Oracle_key.Map.t
+    -> vars:Value.Boxed.t Map.M(Variable_idx).t
+    -> oracles:Prepared_oracle.t Map.M(Oracle_key).t
     -> x:Float32_u.t
     -> y:Float32_u.t
     -> Value.t
@@ -44,7 +44,7 @@ module type S_batch = sig @@ portable
 
     val create : Prepared.t -> Sample_region.t -> t
     val set_variable : t -> var:Variable_idx.t -> Value.t -> unit
-    val run : t -> oracles:Prepared_oracle.t Oracle_key.Map.t -> Result.t
+    val run : t -> oracles:Prepared_oracle.t Map.M(Oracle_key).t -> Result.t
   end
 end
 
@@ -75,7 +75,7 @@ module type S_parallel = sig @@ portable
     val run
       :  t
       -> par:Parallel.t @ local
-      -> oracles:Prepared_oracle.t Oracle_key.Map.t
+      -> oracles:Prepared_oracle.t Map.M(Oracle_key).t
       -> Result.t
   end
 end

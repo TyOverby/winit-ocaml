@@ -23,11 +23,11 @@ module Single_to_batch (S : S_single) : S_batch = struct
     type t =
       { prepared : S.t
       ; region : Sample_region.t
-      ; mutable variables : Value.Boxed.t S.Variable_idx.Map.t
+      ; mutable variables : Value.Boxed.t Map.M(S.Variable_idx).t
       }
 
     let create prepared region =
-      { prepared; region; variables = S.Variable_idx.Map.of_alist_exn [] }
+      { prepared; region; variables = Map.empty (module S.Variable_idx) }
     ;;
 
     let set_variable t ~var value =

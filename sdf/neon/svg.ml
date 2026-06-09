@@ -39,7 +39,9 @@ let command =
              }
            in
            let batch = B.Batch.create prepared region in
-           let result = B.Batch.run batch ~par ~oracles:Sdf.Oracle.Key.Map.empty in
+           let result =
+             B.Batch.run batch ~par ~oracles:(Map.empty (module Sdf.Oracle.Key))
+           in
            let grid : float32# array = Array.create ~len:(width * height) #0.0s in
            for y = 0 to height - 1 do
              for x = 0 to width - 1 do

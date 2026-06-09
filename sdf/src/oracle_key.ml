@@ -5,4 +5,4 @@ module T = struct
 end
 
 include T
-include Comparable.Make_plain [@mode portable] (T)
+include Comparator.Make [@mode portable] (T)

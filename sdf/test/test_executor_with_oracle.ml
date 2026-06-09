@@ -12,7 +12,7 @@ let make_test (module Executor : Executor.S) =
         | idx -> Map.set map ~key:idx ~data:value
         | exception _ -> map
       in
-      Implementation.Variable_idx.Map.of_alist_exn []
+      Map.empty (module Implementation.Variable_idx)
       |> add_var "b" (Value.Boxed.T (Value.of_bool true))
     ;;
 
@@ -28,7 +28,7 @@ let make_test (module Executor : Executor.S) =
           Oracle_dependencies.extract_deps tree
           |> List.join
           |> List.fold
-               ~init:(Oracle.Key.Map.of_alist_exn [])
+               ~init:(Map.empty (module Oracle.Key))
                ~f:(fun prepared ((key, tree) as oracle_key) ->
                  let module M =
                    (val List.Assoc.find_exn oracle_registry ~equal:String.equal key)
