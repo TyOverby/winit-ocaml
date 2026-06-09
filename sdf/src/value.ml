@@ -24,6 +24,7 @@ let unbox (Boxed.T t) = t
 module Array = struct
   type t = Int32_u.t array
 
+  let length t = Array.length t
   let create ~len = Array.create ~len #0l
   let get = Array.unsafe_get
   let get_int t n = Array.unsafe_get t n
