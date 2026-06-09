@@ -1,4 +1,6 @@
 open! Core
+module Key = Oracle_key
+module Prepared = Prepared_oracle
 
 module type S = sig
   type t [@@deriving equal, compare, sexp_of]
@@ -10,10 +12,7 @@ module type S = sig
   val prepare
     :  t
     -> exec:(module Executor.S) @ portable
-    -> oracles:Prepared_oracle.t Oracle_key.Map.t
+    -> oracles:Prepared.t Oracle_key.Map.t
     -> sample_region:Sample_region.t
-    -> Prepared_oracle.t
+    -> Prepared.t
 end
-
-module Key = Oracle_key
-module Prepared = Prepared_oracle

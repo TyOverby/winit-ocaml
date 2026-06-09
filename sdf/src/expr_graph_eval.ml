@@ -200,3 +200,7 @@ end
 module Single : Executor.S_single = Executor.Batch_to_single (Batch_impl)
 module Batch : Executor.S_batch = Batch_impl
 module Parallel : Executor.S_parallel = Executor.Batch_to_parallel (Batch_impl)
+
+module Private = struct
+  let run = run
+end

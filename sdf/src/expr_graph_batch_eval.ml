@@ -254,7 +254,7 @@ let run ~variable_bank ~instructions ~register_bank ~width ~oracles ~x_coords ~y
     for px = simd_width to width - 1 do
       let x = Float32_u.of_bits (Array.unsafe_get x_coords px) in
       let y = Float32_u.of_bits (Array.unsafe_get y_coords px) in
-      Expr_graph_eval.run ~variables ~instructions ~registers ~oracles ~x ~y;
+      Expr_graph_eval.Private.run ~variables ~instructions ~registers ~oracles ~x ~y;
       for r = 0 to register_count - 1 do
         Array.unsafe_set
           (Array.unsafe_get register_bank r)
