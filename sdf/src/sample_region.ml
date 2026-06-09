@@ -26,23 +26,23 @@ let expand { start_x; end_x; start_y; end_y; samples_x; samples_y } ~by_ =
 ;;
 
 let step_x t =
-  (Float32_u.to_float t.end_x -. Float32_u.to_float t.start_x) /. Float.of_int t.samples_x
+  let open Float32_u in
+  (t.end_x - t.start_x) / of_int t.samples_x
 ;;
 
 let step_y t =
-  (Float32_u.to_float t.end_y -. Float32_u.to_float t.start_y) /. Float.of_int t.samples_y
+  let open Float32_u in
+  (t.end_y - t.start_y) / of_int t.samples_y
 ;;
 
 let x_at t col =
-  if col = 0
-  then t.start_x
-  else Float32_u.of_float (Float32_u.to_float t.start_x +. (step_x t *. Float.of_int col))
+  let open Float32_u in
+  if Int.equal col 0 then t.start_x else t.start_x + (step_x t * of_int col)
 ;;
 
 let y_at t row =
-  if row = 0
-  then t.start_y
-  else Float32_u.of_float (Float32_u.to_float t.start_y +. (step_y t *. Float.of_int row))
+  let open Float32_u in
+  if Int.equal row 0 then t.start_y else t.start_y + (step_y t * of_int row)
 ;;
 
 let row t r =

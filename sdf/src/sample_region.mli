@@ -10,8 +10,8 @@ type t =
   }
 [@@deriving sexp_of]
 
-val step_x : t -> float
-val step_y : t -> float
+val step_x : t -> float32#
+val step_y : t -> float32#
 val x_at : t -> int -> float32#
 val y_at : t -> int -> float32#
 val row : t -> int -> t
