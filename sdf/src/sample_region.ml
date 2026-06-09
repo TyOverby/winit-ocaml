@@ -8,7 +8,7 @@ type t =
   ; samples_x : int
   ; samples_y : int
   }
-[@@deriving sexp_of]
+[@@deriving sexp_of, equal]
 
 let expand { start_x; end_x; start_y; end_y; samples_x; samples_y } ~by_ =
   let new_samples_x = samples_x + (by_ * 2) in

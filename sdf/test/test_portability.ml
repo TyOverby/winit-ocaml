@@ -11,3 +11,4 @@ let _ : (module Executor.S) list @ shareable =
 
 let _ : (module Oracle.S) list @ portable = [ (module Sdf_passthrough_oracle) ]
 let _ : (module Oracle.S) list @ shareable = [ (module Sdf_passthrough_oracle) ]
+let _ : (module Oracle.S) list @ immutable = [ (module Sdf_passthrough_oracle) ]

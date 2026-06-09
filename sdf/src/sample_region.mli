@@ -8,7 +8,7 @@ type t =
   ; samples_x : int
   ; samples_y : int
   }
-[@@deriving sexp_of]
+[@@deriving sexp_of, equal]
 
 val step_x : t -> float32#
 val step_y : t -> float32#
