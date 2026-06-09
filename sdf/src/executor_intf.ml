@@ -94,8 +94,8 @@ module type Executor = sig
   module type S_parallel = S_parallel
   module type S = S
 
-  module Batch_to_parallel (_ : S_batch) : S_parallel
-  module Single_to_batch (_ : S_single) : S_batch
-  module Batch_to_single (_ : S_batch) : S_single
-  module Parallel_to_single (_ : S_single) : S_parallel
+  module Batch_to_parallel (_ : S_batch) : S_parallel @ portable
+  module Single_to_batch (_ : S_single) : S_batch @ portable
+  module Batch_to_single (_ : S_batch) : S_single @ portable
+  module Parallel_to_single (_ : S_single) : S_parallel @ portable
 end

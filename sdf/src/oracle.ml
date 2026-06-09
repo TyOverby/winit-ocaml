@@ -5,7 +5,7 @@ module Prepared = Prepared_oracle
 module type S = sig
   type t [@@deriving equal, compare, sexp_of]
 
-  include Comparable.S_plain with type t := t
+  include Comparator.S [@mode portable] with type t := t
 
   val create : Expr_tree.t list -> t
 

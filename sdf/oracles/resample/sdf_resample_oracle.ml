@@ -3,7 +3,7 @@ open Sdf
 
 type t = Expr_tree.t [@@deriving equal, compare, sexp_of]
 
-include functor Comparable.Make_plain [@mode portable]
+include functor Comparator.Make [@mode portable]
 
 module Prepared = struct
   type t : value mod contended portable =

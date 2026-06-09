@@ -224,7 +224,7 @@ let (eval @ portable)
      | Error e -> Error e)
 ;;
 
-module Single : Executor.S_single = struct
+module (Single @ portable) : Executor.S_single = struct
   type t = Expr_tree.t
 
   module Prepared = Expr_tree
@@ -242,5 +242,5 @@ module Single : Executor.S_single = struct
   ;;
 end
 
-module Batch : Executor.S_batch = Executor.Single_to_batch (Single)
-module Parallel : Executor.S_parallel = Executor.Batch_to_parallel (Batch)
+module (Batch @ portable) : Executor.S_batch = Executor.Single_to_batch (Single)
+module (Parallel @ portable) : Executor.S_parallel = Executor.Batch_to_parallel (Batch)
