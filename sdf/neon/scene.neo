@@ -41,13 +41,13 @@ fn smooth_union(a, b, k) {
 
 let c1 = circle(150, 150, 80);
 let c2 = circle(250, 200, 80);
-let scene = smooth_union(c1, c2, 5.0);//.modulate(5.0, 5.0);
+let scene = smooth_union(c1, c2, 5.0).modulate(5.0, 5.0);
 
 let x : float = var("x");
 let y : float = var("y");
 
 fn id (x) { x } 
 
-let f = if false { id } else { resample };
+let f = if true { id } else { resample };
 
 export f(scene(x, y));
