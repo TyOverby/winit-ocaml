@@ -1,10 +1,12 @@
+@@ portable
+
 (** A spatial-partitioning index (a bounding-volume hierarchy) over a fixed set of 2D line
     segments, specialised for nearest-segment queries.
 
     Coordinates are unboxed [float32#] for cache-density and to interoperate with the rest
     of the codebase. *)
 
-type t
+type t : value mod contended portable
 
 (** [build coords ~length] indexes the first [length] segments described by [coords].
     [coords] is a flat, interleaved list of endpoints in the order [x1; y1; x2; y2] per

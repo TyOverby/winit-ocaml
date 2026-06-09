@@ -2,8 +2,8 @@ open! Core
 module Key = Oracle_key
 module Prepared = Prepared_oracle
 
-module type S = sig
-  type t [@@deriving equal, compare, sexp_of]
+module type S = sig @@ portable
+  type t : value mod contended portable [@@deriving equal, compare, sexp_of]
 
   include Comparator.S [@mode portable] with type t := t
 
@@ -11,7 +11,8 @@ module type S = sig
 
   val prepare
     :  t
-    -> exec:(module Executor.S) @ portable
+    -> par:Parallel.t @ local
+    -> exec:(module Executor.S) @ shareable
     -> oracles:Prepared.t Oracle_key.Map.t
     -> sample_region:Sample_region.t
     -> Prepared.t

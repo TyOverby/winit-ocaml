@@ -42,6 +42,6 @@ let make
     (Prepared.T { computed; exec = { portended = exec }; oracles })
 ;;
 
-let prepare tree ~(exec : (module Executor.S)) ~oracles ~sample_region =
+let prepare tree ~par:_ ~(exec : (module Executor.S)) ~oracles ~sample_region =
   make tree ~exec:(Obj.magic Obj.magic_portable exec) ~oracles ~sample_region
 ;;

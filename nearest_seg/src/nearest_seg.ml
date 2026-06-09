@@ -9,7 +9,7 @@ let half = #0.5s
 let one = #1.s
 let neg_one = F.neg #1.s
 
-type t =
+type inner =
   { (* Segment endpoints, reordered into leaf order (so each leaf owns a contiguous
        range). Indexed by reordered segment position, not original input position. *)
     sx1 : float32# array
@@ -31,22 +31,27 @@ type t =
   ; seg_count : int
   }
 
+type t = inner portended
+
 let empty =
   let f = Array.create ~len:0 zero in
   let i = Array.create ~len:0 0 in
-  { sx1 = f
-  ; sy1 = f
-  ; sx2 = f
-  ; sy2 = f
-  ; nminx = f
-  ; nminy = f
-  ; nmaxx = f
-  ; nmaxy = f
-  ; nleft = i
-  ; nright = i
-  ; nstart = i
-  ; ncount = i
-  ; seg_count = 0
+  { portended =
+      Obj.magic_portable__contended
+        { sx1 = f
+        ; sy1 = f
+        ; sx2 = f
+        ; sy2 = f
+        ; nminx = f
+        ; nminy = f
+        ; nmaxx = f
+        ; nmaxy = f
+        ; nleft = i
+        ; nright = i
+        ; nstart = i
+        ; ncount = i
+        ; seg_count = 0
+        }
   }
 ;;
 
@@ -169,19 +174,22 @@ let build (coords : float32# array) ~length : t =
       Array.set sx2 i (Array.get coords ((4 * s) + 2));
       Array.set sy2 i (Array.get coords ((4 * s) + 3))
     done;
-    { sx1
-    ; sy1
-    ; sx2
-    ; sy2
-    ; nminx
-    ; nminy
-    ; nmaxx
-    ; nmaxy
-    ; nleft
-    ; nright
-    ; nstart
-    ; ncount
-    ; seg_count = n
+    { portended =
+        Obj.magic_portable__contended
+          { sx1
+          ; sy1
+          ; sx2
+          ; sy2
+          ; nminx
+          ; nminy
+          ; nmaxx
+          ; nmaxy
+          ; nleft
+          ; nright
+          ; nstart
+          ; ncount
+          ; seg_count = n
+          }
     })
 ;;
 
@@ -267,7 +275,8 @@ let rec visit t node px py best =
       if F.compare dl (Array.get best 0) < 0 then visit t left px py best))
 ;;
 
-let query t ~x ~y =
+let query { portended = t } ~x ~y =
+  let t = Obj.magic Obj.magic t in
   if t.seg_count = 0
   then F.infinity
   else (
@@ -276,3 +285,5 @@ let query t ~x ~y =
     visit t 0 x y best;
     F.mul (Array.get best 1) (F.sqrt (Array.get best 0)))
 ;;
+
+let query @ portable = Obj.magic_portable query

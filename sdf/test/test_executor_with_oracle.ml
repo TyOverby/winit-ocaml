@@ -6,48 +6,52 @@ let make_test (module Executor : Executor.S) =
   let module A = struct
     module Implementation = Executor.Single
 
-    let default_env t =
+    let (default_env @ portable) t =
       let add_var name value map =
         match Implementation.lookup_variable t name with
         | idx -> Map.set map ~key:idx ~data:value
         | exception _ -> map
       in
-      Implementation.Variable_idx.Map.empty
+      Implementation.Variable_idx.Map.of_alist_exn []
       |> add_var "b" (Value.Boxed.T (Value.of_bool true))
     ;;
 
-    let oracle_registry : (string * (module Oracle.S)) list =
-      [ "passthrough", (module Sdf_passthrough_oracle) ]
+    let oracle_registry : (unit -> (string * (module Oracle.S)) list) @ portable =
+      fun () -> [ "passthrough", (module Sdf_passthrough_oracle) ]
     ;;
 
     let run tree =
-      let oracles =
-        Oracle_dependencies.extract_deps tree
-        |> List.join
-        |> List.fold
-             ~init:Oracle.Key.Map.empty
-             ~f:(fun prepared ((key, tree) as oracle_key) ->
-               let module M =
-                 (val List.Assoc.find_exn oracle_registry ~equal:String.equal key)
-               in
-               let p =
-                 M.create tree
-                 |> M.prepare
-                      ~exec:(module Executor)
-                      ~oracles:prepared
-                      ~sample_region:(Sdf.Sample_region.point ~x:#0.0s ~y:#0.0s)
-               in
-               Map.set prepared ~key:oracle_key ~data:p)
-      in
-      let t = Implementation.of_tree tree in
-      let value =
-        Or_error.try_with (fun () ->
-          Value.box
-            (Implementation.run ~vars:(default_env t) ~oracles ~x:#1.0s ~y:#5.0s t))
-      in
-      match value with
-      | Ok v -> v |> Value.unbox |> Value.to_float |> Float32_u.sexp_of_t |> print_s
-      | Error e -> print_s (Error.sexp_of_t e)
+      let scheduler = Parallel_scheduler.create () in
+      Parallel_scheduler.parallel scheduler ~f:(fun par ->
+        let oracle_registry = oracle_registry () in
+        let oracles =
+          Oracle_dependencies.extract_deps tree
+          |> List.join
+          |> List.fold
+               ~init:(Oracle.Key.Map.of_alist_exn [])
+               ~f:(fun prepared ((key, tree) as oracle_key) ->
+                 let module M =
+                   (val List.Assoc.find_exn oracle_registry ~equal:String.equal key)
+                 in
+                 let p =
+                   M.create tree
+                   |> M.prepare
+                        ~exec:(Obj.magic Obj.magic (module Executor : Sdf.Executor.S))
+                        ~par
+                        ~oracles:prepared
+                        ~sample_region:(Sdf.Sample_region.point ~x:#0.0s ~y:#0.0s)
+                 in
+                 Map.set prepared ~key:oracle_key ~data:p)
+        in
+        let t = Implementation.of_tree tree in
+        let value =
+          Or_error.try_with (fun () ->
+            Value.box
+              (Implementation.run ~vars:(default_env t) ~oracles ~x:#1.0s ~y:#5.0s t))
+        in
+        match value with
+        | Ok v -> v |> Value.unbox |> Value.to_float |> Float32_u.sexp_of_t |> print_s
+        | Error e -> print_s (Error.sexp_of_t e))
     ;;
 
     let%expect_test "no oracles" =
