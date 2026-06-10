@@ -2,12 +2,12 @@
  (names bench compare)
  (libraries
   sdf
-  neo
+  sdf_runner
+  sdf_passthrough_oracle
+  sdf_resample_oracle
   core
   core_unix.sys_unix
   core_unix.command_unix
-  core_unix
-  parallel
-  parallel.scheduler)
+  unboxed.float32_u)
  (preprocess
   (pps ppx_jane)))

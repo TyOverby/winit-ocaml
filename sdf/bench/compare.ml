@@ -49,10 +49,9 @@ let () =
                   pct
                   direction
               in
-              compare_stat "parse+compile" b.parse_and_compile a.parse_and_compile;
-              compare_stat "tree->graph" b.tree_to_graph a.tree_to_graph;
-              compare_stat "eval (1000x1000)" b.eval_grid a.eval_grid;
-              compare_stat "total" b.total a.total;
+              compare_stat "cold (recompile)" b.cold a.cold;
+              compare_stat "warm (re-eval)" b.warm a.warm;
+              compare_stat "hot (cached)" b.hot a.hot;
               printf "\n"
             | Some _, None -> printf "=== %s (only in before) ===\n\n" name
             | None, Some _ -> printf "=== %s (only in after) ===\n\n" name

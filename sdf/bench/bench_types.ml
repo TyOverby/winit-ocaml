@@ -12,13 +12,20 @@ module Stats = struct
 end
 
 module Benchmark_result = struct
+  (* Each [Sdf_runner.run] is timed in three cache states:
+
+     - [cold]: a source the runner has never seen, evaluated at a fresh region, so it
+       re-parses, re-compiles, prepares, and evaluates the whole grid.
+     - [hot]: the same source at the same region as the previous run, so the runner serves
+       a cached result without re-evaluating.
+     - [warm]: the same source at a slightly shifted region, so the parse/compile/prepare
+       results are reused but the grid is re-evaluated. *)
   type t =
     { name : string
     ; iterations : int
-    ; parse_and_compile : Stats.t
-    ; tree_to_graph : Stats.t
-    ; eval_grid : Stats.t
-    ; total : Stats.t
+    ; cold : Stats.t
+    ; hot : Stats.t
+    ; warm : Stats.t
     }
   [@@deriving sexp]
 end
