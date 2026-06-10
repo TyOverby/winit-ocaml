@@ -74,7 +74,7 @@ void write_line(float2 o1, float2 o2, float *out, int* atomic)
         return;
     }
 
-    if (isnan(o1.x)) {
+    if (isnan(o1.x) || isnan(o1.y) || isnan(o2.x) || isnan(o2.y)) {
         return;
     }
 
