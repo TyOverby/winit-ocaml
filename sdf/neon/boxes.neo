@@ -1,0 +1,44 @@
+fn union(f, g) {
+  fn(x, y) {
+    min(f(x, y), g(x, y))
+  }
+}
+
+// A rectangle SDF with top-left corner (x, y) and the given width and height.
+// Returns a function (x, y) -> distance.
+fn rectangle(x, y, width, height) {
+  let hw = width / 2;
+  let hh = height / 2;
+  let cx = x + hw;
+  let cy = y + hh;
+  fn(px, py) {
+    let dx = abs(px - cx) - hw;
+    let dy = abs(py - cy) - hh;
+    let outside = sqrt(max(dx, 0) * max(dx, 0) + max(dy, 0) * max(dy, 0));
+    let inside = min(max(dx, dy), 0);
+    outside + inside
+  }
+}
+
+fn shrink(shape, by) {
+    fn(x, y) {
+        shape(x, y) + by
+    }
+}
+
+fn resample_shape(shape) {
+    fn(x, y) {
+        resample(shape(x, y))
+    }
+}
+
+let scene = 
+    rectangle(50, 100, 100, 150)
+    .union(rectangle(150, 50, 200, 250))
+    .resample_shape();
+    //.shrink(-15);
+
+let x : float = var("x");
+let y : float = var("y");
+
+export scene(x, y);
