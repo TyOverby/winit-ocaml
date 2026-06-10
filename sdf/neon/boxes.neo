@@ -1,17 +1,9 @@
-fn union(f, g) {
-  fn(x, y) {
-    min(f(x, y), g(x, y))
-  }
-}
-
 fn resample_shape(shape) {
     fn(x, y) {
         resample(shape(x, y))
     }
 }
 
-// A rectangle SDF with top-left corner (x, y) and the given width and height.
-// Returns a function (x, y) -> distance.
 fn rectangle(x, y, width, height) {
   let hw = width / 2;
   let hh = height / 2;
@@ -20,9 +12,23 @@ fn rectangle(x, y, width, height) {
   fn(px, py) {
     let dx = abs(px - cx) - hw;
     let dy = abs(py - cy) - hh;
-    let outside = sqrt(max(dx, 0) * max(dx, 0) + max(dy, 0) * max(dy, 0));
+    let outside = 
+      sqrt(max(dx, 0) * max(dx, 0) 
+         + max(dy, 0) * max(dy, 0));
     let inside = min(max(dx, dy), 0);
     outside + inside
+  }
+}
+
+fn union(f, g) {
+  fn(x, y) {
+    min(f(x, y), g(x, y))
+  }
+}
+
+fn subtract(f, g) {
+  fn(x, y) {
+    max(f(x, y), -g(x, y))
   }
 }
 
@@ -32,11 +38,15 @@ fn shrink(shape, amount) {
   }
 }
 
+fn ring(shape, amount) {
+  shape.subtract(shape.shrink(amount))
+}
+
 let scene = 
-    rectangle(50, 100, 100, 150)
-    .union(rectangle(150, 50, 200, 250))
+    rectangle(150, 50, 200, 250)
+    //.union(rectangle(50, 100, 102, 150))
     //.resample_shape()
-    //.shrink(-10)
+    //.ring(20)
 ;
 
 let x : float = var("x");
