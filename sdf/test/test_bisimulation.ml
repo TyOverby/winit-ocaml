@@ -110,11 +110,11 @@ let backends : (string * (module Executor.S_single)) list =
 
 let eval_with_single (module S : Executor.S_single) tree ~x ~y =
   let t = S.of_tree tree in
-  let vars = S.Variable_idx.Map.empty in
+  let vars = Map.empty (module S.Variable_idx) in
   S.run
     t
     ~vars
-    ~oracles:Oracle.Key.Map.empty
+    ~oracles:(Map.empty (module Oracle.Key))
     ~x:(Float32_u.of_float x)
     ~y:(Float32_u.of_float y)
 ;;

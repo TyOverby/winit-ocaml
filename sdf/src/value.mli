@@ -27,6 +27,7 @@ module Array : sig
   type value := t
   type t
 
+  val length : t -> int
   val create : len:int -> t
 
   (** Getters *)

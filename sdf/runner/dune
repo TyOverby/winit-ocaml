@@ -1,0 +1,5 @@
+(library
+ (name sdf_runner)
+ (libraries core sdf neo parallel parallel.scheduler)
+ (preprocess
+  (pps ppx_jane)))

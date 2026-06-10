@@ -12,13 +12,13 @@ module Prepared = struct
             (module Executor.S with type Single.t = 'a and type Single.Variable_idx.t = 'b)
               portended
         ; computed : 'a
-        ; oracles : Oracle.Prepared.t Oracle.Key.Map.t
+        ; oracles : Oracle.Prepared.t Map.M(Oracle.Key).t
         }
         -> t
 
   let sample (T { computed; exec; oracles }) ~x ~y =
     let module E = (val exec.portended) in
-    E.Single.run computed ~vars:(E.Single.Variable_idx.Map.of_alist_exn []) ~oracles ~x ~y
+    E.Single.run computed ~vars:(Map.empty (module E.Single.Variable_idx)) ~oracles ~x ~y
     |> Value.to_float
   ;;
 end

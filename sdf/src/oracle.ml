@@ -13,7 +13,7 @@ module type S = sig @@ portable
     :  t
     -> par:Parallel.t @ local
     -> exec:(module Executor.S) @ shareable
-    -> oracles:Prepared.t Oracle_key.Map.t
+    -> oracles:Prepared.t Map.M(Oracle_key).t
     -> sample_region:Sample_region.t
     -> Prepared.t
 end

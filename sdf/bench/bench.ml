@@ -39,7 +39,7 @@ let eval_parallel (Prepared_parallel ((module B), prepared)) ~scheduler =
   in
   let batch = B.Batch.create prepared region in
   let (_ : B.Result.t) =
-    B.Batch.run batch ~par:scheduler ~oracles:Sdf.Oracle.Key.Map.empty
+    B.Batch.run batch ~par:scheduler ~oracles:(Map.empty (module Sdf.Oracle.Key))
   in
   ()
 ;;

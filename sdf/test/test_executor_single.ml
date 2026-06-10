@@ -9,7 +9,7 @@ module Make_tests (Implementation : Executor.S_single) = struct
       | idx -> Map.set map ~key:idx ~data:value
       | exception _ -> map
     in
-    Implementation.Variable_idx.Map.empty
+    Map.empty (module Implementation.Variable_idx)
     |> add_var "b" (Value.Boxed.T (Value.of_bool true))
   ;;
 
@@ -20,7 +20,7 @@ module Make_tests (Implementation : Executor.S_single) = struct
         Value.box
           (Implementation.run
              ~vars:(default_env t)
-             ~oracles:Oracle.Key.Map.empty
+             ~oracles:(Map.empty (module Oracle.Key))
              ~x:#1.0s
              ~y:#1.0s
              t))
@@ -37,7 +37,7 @@ module Make_tests (Implementation : Executor.S_single) = struct
         Value.box
           (Implementation.run
              ~vars:(default_env t)
-             ~oracles:Oracle.Key.Map.empty
+             ~oracles:(Map.empty (module Oracle.Key))
              ~x:#1.0s
              ~y:#1.0s
              t))
@@ -261,7 +261,7 @@ module Tree_eval_error_tests = struct
       | idx -> Map.set map ~key:idx ~data:value
       | exception _ -> map
     in
-    Implementation.Variable_idx.Map.empty
+    Map.empty (module Implementation.Variable_idx)
     |> add_var "b" (Value.Boxed.T (Value.of_bool true))
   ;;
 
@@ -272,7 +272,7 @@ module Tree_eval_error_tests = struct
         Value.box
           (Implementation.run
              ~vars:(default_env t)
-             ~oracles:Oracle.Key.Map.empty
+             ~oracles:(Map.empty (module Oracle.Key))
              ~x:#1.0s
              ~y:#1.0s
              t))
