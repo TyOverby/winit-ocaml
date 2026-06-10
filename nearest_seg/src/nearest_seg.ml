@@ -287,3 +287,74 @@ let query { portended = t } ~x ~y =
 ;;
 
 let query @ portable = Obj.magic_portable query
+
+(* Brute-force O(n) reference implementation. [query] scans every segment, with no spatial
+   pruning, using exactly the same per-segment distance and sign arithmetic as [scan_leaf]
+   above. It exists so tests can bisimulate the real index against it: the only thing that
+   can differ between the two is *which* segments get visited, never the formula. *)
+module Dummy = struct
+  type inner =
+    { sx1 : float32# array
+    ; sy1 : float32# array
+    ; sx2 : float32# array
+    ; sy2 : float32# array
+    ; seg_count : int
+    }
+
+  type t = inner portended
+
+  let build (coords : float32# array) ~length : t =
+    let n = if length < 0 then 0 else length in
+    let sx1 = Array.create ~len:n zero in
+    let sy1 = Array.create ~len:n zero in
+    let sx2 = Array.create ~len:n zero in
+    let sy2 = Array.create ~len:n zero in
+    for s = 0 to n - 1 do
+      Array.set sx1 s (Array.get coords ((4 * s) + 0));
+      Array.set sy1 s (Array.get coords ((4 * s) + 1));
+      Array.set sx2 s (Array.get coords ((4 * s) + 2));
+      Array.set sy2 s (Array.get coords ((4 * s) + 3))
+    done;
+    { portended = Obj.magic_portable__contended { sx1; sy1; sx2; sy2; seg_count = n } }
+  ;;
+
+  let query { portended = t } ~x:px ~y:py =
+    let t = Obj.magic Obj.magic t in
+    if t.seg_count = 0
+    then F.infinity
+    else (
+      let best = Array.create ~len:2 F.infinity in
+      Array.set best 1 one;
+      for k = 0 to t.seg_count - 1 do
+        let x1 = Array.get t.sx1 k in
+        let y1 = Array.get t.sy1 k in
+        let x2 = Array.get t.sx2 k in
+        let y2 = Array.get t.sy2 k in
+        let abx = F.sub x2 x1 in
+        let aby = F.sub y2 y1 in
+        let apx = F.sub px x1 in
+        let apy = F.sub py y1 in
+        let len2 = F.add (F.mul abx abx) (F.mul aby aby) in
+        let dot = F.add (F.mul apx abx) (F.mul apy aby) in
+        let tparam =
+          if F.compare len2 zero > 0
+          then (
+            let q = F.div dot len2 in
+            if F.compare q zero < 0 then zero else if F.compare q one > 0 then one else q)
+          else zero
+        in
+        let dx = F.sub px (F.add x1 (F.mul tparam abx)) in
+        let dy = F.sub py (F.add y1 (F.mul tparam aby)) in
+        let d2 = F.add (F.mul dx dx) (F.mul dy dy) in
+        if F.compare d2 (Array.get best 0) < 0
+        then (
+          let cross = F.sub (F.mul abx apy) (F.mul aby apx) in
+          let sign = if F.compare cross zero > 0 then neg_one else one in
+          Array.set best 0 d2;
+          Array.set best 1 sign)
+      done;
+      F.mul (Array.get best 1) (F.sqrt (Array.get best 0)))
+  ;;
+
+  let query @ portable = Obj.magic_portable query
+end

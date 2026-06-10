@@ -36,3 +36,17 @@ val build : float32# array -> length:int -> t
 
     Returns [+inf] for an empty index. Runs in O(log n) on well-distributed inputs. *)
 val query : t -> x:float32# -> y:float32# -> float32#
+
+(** A brute-force O(n) reference implementation of the index, kept as a testing oracle.
+
+    [build] and [query] have the same meaning and signed-distance semantics as the
+    top-level {!val:build} and {!val:query}, but [query] simply scans every segment with no
+    spatial pruning. It uses the same [float32#] arithmetic as the real index, so the two
+    agree exactly except on ties (where they may pick different equidistant segments, and
+    so different signs). Intended for bisimulation tests, not production use. *)
+module Dummy : sig
+  type t : value mod contended portable
+
+  val build : float32# array -> length:int -> t
+  val query : t -> x:float32# -> y:float32# -> float32#
+end
