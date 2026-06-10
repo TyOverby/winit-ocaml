@@ -34,6 +34,16 @@ val build : float32# array -> length:int -> t
     [(x2-x1)*(y-y1) - (y2-y1)*(x-x1)]: it is negative when that cross product is positive.
     Feeding in segments wound the other way flips the sign of the whole field.
 
+    When the nearest contour point is a vertex shared by two segments, the two report the
+    same distance but may disagree on the side (the point lies beyond each segment's
+    extent, where the infinite-line test of the more nearly collinear segment is
+    meaningless). Candidates whose squared distances agree to within a few float32 ulps
+    are therefore treated as ties (clamped projections also reuse the stored endpoint
+    coordinates, so segments sharing a bitwise-identical vertex tie exactly), and the
+    sign comes from the tying segment whose infinite line the query point deviates from
+    the most (the 2D angle-weighted-pseudonormal rule), which gives the correct sign at
+    every vertex of a consistently wound contour.
+
     Returns [+inf] for an empty index. Runs in O(log n) on well-distributed inputs. *)
 val query : t -> x:float32# -> y:float32# -> float32#
 
@@ -41,9 +51,10 @@ val query : t -> x:float32# -> y:float32# -> float32#
 
     [build] and [query] have the same meaning and signed-distance semantics as the
     top-level {!val:build} and {!val:query}, but [query] simply scans every segment with no
-    spatial pruning. It uses the same [float32#] arithmetic as the real index, so the two
-    agree exactly except on ties (where they may pick different equidistant segments, and
-    so different signs). Intended for bisimulation tests, not production use. *)
+    spatial pruning. It uses the same [float32#] arithmetic and the same tie-break rule as
+    the real index, so the two agree except in degenerate cases where both the distance
+    and the tie-break metric tie exactly across segments with different signs. Intended
+    for bisimulation tests, not production use. *)
 module Dummy : sig
   type t : value mod contended portable
 

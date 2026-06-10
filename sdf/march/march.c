@@ -23,6 +23,14 @@ const static float2 S = {0.0f, 0.5f};
 const static float2 E = {0.5f, 0.0f};
 const static float2 W = {-0.5f, 0.0f};
 
+/*
+Offset of the zero crossing between two corner values, measured from the edge
+midpoint. Every call site passes the corners in the edge's canonical order
+(N: a,b  S: d,c  W: a,d  E: b,c) so that the two cells sharing an edge compute
+the crossing from identical expressions and get bitwise-identical coordinates.
+Downstream consumers (line joining, nearest-segment sign ties) rely on shared
+vertices matching exactly.
+*/
 float lerp(float fa, float fb, float dist)
 {
     return -dist / 2.0f + dist * ((-fa) / (fb - fa));
@@ -121,7 +129,7 @@ void march(
     // 10
     case 1:
         o1 = w(dist, p, lerp(sra, srd, dist));
-        o2 = s(dist, p, -lerp(src, srd, dist));
+        o2 = s(dist, p, lerp(srd, src, dist));
         break;
 
     // 0010
@@ -129,7 +137,7 @@ void march(
     // 01
     case 2:
         o1 = s(dist, p, lerp(srd, src, dist));
-        o2 = e(dist, p, -lerp(src, srb, dist));
+        o2 = e(dist, p, lerp(srb, src, dist));
         break;
 
     // 0011
@@ -156,7 +164,7 @@ void march(
         o1 = e(dist, p, lerp(srb, src, dist));
 
         o3 = w(dist, p, lerp(sra, srd, dist));
-        o4 = s(dist, p, -lerp(src, srd, dist));
+        o4 = s(dist, p, lerp(srd, src, dist));
         // WEW LADS
         break;
 
@@ -164,8 +172,8 @@ void march(
     // 01
     // 01
     case 6:
-        o2 = n(dist, p, -lerp(srb, sra, dist));
-        o1 = s(dist, p, -lerp(src, srd, dist));
+        o2 = n(dist, p, lerp(sra, srb, dist));
+        o1 = s(dist, p, lerp(srd, src, dist));
         break;
 
     // 0111
@@ -188,8 +196,8 @@ void march(
     // 10
     // 10
     case 9:
-        o1 = n(dist, p, -lerp(srb, sra, dist));
-        o2 = s(dist, p, -lerp(src, srd, dist));
+        o1 = n(dist, p, lerp(sra, srb, dist));
+        o2 = s(dist, p, lerp(srd, src, dist));
         break;
 
     // 1010
@@ -197,7 +205,7 @@ void march(
     // 01
     case 10:
         o1 = s(dist, p, lerp(srd, src, dist));
-        o2 = e(dist, p, -lerp(src, srb, dist));
+        o2 = e(dist, p, lerp(srb, src, dist));
 
         o4 = w(dist, p, lerp(sra, srd, dist));
         o3 = n(dist, p, lerp(sra, srb, dist));
@@ -209,7 +217,7 @@ void march(
     // 11
     case 11:
         o1 = n(dist, p, lerp(sra, srb, dist));
-        o2 = e(dist, p, -lerp(src, srb, dist));
+        o2 = e(dist, p, lerp(srb, src, dist));
         break;
 
     // 1100
@@ -224,11 +232,6 @@ void march(
     // 11
     // 10
     case 13:
-        /*
-            let db = lerp(srb, src, dist);
-            let dd = lerp(srd, src, dist);
-            MarchResult::One(Line(s(dist, p, dd), e(dist, p, db)))
-            */
         o2 = s(dist, p, lerp(srd, src, dist));
         o1 = e(dist, p, lerp(srb, src, dist));
         break;

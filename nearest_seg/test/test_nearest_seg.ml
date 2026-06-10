@@ -93,3 +93,27 @@ let%expect_test "distance clamps to the nearer endpoint" =
   printf "%.4f" (Float.abs d);
   [%expect {| 4.0000 |}]
 ;;
+
+let%expect_test "sign tie at a shared vertex resolves by the pseudonormal rule" =
+  (* Two contour segments meet at the origin. The query point's projection clamps to the
+     shared vertex on both, so both report the same distance; only the sign is in
+     question. The first segment in scan order is nearly collinear with the direction to
+     the query point and its infinite line puts the point (wrongly) outside; the
+     tie-break must pick the second segment, whose line the point deviates from most,
+     which correctly says inside. Geometry distilled from a marched reflex corner of
+     sdf/neon/boxes.neo, where the old first-wins rule flipped the sign of a whole wedge
+     of interior points. *)
+  let coords =
+    coords_of_floats
+      [| -1.0; -0.3203125; 0.0; 0.0 (* shallow approach into the vertex *)
+       ; 0.0; 0.0; 0.0546875; -0.5 (* steep exit from the vertex *)
+      |]
+  in
+  let t = Nearest_seg.build coords ~length:2 in
+  let dummy = Nearest_seg.Dummy.build coords ~length:2 in
+  let x = F.of_float 3.0
+  and y = F.of_float 0.5 in
+  printf "%.4f " (F.to_float (Nearest_seg.query t ~x ~y));
+  printf "%.4f" (F.to_float (Nearest_seg.Dummy.query dummy ~x ~y));
+  [%expect {| -3.0414 -3.0414 |}]
+;;

@@ -8,15 +8,21 @@ include functor Comparator.Make [@mode portable]
 module Prepared = struct
   type t : value mod contended portable =
     { segments : Nearest_seg.t
+    ; inv_step_x : float32#
+    ; inv_step_y : float32#
     ; offset_x : float32#
     ; offset_y : float32#
+    ; dist_scale : float32#
     }
 
-  let sample { segments; offset_x; offset_y } ~x ~y =
+  (* The segments live in the expanded grid's index space (March emits cell-index
+     coordinates), so map world coordinates to grid indices before querying, and scale
+     the resulting distance (measured in grid cells) back to world units. *)
+  let sample { segments; inv_step_x; inv_step_y; offset_x; offset_y; dist_scale } ~x ~y =
     let open Float32_u in
-    let x = x + offset_x
-    and y = y + offset_y in
-    Nearest_seg.query segments ~x ~y
+    let x = (x * inv_step_x) + offset_x
+    and y = (y * inv_step_y) + offset_y in
+    Nearest_seg.query segments ~x ~y * dist_scale
   ;;
 end
 
@@ -54,9 +60,20 @@ let make
     Nearest_seg.build march_output ~length
   in
   let open Float32_u in
-  let offset_x = Sample_region.step_x sample_region * Float32_u.of_int expand_by
-  and offset_y = Sample_region.step_y sample_region * Float32_u.of_int expand_by in
-  Oracle.Prepared.wrap (module Prepared) { Prepared.segments; offset_x; offset_y }
+  let step_x = Sample_region.step_x sample_region
+  and step_y = Sample_region.step_y sample_region in
+  (* World x corresponds to grid index (x - start_x) / step_x + expand_by (the expanded
+     grid adds [expand_by] rows/columns before the region start). Index-space distances
+     are in units of [step_x]; scaling by it assumes square-ish samples. *)
+  Oracle.Prepared.wrap
+    (module Prepared)
+    { Prepared.segments
+    ; inv_step_x = #1.s / step_x
+    ; inv_step_y = #1.s / step_y
+    ; offset_x = of_int expand_by - (sample_region.Sample_region.start_x / step_x)
+    ; offset_y = of_int expand_by - (sample_region.Sample_region.start_y / step_y)
+    ; dist_scale = step_x
+    }
 ;;
 
 let prepare tree ~par ~(exec : (module Executor.S)) ~oracles ~sample_region =

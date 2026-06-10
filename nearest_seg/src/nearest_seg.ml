@@ -9,6 +9,16 @@ let half = #0.5s
 let one = #1.s
 let neg_one = F.neg #1.s
 
+(* Relative width of the distance-tie window used when deciding which segment supplies
+   the *sign* of the result (see [scan_leaf]). Squared distances within this relative
+   margin of the minimum are treated as ties: float32 evaluation of d2 is only accurate
+   to a few ulps (~1e-7 relative), so candidates whose true distances differ by less than
+   that can compare in an arbitrary order. The window is far below any meaningful
+   geometric separation (a relative 4e-6 in squared distance), so it only ever groups
+   candidates that touch what is effectively the same contour point. *)
+let one_plus_eps = #1.000004s
+let one_minus_eps = #0.999996s
+
 type inner =
   { (* Segment endpoints, reordered into leaf order (so each leaf owns a contiguous
        range). Indexed by reordered segment position, not original input position. *)
@@ -203,7 +213,9 @@ let[@inline] aabb_dist2 px py minx miny maxx maxy =
 ;;
 
 (* Scan a leaf's segments, updating the running best. [best] holds the best squared
-   distance at index 0 and the sign (+1 / -1) of that segment at index 1. *)
+   distance at index 0, the sign (+1 / -1) of the winning segment at index 1, and the
+   squared perpendicular distance from the query point to the winning segment's infinite
+   line at index 2 (the tie-break metric, see below). *)
 let scan_leaf t s c px py best =
   for k = s to s + c - 1 do
     let x1 = Array.get t.sx1 k in
@@ -224,19 +236,54 @@ let scan_leaf t s c px py best =
         if F.compare q zero < 0 then zero else if F.compare q one > 0 then one else q)
       else zero
     in
-    let dx = F.sub px (F.add x1 (F.mul tparam abx)) in
-    let dy = F.sub py (F.add y1 (F.mul tparam aby)) in
+    (* When the projection clamps, take the endpoint verbatim from the segment data
+       rather than computing [x1 + t * abx]: two segments sharing a vertex then measure
+       the distance to that vertex from bitwise-identical coordinates, so their squared
+       distances tie *exactly* and the tie-break below can see the tie. *)
+    let interior = F.compare tparam zero > 0 && F.compare tparam one < 0 in
+    let cpx =
+      if interior
+      then F.add x1 (F.mul tparam abx)
+      else if F.compare tparam zero > 0
+      then x2
+      else x1
+    in
+    let cpy =
+      if interior
+      then F.add y1 (F.mul tparam aby)
+      else if F.compare tparam zero > 0
+      then y2
+      else y1
+    in
+    let dx = F.sub px cpx in
+    let dy = F.sub py cpy in
     let d2 = F.add (F.mul dx dx) (F.mul dy dy) in
-    if F.compare d2 (Array.get best 0) < 0
+    if F.compare d2 (F.mul (Array.get best 0) one_plus_eps) <= 0
     then (
       (* Sidedness from the cross product of the directed segment with the point. For
          contours wound clockwise on screen (image coords, y down) around solid regions,
          cross > 0 is the inside, so it gets a negative sign: negative inside, positive
-         outside, the standard SDF convention. See [query] in the .mli. *)
+         outside, the standard SDF convention. See [query] in the .mli.
+
+         When two segments share a vertex and the query point's nearest contour point is
+         that vertex (or an interior projection within rounding error of it), they report
+         the same distance up to float32 noise but can disagree on the side: the point
+         lies beyond a segment's extent, where the infinite-line test is meaningless for
+         the segment whose line the point is nearly collinear with. Resolve distance ties
+         toward the segment whose infinite line the point deviates from the most (largest
+         perpendicular distance) - the 2D angle-weighted-pseudonormal rule, which gives
+         the correct sign at vertices of a consistently wound contour. *)
       let cross = F.sub (F.mul abx apy) (F.mul aby apx) in
-      let sign = if F.compare cross zero > 0 then neg_one else one in
-      Array.set best 0 d2;
-      Array.set best 1 sign)
+      let line_d2 =
+        if F.compare len2 zero > 0 then F.div (F.mul cross cross) len2 else zero
+      in
+      if F.compare d2 (F.mul (Array.get best 0) one_minus_eps) < 0
+         || F.compare line_d2 (Array.get best 2) > 0
+      then (
+        let sign = if F.compare cross zero > 0 then neg_one else one in
+        Array.set best 1 sign;
+        Array.set best 2 line_d2);
+      if F.compare d2 (Array.get best 0) < 0 then Array.set best 0 d2)
   done
 ;;
 
@@ -265,14 +312,21 @@ let rec visit t node px py best =
         (Array.get t.nmaxy right)
     in
     (* Descend into the nearer child first to tighten [best] before pruning the other.
-       Re-read [best] for the second child since the first may have improved it. *)
+       Re-read [best] for the second child since the first may have improved it. Pruning
+       must keep nodes inside the distance-tie window ([<= best * (1 + eps)], not
+       [< best]): a near-equidistant segment in another node may win the sign tie-break
+       in [scan_leaf]. *)
     if F.compare dl dr <= 0
     then (
-      if F.compare dl (Array.get best 0) < 0 then visit t left px py best;
-      if F.compare dr (Array.get best 0) < 0 then visit t right px py best)
+      if F.compare dl (F.mul (Array.get best 0) one_plus_eps) <= 0
+      then visit t left px py best;
+      if F.compare dr (F.mul (Array.get best 0) one_plus_eps) <= 0
+      then visit t right px py best)
     else (
-      if F.compare dr (Array.get best 0) < 0 then visit t right px py best;
-      if F.compare dl (Array.get best 0) < 0 then visit t left px py best))
+      if F.compare dr (F.mul (Array.get best 0) one_plus_eps) <= 0
+      then visit t right px py best;
+      if F.compare dl (F.mul (Array.get best 0) one_plus_eps) <= 0
+      then visit t left px py best))
 ;;
 
 let query { portended = t } ~x ~y =
@@ -280,8 +334,9 @@ let query { portended = t } ~x ~y =
   if t.seg_count = 0
   then F.infinity
   else (
-    let best = Array.create ~len:2 F.infinity in
+    let best = Array.create ~len:3 F.infinity in
     Array.set best 1 one;
+    Array.set best 2 zero;
     visit t 0 x y best;
     F.mul (Array.get best 1) (F.sqrt (Array.get best 0)))
 ;;
@@ -323,8 +378,9 @@ module Dummy = struct
     if t.seg_count = 0
     then F.infinity
     else (
-      let best = Array.create ~len:2 F.infinity in
+      let best = Array.create ~len:3 F.infinity in
       Array.set best 1 one;
+      Array.set best 2 zero;
       for k = 0 to t.seg_count - 1 do
         let x1 = Array.get t.sx1 k in
         let y1 = Array.get t.sy1 k in
@@ -343,15 +399,37 @@ module Dummy = struct
             if F.compare q zero < 0 then zero else if F.compare q one > 0 then one else q)
           else zero
         in
-        let dx = F.sub px (F.add x1 (F.mul tparam abx)) in
-        let dy = F.sub py (F.add y1 (F.mul tparam aby)) in
+        let interior = F.compare tparam zero > 0 && F.compare tparam one < 0 in
+        let cpx =
+          if interior
+          then F.add x1 (F.mul tparam abx)
+          else if F.compare tparam zero > 0
+          then x2
+          else x1
+        in
+        let cpy =
+          if interior
+          then F.add y1 (F.mul tparam aby)
+          else if F.compare tparam zero > 0
+          then y2
+          else y1
+        in
+        let dx = F.sub px cpx in
+        let dy = F.sub py cpy in
         let d2 = F.add (F.mul dx dx) (F.mul dy dy) in
-        if F.compare d2 (Array.get best 0) < 0
+        if F.compare d2 (F.mul (Array.get best 0) one_plus_eps) <= 0
         then (
           let cross = F.sub (F.mul abx apy) (F.mul aby apx) in
-          let sign = if F.compare cross zero > 0 then neg_one else one in
-          Array.set best 0 d2;
-          Array.set best 1 sign)
+          let line_d2 =
+            if F.compare len2 zero > 0 then F.div (F.mul cross cross) len2 else zero
+          in
+          if F.compare d2 (F.mul (Array.get best 0) one_minus_eps) < 0
+             || F.compare line_d2 (Array.get best 2) > 0
+          then (
+            let sign = if F.compare cross zero > 0 then neg_one else one in
+            Array.set best 1 sign;
+            Array.set best 2 line_d2);
+          if F.compare d2 (Array.get best 0) < 0 then Array.set best 0 d2)
       done;
       F.mul (Array.get best 1) (F.sqrt (Array.get best 0)))
   ;;
