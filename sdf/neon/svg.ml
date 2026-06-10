@@ -1,72 +1,83 @@
 open! Core
 
+let oracle_registry : unit -> (string * (module Sdf.Oracle.S) portable) list =
+  fun () ->
+  [ "passthrough", { portable = (module Sdf_passthrough_oracle) }
+  ; "resample", { portable = (module Sdf_resample_oracle) }
+  ]
+;;
+
 let command =
   Command.basic
     ~summary:"Export SDF contour lines as SVG"
     (let%map_open.Command scene_file = anon ("SCENE_FILE" %: string)
      and output_file =
        flag "-o" (optional_with_default "output.svg" string) ~doc:"FILE Output SVG path"
-     and min_x =
-       flag "-min-x" (optional_with_default (-5.0) float) ~doc:"FLOAT Min X coordinate"
-     and min_y =
-       flag "-min-y" (optional_with_default (-5.0) float) ~doc:"FLOAT Min Y coordinate"
-     and max_x =
-       flag "-max-x" (optional_with_default 5.0 float) ~doc:"FLOAT Max X coordinate"
-     and max_y =
-       flag "-max-y" (optional_with_default 5.0 float) ~doc:"FLOAT Max Y coordinate"
-     and resolution =
-       flag "-resolution" (optional_with_default 256 int) ~doc:"INT Grid resolution"
+     and x =
+       flag "-x" (optional_with_default "0.0" string) ~doc:"FLOAT Top-left X coordinate"
+     and y =
+       flag "-y" (optional_with_default "0.0" string) ~doc:"FLOAT Top-left Y coordinate"
+     and width = flag "-width" (optional_with_default 256 int) ~doc:"INT Width in pixels"
+     and height =
+       flag "-height" (optional_with_default 256 int) ~doc:"INT Height in pixels"
+     and filled =
+       flag
+         "-filled"
+         (optional_with_default true bool)
+         ~doc:"BOOL Fill closed contours (default true); false exports only line segments"
      in
      fun () ->
        let source = In_channel.read_all scene_file in
-       let tree = Neo.compile ~filename:scene_file source |> Or_error.ok_exn in
-       let module B = Sdf.Expr_graph_batch_eval.Parallel in
-       let prepared = B.Prepared.of_tree tree in
-       let scheduler = Parallel_scheduler.create () in
-       let width = resolution in
-       let height = resolution in
-       let dx = (max_x -. min_x) /. Float.of_int width in
-       let dy = (max_y -. min_y) /. Float.of_int height in
-       let grid =
-         Parallel_scheduler.parallel scheduler ~f:(fun par ->
-           let region =
-             { Sdf.Sample_region.start_x = Float32_u.of_float min_x
-             ; end_x = Float32_u.of_float max_x
-             ; samples_x = width
-             ; start_y = Float32_u.of_float min_y
-             ; end_y = Float32_u.of_float max_y
-             ; samples_y = height
-             }
-           in
-           let batch = B.Batch.create prepared region in
-           let result =
-             B.Batch.run batch ~par ~oracles:(Map.empty (module Sdf.Oracle.Key))
-           in
-           let grid : float32# array = Array.create ~len:(width * height) #0.0s in
+       (* One world unit per pixel, so the sample resolution is just the pixel
+          width/height and [dx = dy = 1]. *)
+       let x = Float32_u.of_string x
+       and y = Float32_u.of_string y in
+       let region =
+         let open Float32_u in
+         { Sdf.Sample_region.start_x = x
+         ; end_x = x + of_int width
+         ; samples_x = width
+         ; start_y = y
+         ; end_y = y + of_int height
+         ; samples_y = height
+         }
+       in
+       let grid : float32# array = Array.create ~len:(width * height) #0.0s in
+       let runner = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
+       List.iter (oracle_registry ()) ~f:(fun (name, { portable = oracle }) ->
+         Sdf_runner.add_oracle runner ~name oracle);
+       Sdf_runner.run
+         runner
+         ~region
+         ~filename:scene_file
+         source
+         ~f:(fun _par result get ->
+           let grid = Stdlib.Obj.magic_uncontended grid in
            for y = 0 to height - 1 do
              for x = 0 to width - 1 do
-               grid.((y * width) + x) <- Sdf.Value.to_float (B.Result.get result ~x ~y)
+               grid.((y * width) + x)
+               <- Sdf.Value.to_float (get (Obj.magic Obj.magic result) ~x ~y)
              done
-           done;
-           grid)
-       in
+           done);
        let march_output : float32# array =
          Array.create ~len:(width * height * 2 * 4) #0.0s
        in
        let count = March.run grid march_output width height in
        let shapes = Line_join.f march_output ~length:count in
-       let stroke_width = Float.min dx dy *. 0.5 in
-       let world_x px = min_x +. (px *. dx) in
-       let world_y py = min_y +. (py *. dy) in
+       let stroke_width = 0.5 in
+       let x = Float32_u.to_float x
+       and y = Float32_u.to_float y in
+       let world_x px = x +. px in
+       let world_y py = y +. py in
        Out_channel.with_file output_file ~f:(fun oc ->
          Printf.fprintf
            oc
            {|<svg xmlns="http://www.w3.org/2000/svg" viewBox="%f %f %f %f">
 |}
-           min_x
-           min_y
-           (max_x -. min_x)
-           (max_y -. min_y);
+           x
+           y
+           (Float.of_int width)
+           (Float.of_int height);
          List.iter shapes ~f:(fun shape ->
            let points =
              match shape with
@@ -82,7 +93,7 @@ let command =
                sprintf "%f,%f" (world_x x) (world_y y))
              |> String.concat ~sep:" "
            in
-           if is_closed
+           if is_closed && filled
            then
              Printf.fprintf
                oc
