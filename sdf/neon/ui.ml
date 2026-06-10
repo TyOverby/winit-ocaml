@@ -7,8 +7,10 @@ type render_mode =
 
 type state =
   { mutable canvas : (Image_buf.t[@sexp.opaque])
-  ; mutable is_drawing : bool
+  ; mutable is_dragging : bool
   ; mutable dirty_regions : (Softbuffer.damage_rect list[@sexp.opaque])
+  ; mutable offset_x : Float32_u.t
+  ; mutable offset_y : Float32_u.t
   ; mutable last_x : float option
   ; mutable last_y : float option
   ; mutable render_mode : render_mode
@@ -17,8 +19,10 @@ type state =
 
 let create_state () =
   { canvas = Image_buf.create ~width:0 ~height:0 #0l
-  ; is_drawing = false
+  ; is_dragging = false
   ; dirty_regions = []
+  ; offset_x = -#78.0546875s
+  ; offset_y = -#69.1796875s
   ; last_x = None
   ; last_y = None
   ; render_mode = Grayscale
@@ -92,16 +96,17 @@ let color_rings (dist : float) : Int32_u.t =
     lor #0xFF000000l)
 ;;
 
-let draw_shape' (state : state) runner ~filename ~source ~show_timings =
+let draw_shape (state : state) runner ~filename ~source ~show_timings =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
   let canvas = state.canvas in
   let region =
-    { Sdf.Sample_region.start_x = #0.0s
-    ; end_x = Float32_u.of_float (Float.of_int width)
+    let open Float32_u in
+    { Sdf.Sample_region.start_x = state.offset_x
+    ; end_x = state.offset_x + of_int width
     ; samples_x = width
-    ; start_y = #0.0s
-    ; end_y = Float32_u.of_float (Float.of_int height)
+    ; start_y = state.offset_y
+    ; end_y = state.offset_y + of_int height
     ; samples_y = height
     }
   in
@@ -211,12 +216,27 @@ let command =
                  (match state.render_mode with
                   | Grayscale -> "grayscale"
                   | Rings -> "rings"))
-           | Winit.PointerButtonPressed _ -> state.is_drawing <- true
+           | Winit.PointerButtonPressed { x; y; _ } ->
+             state.last_x <- Some x;
+             state.last_y <- Some y;
+             state.is_dragging <- true
            | Winit.PointerButtonReleased _ ->
-             state.is_drawing <- false;
+             state.is_dragging <- false;
              state.last_x <- None;
              state.last_y <- None
-           | Winit.PointerMoved { x = _; y = _; source = _; _ } -> ()
+           | Winit.PointerMoved { x; y; source = _; _ } ->
+             let open Float32_u in
+             (match state.last_x, state.last_y with
+              | Some last_x, Some last_y ->
+                (* TODO: I think that the "divide by 2" is needed because pointer
+                   coordinates are scaled by screen resolution. *)
+                state.offset_x <- state.offset_x + ((of_float last_x - of_float x) / #1.0s);
+                state.offset_y <- state.offset_y + ((of_float last_y - of_float y) / #1.0s)
+              | _ -> ());
+             if state.is_dragging
+             then (
+               state.last_x <- Some x;
+               state.last_y <- Some y)
            | _ -> ());
          (* Get buffer and draw *)
          let screen =
@@ -227,7 +247,15 @@ let command =
          ensure_canvas_size state screen;
          (* Draw and present *)
          let before = Core.Time_ns.now () in
-         draw_shape' state runner ~filename:scene_file ~source:!last_source ~show_timings;
+         (try
+            draw_shape
+              state
+              runner
+              ~filename:scene_file
+              ~source:!last_source
+              ~show_timings
+          with
+          | exn -> eprintf "%s\n%!" (Error.to_string_hum (Error.of_exn exn)));
          let after = Core.Time_ns.now () in
          if show_timings
          then
