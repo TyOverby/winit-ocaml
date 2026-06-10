@@ -4,6 +4,12 @@ fn union(f, g) {
   }
 }
 
+fn resample_shape(shape) {
+    fn(x, y) {
+        resample(shape(x, y))
+    }
+}
+
 // A rectangle SDF with top-left corner (x, y) and the given width and height.
 // Returns a function (x, y) -> distance.
 fn rectangle(x, y, width, height) {
@@ -20,23 +26,18 @@ fn rectangle(x, y, width, height) {
   }
 }
 
-fn shrink(shape, by) {
-    fn(x, y) {
-        shape(x, y) + by
-    }
-}
-
-fn resample_shape(shape) {
-    fn(x, y) {
-        resample(shape(x, y))
-    }
+fn shrink(shape, amount) {
+  fn(x, y) {
+    shape(x, y) + amount
+  }
 }
 
 let scene = 
     rectangle(50, 100, 100, 150)
     .union(rectangle(150, 50, 200, 250))
-    .resample_shape();
-    //.shrink(-15);
+    //.resample_shape()
+    //.shrink(-10)
+;
 
 let x : float = var("x");
 let y : float = var("y");
