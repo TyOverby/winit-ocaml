@@ -45,7 +45,7 @@ fn ring(shape, amount) {
 let scene = 
     rectangle(150, 50, 200, 250)
     //.union(rectangle(50, 100, 102, 150))
-    //.resample_shape()
+    .resample_shape()
     //.ring(20)
 ;
 
