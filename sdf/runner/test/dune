@@ -1,0 +1,17 @@
+(library
+ (name sdf_runner_test)
+ (libraries
+  base
+  core
+  sdf
+  sdf_contour
+  sdf_runner
+  march
+  parallel
+  parallel.scheduler
+  sdf_passthrough_oracle
+  sdf_resample_oracle
+  unboxed.float32_u)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

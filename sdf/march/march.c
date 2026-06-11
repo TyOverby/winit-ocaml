@@ -256,12 +256,23 @@ void march(
     write_line(o3, o4, out, atomic);
 }
 
+/*
+The emitted coordinates live in cell-index space offset by (ox, oy): the cell at
+buffer position (x, y) is treated as global cell (x + ox, y + oy). The global
+index is formed in *integer* arithmetic before the float conversion, so a tiled
+caller passing its tile origin gets coordinates bitwise-identical to a single
+dense run over the whole grid (adding the offset to the float coordinates after
+the fact would round twice and occasionally differ in the last ulp, breaking
+exact-equality stitching at tile seams).
+*/
 void apply(
     float* restrict buffer,
-    unsigned int width, 
+    unsigned int width,
     unsigned int height,
     float* restrict out,
     int *atomic,
+    int ox,
+    int oy,
     unsigned int x,
     unsigned int y)
 {
@@ -282,8 +293,24 @@ void apply(
     float src = buffer[c];
     float srd = buffer[d];
 
-    float2 p = (float2){x + 0.5f, y + 0.5f};
+    float2 p = (float2){((int)x + ox) + 0.5f, ((int)y + oy) + 0.5f};
     march(sra, srb, src, srd, p, 1.0f, out, atomic);
+}
+
+extern int run_marching_squares_offset(
+    float* restrict buffer,
+    float* restrict out,
+    unsigned int width,
+    unsigned int height,
+    int ox,
+    int oy) {
+    int atomic = 0;
+    for (unsigned int y = 0; y < height; y++) {
+        for (unsigned int x = 0; x < width; x++) {
+            apply(buffer, width, height, out, &atomic, ox, oy, x, y);
+        }
+    }
+    return atomic;
 }
 
 extern int run_marching_squares(
@@ -291,13 +318,7 @@ extern int run_marching_squares(
     float* restrict out,
     unsigned int width,
     unsigned int height) {
-    int atomic = 0;
-    for (unsigned int y = 0; y < height; y++) {
-        for (unsigned int x = 0; x < width; x++) {
-            apply(buffer, width, height, out, &atomic, x, y);
-        }
-    }
-    return atomic;
+    return run_marching_squares_offset(buffer, out, width, height, 0, 0);
 }
 
 #include <caml/mlvalues.h>
@@ -309,4 +330,19 @@ CAMLprim value run_stub(value input, value output, value width, value height) {
     int h = Int_val(height);
     int count = run_marching_squares(in_buf, out_buf, w, h);
     return Val_int(count);
+}
+
+CAMLprim value run_offset_stub(
+    value input, value output, value width, value height, value ox, value oy) {
+    float *in_buf = (float *) Op_val(input);
+    float *out_buf = (float *) Op_val(output);
+    int w = Int_val(width);
+    int h = Int_val(height);
+    int count = run_marching_squares_offset(
+        in_buf, out_buf, w, h, Int_val(ox), Int_val(oy));
+    return Val_int(count);
+}
+
+CAMLprim value run_offset_stub_bytecode(value *argv, int argn) {
+    return run_offset_stub(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
 }

@@ -78,21 +78,15 @@ let make
   let expand_by = 2 in
   let segments =
     let sample_region = Sample_region.expand sample_region ~by_:expand_by in
-    let prepared = E.Parallel.Prepared.of_tree tree in
-    let batch = E.Parallel.Batch.create prepared sample_region in
-    let result = E.Parallel.Batch.run batch ~par ~oracles in
-    let width, height = sample_region.samples_x, sample_region.samples_y in
-    let grid = Array.create ~len:(width * height) #0.0s in
-    for y = 0 to height - 1 do
-      for x = 0 to width - 1 do
-        grid.((y * width) + x) <- Sdf.Value.to_float (E.Parallel.Result.get result ~x ~y)
-      done
-    done;
-    let march_output : float32# array =
-      Array.create ~len:(width * height * 2 * 4) #0.0s
+    let ~segments, ~length, ~stats:_ =
+      Sdf_contour.extract
+        ~exec:(module E : Executor.S)
+        ~par
+        ~oracles
+        ~region:sample_region
+        tree
     in
-    let length = March.run grid march_output width height in
-    Nearest_seg.build march_output ~length
+    Nearest_seg.build segments ~length
   in
   let open Float32_u in
   let step_x = Sample_region.step_x sample_region

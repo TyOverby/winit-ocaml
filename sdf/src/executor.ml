@@ -23,11 +23,32 @@ module Single_to_batch (S : S_single) : S_batch = struct
     type t =
       { prepared : S.t
       ; region : Sample_region.t
+      ; x0 : int
+      ; y0 : int
+      ; samples_x : int
+      ; samples_y : int
       ; mutable variables : Value.Boxed.t Map.M(S.Variable_idx).t
       }
 
-    let create prepared region =
-      { prepared; region; variables = Map.empty (module S.Variable_idx) }
+    let create_sub prepared region ~x0 ~y0 ~samples_x ~samples_y =
+      { prepared
+      ; region
+      ; x0
+      ; y0
+      ; samples_x
+      ; samples_y
+      ; variables = Map.empty (module S.Variable_idx)
+      }
+    ;;
+
+    let create prepared (region : Sample_region.t) =
+      create_sub
+        prepared
+        region
+        ~x0:0
+        ~y0:0
+        ~samples_x:region.samples_x
+        ~samples_y:region.samples_y
     ;;
 
     let set_variable t ~var value =
@@ -36,15 +57,15 @@ module Single_to_batch (S : S_single) : S_batch = struct
     ;;
 
     let (run @ portable) t ~oracles =
-      let region = t.region in
-      let len = region.samples_x * region.samples_y in
+      let { prepared; region; x0; y0; samples_x; samples_y; variables } = t in
+      let len = samples_x * samples_y in
       let out = Value.Array.create ~len in
       for i = 0 to len - 1 do
-        let col = i mod region.samples_x in
-        let row = i / region.samples_x in
-        let x = Sample_region.x_at region col in
-        let y = Sample_region.y_at region row in
-        Value.Array.set out i (S.run t.prepared ~vars:t.variables ~oracles ~x ~y)
+        let col = i mod samples_x in
+        let row = i / samples_x in
+        let x = Sample_region.x_at region (x0 + col) in
+        let y = Sample_region.y_at region (y0 + row) in
+        Value.Array.set out i (S.run prepared ~vars:variables ~oracles ~x ~y)
       done;
       out
     ;;

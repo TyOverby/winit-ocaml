@@ -65,7 +65,7 @@ end
 (** Interval versions of the float-valued primitives. Semantics match the scalar
     evaluator exactly, e.g. [div] and [sqrt] are total ([x / 0 = 0], [sqrt x = 0] for
     [x < 0]), [sign] maps NaN to 0, [min]/[max] propagate NaN from either argument, and
-    [round] rounds half-integers up like [Float32_u.round_nearest]. *)
+    [round] rounds half-integers to even (the hardware rounding of the SIMD backend). *)
 
 val add : t -> t -> t
 val sub : t -> t -> t

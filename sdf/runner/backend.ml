@@ -1,6 +1,14 @@
 open! Core
 open Sdf
 
+module Contour_result = struct
+  type t =
+    { segments : float32# array
+    ; length : int
+    ; stats : Sdf_contour.Stats.t
+    }
+end
+
 module type S = sig
   module E : Executor.S
 
@@ -16,6 +24,25 @@ module type S = sig
     -> filename:string
     -> string
     -> E.Parallel.Result.t
+
+  (** The zero contour of the scene over [region], via {!Sdf_contour.extract} (tiles the
+      contour provably misses are never sampled). Cached like [run]'s output. *)
+  val run_contour
+    :  t
+    -> region:Sample_region.t
+    -> filename:string
+    -> string
+    -> Contour_result.t
+
+  (** A sparse tiled evaluation of the scene over [region], via {!Sdf.Tiled_eval}. The
+      cache key includes [cull], since the verdicts depend on it. *)
+  val run_tiled
+    :  t
+    -> region:Sample_region.t
+    -> filename:string
+    -> string
+    -> cull:Tile_scheduler.Cull.t
+    -> Tiled_eval.Result.t
 end
 
 module Make (E : Executor.S @ portable) : S with module E = E = struct
@@ -27,6 +54,8 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
     ; mutable region : Sample_region.t
     ; mutable prepared : E.Parallel.Prepared.t
     ; mutable output : E.Parallel.Result.t option
+    ; mutable contour : (Sample_region.t * Contour_result.t) option
+    ; mutable tiled : (Sample_region.t * Tile_scheduler.Cull.t * Tiled_eval.Result.t) option
     ; mutable oracles : Oracle.Prepared.t Map.M(Oracle.Prepared.Key).t
     }
 
@@ -74,6 +103,8 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
         ; tree
         ; prepared
         ; output = None
+        ; contour = None
+        ; tiled = None
         ; oracles = Map.empty (module Oracle.Prepared.Key)
         }
       in
@@ -96,46 +127,66 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
           last_run))
   ;;
 
+  (* All cached outputs are derived from the same compiled tree, so a recompile
+     invalidates every one of them, even though the caller is about to refresh only one
+     kind. *)
+  let invalidate_caches_if_dirty t =
+    match t.dirty, t.last_run with
+    | true, Some last_run ->
+      last_run.output <- None;
+      last_run.contour <- None;
+      last_run.tiled <- None
+    | _ -> ()
+  ;;
+
+  (* Prepare every oracle the tree references, in dependency order, reusing oracles
+     cached for the same region. Returns the prepared map plus the region-keyed map used
+     for the next frame's cache. Runs inside a parallel context. *)
+  let prepare_oracles ~oracle_impls ~tree ~prev_oracles ~region ~(par @ local) =
+    let result =
+      Sdf.Oracle_dependencies.extract_deps tree
+      (* perf: don't do this join, instead process all independent oracles in parallel *)
+      |> List.join
+      |> List.fold
+           ~init:(Map.empty (module Oracle.Key), Map.empty (module Oracle.Prepared.Key))
+           ~f:(fun (prepared, prepared_with_region) ((key, tree) as oracle_key) ->
+             let p =
+               match Map.find prev_oracles (region, oracle_key) with
+               | Some oracle -> oracle
+               | None ->
+                 let module M =
+                   (val (List.Assoc.find_exn
+                           (Obj.magic Obj.magic oracle_impls)
+                           ~equal:String.equal
+                           key
+                         : (module Oracle.S)))
+                 in
+                 M.create tree
+                 |> M.prepare
+                      ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
+                      ~par
+                      ~oracles:prepared
+                      ~sample_region:region
+             in
+             ( Map.set prepared ~key:oracle_key ~data:p
+             , Map.set prepared_with_region ~key:(region, oracle_key) ~data:p ))
+    in
+    result
+  ;;
+
   let run (t @ nonportable) ~region ~filename source =
     let last_run = update_source_code t ~filename source in
+    invalidate_caches_if_dirty t;
     match t.dirty, last_run with
     | false, { region = last_region; output = Some output; _ }
       when Sample_region.equal last_region region -> output
     | _, { tree; prepared; oracles = prev_oracles; _ } ->
       last_run.region <- region;
-      let oracles = oracles t in
+      let oracle_impls = oracles t in
       let result, oracles_with_region =
         Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
-          (* [oracles_with_region] is separate from [oracles] because we're caching the prepared oracles 
-             between frames, we care about the region that they're cached inside of. *)
           let oracles, oracles_with_region =
-            Sdf.Oracle_dependencies.extract_deps tree
-            (* perf: don't do this join, instead process all independent oracles in parallel *)
-            |> List.join
-            |> List.fold
-                 ~init:
-                   (Map.empty (module Oracle.Key), Map.empty (module Oracle.Prepared.Key))
-                 ~f:(fun (prepared, prepared_with_region) ((key, tree) as oracle_key) ->
-                   let p =
-                     match Map.find prev_oracles (region, oracle_key) with
-                     | Some oracle -> oracle
-                     | None ->
-                       let module M =
-                         (val (List.Assoc.find_exn
-                                 (Obj.magic Obj.magic oracles)
-                                 ~equal:String.equal
-                                 key
-                               : (module Oracle.S)))
-                       in
-                       M.create tree
-                       |> M.prepare
-                            ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
-                            ~par
-                            ~oracles:prepared
-                            ~sample_region:region
-                   in
-                   ( Map.set prepared ~key:oracle_key ~data:p
-                   , Map.set prepared_with_region ~key:(region, oracle_key) ~data:p ))
+            prepare_oracles ~oracle_impls ~tree ~prev_oracles ~region ~par
           in
           let batch = E.Parallel.Batch.create prepared region in
           let result = E.Parallel.Batch.run batch ~par ~oracles in
@@ -143,6 +194,72 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
       in
       last_run.oracles <- oracles_with_region;
       last_run.output <- Some result;
+      t.dirty <- false;
+      result
+  ;;
+
+  let run_contour (t @ nonportable) ~region ~filename source =
+    let last_run = update_source_code t ~filename source in
+    invalidate_caches_if_dirty t;
+    match t.dirty, last_run.contour with
+    | false, Some (cached_region, result) when Sample_region.equal cached_region region
+      -> result
+    | _ ->
+      let { tree; oracles = prev_oracles; _ } = last_run in
+      let oracle_impls = oracles t in
+      let result, oracles_with_region =
+        Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
+          let oracles, oracles_with_region =
+            prepare_oracles ~oracle_impls ~tree ~prev_oracles ~region ~par
+          in
+          let ~segments, ~length, ~stats =
+            Sdf_contour.extract
+              ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
+              ~par
+              ~oracles
+              ~region
+              tree
+          in
+          ( { Modes.Portended.portended =
+                Stdlib.Obj.magic_portable { Contour_result.segments; length; stats }
+            }
+          , oracles_with_region ))
+      in
+      let result = Stdlib.Obj.magic_uncontended result.Modes.Portended.portended in
+      last_run.oracles <- oracles_with_region;
+      last_run.contour <- Some (region, result);
+      t.dirty <- false;
+      result
+  ;;
+
+  let run_tiled (t @ nonportable) ~region ~filename source ~cull =
+    let last_run = update_source_code t ~filename source in
+    invalidate_caches_if_dirty t;
+    match t.dirty, last_run.tiled with
+    | false, Some (cached_region, cached_cull, result)
+      when Sample_region.equal cached_region region
+           && Tile_scheduler.Cull.equal cached_cull cull -> result
+    | _ ->
+      let { tree; oracles = prev_oracles; _ } = last_run in
+      let oracle_impls = oracles t in
+      let result, oracles_with_region =
+        Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
+          let oracles, oracles_with_region =
+            prepare_oracles ~oracle_impls ~tree ~prev_oracles ~region ~par
+          in
+          let result =
+            Tiled_eval.run
+              ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
+              ~par
+              ~oracles
+              ~region
+              ~cull
+              tree
+          in
+          result, oracles_with_region)
+      in
+      last_run.oracles <- oracles_with_region;
+      last_run.tiled <- Some (region, cull, result);
       t.dirty <- false;
       result
   ;;

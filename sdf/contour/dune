@@ -1,0 +1,5 @@
+(library
+ (name sdf_contour)
+ (libraries base core sdf march parallel unboxed.float32_u)
+ (preprocess
+  (pps ppx_jane)))

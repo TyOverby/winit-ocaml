@@ -42,27 +42,12 @@ let command =
          ; samples_y = height
          }
        in
-       let grid : float32# array = Array.create ~len:(width * height) #0.0s in
        let runner = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
        List.iter (oracle_registry ()) ~f:(fun (name, { portable = oracle }) ->
          Sdf_runner.add_oracle runner ~name oracle);
-       Sdf_runner.run
-         runner
-         ~region
-         ~filename:scene_file
-         source
-         ~f:(fun _par result get ->
-           let grid = Stdlib.Obj.magic_uncontended grid in
-           for y = 0 to height - 1 do
-             for x = 0 to width - 1 do
-               grid.((y * width) + x)
-               <- Sdf.Value.to_float (get (Obj.magic Obj.magic result) ~x ~y)
-             done
-           done);
-       let march_output : float32# array =
-         Array.create ~len:(width * height * 2 * 4) #0.0s
+       let ~segments:march_output, ~length:count, ~stats =
+         Sdf_runner.run_contour runner ~region ~filename:scene_file source
        in
-       let count = March.run grid march_output width height in
        let shapes = Line_join.f march_output ~length:count in
        let stroke_width = 0.5 in
        let x = Float32_u.to_float x
@@ -113,5 +98,10 @@ let command =
          "Wrote %d shapes (%d line segments) to %s\n"
          (List.length shapes)
          count
-         output_file)
+         output_file;
+       printf
+         "Culling skipped %d of %d tiles (%d samples evaluated)\n"
+         stats.Sdf_contour.Stats.tiles_culled
+         stats.tiles_total
+         stats.samples_evaluated)
 ;;

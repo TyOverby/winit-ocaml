@@ -60,6 +60,27 @@ is to keep NaN out of ordinary programs: NaN propagates through `min`/`max`
 division by zero would force the interval evaluator
 (`Expr_graph_range_eval`) to report "any value" for the whole scene.
 
+`round` rounds half-integers **to even**, matching the single-instruction
+hardware rounding the SIMD backend uses (`frintn` / `roundps`); the scalar
+backends use `Float32_u.round_nearest_half_to_even` to agree exactly.
+`min`/`max` order the zeros (`min(-0, +0) = -0`, `max(-0, +0) = +0`) like
+NEON `fmin`/`fmax`; the scalar backends implement the tie case with a
+sign-OR/AND of the bits. `neg`/`abs` are sign-bit operations in every
+backend (so `neg 0. = -0.` and NaN payloads survive both).
+
+Every primitive must produce bitwise-identical results in the SIMD vector
+path and the scalar backends (which also serve as the SIMD batch's tail for
+widths not divisible by 4): the tiled sampling machinery (`Tile_scheduler` /
+`Sdf_contour` / `Tiled_eval`) relies on a sample's value being a function of
+its coordinates only, independent of batch width or lane position.
+`test/test_simd_tail_consistency.ml` pins this per-op over special values
+(half-integer ties, signed zeros, NaN, infinities), and the differential
+quickcheck suites in `test/test_create_sub.ml` and `contour/test` cover it
+end-to-end. Caveat: on amd64, SSE `minps`/`maxps` neither propagate NaN nor
+order the zeros the way the scalar `Float32_u.min`/`max` (and arm64 NEON)
+do; if this code ever runs on amd64, `Simd.f32x4_min`/`f32x4_max` need a
+correcting sequence — the consistency test will catch it.
+
 ### Runtime Representation
 
 Values are unboxed 32-bit integers (`Int32_u.t`) reinterpreted as either

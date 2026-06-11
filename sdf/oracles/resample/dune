@@ -1,5 +1,5 @@
 (library
  (name sdf_resample_oracle)
- (libraries base core sdf march nearest_seg)
+ (libraries base core sdf sdf_contour nearest_seg)
  (preprocess
   (pps ppx_jane ppx_builtin)))

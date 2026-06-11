@@ -94,21 +94,38 @@ let rec eval_float
   | Round a ->
     (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
-     | Ok a -> Ok (Float32_u.round_nearest a))
+     | Ok a -> Ok (Float32_u.round_nearest_half_to_even a))
   | Min (a, b) ->
     (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a ->
        (match eval_float ~env ~oracles ~x ~y b with
         | Error _ as e -> e
-        | Ok b -> Ok (Float32_u.min a b)))
+        | Ok b ->
+          (* On a tie ([a = b] is only true for equal values, including -0 = +0) take
+             the sign-OR of the bits so that min(-0, +0) = -0, matching the SIMD
+             backend's hardware min. Equal non-zero values have identical bits, so the
+             OR is a no-op. *)
+          if Float32_u.O.(a = b)
+          then
+            Ok
+              (Float32_u.of_bits
+                 Int32_u.O.(Float32_u.to_bits a lor Float32_u.to_bits b))
+          else Ok (Float32_u.min a b)))
   | Max (a, b) ->
     (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
      | Ok a ->
        (match eval_float ~env ~oracles ~x ~y b with
         | Error _ as e -> e
-        | Ok b -> Ok (Float32_u.max a b)))
+        | Ok b ->
+          (* Sign-AND on ties: max(-0, +0) = +0, matching the SIMD backend. *)
+          if Float32_u.O.(a = b)
+          then
+            Ok
+              (Float32_u.of_bits
+                 Int32_u.O.(Float32_u.to_bits a land Float32_u.to_bits b))
+          else Ok (Float32_u.max a b)))
   | Cond { condition; then_; else_ } ->
     (match eval_bool ~env ~oracles ~x ~y condition with
      | Error e -> Error e

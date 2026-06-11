@@ -130,12 +130,21 @@ let rec run_simd
           out_arr
           px
           (Simd.f32x4_select neg_mask ~fail:(Simd.f32x4_sqrt v) ~pass:Simd.f32x4_zero))
+    (* Abs and Neg are sign-bit operations on the integer view, not float arithmetic:
+       the scalar backends compile to fabs/fneg, which clear/flip the sign bit even on
+       zeros and NaNs, and every backend (including this batch's own scalar tail) must
+       produce bitwise-identical values. [max(v, 0 - v)]-style implementations differ on
+       [-0.] and NaN payloads. *)
     | Abs a ->
       let a_arr = Array.unsafe_get register_bank a in
-      simd_loop ~width (fun px -> store_f out_arr px (Simd.f32x4_abs (load_f a_arr px)))
+      let mask = Simd.i32x4_set1 #0x7fffffffl in
+      simd_loop ~width (fun px ->
+        store_i out_arr px (Simd.i32x4_and (load_i a_arr px) mask))
     | Neg a ->
       let a_arr = Array.unsafe_get register_bank a in
-      simd_loop ~width (fun px -> store_f out_arr px (Simd.f32x4_neg (load_f a_arr px)))
+      let mask = Simd.i32x4_set1 #0x80000000l in
+      simd_loop ~width (fun px ->
+        store_i out_arr px (Simd.i32x4_xor (load_i a_arr px) mask))
     | Sign a ->
       let a_arr = Array.unsafe_get register_bank a in
       let zero = Simd.f32x4_zero in
@@ -323,8 +332,8 @@ module Batch_impl : Executor.S_batch = struct
       ; len : int
       }
 
-    let create (prepared : Prepared.t) (region : Sample_region.t) =
-      let len = region.samples_x * region.samples_y in
+    let create_sub (prepared : Prepared.t) region ~x0 ~y0 ~samples_x ~samples_y =
+      let len = samples_x * samples_y in
       let variables = Variable_bank.create ~num_vars:prepared.num_vars in
       let registers =
         let register_count = prepared.register_count in
@@ -333,12 +342,22 @@ module Batch_impl : Executor.S_batch = struct
       let x_coords = Array.create ~len #0l in
       let y_coords = Array.create ~len #0l in
       for i = 0 to len - 1 do
-        let col = i mod region.samples_x in
-        let row = i / region.samples_x in
-        Array.set x_coords i (Float32_u.to_bits (Sample_region.x_at region col));
-        Array.set y_coords i (Float32_u.to_bits (Sample_region.y_at region row))
+        let col = i mod samples_x in
+        let row = i / samples_x in
+        Array.set x_coords i (Float32_u.to_bits (Sample_region.x_at region (x0 + col)));
+        Array.set y_coords i (Float32_u.to_bits (Sample_region.y_at region (y0 + row)))
       done;
       { prepared; variables; registers; x_coords; y_coords; len }
+    ;;
+
+    let create (prepared : Prepared.t) (region : Sample_region.t) =
+      create_sub
+        prepared
+        region
+        ~x0:0
+        ~y0:0
+        ~samples_x:region.samples_x
+        ~samples_y:region.samples_y
     ;;
 
     let set_variable t ~var value = Variable_bank.set_variable t.variables ~var value

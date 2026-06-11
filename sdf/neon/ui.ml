@@ -3,6 +3,10 @@ open! Core
 type render_mode =
   | Grayscale
   | Rings
+  | Tiles
+  (** [Rings] with the tile culling made visible: tiles the interval evaluator proves
+      sign-uniform are never sampled and render as flat black (inside) or white
+      (outside); only the remaining tiles get the rings shader. *)
 [@@deriving sexp_of]
 
 type state =
@@ -96,6 +100,57 @@ let color_rings (dist : float) : Int32_u.t =
     lor #0xFF000000l)
 ;;
 
+(* Render through the sparse tiled evaluator: culled tiles become flat color fills
+   (black for provably-inside, white for provably-outside — consistent for both cull
+   predicates we use), active tiles are colored per pixel from their sampled patch. *)
+let draw_tiled runner ~region ~filename ~source ~canvas ~cull ~color_pixel ~show_timings =
+  let result = Sdf_runner.run_tiled runner ~region ~filename source ~cull in
+  let before = Core.Time_ns.now () in
+  Sdf.Tiled_eval.Result.iter
+    result
+    ~fill:(fun ~x0 ~y0 ~samples_x ~samples_y interval ->
+      let #{ Sdf.Interval.lo = _; hi } = interval in
+      let color = if Float32_u.O.(hi <= #0.s) then #0xFF000000l else #0xFFFFFFFFl in
+      for y = y0 to y0 + samples_y - 1 do
+        for x = x0 to x0 + samples_x - 1 do
+          Image_buf.set canvas ~x ~y color
+        done
+      done)
+    ~draw:(fun ~x0 ~y0 ~samples_x ~samples_y ~get ->
+      for j = 0 to samples_y - 1 do
+        for i = 0 to samples_x - 1 do
+          let dist =
+            Float32_u.to_float (Sdf.Value.to_float (get ((j * samples_x) + i)))
+          in
+          Image_buf.set canvas ~x:(x0 + i) ~y:(y0 + j) (color_pixel dist)
+        done
+      done);
+  let after = Core.Time_ns.now () in
+  if show_timings
+  then
+    print_s
+      [%message "" ~copy_pixels:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)]
+;;
+
+let draw_dense runner ~region ~filename ~source ~canvas ~color_pixel ~show_timings =
+  let width = region.Sdf.Sample_region.samples_x in
+  let height = region.Sdf.Sample_region.samples_y in
+  Sdf_runner.run runner ~region ~filename source ~f:(fun par result get ->
+    let before = Core.Time_ns.now () in
+    Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
+      for x = 0 to width - 1 do
+        let dist =
+          Float32_u.to_float (Sdf.Value.to_float (get (Obj.magic Obj.magic result) ~x ~y))
+        in
+        Image_buf.set canvas ~x ~y (color_pixel dist)
+      done);
+    let after = Core.Time_ns.now () in
+    if show_timings
+    then
+      print_s
+        [%message "" ~copy_pixels:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)])
+;;
+
 let draw_shape (state : state) runner ~filename ~source ~show_timings =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
@@ -110,25 +165,33 @@ let draw_shape (state : state) runner ~filename ~source ~show_timings =
     ; samples_y = height
     }
   in
-  Sdf_runner.run runner ~region ~filename source ~f:(fun par result get ->
-    let color_pixel =
-      match state.render_mode with
-      | Grayscale -> color_grayscale
-      | Rings -> color_rings
-    in
-    let before = Core.Time_ns.now () in
-    Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
-      for x = 0 to width - 1 do
-        let dist =
-          Float32_u.to_float (Sdf.Value.to_float (get (Obj.magic Obj.magic result) ~x ~y))
-        in
-        Image_buf.set canvas ~x ~y (color_pixel dist)
-      done);
-    let after = Core.Time_ns.now () in
-    if show_timings
-    then
-      print_s
-        [%message "" ~copy_pixels:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)])
+  match state.render_mode with
+  | Rings ->
+    draw_dense runner ~region ~filename ~source ~canvas ~color_pixel:color_rings ~show_timings
+  | Grayscale ->
+    (* The grayscale ramp is constant outside (0, 1], so culling there renders pixels
+       identical to the dense path. *)
+    draw_tiled
+      runner
+      ~region
+      ~filename
+      ~source
+      ~canvas
+      ~cull:(Constant_outside { below = 0.; above = 1. })
+      ~color_pixel:color_grayscale
+      ~show_timings
+  | Tiles ->
+    (* Rings shading, but with the contour cull predicate and flat fills, so the tiles
+       the scheduler skips are visible. *)
+    draw_tiled
+      runner
+      ~region
+      ~filename
+      ~source
+      ~canvas
+      ~cull:No_contour
+      ~color_pixel:color_rings
+      ~show_timings
 ;;
 
 (* The available evaluation backends, each a [(module Batch_backend_intf.S_parallel)],
@@ -210,12 +273,14 @@ let command =
                state.render_mode
                <- (match state.render_mode with
                    | Grayscale -> Rings
-                   | Rings -> Grayscale);
+                   | Rings -> Tiles
+                   | Tiles -> Grayscale);
                Printf.printf
                  "Render mode: %s\n%!"
                  (match state.render_mode with
                   | Grayscale -> "grayscale"
-                  | Rings -> "rings"))
+                  | Rings -> "rings"
+                  | Tiles -> "tiles"))
            | Winit.PointerButtonPressed { x; y; _ } ->
              state.last_x <- Some x;
              state.last_y <- Some y;

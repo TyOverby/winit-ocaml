@@ -1,0 +1,17 @@
+(library
+ (name sdf_contour_test)
+ (libraries
+  base
+  core
+  sdf
+  sdf_contour
+  sdf_test
+  march
+  line_join
+  parallel
+  parallel.scheduler
+  sdf_passthrough_oracle
+  unboxed.float32_u)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

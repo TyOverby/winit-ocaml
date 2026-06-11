@@ -192,7 +192,7 @@ let sign (#{ lo; hi } as t : t) =
 ;;
 
 let round (#{ lo; hi } as t : t) =
-  if is_top t then top else make (F.round_nearest lo) (F.round_nearest hi)
+  if is_top t then top else make (F.round_nearest_half_to_even lo) (F.round_nearest_half_to_even hi)
 ;;
 
 (* Scalar [Min]/[Max] use [F.min]/[F.max], which return NaN if either argument is NaN, so

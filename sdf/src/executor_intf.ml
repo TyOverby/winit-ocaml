@@ -43,6 +43,22 @@ module type S_batch = sig @@ portable
     type t
 
     val create : Prepared.t -> Sample_region.t -> t
+
+    (** A batch over the index-space sub-rectangle of [region] whose top-left sample is
+        [(x0, y0)]. Sample [(i, j)] (i.e. [px = j * samples_x + i]) is evaluated at
+        exactly [(Sample_region.x_at region (x0 + i), Sample_region.y_at region (y0 + j))]
+        — bitwise the same coordinates as the corresponding sample of a batch over the
+        whole region, so samples shared by overlapping sub-rectangles evaluate
+        identically. *)
+    val create_sub
+      :  Prepared.t
+      -> Sample_region.t
+      -> x0:int
+      -> y0:int
+      -> samples_x:int
+      -> samples_y:int
+      -> t
+
     val set_variable : t -> var:Variable_idx.t -> Value.t -> unit
     val run : t -> oracles:Prepared_oracle.t Map.M(Oracle_key).t -> Result.t
   end

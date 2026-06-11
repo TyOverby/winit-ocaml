@@ -66,15 +66,28 @@ let rec run ~variables ~instructions ~registers ~oracles ~x ~y =
         Value.of_float (Float32_u.cos a)
       | Round a ->
         let a = Value.Array.get_float registers a in
-        Value.of_float (Float32_u.round_nearest a)
+        Value.of_float (Float32_u.round_nearest_half_to_even a)
       | Min (a, b) ->
         let a = Value.Array.get_float registers a in
         let b = Value.Array.get_float registers b in
-        Value.of_float (Float32_u.min a b)
+        (* On a tie ([a = b] is only true for equal values, including -0 = +0) take the
+           sign-OR of the bits so that min(-0, +0) = -0, matching the SIMD backend's
+           hardware min. Equal non-zero values have identical bits, so the OR is a
+           no-op. *)
+        if Float32_u.O.(a = b)
+        then
+          Value.of_float
+            (Float32_u.of_bits Int32_u.O.(Float32_u.to_bits a lor Float32_u.to_bits b))
+        else Value.of_float (Float32_u.min a b)
       | Max (a, b) ->
         let a = Value.Array.get_float registers a in
         let b = Value.Array.get_float registers b in
-        Value.of_float (Float32_u.max a b)
+        (* Sign-AND on ties: max(-0, +0) = +0, matching the SIMD backend. *)
+        if Float32_u.O.(a = b)
+        then
+          Value.of_float
+            (Float32_u.of_bits Int32_u.O.(Float32_u.to_bits a land Float32_u.to_bits b))
+        else Value.of_float (Float32_u.max a b)
       | Lt (a, b) ->
         let a = Value.Array.get_float registers a in
         let b = Value.Array.get_float registers b in
@@ -158,8 +171,8 @@ module Batch_impl : Executor.S_batch = struct
       ; len : int
       }
 
-    let create (prepared : Prepared.t) (region : Sample_region.t) =
-      let len = region.samples_x * region.samples_y in
+    let create_sub (prepared : Prepared.t) region ~x0 ~y0 ~samples_x ~samples_y =
+      let len = samples_x * samples_y in
       let variables = Value.Array.create ~len:prepared.num_vars in
       let registers =
         Iarray.init len ~f:(fun _ -> Value.Array.create ~len:prepared.register_count)
@@ -167,12 +180,22 @@ module Batch_impl : Executor.S_batch = struct
       let x_coords = Array.create ~len #0l in
       let y_coords = Array.create ~len #0l in
       for i = 0 to len - 1 do
-        let col = i mod region.samples_x in
-        let row = i / region.samples_x in
-        Array.set x_coords i (Float32_u.to_bits (Sample_region.x_at region col));
-        Array.set y_coords i (Float32_u.to_bits (Sample_region.y_at region row))
+        let col = i mod samples_x in
+        let row = i / samples_x in
+        Array.set x_coords i (Float32_u.to_bits (Sample_region.x_at region (x0 + col)));
+        Array.set y_coords i (Float32_u.to_bits (Sample_region.y_at region (y0 + row)))
       done;
       { prepared; variables; registers; x_coords; y_coords; len }
+    ;;
+
+    let create (prepared : Prepared.t) (region : Sample_region.t) =
+      create_sub
+        prepared
+        region
+        ~x0:0
+        ~y0:0
+        ~samples_x:region.samples_x
+        ~samples_y:region.samples_y
     ;;
 
     let set_variable t ~var value = Value.Array.set t.variables var value
