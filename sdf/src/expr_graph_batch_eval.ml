@@ -111,10 +111,25 @@ let rec run_simd
       let a_arr = Array.unsafe_get register_bank a in
       let b_arr = Array.unsafe_get register_bank b in
       simd_loop ~width (fun px ->
-        store_f out_arr px (Simd.f32x4_div (load_f a_arr px) (load_f b_arr px)))
+        (* Division is total: x / 0 = 0. [abs b <= 0] is true exactly for ±0 (and false
+           for NaN), matching the scalar evaluators' [b = 0] test. *)
+        let bv = load_f b_arr px in
+        let zero_mask = Simd.f32x4_le (Simd.f32x4_abs bv) Simd.f32x4_zero in
+        let quotient = Simd.f32x4_div (load_f a_arr px) bv in
+        store_f
+          out_arr
+          px
+          (Simd.f32x4_select zero_mask ~fail:quotient ~pass:Simd.f32x4_zero))
     | Sqrt a ->
       let a_arr = Array.unsafe_get register_bank a in
-      simd_loop ~width (fun px -> store_f out_arr px (Simd.f32x4_sqrt (load_f a_arr px)))
+      simd_loop ~width (fun px ->
+        (* Sqrt is total: sqrt of a negative is 0. *)
+        let v = load_f a_arr px in
+        let neg_mask = Simd.f32x4_lt v Simd.f32x4_zero in
+        store_f
+          out_arr
+          px
+          (Simd.f32x4_select neg_mask ~fail:(Simd.f32x4_sqrt v) ~pass:Simd.f32x4_zero))
     | Abs a ->
       let a_arr = Array.unsafe_get register_bank a in
       simd_loop ~width (fun px -> store_f out_arr px (Simd.f32x4_abs (load_f a_arr px)))

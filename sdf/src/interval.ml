@@ -126,26 +126,50 @@ let mul (#{ lo = a; hi = b } as i1 : t) (#{ lo = c; hi = d } as i2 : t) =
     make (min4 (a * c) (a * d) (b * c) (b * d)) (max4 (a * c) (a * d) (b * c) (b * d)))
 ;;
 
+(* Division is total ([x / 0 = 0], matching the scalar evaluators), so a denominator
+   interval containing zero no longer forces [top]: the result is the hull of 0 (from
+   exact-zero denominators), the quotients against the nonzero denominator endpoints, and
+   the infinities approached as the denominator nears zero from whichever sides are
+   present. NaN is still possible from [inf / inf]; it arises only via quotients of
+   infinite endpoints, which propagate through the min/max into [make]. *)
 let div (#{ lo = a; hi = b } as i1 : t) (#{ lo = c; hi = d } as i2 : t) =
   if is_top i1 || is_top i2
   then top
   else if contains_zero i2
-  then
-    (* The quotient is unbounded on either side of the zero, and [0 / 0] is NaN. *)
-    top
+  then (
+    let mn = F.Ref.create zero in
+    let mx = F.Ref.create zero in
+    let add v =
+      F.Ref.set mn (F.min (F.Ref.get mn) v);
+      F.Ref.set mx (F.max (F.Ref.get mx) v)
+    in
+    let num_pos = F.O.(b > zero) in
+    let num_neg = F.O.(a < zero) in
+    if F.O.(c < zero)
+    then (
+      (* Denominators down to [c], and arbitrarily close to zero from below. *)
+      add F.O.(a / c);
+      add F.O.(b / c);
+      if num_pos then add F.neg_infinity;
+      if num_neg then add F.infinity);
+    if F.O.(d > zero)
+    then (
+      add F.O.(a / d);
+      add F.O.(b / d);
+      if num_pos then add F.infinity;
+      if num_neg then add F.neg_infinity);
+    make (F.Ref.get mn) (F.Ref.get mx))
   else (
     let open F.O in
     make (min4 (a / c) (a / d) (b / c) (b / d)) (max4 (a / c) (a / d) (b / c) (b / d)))
 ;;
 
+(* Sqrt is total ([sqrt x = 0] for [x < 0], matching the scalar evaluators), which makes
+   it a monotone non-decreasing function over the whole float line. *)
+let sqrt_scalar a = if F.O.(a < zero) then zero else F.sqrt a
+
 let sqrt (#{ lo; hi } as t : t) =
-  if is_top t
-  then top
-  else if F.O.(lo < zero)
-  then
-    (* Some inputs are negative, so NaN is an achievable result. *)
-    top
-  else make (F.sqrt lo) (F.sqrt hi)
+  if is_top t then top else make (sqrt_scalar lo) (sqrt_scalar hi)
 ;;
 
 let abs (#{ lo; hi } as t : t) =

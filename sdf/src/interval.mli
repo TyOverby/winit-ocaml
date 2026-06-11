@@ -12,8 +12,10 @@ open! Core
 
     NaN is handled through a distinguished "top" interval: an interval with a NaN
     endpoint means "any float value, possibly NaN". Operations that could produce NaN for
-    some inputs in range (e.g. [div] by an interval containing zero, [sqrt] of an
-    interval reaching below zero, [inf - inf]) return {!top}. *)
+    some inputs in range return {!top}. Because the language's division and square root
+    are total ([x / 0 = 0] and [sqrt x = 0] for [x < 0]), NaN can only arise from
+    arithmetic on infinities ([inf - inf], [0 * inf], [inf / inf]) or trig of an
+    infinity, so [top] is rare in practice. *)
 type t = #{ lo : Float32_u.t
           ; hi : Float32_u.t
           }
@@ -61,8 +63,9 @@ module Bool : sig
 end
 
 (** Interval versions of the float-valued primitives. Semantics match the scalar
-    evaluator exactly, e.g. [sign] maps NaN to 0, [min]/[max] propagate NaN from either
-    argument, and [round] rounds half-integers up like [Float32_u.round_nearest]. *)
+    evaluator exactly, e.g. [div] and [sqrt] are total ([x / 0 = 0], [sqrt x = 0] for
+    [x < 0]), [sign] maps NaN to 0, [min]/[max] propagate NaN from either argument, and
+    [round] rounds half-integers up like [Float32_u.round_nearest]. *)
 
 val add : t -> t -> t
 val sub : t -> t -> t

@@ -63,7 +63,11 @@ val var : loc:Source_code_position.t -> string -> Type.t -> t Or_error.t
 val add : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val mul : loc:Source_code_position.t -> t -> t -> t Or_error.t
 val sub : loc:Source_code_position.t -> t -> t -> t Or_error.t
+
+(** Division is total: [x / 0 = 0] (for either sign of zero) in every evaluator. *)
 val div : loc:Source_code_position.t -> t -> t -> t Or_error.t
+
+(** Sqrt is total: [sqrt x = 0] for [x < 0] in every evaluator. *)
 val sqrt : loc:Source_code_position.t -> t -> t Or_error.t
 val abs : loc:Source_code_position.t -> t -> t Or_error.t
 val neg : loc:Source_code_position.t -> t -> t Or_error.t

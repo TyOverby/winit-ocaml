@@ -189,13 +189,41 @@ let%expect_test "div: denominator positive" =
   check_containment_grid tree ~x_lo:4.0 ~x_hi:8.0 ~y_lo:2.0 ~y_hi:4.0 interval
 ;;
 
-let%expect_test "div: denominator spans zero => top" =
-  (* y in [-1,1] contains zero, so x/y = top *)
+let%expect_test "div: denominator spans zero => unbounded both ways" =
+  (* y in [-1,1] contains zero: quotients blow up on both sides of it (division is total,
+     x / 0 = 0, so 0 is also included — but the hull is all of [-inf, inf]). *)
   let tree = div coord_x coord_y in
   let interval = eval_range tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:(-1.0) ~y_hi:1.0 in
   print_string (Interval.to_string interval);
-  [%expect {| [top] |}]
-  (* Containment holds trivially for top; no need to check. *)
+  [%expect {| [-inf, inf] |}];
+  check_containment_grid tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:(-1.0) ~y_hi:1.0 interval
+;;
+
+let%expect_test "div: denominator touches zero from one side => half-bounded" =
+  (* y in [0,4] with x in [1,2]: quotients are {0} (from y = 0) plus [1/4, +inf). *)
+  let tree = div coord_x coord_y in
+  let interval = eval_range tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:0.0 ~y_hi:4.0 in
+  print_string (Interval.to_string interval);
+  [%expect {| [0., inf] |}];
+  check_containment_grid tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:0.0 ~y_hi:4.0 interval
+;;
+
+let%expect_test "div: denominator exactly zero => zero" =
+  let tree = div coord_x (f #0.0s) in
+  let interval = eval_range tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:0.0 ~y_hi:0.0 in
+  print_string (Interval.to_string interval);
+  [%expect {| [0., 0.] |}];
+  check_containment_grid tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:0.0 ~y_hi:0.0 interval
+;;
+
+let%expect_test "div: min recovers a bound below a division by a zero-spanning range" =
+  (* The motivation for total division: the divide yields [-inf, inf] rather than top, so
+     a downstream min (the SDF union combinator) can still recover an upper bound. *)
+  let tree = min (div coord_x coord_y) (f #7.0s) in
+  let interval = eval_range tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:(-1.0) ~y_hi:1.0 in
+  print_string (Interval.to_string interval);
+  [%expect {| [-inf, 7.] |}];
+  check_containment_grid tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:(-1.0) ~y_hi:1.0 interval
 ;;
 
 let%expect_test "sqrt: all positive" =
@@ -207,12 +235,21 @@ let%expect_test "sqrt: all positive" =
   check_containment_grid tree ~x_lo:1.0 ~x_hi:4.0 ~y_lo:0.0 ~y_hi:0.0 interval
 ;;
 
-let%expect_test "sqrt: reaches below zero => top" =
-  (* x in [-1,4]: lo < 0 so sqrt returns top *)
+let%expect_test "sqrt: clamps negatives to zero" =
+  (* x in [-1,4]: sqrt is total (sqrt of a negative is 0), so the range is [0, 2] *)
   let tree = sqrt coord_x in
   let interval = eval_range tree ~x_lo:(-1.0) ~x_hi:4.0 ~y_lo:0.0 ~y_hi:0.0 in
   print_string (Interval.to_string interval);
-  [%expect {| [top] |}]
+  [%expect {| [0., 2.] |}];
+  check_containment_grid tree ~x_lo:(-1.0) ~x_hi:4.0 ~y_lo:0.0 ~y_hi:0.0 interval
+;;
+
+let%expect_test "sqrt: entirely negative => zero" =
+  let tree = sqrt coord_x in
+  let interval = eval_range tree ~x_lo:(-4.0) ~x_hi:(-1.0) ~y_lo:0.0 ~y_hi:0.0 in
+  print_string (Interval.to_string interval);
+  [%expect {| [0., 0.] |}];
+  check_containment_grid tree ~x_lo:(-4.0) ~x_hi:(-1.0) ~y_lo:0.0 ~y_hi:0.0 interval
 ;;
 
 let%expect_test "abs: all positive" =

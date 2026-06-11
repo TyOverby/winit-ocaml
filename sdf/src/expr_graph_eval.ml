@@ -35,10 +35,14 @@ let rec run ~variables ~instructions ~registers ~oracles ~x ~y =
       | Div (a, b) ->
         let a = Value.Array.get_float registers a in
         let b = Value.Array.get_float registers b in
-        Value.of_float Float32_u.(a / b)
+        (* Division is total: x / 0 = 0 (for either sign of zero). *)
+        Value.of_float
+          (if Float32_u.(b = zero) then Float32_u.zero else Float32_u.(a / b))
       | Sqrt a ->
         let a = Value.Array.get_float registers a in
-        Value.of_float (Float32_u.sqrt a)
+        (* Sqrt is total: sqrt of a negative is 0. *)
+        Value.of_float
+          (if Float32_u.(a < zero) then Float32_u.zero else Float32_u.sqrt a)
       | Abs a ->
         let a = Value.Array.get_float registers a in
         Value.of_float (Float32_u.abs a)

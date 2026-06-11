@@ -132,16 +132,26 @@ module Make_tests (Implementation : Executor.S_single) = struct
     [%expect {| 5 |}]
   ;;
 
-  let%expect_test "division by zero produces infinity" =
+  (* Division is total: x / 0 = 0, including 0 / 0 and division by -0. *)
+  let%expect_test "division by zero produces zero" =
     eval_float (div (f #1.s) (f #0.s));
-    [%expect {| INF |}]
+    [%expect {| 0 |}]
   ;;
 
-  let%expect_test "zero divided by zero is NaN" =
+  let%expect_test "zero divided by zero is zero" =
     eval_float (div (f #0.s) (f #0.s));
-    (* arm64 produces "NAN" and x86-64 produces "-NAN" *)
-    [%expect.output] |> String.chop_prefix_if_exists ~prefix:"-" |> print_endline;
-    [%expect {| NAN |}]
+    [%expect {| 0 |}]
+  ;;
+
+  let%expect_test "division by negative zero is zero" =
+    eval_float (div (f #1.s) (f Float32_u.(neg #0.s)));
+    [%expect {| 0 |}]
+  ;;
+
+  (* Sqrt is total: sqrt of a negative is 0. *)
+  let%expect_test "sqrt of a negative produces zero" =
+    eval_float (sqrt (f Float32_u.(neg #4.s)));
+    [%expect {| 0 |}]
   ;;
 
   let%expect_test "nested arithmetic respects left-to-right composition" =

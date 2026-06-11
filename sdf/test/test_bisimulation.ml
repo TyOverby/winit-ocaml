@@ -272,9 +272,10 @@ let%expect_test "div by zero in else branch, taking then branch" =
 ;;
 
 let%expect_test "original quickcheck failure - simplified" =
-  (* From the quickcheck counterexample: the outer cond's condition is true, so we should
-     get the then branch (x), but the graph evaluator returned +infinity from the else
-     branch. *)
+  (* From a historical quickcheck counterexample where the graph evaluator took the wrong
+     cond branch; kept as a bisimulation regression. (Under the original IEEE division
+     semantics the condition was true and the result was x; with total division
+     [y / 0 = 0] the condition is false and the else branch correctly produces +inf.) *)
   let tree =
     cond
       ~condition:
@@ -297,12 +298,14 @@ let%expect_test "original quickcheck failure - simplified" =
            ~else_:(add (div coord_y (nf #0.0s)) (mul coord_x (nf #0.0s))))
   in
   check tree ~x:(-0.267355561256) ~y:2.9582283945787943e-31;
-  [%expect {| -0.267355561 |}]
+  [%expect {| inf |}]
 ;;
 
 (* Regression test: CSE must distinguish -0.0 from +0.0. An expression using both -0.0 and
-   +0.0 as literals must not have them merged by CSE, since they produce different results
-   via division (1/+0 = +inf, 1/-0 = -inf). *)
+   +0.0 as literals must not have them merged by CSE: a program exporting a zero would
+   print the wrong sign if its literal were swapped for the other zero. (Division used to
+   be the sharper observable — 1/+0 = +inf vs 1/-0 = -inf — but division is now total,
+   with x / 0 = 0 for either sign of zero.) *)
 
 let pp tree =
   let ~instructions, ~final_register, ~register_count:_, ~var_mapping:_, ~oracle_keys:_ =
@@ -319,9 +322,9 @@ let%expect_test "CSE distinguishes -0.0 and +0.0: evaluation" =
       ~then_:(f #1.0s)
       ~else_:(f #2.0s)
   in
-  (* y=1, so div(y, +0) = +inf, and lt(1, +inf) = true → should return 1 *)
+  (* y=1, so div(y, +0) = 0 (total division), and lt(1, 0) = false → should return 2 *)
   check tree ~x:0.0 ~y:1.0;
-  [%expect {| 1. |}]
+  [%expect {| 2. |}]
 ;;
 
 let%expect_test "CSE distinguishes -0.0 and +0.0: graph has separate registers" =

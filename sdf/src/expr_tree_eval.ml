@@ -51,11 +51,19 @@ let rec eval_float
      | Ok a ->
        (match eval_float ~env ~oracles ~x ~y b with
         | Error _ as e -> e
-        | Ok b -> Ok Float32_u.O.(a / b)))
+        | Ok b ->
+          (* Division is total: x / 0 = 0 (for either sign of zero). *)
+          Ok
+            (if Float32_u.O.(b = Float32_u.zero)
+             then Float32_u.zero
+             else Float32_u.O.(a / b))))
   | Sqrt a ->
     (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e
-     | Ok a -> Ok (Float32_u.sqrt a))
+     | Ok a ->
+       (* Sqrt is total: sqrt of a negative is 0. *)
+       Ok
+         (if Float32_u.O.(a < Float32_u.zero) then Float32_u.zero else Float32_u.sqrt a))
   | Abs a ->
     (match eval_float ~env ~oracles ~x ~y a with
      | Error _ as e -> e

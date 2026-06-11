@@ -50,6 +50,16 @@ and by the `Expr_tree` smart constructors (which return `Or_error.t`).
 Comparisons produce bools from float operands; conditionals require matching
 branch types.
 
+### Arithmetic Semantics
+
+Division and square root are total, deviating from IEEE: `x / 0 = 0` (for
+either sign of zero) and `sqrt x = 0` for `x < 0`. All evaluator backends
+implement this identically (the SIMD backend via compare + select). The point
+is to keep NaN out of ordinary programs: NaN propagates through `min`/`max`
+(the SDF union/intersection combinators), so under IEEE semantics a single
+division by zero would force the interval evaluator
+(`Expr_graph_range_eval`) to report "any value" for the whole scene.
+
 ### Runtime Representation
 
 Values are unboxed 32-bit integers (`Int32_u.t`) reinterpreted as either
