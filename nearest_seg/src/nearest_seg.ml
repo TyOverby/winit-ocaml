@@ -343,6 +343,245 @@ let query { portended = t } ~x ~y =
 
 let query @ portable = Obj.magic_portable query
 
+(* ---------- Range queries ---------- *)
+
+module Interval = struct
+  type t = #{ lo : float32#
+            ; hi : float32#
+            }
+end
+
+(* Mutable accumulator threaded through a range query.
+
+   [dmin2] is the minimum over segments of the squared distance from the query box to
+   the segment: a lower bound on |query p| anywhere in the box (and exact at the point
+   of the box closest to the contour).
+
+   [dub2] is the minimum over segments of (maximum over the box's corners of the squared
+   point-to-segment distance). For any point p, |query p| = min over segments of
+   d(p, s) <= d(p, s') <= corner-max(s') for every segment s', so [dub2] upper-bounds
+   |query|^2 over the whole box (point-to-segment distance is convex, so its max over the
+   box is attained at a corner).
+
+   [can_pos] / [can_neg] record which signs the query could return somewhere in the box,
+   derived from the cross-product range of every segment close enough to be the nearest
+   (and hence supply the sign) for some point of the box. *)
+type range_acc =
+  { mutable dmin2 : float32#
+  ; mutable dub2 : float32#
+  ; mutable can_pos : bool
+  ; mutable can_neg : bool
+  }
+
+(* Slightly wider than [one_plus_eps]: candidates for supplying the sign must cover the
+   scalar query's distance-tie window plus float32 noise from computing box distances by
+   a different formula than [scan_leaf]'s per-point one. *)
+let range_sign_window = #1.0003s
+
+(* Relative tolerance on the corner cross-product test, absorbing float32 rounding when a
+   box point sits essentially on a segment's infinite line. *)
+let cross_tol_rel = #1e-4s
+
+(* Outward padding applied to the final distance bounds, relative to the magnitudes
+   involved, so that scalar queries (computed by a different float32 expression) can
+   never land outside the reported range by mere rounding. *)
+let range_pad_rel = #3e-5s
+
+let[@inline] min4 a b c d = F.min (F.min a b) (F.min c d)
+let[@inline] max4 a b c d = F.max (F.max a b) (F.max c d)
+
+(* Squared point-to-segment distance; same projection-and-clamp construction as
+   [scan_leaf]. *)
+let[@inline] pt_seg_dist2 px py x1 y1 x2 y2 =
+  let abx = F.sub x2 x1 in
+  let aby = F.sub y2 y1 in
+  let apx = F.sub px x1 in
+  let apy = F.sub py y1 in
+  let len2 = F.add (F.mul abx abx) (F.mul aby aby) in
+  let dot = F.add (F.mul apx abx) (F.mul apy aby) in
+  let tparam =
+    if F.compare len2 zero > 0
+    then (
+      let q = F.div dot len2 in
+      if F.compare q zero < 0 then zero else if F.compare q one > 0 then one else q)
+    else zero
+  in
+  let interior = F.compare tparam zero > 0 && F.compare tparam one < 0 in
+  let cpx =
+    if interior
+    then F.add x1 (F.mul tparam abx)
+    else if F.compare tparam zero > 0
+    then x2
+    else x1
+  in
+  let cpy =
+    if interior
+    then F.add y1 (F.mul tparam aby)
+    else if F.compare tparam zero > 0
+    then y2
+    else y1
+  in
+  let dx = F.sub px cpx in
+  let dy = F.sub py cpy in
+  F.add (F.mul dx dx) (F.mul dy dy)
+;;
+
+(* Squared gap between the query box and an axis-aligned box: a lower bound on the
+   distance from any query-box point to anything inside the node box. *)
+let[@inline] box_box_gap2 qx0 qy0 qx1 qy1 minx miny maxx maxy =
+  let dx = F.max zero (F.max (F.sub minx qx1) (F.sub qx0 maxx)) in
+  let dy = F.max zero (F.max (F.sub miny qy1) (F.sub qy0 maxy)) in
+  F.add (F.mul dx dx) (F.mul dy dy)
+;;
+
+(* Separating-axis test between a segment and the query box: the candidate axes for a
+   segment vs. an AABB are x, y, and the segment's normal. *)
+let[@inline] seg_intersects_box x1 y1 x2 y2 qx0 qy0 qx1 qy1 =
+  F.compare (F.min x1 x2) qx1 <= 0
+  && F.compare (F.max x1 x2) qx0 >= 0
+  && F.compare (F.min y1 y2) qy1 <= 0
+  && F.compare (F.max y1 y2) qy0 >= 0
+  &&
+  let nx = F.neg (F.sub y2 y1) in
+  let ny = F.sub x2 x1 in
+  let c = F.add (F.mul nx x1) (F.mul ny y1) in
+  let p1 = F.add (F.mul nx qx0) (F.mul ny qy0) in
+  let p2 = F.add (F.mul nx qx1) (F.mul ny qy0) in
+  let p3 = F.add (F.mul nx qx0) (F.mul ny qy1) in
+  let p4 = F.add (F.mul nx qx1) (F.mul ny qy1) in
+  F.compare (min4 p1 p2 p3 p4) c <= 0 && F.compare c (max4 p1 p2 p3 p4) <= 0
+;;
+
+let process_seg_range x1 y1 x2 y2 qx0 qy0 qx1 qy1 acc =
+  let d00 = pt_seg_dist2 qx0 qy0 x1 y1 x2 y2 in
+  let d10 = pt_seg_dist2 qx1 qy0 x1 y1 x2 y2 in
+  let d01 = pt_seg_dist2 qx0 qy1 x1 y1 x2 y2 in
+  let d11 = pt_seg_dist2 qx1 qy1 x1 y1 x2 y2 in
+  let segmax2 = max4 d00 d10 d01 d11 in
+  (* Min distance between two convex sets is attained vertex-to-edge or vertex-to-vertex
+     (or is zero on overlap): box corners against the segment, segment endpoints against
+     the box, and an overlap test. *)
+  let corner_min2 = min4 d00 d10 d01 d11 in
+  let e1 = aabb_dist2 x1 y1 qx0 qy0 qx1 qy1 in
+  let e2 = aabb_dist2 x2 y2 qx0 qy0 qx1 qy1 in
+  let segmin2 =
+    if seg_intersects_box x1 y1 x2 y2 qx0 qy0 qx1 qy1
+    then zero
+    else F.min corner_min2 (F.min e1 e2)
+  in
+  if F.compare segmin2 acc.dmin2 < 0 then acc.dmin2 <- segmin2;
+  if F.compare segmax2 acc.dub2 < 0 then acc.dub2 <- segmax2;
+  (* This segment is the nearest one (within the scalar query's sign tie window) for
+     *some* point of the box only if its min distance is within the running upper bound.
+     [acc.dub2] may shrink later, making this check conservative — that only ever lets
+     extra segments contribute sign possibilities, never excludes a real winner. For each
+     candidate, the cross product is linear in the query point, so its range over the box
+     is spanned by the corners; cross > 0 makes the scalar query report negative. *)
+  if F.compare segmin2 (F.mul acc.dub2 range_sign_window) <= 0
+  then (
+    let abx = F.sub x2 x1 in
+    let aby = F.sub y2 y1 in
+    let[@inline] cross px py =
+      F.sub (F.mul abx (F.sub py y1)) (F.mul aby (F.sub px x1))
+    in
+    let c00 = cross qx0 qy0 in
+    let c10 = cross qx1 qy0 in
+    let c01 = cross qx0 qy1 in
+    let c11 = cross qx1 qy1 in
+    let cmin = min4 c00 c10 c01 c11 in
+    let cmax = max4 c00 c10 c01 c11 in
+    let tol = F.mul cross_tol_rel (F.max (F.abs cmin) (F.abs cmax)) in
+    if F.compare cmax (F.neg tol) > 0 then acc.can_neg <- true;
+    if F.compare cmin tol <= 0 then acc.can_pos <- true)
+;;
+
+let rec visit_range t node qx0 qy0 qx1 qy1 acc =
+  let left = Array.get t.nleft node in
+  if left < 0
+  then (
+    let s = Array.get t.nstart node in
+    let c = Array.get t.ncount node in
+    for k = s to s + c - 1 do
+      process_seg_range
+        (Array.get t.sx1 k)
+        (Array.get t.sy1 k)
+        (Array.get t.sx2 k)
+        (Array.get t.sy2 k)
+        qx0
+        qy0
+        qx1
+        qy1
+        acc
+    done)
+  else (
+    let right = Array.get t.nright node in
+    let[@inline] gap2 n =
+      box_box_gap2
+        qx0
+        qy0
+        qx1
+        qy1
+        (Array.get t.nminx n)
+        (Array.get t.nminy n)
+        (Array.get t.nmaxx n)
+        (Array.get t.nmaxy n)
+    in
+    let dl = gap2 left in
+    let dr = gap2 right in
+    (* A node is interesting only if some segment in it can either improve [dub2] or be a
+       sign candidate; both require its gap to the box to be within
+       [dub2 * range_sign_window] (the gap lower-bounds every per-segment quantity we
+       track, including [dmin2 <= dub2]). Descend nearer child first so the bounds
+       tighten before the farther child is tested; re-read [acc.dub2] for the second
+       child. *)
+    if F.compare dl dr <= 0
+    then (
+      if F.compare dl (F.mul acc.dub2 range_sign_window) <= 0
+      then visit_range t left qx0 qy0 qx1 qy1 acc;
+      if F.compare dr (F.mul acc.dub2 range_sign_window) <= 0
+      then visit_range t right qx0 qy0 qx1 qy1 acc)
+    else (
+      if F.compare dr (F.mul acc.dub2 range_sign_window) <= 0
+      then visit_range t right qx0 qy0 qx1 qy1 acc;
+      if F.compare dl (F.mul acc.dub2 range_sign_window) <= 0
+      then visit_range t left qx0 qy0 qx1 qy1 acc))
+;;
+
+(* Turn the accumulated bounds into a signed interval. Both unsigned bounds are padded
+   outward (relative to the coordinate scale) before signs are applied. *)
+let finish_range acc qx0 qy0 qx1 qy1 : Interval.t =
+  let dmin = F.sqrt acc.dmin2 in
+  let dub = F.sqrt acc.dub2 in
+  let scale = max4 (F.abs qx0) (F.abs qy0) (F.abs qx1) (F.abs qy1) in
+  let pad = F.mul range_pad_rel (F.add scale dub) in
+  let dmin = F.max zero (F.sub dmin pad) in
+  let dub = F.add dub pad in
+  (* At least one sign flag is always set when there are segments (the segment achieving
+     [dub2] passes its own candidacy check); fall back to both if not. *)
+  let can_pos, can_neg =
+    if acc.can_pos || acc.can_neg then acc.can_pos, acc.can_neg else true, true
+  in
+  let lo = if can_neg then F.neg dub else dmin in
+  let hi = if can_pos then dub else F.neg dmin in
+  #{ Interval.lo; hi }
+;;
+
+let query_range { portended = t } ~x_lo ~y_lo ~x_hi ~y_hi : Interval.t =
+  let t = Obj.magic Obj.magic t in
+  if t.seg_count = 0
+  then #{ Interval.lo = F.infinity; hi = F.infinity }
+  else (
+    let qx0 = F.min x_lo x_hi in
+    let qx1 = F.max x_lo x_hi in
+    let qy0 = F.min y_lo y_hi in
+    let qy1 = F.max y_lo y_hi in
+    let acc = { dmin2 = F.infinity; dub2 = F.infinity; can_pos = false; can_neg = false } in
+    visit_range t 0 qx0 qy0 qx1 qy1 acc;
+    finish_range acc qx0 qy0 qx1 qy1)
+;;
+
+let query_range @ portable = Obj.magic_portable query_range
+
 (* Brute-force O(n) reference implementation. [query] scans every segment, with no spatial
    pruning, using exactly the same per-segment distance and sign arithmetic as [scan_leaf]
    above. It exists so tests can bisimulate the real index against it: the only thing that
@@ -435,4 +674,35 @@ module Dummy = struct
   ;;
 
   let query @ portable = Obj.magic_portable query
+
+  (* Same per-segment range computation as the spatially-indexed [query_range], with no
+     pruning at all: every segment is processed. *)
+  let query_range { portended = t } ~x_lo ~y_lo ~x_hi ~y_hi : Interval.t =
+    let t = Obj.magic Obj.magic t in
+    if t.seg_count = 0
+    then #{ Interval.lo = F.infinity; hi = F.infinity }
+    else (
+      let qx0 = F.min x_lo x_hi in
+      let qx1 = F.max x_lo x_hi in
+      let qy0 = F.min y_lo y_hi in
+      let qy1 = F.max y_lo y_hi in
+      let acc =
+        { dmin2 = F.infinity; dub2 = F.infinity; can_pos = false; can_neg = false }
+      in
+      for k = 0 to t.seg_count - 1 do
+        process_seg_range
+          (Array.get t.sx1 k)
+          (Array.get t.sy1 k)
+          (Array.get t.sx2 k)
+          (Array.get t.sy2 k)
+          qx0
+          qy0
+          qx1
+          qy1
+          acc
+      done;
+      finish_range acc qx0 qy0 qx1 qy1)
+  ;;
+
+  let query_range @ portable = Obj.magic_portable query_range
 end

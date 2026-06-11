@@ -6,6 +6,7 @@ module type S = sig
   type t : value mod contended portable
 
   val sample : t -> x:float32# -> y:float32# -> float32#
+  val sample_range : t -> x:Interval.t -> y:Interval.t -> Interval.t
 end
 
 type inner =
@@ -27,3 +28,7 @@ let wrap
 ;;
 
 let sample { portended = T { impl = (module M); value } } ~x ~y = M.sample value ~x ~y
+
+let sample_range { portended = T { impl = (module M); value } } ~x ~y =
+  M.sample_range value ~x ~y
+;;

@@ -47,6 +47,39 @@ val build : float32# array -> length:int -> t
     Returns [+inf] for an empty index. Runs in O(log n) on well-distributed inputs. *)
 val query : t -> x:float32# -> y:float32# -> float32#
 
+(** An inclusive range of query results, as returned by {!query_range}. *)
+module Interval : sig
+  type t = #{ lo : float32#
+            ; hi : float32#
+            }
+end
+
+(** [query_range t ~x_lo ~y_lo ~x_hi ~y_hi] returns an interval guaranteed to contain
+    [query t ~x ~y] for every point (x, y) of the axis-aligned box
+    [x_lo, x_hi] × [y_lo, y_hi] (the bounds of each axis are swapped if given out of
+    order). Coordinates must be finite.
+
+    The magnitude bounds are the exact min distance from the box to the contour and a
+    branch-and-bound upper bound on the max distance, both padded outward by a small
+    epsilon relative to the coordinate scale to absorb float32 rounding (the scalar query
+    computes its distance by a different float32 expression).
+
+    The sign side is conservative: the interval covers a sign as soon as *some* segment
+    that could be nearest for *some* point of the box lies on that side of the point, so
+    boxes near the contour (or near a sign discontinuity, e.g. past the open end of an
+    unclosed contour) report both signs even when every actual sample inside agrees. The
+    result is therefore an over-approximation: every scalar query result falls inside it,
+    but not every value inside it need be attainable.
+
+    Returns [[+inf, +inf]] for an empty index. *)
+val query_range
+  :  t
+  -> x_lo:float32#
+  -> y_lo:float32#
+  -> x_hi:float32#
+  -> y_hi:float32#
+  -> Interval.t
+
 (** A brute-force O(n) reference implementation of the index, kept as a testing oracle.
 
     [build] and [query] have the same meaning and signed-distance semantics as the
@@ -60,4 +93,16 @@ module Dummy : sig
 
   val build : float32# array -> length:int -> t
   val query : t -> x:float32# -> y:float32# -> float32#
+
+  (** Brute-force [query_range]: identical per-segment bounds and sign logic as the
+      top-level {!val:query_range}, but scanning every segment. The two can differ only
+      in tightness (the indexed version may skip segments that cannot affect the bounds),
+      never in soundness. *)
+  val query_range
+    :  t
+    -> x_lo:float32#
+    -> y_lo:float32#
+    -> x_hi:float32#
+    -> y_hi:float32#
+    -> Interval.t
 end

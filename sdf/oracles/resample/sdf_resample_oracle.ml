@@ -24,6 +24,41 @@ module Prepared = struct
     and y = (y * inv_step_y) + offset_y in
     Nearest_seg.query segments ~x ~y * dist_scale
   ;;
+
+  (* The world -> grid-index map is affine and applied per-endpoint with the same float32
+     arithmetic as [sample], so (after reordering for a negative step) the transformed
+     box contains every transformed sample point. Likewise the final [dist_scale]
+     multiply is monotone. Anything non-finite (an unbounded coordinate range would
+     transform to an infinite grid box) falls back to the full range. *)
+  let sample_range
+    { segments; inv_step_x; inv_step_y; offset_x; offset_y; dist_scale }
+    ~x
+    ~y
+    =
+    if Interval.is_top x || Interval.is_top y
+    then Interval.top
+    else (
+      let open Float32_u in
+      let #{ Interval.lo = xl; hi = xh } = x in
+      let #{ Interval.lo = yl; hi = yh } = y in
+      let gx0 = (xl * inv_step_x) + offset_x
+      and gx1 = (xh * inv_step_x) + offset_x
+      and gy0 = (yl * inv_step_y) + offset_y
+      and gy1 = (yh * inv_step_y) + offset_y in
+      let x_lo = min gx0 gx1
+      and x_hi = max gx0 gx1
+      and y_lo = min gy0 gy1
+      and y_hi = max gy0 gy1 in
+      if is_finite x_lo && is_finite x_hi && is_finite y_lo && is_finite y_hi
+      then (
+        let #{ Nearest_seg.Interval.lo; hi } =
+          Nearest_seg.query_range segments ~x_lo ~y_lo ~x_hi ~y_hi
+        in
+        let a = lo * dist_scale
+        and b = hi * dist_scale in
+        Interval.create ~lo:(min a b) ~hi:(max a b))
+      else Interval.top)
+  ;;
 end
 
 let create = function
