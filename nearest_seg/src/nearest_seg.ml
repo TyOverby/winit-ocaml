@@ -39,6 +39,12 @@ type inner =
   ; nstart : int array
   ; ncount : int array
   ; seg_count : int
+  ; (* Vertices where the sign of the field may be discontinuous at nonzero magnitude
+       (see [unsafe_vertices]); empty unless built with [~assume_level_set:true]. *)
+    ux : float32# array
+  ; uy : float32# array
+  ; (* Whether [query_range] may use the midpoint probe to resolve an ambiguous sign. *)
+    probe : bool
   }
 
 type t = inner portended
@@ -61,15 +67,77 @@ let empty =
         ; nstart = i
         ; ncount = i
         ; seg_count = 0
+        ; ux = f
+        ; uy = f
+        ; probe = false
         }
   }
 ;;
 
-let build (coords : float32# array) ~length : t =
+(* Endpoint [2s] is segment [s]'s tail [(x1,y1)]; endpoint [2s+1] is its head
+   [(x2,y2)]. Vertices are matched by exact bit pattern (marching squares emits shared
+   vertices bitwise-identically — the property [Line_join] also relies on). A vertex is
+   *safe* iff exactly two endpoints coincide there, one head and one tail, from two
+   different segments: an interior vertex of a consistently directed chain, where the
+   sign tie-break gives a continuous field. Everything else — an open end where a
+   contour was clipped at the sample-region boundary, a junction, a duplicated or
+   zero-length segment — is a place where the field's sign can jump at nonzero
+   magnitude, so [query_range]'s midpoint probe must keep clear of it. *)
+let unsafe_vertices (coords : float32# array) ~length =
+  let n2 = 2 * length in
+  let seg e = e lsr 1 in
+  let xoff e = (4 * seg e) + if e land 1 = 0 then 0 else 2 in
+  let bits_x e = Int32_u.to_int_trunc (F.to_bits (Array.get coords (xoff e))) in
+  let bits_y e = Int32_u.to_int_trunc (F.to_bits (Array.get coords (xoff e + 1))) in
+  let idx = Array.init n2 ~f:Fn.id in
+  Array.sort idx ~compare:(fun a b ->
+    let c = Int.compare (bits_x a) (bits_x b) in
+    if c <> 0 then c else Int.compare (bits_y a) (bits_y b));
+  let same a b = bits_x a = bits_x b && bits_y a = bits_y b in
+  (* Visit each group of coincident endpoints (an inclusive index range of [idx]). *)
+  let scan ~f =
+    let i = ref 0 in
+    while !i < n2 do
+      let j = ref !i in
+      while !j + 1 < n2 && same (Array.get idx !i) (Array.get idx (!j + 1)) do
+        incr j
+      done;
+      f !i !j;
+      i := !j + 1
+    done
+  in
+  let group_safe lo hi =
+    hi - lo = 1
+    &&
+    let a = Array.get idx lo
+    and b = Array.get idx hi in
+    seg a <> seg b && a land 1 <> b land 1
+  in
+  let count = ref 0 in
+  scan ~f:(fun lo hi -> if not (group_safe lo hi) then incr count);
+  let ux = Array.create ~len:!count zero in
+  let uy = Array.create ~len:!count zero in
+  let pos = ref 0 in
+  scan ~f:(fun lo hi ->
+    if not (group_safe lo hi)
+    then (
+      let e = Array.get idx lo in
+      Array.set ux !pos (Array.get coords (xoff e));
+      Array.set uy !pos (Array.get coords (xoff e + 1));
+      incr pos));
+  ux, uy
+;;
+
+let build ?(assume_level_set = false) (coords : float32# array) ~length : t =
   let n = length in
   if n <= 0
   then empty
   else (
+    let ux, uy =
+      if assume_level_set
+      then unsafe_vertices coords ~length
+      else Array.create ~len:0 zero, Array.create ~len:0 zero
+    in
     (* Per-segment bounding boxes and centroids, indexed by *original* segment id. *)
     let segminx = Array.create ~len:n zero in
     let segminy = Array.create ~len:n zero in
@@ -199,6 +267,9 @@ let build (coords : float32# array) ~length : t =
           ; nstart
           ; ncount
           ; seg_count = n
+          ; ux
+          ; uy
+          ; probe = assume_level_set
           }
     })
 ;;
@@ -329,8 +400,7 @@ let rec visit t node px py best =
       then visit t left px py best))
 ;;
 
-let query { portended = t } ~x ~y =
-  let t = Obj.magic Obj.magic t in
+let query_inner t ~x ~y =
   if t.seg_count = 0
   then F.infinity
   else (
@@ -339,6 +409,11 @@ let query { portended = t } ~x ~y =
     Array.set best 2 zero;
     visit t 0 x y best;
     F.mul (Array.get best 1) (F.sqrt (Array.get best 0)))
+;;
+
+let query { portended = t } ~x ~y =
+  let t = Obj.magic Obj.magic t in
+  query_inner t ~x ~y
 ;;
 
 let query @ portable = Obj.magic_portable query
@@ -566,6 +641,49 @@ let finish_range acc qx0 qy0 qx1 qy1 : Interval.t =
   #{ Interval.lo; hi }
 ;;
 
+(* The midpoint probe, for indexes built with [~assume_level_set:true]: when the
+   cross-product flags leave the sign ambiguous, one scalar query can often resolve it.
+   On a level-set contour the signed field is 1-Lipschitz wherever its sign is
+   continuous, so if the field at the box centre exceeds the box's half-diagonal (plus
+   float32 padding) it cannot reach zero anywhere in the box, and the unresolved sign is
+   impossible.
+
+   Soundness needs the field to be continuous on the box. Sign jumps at nonzero
+   magnitude happen only where the nearest contour point is an unsafe vertex (see
+   [unsafe_vertices]), so the probe requires every unsafe vertex to lie farther from the
+   box than [dub * range_sign_window]: every box point has some segment within [dub], so
+   no box point's nearest point (nor any tie-window candidate supplying its sign) can
+   then be an unsafe vertex. Boxes genuinely inside a sign-flip wedge — e.g. past the
+   open end of a contour clipped at the sample-region boundary — sit within [dub] of the
+   clipped endpoint and correctly keep the conservative both-signs answer. *)
+let box_clear_of_unsafe_vertices ~ux ~uy acc qx0 qy0 qx1 qy1 =
+  let threshold = F.mul acc.dub2 (F.mul range_sign_window range_sign_window) in
+  let clear = ref true in
+  for i = 0 to Array.length ux - 1 do
+    let d2 = aabb_dist2 (Array.get ux i) (Array.get uy i) qx0 qy0 qx1 qy1 in
+    if F.compare d2 threshold <= 0 then clear := false
+  done;
+  !clear
+;;
+
+(* [d_mid] is the scalar query at the box centre; computed per-halves so finite
+   coordinates can't overflow. The padding mirrors [finish_range]'s: it absorbs both the
+   float32 rounding of the half-diagonal and the different float32 expression the scalar
+   query computes its distance by. *)
+let resolve_sign_from_probe acc ~d_mid qx0 qy0 qx1 qy1 =
+  let hw = F.mul (F.sub qx1 qx0) half in
+  let hh = F.mul (F.sub qy1 qy0) half in
+  let r = F.sqrt (F.add (F.mul hw hw) (F.mul hh hh)) in
+  let dub = F.sqrt acc.dub2 in
+  let scale = max4 (F.abs qx0) (F.abs qy0) (F.abs qx1) (F.abs qy1) in
+  let pad = F.mul range_pad_rel (F.add scale dub) in
+  let thresh = F.add r pad in
+  if F.compare d_mid thresh > 0
+  then acc.can_neg <- false
+  else if F.compare d_mid (F.neg thresh) < 0
+  then acc.can_pos <- false
+;;
+
 let query_range { portended = t } ~x_lo ~y_lo ~x_hi ~y_hi : Interval.t =
   let t = Obj.magic Obj.magic t in
   if t.seg_count = 0
@@ -577,6 +695,14 @@ let query_range { portended = t } ~x_lo ~y_lo ~x_hi ~y_hi : Interval.t =
     let qy1 = F.max y_lo y_hi in
     let acc = { dmin2 = F.infinity; dub2 = F.infinity; can_pos = false; can_neg = false } in
     visit_range t 0 qx0 qy0 qx1 qy1 acc;
+    if t.probe
+       && acc.can_pos
+       && acc.can_neg
+       && box_clear_of_unsafe_vertices ~ux:t.ux ~uy:t.uy acc qx0 qy0 qx1 qy1
+    then (
+      let mx = F.add (F.mul qx0 half) (F.mul qx1 half) in
+      let my = F.add (F.mul qy0 half) (F.mul qy1 half) in
+      resolve_sign_from_probe acc ~d_mid:(query_inner t ~x:mx ~y:my) qx0 qy0 qx1 qy1);
     finish_range acc qx0 qy0 qx1 qy1)
 ;;
 
@@ -593,11 +719,14 @@ module Dummy = struct
     ; sx2 : float32# array
     ; sy2 : float32# array
     ; seg_count : int
+    ; ux : float32# array
+    ; uy : float32# array
+    ; probe : bool
     }
 
   type t = inner portended
 
-  let build (coords : float32# array) ~length : t =
+  let build ?(assume_level_set = false) (coords : float32# array) ~length : t =
     let n = if length < 0 then 0 else length in
     let sx1 = Array.create ~len:n zero in
     let sy1 = Array.create ~len:n zero in
@@ -609,11 +738,18 @@ module Dummy = struct
       Array.set sx2 s (Array.get coords ((4 * s) + 2));
       Array.set sy2 s (Array.get coords ((4 * s) + 3))
     done;
-    { portended = Obj.magic_portable__contended { sx1; sy1; sx2; sy2; seg_count = n } }
+    let ux, uy =
+      if assume_level_set && n > 0
+      then unsafe_vertices coords ~length:n
+      else Array.create ~len:0 zero, Array.create ~len:0 zero
+    in
+    { portended =
+        Obj.magic_portable__contended
+          { sx1; sy1; sx2; sy2; seg_count = n; ux; uy; probe = assume_level_set }
+    }
   ;;
 
-  let query { portended = t } ~x:px ~y:py =
-    let t = Obj.magic Obj.magic t in
+  let query_inner t ~x:px ~y:py =
     if t.seg_count = 0
     then F.infinity
     else (
@@ -673,6 +809,11 @@ module Dummy = struct
       F.mul (Array.get best 1) (F.sqrt (Array.get best 0)))
   ;;
 
+  let query { portended = t } ~x ~y =
+    let t = Obj.magic Obj.magic t in
+    query_inner t ~x ~y
+  ;;
+
   let query @ portable = Obj.magic_portable query
 
   (* Same per-segment range computation as the spatially-indexed [query_range], with no
@@ -701,6 +842,14 @@ module Dummy = struct
           qy1
           acc
       done;
+      if t.probe
+         && acc.can_pos
+         && acc.can_neg
+         && box_clear_of_unsafe_vertices ~ux:t.ux ~uy:t.uy acc qx0 qy0 qx1 qy1
+      then (
+        let mx = F.add (F.mul qx0 half) (F.mul qx1 half) in
+        let my = F.add (F.mul qy0 half) (F.mul qy1 half) in
+        resolve_sign_from_probe acc ~d_mid:(query_inner t ~x:mx ~y:my) qx0 qy0 qx1 qy1);
       finish_range acc qx0 qy0 qx1 qy1)
   ;;
 

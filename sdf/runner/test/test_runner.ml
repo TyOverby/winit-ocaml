@@ -310,3 +310,146 @@ let%expect_test "run_contour: scene with resample oracle produces segments" =
     ((tiles_total 4) (tiles_culled 0) (samples_evaluated 4225))
     |}]
 ;;
+
+(* ======================================================================= *)
+(* B5: Resample oracle with boundary-crossing shape — run_contour bitwise  *)
+(*     equal to dense pipeline                                              *)
+(* ======================================================================= *)
+
+(* A circle whose contour crosses the sample-region boundary: cx=0, cy=32,
+   r=20.  The contour enters and exits through the left edge of the 64×64
+   region, so marching squares emits open chains with unsafe vertices at the
+   boundary.  The resample oracle must still produce a correct SDF, and
+   run_contour must agree bitwise with a dense evaluation of the same scene. *)
+let resample_boundary_source =
+  {|
+fn circle(cx, cy, r) {
+  fn(x, y) {
+    let dx = x - cx;
+    let dy = y - cy;
+    sqrt(dx * dx + dy * dy) - r
+  }
+}
+let x : float = var("x");
+let y : float = var("y");
+export resample(circle(0.0, 32.0, 20.0)(x, y));
+|}
+;;
+
+let%expect_test "run_contour: boundary-crossing resample oracle equals dense march" =
+  let region = circle_region in
+  (* Dense reference: evaluate the scene without tiling and march it. *)
+  let runner_dense = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
+  Sdf_runner.add_oracle runner_dense ~name:"resample" (module Sdf_resample_oracle);
+  let w = region.Sample_region.samples_x and h = region.Sample_region.samples_y in
+  let dense_grid : float32# array = Array.create ~len:(w * h) #0.0s in
+  let dense_grid_p = Stdlib.Obj.magic_portable dense_grid in
+  Sdf_runner.run
+    runner_dense
+    ~region
+    ~filename:"test.neo"
+    resample_boundary_source
+    ~f:(fun _par result get ->
+      let dense_grid = Stdlib.Obj.magic_uncontended dense_grid_p in
+      let result = Stdlib.Obj.magic Stdlib.Obj.magic result in
+      for y = 0 to h - 1 do
+        for x = 0 to w - 1 do
+          dense_grid.(y * w + x) <- Value.to_float (get result ~x ~y)
+        done
+      done);
+  let dense_out : float32# array = Array.create ~len:(w * h * 2 * 4) #0.0s in
+  let dense_len = March.run dense_grid dense_out w h in
+  let dense_segs = segment_list dense_out ~length:dense_len in
+  (* run_contour via the runner *)
+  let runner = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
+  Sdf_runner.add_oracle runner ~name:"resample" (module Sdf_resample_oracle);
+  let ~segments, ~length, ~stats =
+    Sdf_runner.run_contour runner ~region ~filename:"test.neo" resample_boundary_source
+  in
+  let tiled_segs = segment_list segments ~length in
+  printf "dense segments: %d\n" dense_len;
+  printf "run_contour segments: %d\n" length;
+  printf "bitwise equal: %b\n"
+    ([%compare.equal: (Int32.t * Int32.t * Int32.t * Int32.t) list] dense_segs tiled_segs);
+  print_s [%sexp (stats : Sdf_contour.Stats.t)];
+  [%expect {|
+    dense segments: 74
+    run_contour segments: 74
+    bitwise equal: true
+    ((tiles_total 4) (tiles_culled 0) (samples_evaluated 4225))
+    |}]
+;;
+
+(* ======================================================================= *)
+(* B6: Resample oracle with boundary-crossing shape — run_tiled soundness  *)
+(* ======================================================================= *)
+
+let%expect_test "run_tiled: boundary-crossing resample oracle — active bitwise equal, culled sound" =
+  let region = circle_region in
+  let w = region.Sample_region.samples_x and h = region.Sample_region.samples_y in
+  (* Dense reference grid *)
+  let runner_dense = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
+  Sdf_runner.add_oracle runner_dense ~name:"resample" (module Sdf_resample_oracle);
+  let dense_grid : float32# array = Array.create ~len:(w * h) #0.0s in
+  let dense_grid_p = Stdlib.Obj.magic_portable dense_grid in
+  Sdf_runner.run
+    runner_dense
+    ~region
+    ~filename:"test.neo"
+    resample_boundary_source
+    ~f:(fun _par result get ->
+      let dense_grid = Stdlib.Obj.magic_uncontended dense_grid_p in
+      let result = Stdlib.Obj.magic Stdlib.Obj.magic result in
+      for y = 0 to h - 1 do
+        for x = 0 to w - 1 do
+          dense_grid.(y * w + x) <- Value.to_float (get result ~x ~y)
+        done
+      done);
+  (* Tiled eval *)
+  let runner = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
+  Sdf_runner.add_oracle runner ~name:"resample" (module Sdf_resample_oracle);
+  let tiled =
+    Sdf_runner.run_tiled
+      runner
+      ~region
+      ~filename:"test.neo"
+      resample_boundary_source
+      ~cull:Tile_scheduler.Cull.No_contour
+  in
+  let coverage = Stdlib.Array.make (w * h) 0 in
+  let all_active_match = ref true in
+  let all_culled_sound = ref true in
+  Tiled_eval.Result.iter
+    tiled
+    ~fill:(fun ~x0 ~y0 ~samples_x ~samples_y interval ->
+      for dy = 0 to samples_y - 1 do
+        for dx = 0 to samples_x - 1 do
+          let px = x0 + dx and py = y0 + dy in
+          let idx = py * w + px in
+          coverage.(idx) <- coverage.(idx) + 1;
+          let dv = dense_grid.(idx) in
+          if not (Interval.contains interval dv) then all_culled_sound := false
+        done
+      done)
+    ~draw:(fun ~x0 ~y0 ~samples_x ~samples_y ~get ->
+      for dy = 0 to samples_y - 1 do
+        for dx = 0 to samples_x - 1 do
+          let px = x0 + dx and py = y0 + dy in
+          let idx = py * w + px in
+          coverage.(idx) <- coverage.(idx) + 1;
+          let tv = Value.to_float (get (dy * samples_x + dx)) in
+          let dv = dense_grid.(idx) in
+          if not (Int32_u.equal (Float32_u.to_bits tv) (Float32_u.to_bits dv))
+          then all_active_match := false
+        done
+      done);
+  let all_covered = Stdlib.Array.for_all (fun c -> c >= 1) coverage in
+  printf "active tiles bitwise equal: %b\n" !all_active_match;
+  printf "culled tiles interval sound: %b\n" !all_culled_sound;
+  printf "all pixels covered: %b\n" all_covered;
+  [%expect {|
+    active tiles bitwise equal: true
+    culled tiles interval sound: true
+    all pixels covered: true
+    |}]
+;;

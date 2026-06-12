@@ -23,7 +23,12 @@ arbitrary inner pseudo-SDF. At `prepare` time it:
    grid.
 2. Runs `march` (marching squares) to extract that grid's zero-contour as line
    segments.
-3. Builds a `nearest_seg` spatial index over the segments.
+3. Builds a `nearest_seg` spatial index over the segments, with
+   `~assume_level_set:true`: marching-squares output is a level-set contour, which
+   lets `query_range` resolve sign ambiguities with a midpoint probe (see the
+   `nearest_seg` mli). Without it, `sample_range` straddles zero for any box that
+   overlaps the contour's extent in one axis, however far away, defeating tile
+   culling.
 
 Then `sample ~x ~y` maps world coordinates into the expanded grid's index space,
 queries the nearest contour segment, and scales the index-space distance back to

@@ -1,5 +1,5 @@
 (library
  (name nearest_seg)
- (libraries core stdlib_upstream_compatible unboxed.float32_u)
+ (libraries core stdlib_upstream_compatible unboxed.float32_u unboxed.int32_u)
  (preprocess
   (pps ppx_jane)))

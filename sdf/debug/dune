@@ -1,5 +1,5 @@
-(executable
- (name debug_resample)
+(executables
+ (names debug_resample debug_range_cull)
  (libraries core march nearest_seg unboxed.float32_u)
  (preprocess
   (pps ppx_jane)))

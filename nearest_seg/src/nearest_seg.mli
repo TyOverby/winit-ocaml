@@ -13,8 +13,19 @@ type t : value mod contended portable
     segment, repeating; only the leading [length * 4] entries are read, so the buffer may
     be over-allocated (e.g. the partially-filled output of [sdf/march], whose returned
     count is exactly this [length]). Requires [length * 4 <= Array.length coords].
-    Building is O(length log length). *)
-val build : float32# array -> length:int -> t
+    Building is O(length log length).
+
+    [assume_level_set] declares that the segments are the contour of a level set, as
+    marching squares emits them: consistently wound chains that never cross mid-segment,
+    whose shared vertices are bitwise-identical, and whose only sign discontinuities at
+    nonzero magnitude are past open chain ends (where a contour was clipped at the
+    sample-region boundary). Under that assumption {!query_range} may use a midpoint
+    probe to resolve an otherwise-ambiguous sign, which makes its intervals dramatically
+    tighter far from the contour (see {!query_range}). Do {e not} set it for arbitrary
+    segment soups: two nearby same-wound strands (impossible in a level set) have a
+    genuine sign discontinuity between them that the probe cannot detect, and the
+    containment guarantee of {!query_range} would be lost. *)
+val build : ?assume_level_set:bool -> float32# array -> length:int -> t
 
 (** [query t ~x ~y] returns the signed distance from the point [(x, y)] to the nearest
     line segment in [t].
@@ -71,6 +82,18 @@ end
     result is therefore an over-approximation: every scalar query result falls inside it,
     but not every value inside it need be attainable.
 
+    For an index built with [~assume_level_set:true], an ambiguous sign is additionally
+    resolved by a {e midpoint probe}: a scalar query at the box centre. The signed field
+    of a level-set contour is 1-Lipschitz wherever its sign is continuous, so when the
+    centre value's magnitude exceeds the box's half-diagonal (plus float32 padding) the
+    field cannot cross zero inside the box and the sign is decided. The probe is skipped
+    whenever an {e unsafe vertex} — an open chain end, junction, or degenerate segment,
+    where the sign can jump at nonzero magnitude — could be the nearest contour point of
+    any box point, so those regions keep the conservative both-signs answer. Without the
+    probe, far-from-the-contour boxes that overlap the contour's bounding box in one
+    axis typically report both signs (perpendicular far edges of the contour enter the
+    sign-candidate set), making the interval straddle zero needlessly.
+
     Returns [[+inf, +inf]] for an empty index. *)
 val query_range
   :  t
@@ -91,7 +114,7 @@ val query_range
 module Dummy : sig
   type t : value mod contended portable
 
-  val build : float32# array -> length:int -> t
+  val build : ?assume_level_set:bool -> float32# array -> length:int -> t
   val query : t -> x:float32# -> y:float32# -> float32#
 
   (** Brute-force [query_range]: identical per-segment bounds and sign logic as the

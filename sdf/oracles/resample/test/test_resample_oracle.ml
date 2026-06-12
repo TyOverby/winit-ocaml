@@ -208,3 +208,225 @@ let%test_unit "resample oracle: sample_range sound for 100 random boxes" =
   if !failures > 0
   then Error.raise_s [%message "sample_range containment failures" ~count:(!failures : int)]
 ;;
+
+(* ======================================================================= *)
+(* A helper: sweep random boxes over a prepared oracle and check            *)
+(* containment at corners, centre, and random interior points.              *)
+(* ======================================================================= *)
+
+(* [check_containment_sweep ~prepared ~region_size ~rng ~num_boxes
+   ~max_box_size ~num_random_pts] sweeps [num_boxes] random boxes whose
+   corners lie in [0, region_size] and whose side lengths are at most
+   [max_box_size].  For each box it checks the 4 corners, the centre, and
+   [num_random_pts] random interior points.  Returns the total failure count. *)
+let check_containment_sweep
+  ~prepared
+  ~region_size
+  ~rng
+  ~num_boxes
+  ~max_box_size
+  ~num_random_pts
+  =
+  let failures = ref 0 in
+  for _ = 1 to num_boxes do
+    let x0 = Float32_u.of_float (Random.State.float rng region_size) in
+    let y0 = Float32_u.of_float (Random.State.float rng region_size) in
+    let w = Float32_u.of_float (Random.State.float rng max_box_size) in
+    let h = Float32_u.of_float (Random.State.float rng max_box_size) in
+    let x1 = Float32_u.(x0 + w) in
+    let y1 = Float32_u.(y0 + h) in
+    let x_iv = Interval.create ~lo:x0 ~hi:x1 in
+    let y_iv = Interval.create ~lo:y0 ~hi:y1 in
+    let range = Oracle.Prepared.sample_range prepared ~x:x_iv ~y:y_iv in
+    let cx = Float32_u.((x0 + x1) * #0.5s) in
+    let cy = Float32_u.((y0 + y1) * #0.5s) in
+    let check px py =
+      let v = Oracle.Prepared.sample prepared ~x:px ~y:py in
+      if not (Interval.contains range v) then incr failures
+    in
+    (* 4 corners + centre *)
+    check x0 y0;
+    check x1 y0;
+    check x0 y1;
+    check x1 y1;
+    check cx cy;
+    (* random interior points *)
+    for _ = 1 to num_random_pts do
+      let tx = Random.State.float rng 1.0 in
+      let ty = Random.State.float rng 1.0 in
+      let px = Float32_u.((x0 * Float32_u.of_float (1.0 -. tx)) + (x1 * Float32_u.of_float tx)) in
+      let py = Float32_u.((y0 * Float32_u.of_float (1.0 -. ty)) + (y1 * Float32_u.of_float ty)) in
+      check px py
+    done
+  done;
+  !failures
+;;
+
+(* ======================================================================= *)
+(* Test A5: Boundary-crossing shapes — containment with open chain ends    *)
+(* ======================================================================= *)
+
+(* Circle clipped at the LEFT edge: centre x=0, y=16, radius=12.
+   Contour crosses x=0 so there are open chain ends at the left boundary. *)
+let%test_unit "resample oracle: boundary-crossing circle (left edge) containment" =
+  let tree = circle ~cx:#0.s ~cy:#16.s ~r:#12.s in
+  let region = square_region ~size:32 in
+  let scheduler = Parallel_scheduler.create () in
+  let prepared = prepare_oracle tree region scheduler in
+  let rng = Random.State.make [| 101 |] in
+  let failures =
+    check_containment_sweep
+      ~prepared
+      ~region_size:32.0
+      ~rng
+      ~num_boxes:200
+      ~max_box_size:16.0
+      ~num_random_pts:10
+  in
+  if failures > 0
+  then
+    Error.raise_s
+      [%message
+        "left-edge clipped circle: sample_range containment failures" ~count:(failures : int)]
+;;
+
+(* Circle clipped at the TOP edge: centre x=16, y=0, radius=10.
+   Contour crosses y=0 so there are open chain ends at the top boundary. *)
+let%test_unit "resample oracle: boundary-crossing circle (top edge) containment" =
+  let tree = circle ~cx:#16.s ~cy:#0.s ~r:#10.s in
+  let region = square_region ~size:32 in
+  let scheduler = Parallel_scheduler.create () in
+  let prepared = prepare_oracle tree region scheduler in
+  let rng = Random.State.make [| 202 |] in
+  let failures =
+    check_containment_sweep
+      ~prepared
+      ~region_size:32.0
+      ~rng
+      ~num_boxes:200
+      ~max_box_size:16.0
+      ~num_random_pts:10
+  in
+  if failures > 0
+  then
+    Error.raise_s
+      [%message
+        "top-edge clipped circle: sample_range containment failures" ~count:(failures : int)]
+;;
+
+(* Circle crossing a CORNER: centre x=0, y=0, radius=14.
+   Contour is clipped at both x=0 and y=0 simultaneously. *)
+let%test_unit "resample oracle: boundary-crossing circle (corner) containment" =
+  let tree = circle ~cx:#0.s ~cy:#0.s ~r:#14.s in
+  let region = square_region ~size:32 in
+  let scheduler = Parallel_scheduler.create () in
+  let prepared = prepare_oracle tree region scheduler in
+  let rng = Random.State.make [| 303 |] in
+  let failures =
+    check_containment_sweep
+      ~prepared
+      ~region_size:32.0
+      ~rng
+      ~num_boxes:200
+      ~max_box_size:16.0
+      ~num_random_pts:10
+  in
+  if failures > 0
+  then
+    Error.raise_s
+      [%message
+        "corner-clipped circle: sample_range containment failures" ~count:(failures : int)]
+;;
+
+(* Also test each clipped circle with boxes that deliberately hug the boundary
+   or span from far inside to the boundary, in a dedicated expect test so we
+   can see the violation count directly. *)
+let%expect_test "resample oracle: boundary-clipped circles — violation count" =
+  let scheduler = Parallel_scheduler.create () in
+  let region = square_region ~size:32 in
+  let check_shape name tree =
+    let prepared = prepare_oracle tree region scheduler in
+    let rng = Random.State.make [| 999 |] in
+    (* Targeted sweep: small boxes hugging x=0 / y=0 boundaries *)
+    let failures = ref 0 in
+    let check_box x0 y0 x1 y1 =
+      let x_iv = Interval.create ~lo:x0 ~hi:x1 in
+      let y_iv = Interval.create ~lo:y0 ~hi:y1 in
+      let range = Oracle.Prepared.sample_range prepared ~x:x_iv ~y:y_iv in
+      let check px py =
+        let v = Oracle.Prepared.sample prepared ~x:px ~y:py in
+        if not (Interval.contains range v) then incr failures
+      in
+      let cx = Float32_u.((x0 + x1) * #0.5s) in
+      let cy = Float32_u.((y0 + y1) * #0.5s) in
+      check x0 y0;
+      check x1 y0;
+      check x0 y1;
+      check x1 y1;
+      check cx cy;
+      for _ = 1 to 10 do
+        let tx = Random.State.float rng 1.0 in
+        let ty = Random.State.float rng 1.0 in
+        let px = Float32_u.((x0 * Float32_u.of_float (1.0 -. tx)) + (x1 * Float32_u.of_float tx)) in
+        let py = Float32_u.((y0 * Float32_u.of_float (1.0 -. ty)) + (y1 * Float32_u.of_float ty)) in
+        check px py
+      done
+    in
+    (* Boxes straddling x=0 boundary: negative lo clamped to 0 in world coords
+       but actually just small boxes starting at 0 *)
+    for i = 0 to 15 do
+      let y_lo = Float32_u.of_float (Float.of_int i *. 2.0) in
+      let y_hi = Float32_u.(y_lo + #2.s) in
+      check_box #0.s y_lo #2.s y_hi
+    done;
+    (* Boxes straddling y=0 boundary *)
+    for i = 0 to 15 do
+      let x_lo = Float32_u.of_float (Float.of_int i *. 2.0) in
+      let x_hi = Float32_u.(x_lo + #2.s) in
+      check_box x_lo #0.s x_hi #2.s
+    done;
+    (* Boxes far from contour but overlapping contour bounding box in one axis *)
+    for i = 0 to 15 do
+      let x_lo = Float32_u.of_float (Float.of_int i *. 2.0) in
+      let x_hi = Float32_u.(x_lo + #2.s) in
+      check_box x_lo #20.s x_hi #28.s
+    done;
+    printf "%s violations: %d\n" name !failures
+  in
+  check_shape "left-edge circle (cx=0,cy=16,r=12)" (circle ~cx:#0.s ~cy:#16.s ~r:#12.s);
+  check_shape "top-edge circle (cx=16,cy=0,r=10)" (circle ~cx:#16.s ~cy:#0.s ~r:#10.s);
+  check_shape "corner circle (cx=0,cy=0,r=14)" (circle ~cx:#0.s ~cy:#0.s ~r:#14.s);
+  [%expect {|
+    left-edge circle (cx=0,cy=16,r=12) violations: 0
+    top-edge circle (cx=16,cy=0,r=10) violations: 0
+    corner circle (cx=0,cy=0,r=14) violations: 0
+    |}]
+;;
+
+(* ======================================================================= *)
+(* Test A6: Probe is active — interior box far from contour reports lo > 0 *)
+(* ======================================================================= *)
+
+(* For the INTERIOR circle (cx=16, cy=16, r=8), the box x∈[14,18], y∈[28,31]
+   is far above the circle (min distance to contour ≈ 28-24 = 4 world units).
+   Without the midpoint probe the interval would straddle zero because the
+   contour's horizontal extent [8,24] overlaps [14,18].  With the probe,
+   lo > 0 (every point in the box is outside). *)
+let%expect_test "resample oracle: sample_range interval lo > 0 far above interior circle" =
+  let tree = circle ~cx:#16.s ~cy:#16.s ~r:#8.s in
+  let region = square_region ~size:32 in
+  let scheduler = Parallel_scheduler.create () in
+  let prepared = prepare_oracle tree region scheduler in
+  let x_iv = Interval.create ~lo:#14.s ~hi:#18.s in
+  let y_iv = Interval.create ~lo:#28.s ~hi:#31.s in
+  let range = Oracle.Prepared.sample_range prepared ~x:x_iv ~y:y_iv in
+  let #{ Interval.lo; hi } = range in
+  let lo = Float32_u.to_float lo in
+  let hi = Float32_u.to_float hi in
+  printf "sample_range for x=[14,18] y=[28,31]: [%.4f, %.4f]\n" lo hi;
+  printf "lo > 0 (probe resolved sign): %b\n" (Float.( > ) lo 0.0);
+  [%expect {|
+    sample_range for x=[14,18] y=[28,31]: [3.9988, 7.2813]
+    lo > 0 (probe resolved sign): true
+    |}]
+;;

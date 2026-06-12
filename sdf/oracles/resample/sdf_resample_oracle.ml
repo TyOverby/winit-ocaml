@@ -86,7 +86,11 @@ let make
         ~region:sample_region
         tree
     in
-    Nearest_seg.build segments ~length
+    (* Marching-squares output is a level-set contour, so the index may resolve
+       range-query signs with the midpoint probe — without it, [sample_range] reports
+       both signs for any box that overlaps the contour's extent in one axis, however
+       far away, which defeats tile culling. *)
+    Nearest_seg.build ~assume_level_set:true segments ~length
   in
   let open Float32_u in
   let step_x = Sample_region.step_x sample_region
