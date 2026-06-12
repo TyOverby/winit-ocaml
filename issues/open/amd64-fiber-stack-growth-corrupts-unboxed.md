@@ -5,9 +5,14 @@
 On amd64 (x86-64), when an OCaml fiber's stack is reallocated (grown) while an
 unboxed `float32#`/`int32#` value is live in a register, the value can come
 back clobbered with leftover register contents from unrelated code. arm64 is
-unaffected. Observed with the `parallel` scheduler
-(`parallel.v0.18~preview.130.91+190`); plain `Domain.spawn` workers (which get
-large stacks up front, so never grow) never reproduce it.
+unaffected. Observed with the `parallel` scheduler; plain `Domain.spawn`
+workers (which get large stacks up front, so never grow) never reproduce it.
+
+Versions: compiler `oxcaml-compiler 5.2.0minus31` (flambda2 backend; built
+from the `5.2.0minus-31` tag of `oxcaml/oxcaml`, exposed in opam as
+`ocaml-variants 5.2.0+ox`); `parallel v0.18~preview.130.91+190` (built from
+`janestreet/parallel` commit `6d9ae953c25d4d5538d537e2c8cb3f131b85d8a1`),
+with the rest of the `~preview.130.91+190` package family to match.
 
 This is a bug in OxCaml's amd64 stack-growth path (or the scheduler's use of
 it), **not** in this repository. This file documents the workaround so it can
@@ -47,24 +52,24 @@ biased to pixel 0 of tiles at fork-split boundaries of `Parallel.for_`.
   `Tile_scheduler.schedule`'s recursion), which showed up as a deterministic
   wrongly-culled tile at high `QUICKCHECK_TRIALS`.
 
-## Minimal reproduction (x86, before workaround)
+## Minimal reproduction
 
-Loop `Sdf_contour.extract` with a scalar backend against a dense reference;
-~90/100 runs mismatch:
+`issues/open/amd64-fiber-stack-repro/` is a ~50-line executable depending only
+on `parallel` (no sdf code): it passes a `float#` down a non-tail recursion —
+once on the main stack, once inside `Parallel_scheduler.parallel` — and checks
+it comes back unchanged. On this machine (x86-64) it fails **deterministically,
+every run, with a single task and no `Parallel.for_`**:
 
-```ocaml
-let tree = (* sin(cos y) + sin(max(y,y)) *) ... in
-let region = { start_x = -27.78s; end_x = -38.31s; samples_x = 30
-             ; start_y = 97.76s; end_y = 19.51s; samples_y = 26 } in
-Parallel_scheduler.parallel scheduler ~f:(fun par ->
-  Sdf_contour.extract ~exec:(module Expr_graph_eval) ~par ~oracles ~region
-    ~tile_cells:2 tree)
-(* compare segments against March.run over a dense grid *)
+```
+$ dune exec issues/open/amd64-fiber-stack-repro/repro.exe
+main stack: walk returned 0x1p+0 (expected 0x1p+0) -- ok
+parallel fiber: walk returned 0x0p+0 (expected 0x1p+0) -- CORRUPTED
 ```
 
-Equivalently, `Parallel.for_` tasks that fill an `int32#` coordinate array and
-evaluate `Expr_graph_eval.Batch` over it (no marching needed) reproduce; the
-same body under `Domain.spawn` does not.
+A recursion depth of ~40 frames is already enough on the scheduler's root
+fiber; the same recursion on the main stack (or under plain `Domain.spawn`) is
+always correct. The original sighting in the SDF test suite was the same
+mechanism with `float32#` per-pixel coordinates.
 
 ## Workaround in this repo
 
