@@ -41,7 +41,6 @@ module Result = struct
 end
 
 let run
-  ~exec:(module E : Executor.S)
   ~par
   ?(trace = Phase_trace.null ())
   ~oracles
@@ -108,7 +107,8 @@ let run
     { Modes.Portended.portended = Stdlib.Obj.magic_portable values }
   in
   let prepared =
-    Phase_trace.span trace "batch-prepare" ~f:(fun () -> E.Batch.Prepared.of_tree tree)
+    Phase_trace.span trace "batch-prepare" ~f:(fun () ->
+      Expr_graph_batch_eval.Prepared.of_tree tree)
   in
   Phase_trace.span trace "eval-tiles" ~f:(fun () ->
     let fk = Phase_trace.fork trace in
@@ -128,12 +128,21 @@ let run
         let sx = Tile_scheduler.tile_samples_x sched ~tx
         and sy = Tile_scheduler.tile_samples_y sched ~ty in
         let batch =
-          E.Batch.Batch.create_sub prepared region ~x0 ~y0 ~samples_x:sx ~samples_y:sy
+          Expr_graph_batch_eval.Batch.create_sub
+            prepared
+            region
+            ~x0
+            ~y0
+            ~samples_x:sx
+            ~samples_y:sy
         in
-        let result = E.Batch.Batch.run batch ~oracles in
+        let result = Expr_graph_batch_eval.Batch.run batch ~oracles in
         let base = offsets.(k) in
         for i = 0 to (sx * sy) - 1 do
-          Value.Array.set values (base + i) (E.Batch.Result.get_output result ~px:i)
+          Value.Array.set
+            values
+            (base + i)
+            (Expr_graph_batch_eval.Result.get_output result ~px:i)
         done)));
   { Modes.Portended.portended =
       Stdlib.Obj.magic_portable { Result.sched; values; offsets }

@@ -7,15 +7,13 @@ prepares oracles, and evaluates — sparsely tiled (`run_tiled`, where
 (`run_contour`). It is the entry point used by both the benchmarks (`sdf/bench`)
 and the `neon` app.
 
-## Modules
+## Module
 
-- **`Backend`** (`backend.ml`) — `Make (E : Executor.S)` produces a runner
-  specialized to one evaluator backend. It owns the mutable state: the last
-  compiled `Expr_tree.t`, the parallel scheduler, the registered oracles, and
-  the cached outputs.
-- **`Sdf_runner`** (`sdf_runner.ml`) — a dynamically-typed wrapper around
-  `Backend` that lets the executor be swapped at runtime via `set_executor`
-  (so the UI / bench can switch between `tree`, `graph`, and `batch` backends).
+- **`Sdf_runner`** (`sdf_runner.ml`) — the whole library is this one concrete
+  module. It owns the mutable state: the last compiled `Expr_tree.t`, the
+  parallel scheduler, the registered oracles, and the cached outputs.
+  Evaluation always uses the SIMD batch evaluator
+  (`Sdf.Expr_graph_batch_eval`), via `Tiled_eval` / `Sdf_contour`.
 
 ## What `run_tiled` / `run_contour` do
 
@@ -34,5 +32,5 @@ On each call they:
 The caching (dirty tracking, per-region result cache, per-region oracle cache)
 is what makes interactive panning in `neon` cheap.
 
-See `../src/CLAUDE.md` for the `Executor` and `Oracle` abstractions this builds
-on.
+See `../src/CLAUDE.md` for the evaluators and the `Oracle` interface this
+builds on.

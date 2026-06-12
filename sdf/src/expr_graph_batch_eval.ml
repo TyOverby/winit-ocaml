@@ -288,7 +288,7 @@ let run ~variable_bank ~instructions ~register_bank ~width ~oracles ~x_coords ~y
     done)
 ;;
 
-module Batch_impl : Executor.S_batch = struct
+module Batch_impl = struct
   module Variable_idx = struct
     type t = int
   end
@@ -395,5 +395,4 @@ module Batch_impl : Executor.S_batch = struct
   end
 end
 
-module Single : Executor.S_single = Executor.Batch_to_single (Batch_impl)
-module Batch : Executor.S_batch = Batch_impl
+include Batch_impl

@@ -41,7 +41,9 @@ pixel coordinates at evaluation time.
    each pixel, reading input variables (e.g. x, y coordinates) and writing a final
    float or bool result.
 
-There is also a tree-based interpreter (`expr_tree_eval.ml`) used mainly for testing.
+There is also a tree-based interpreter (`for_testing/expr_tree_eval.ml`, in the
+`sdf_for_testing` library) that serves as the reference side of the
+bisimulation/differential test suites; it is not used in production.
 
 ### Type System
 
@@ -103,17 +105,19 @@ overhead during grid evaluation.
 | `Expr_tree` | `src/expr_tree.ml` | Typed expression tree with smart constructors |
 | `Expr_graph` | `src/expr_graph.ml` | Register-based instruction IR + CSE |
 | `Expr_graph_register_minimizer` | `src/expr_graph_register_minimizer.ml` | Liveness-based register optimization |
-| `Expr_tree_eval` | `src/expr_tree_eval.ml` | Tree interpreter (for testing) |
-| `Expr_graph_eval` | `src/expr_graph_eval.ml` | Graph evaluator (for production/benchmarks) |
+| `Expr_tree_eval` | `for_testing/expr_tree_eval.ml` | Tree interpreter (reference for tests) |
+| `Expr_graph_eval` | `src/expr_graph_eval.ml` | Scalar graph evaluator (SIMD tail + point sampling) |
+| `Expr_graph_batch_eval` | `src/expr_graph_batch_eval.ml` | SIMD batch evaluator (the production path) |
 | `Value` | `src/value.ml` | Unboxed 32-bit runtime values |
 
 ### Further documentation
 
-- **`src/CLAUDE.md`** — internals of the core library: the `Executor`
-  abstraction (`Single`/`Batch` shapes + adapter functors), the three
-  interchangeable evaluator backends (including the SIMD `Expr_graph_batch_eval`),
-  unboxed runtime values, sampling regions, and oracles (named precomputed
-  sub-fields).
+- **`src/CLAUDE.md`** — internals of the core library: the two production
+  evaluators (the SIMD `Expr_graph_batch_eval` and the scalar
+  `Expr_graph_eval`), unboxed runtime values, sampling regions, and oracles
+  (named precomputed sub-fields). The reference tree interpreter and the
+  evaluator-shape module types used by the test suites live in `for_testing/`
+  (the `sdf_for_testing` library).
 - **`lang/CLAUDE.md`** — how the Neo parser produces context-aware error
   messages via LRgrep, and how to add new error cases.
 
@@ -173,9 +177,6 @@ dune exec sdf/bench/bench.exe --profile=release -- sdf/bench/examples/boxes.neo
 # Run only some of the three cache states (-cold, -hot, -warm; all three by default).
 # Flags combine, e.g. cold + warm only:
 dune exec sdf/bench/bench.exe --profile=release -- -cold -warm
-
-# Select the evaluation backend: graph (default), batch (SIMD), or tree
-dune exec sdf/bench/bench.exe --profile=release -- -strategy batch
 ```
 
 ### Comparing results

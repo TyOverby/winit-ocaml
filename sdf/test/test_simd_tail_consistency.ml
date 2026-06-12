@@ -64,7 +64,7 @@ let eval_width5 tree =
     ; samples_y = 1
     }
   in
-  let module B = Expr_graph_batch_eval.Batch in
+  let module B = Expr_graph_batch_eval in
   let prepared = B.Prepared.of_tree tree in
   let batch = B.Batch.create prepared region in
   let result = B.Batch.run batch ~oracles:(Map.empty (module Oracle.Key)) in

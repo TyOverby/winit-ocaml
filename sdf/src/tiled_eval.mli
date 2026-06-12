@@ -44,8 +44,7 @@ end
     (with tile counts as args), [batch-prepare], and [eval-tiles] with one forked ["tile"]
     lane per active tile. *)
 val run
-  :  exec:(module Executor.S)
-  -> par:Parallel.t @ local
+  :  par:Parallel.t @ local
   -> ?trace:Phase_trace.t
   -> oracles:Prepared_oracle.t Map.M(Oracle_key).t
   -> region:Sample_region.t

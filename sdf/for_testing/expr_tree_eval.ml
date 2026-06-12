@@ -1,4 +1,5 @@
 open! Core
+open Sdf
 
 module Result = struct
   type t =
@@ -16,7 +17,7 @@ end
 
 let rec eval_float
   : ( env:(string, Value.Boxed.t, String.comparator_witness) Map.t
-   -> oracles:Prepared_oracle.t Map.M(Oracle_key).t -> x:Float32_u.t -> y:Float32_u.t
+   -> oracles:Oracle.Prepared.t Map.M(Oracle.Key).t -> x:Float32_u.t -> y:Float32_u.t
    -> Expr_tree.t -> Float_result.t) @ portable
   =
   fun ~env ~oracles ~x ~y t ->
@@ -131,7 +132,7 @@ let rec eval_float
        else eval_float ~env ~oracles ~x ~y else_)
   | Oracle (name, exprs) ->
     let oracle = Map.find_exn oracles (name, exprs) in
-    Prepared_oracle.sample oracle ~x ~y |> Ok
+    Oracle.Prepared.sample oracle ~x ~y |> Ok
   | Var (name, _) ->
     (match Map.find env name with
      | Some (T value) -> Ok (Value.to_float value)
@@ -147,7 +148,7 @@ let rec eval_float
 
 and eval_bool
   : ( env:(string, Value.Boxed.t, String.comparator_witness) Map.t
-   -> oracles:Prepared_oracle.t Map.M(Oracle_key).t -> x:Float32_u.t -> y:Float32_u.t
+   -> oracles:Oracle.Prepared.t Map.M(Oracle.Key).t -> x:Float32_u.t -> y:Float32_u.t
    -> Expr_tree.t -> bool Or_error.t) @ portable
   =
   fun ~env ~oracles ~x ~y t ->
@@ -228,7 +229,7 @@ and eval_bool
 
 let (eval @ portable)
   ~env
-  ~(oracles : Prepared_oracle.t Map.M(Oracle_key).t)
+  ~(oracles : Oracle.Prepared.t Map.M(Oracle.Key).t)
   ~(x : Float32_u.t)
   ~(y : Float32_u.t)
   (t : Expr_tree.t)

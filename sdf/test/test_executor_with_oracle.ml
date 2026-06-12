@@ -1,10 +1,11 @@
 open! Core
 open Sdf
+open Sdf_for_testing
 open Helpers
 
-let make_test (module Executor : Executor.S) =
+let make_test (module Implementation : Executor.S_single) =
   let module A = struct
-    module Implementation = Executor.Single
+    module Implementation = Implementation
 
     let (default_env @ portable) t =
       let add_var name value map =
@@ -36,7 +37,6 @@ let make_test (module Executor : Executor.S) =
                  let p =
                    M.create tree
                    |> M.prepare
-                        ~exec:(Obj.magic Obj.magic (module Executor : Sdf.Executor.S))
                         ~par
                         ~trace:(Phase_trace.null ())
                         ~oracles:prepared
@@ -135,6 +135,8 @@ let make_test (module Executor : Executor.S) =
   ()
 ;;
 
-let () = make_test (module Sdf.Expr_tree_eval : Executor.S)
-let () = make_test (module Sdf.Expr_graph_eval : Executor.S)
-let () = make_test (module Sdf.Expr_graph_batch_eval : Executor.S)
+module Batch_eval_single = Executor.Batch_to_single (Expr_graph_batch_eval)
+
+let () = make_test (module Expr_tree_eval.Single : Executor.S_single)
+let () = make_test (module Expr_graph_eval.Single : Executor.S_single)
+let () = make_test (module Batch_eval_single : Executor.S_single)

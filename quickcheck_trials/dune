@@ -4,6 +4,7 @@
 ; The module is generated at build time from the QUICKCHECK_TRIALS
 ; environment variable. Dune tracks env vars expanded via %{env:...},
 ; so changing the variable rebuilds this library and its dependents.
+
 (rule
  (targets quickcheck_trials.ml)
  (action

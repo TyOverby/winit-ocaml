@@ -1,6 +1,11 @@
 (library
  (name sdf_test)
- (libraries sdf sdf_passthrough_oracle base quickcheck_trials)
+ (libraries
+  sdf
+  sdf_for_testing
+  sdf_passthrough_oracle
+  base
+  quickcheck_trials)
  (inline_tests)
  (preprocess
   (pps ppx_jane)))

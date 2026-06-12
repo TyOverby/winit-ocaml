@@ -8,7 +8,7 @@ open Sdf
     that {!Sdf.Tile_scheduler} proves the contour cannot enter.
 
     Equivalence is exact, not approximate: active tiles are sampled at bitwise the same
-    coordinates the dense grid would use ({!Executor.S_batch.Batch.create_sub}) and
+    coordinates the dense grid would use ({!Expr_graph_batch_eval.Batch.create_sub}) and
     marched with global cell offsets ({!March.run_offset}), so the emitted segments are
     bitwise identical to a dense run's — including the shared endpoints at tile seams that
     [line_join] stitches by exact equality. Culled tiles are sign-uniform on every sample
@@ -36,8 +36,7 @@ end
     (with tile counts as args), [batch-prepare], [march-tiles] with one forked ["tile"]
     lane per active tile, and [stitch-segments]. *)
 val extract
-  :  exec:(module Executor.S)
-  -> par:Parallel.t @ local
+  :  par:Parallel.t @ local
   -> ?trace:Phase_trace.t
   -> oracles:Oracle.Prepared.t Map.M(Oracle.Key).t
   -> region:Sample_region.t

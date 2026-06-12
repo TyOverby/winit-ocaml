@@ -199,28 +199,6 @@ let draw_shape (state : state) runner ~trace ~filename ~source ~show_timings =
       ~show_timings
 ;;
 
-(* The available evaluation backends, each a [(module Sdf.Executor.S)], selected by the
-   [-backend] flag. *)
-let backends : (string * (module Sdf.Executor.S) portable) list =
-  [ "batch", { portable = (module Sdf.Expr_graph_batch_eval) }
-  ; "graph", { portable = (module Sdf.Expr_graph_eval) }
-  ; "tree", { portable = (module Sdf.Expr_tree_eval) }
-  ]
-;;
-
-let backend_arg = Command.Arg_type.of_alist_exn backends
-
-(* Physical key codes (the [keyboard_types.Code] enum discriminants reported by winit) for
-   the keys that hot-swap the backend at runtime: b, g, t, and u on a US layout. *)
-let backend_for_key_code key_code =
-  match key_code with
-  | 20 (* KeyB *) -> Some "batch"
-  | 25 (* KeyG *) -> Some "graph"
-  | 38 (* KeyT *) -> Some "tree"
-  | 39 (* KeyU *) -> Some "gpu"
-  | _ -> None
-;;
-
 let command =
   Command.basic
     ~summary:"Neon SDF renderer UI"
@@ -232,13 +210,6 @@ let command =
          "-trace-file"
          (optional string)
          ~doc:"FILE write a Perfetto trace (.fxt) of the session to FILE on exit"
-     and backend =
-       flag
-         "-backend"
-         (optional_with_default
-            (List.Assoc.find_exn backends "batch" ~equal:String.equal)
-            backend_arg)
-         ~doc:"BACKEND Evaluation backend: batch (default), graph, tree, or gpu"
      in
      fun () ->
        let window =
@@ -251,19 +222,12 @@ let command =
          | None -> Phase_trace.null ()
          | Some _ -> Phase_trace.create ~name:"neon" ()
        in
-       let runner = Sdf_runner.create backend.portable in
+       let runner = Sdf_runner.create () in
        List.iter (oracle_registry ()) ~f:(fun (name, { portable = oracle }) ->
          Sdf_runner.add_oracle runner ~name oracle);
        let last_mtime = ref (Core_unix.stat scene_file).st_mtime in
        let last_source = ref (In_channel.read_all scene_file) in
        let should_exit = ref false in
-       let switch_backend label =
-         match List.Assoc.find backends label ~equal:String.equal with
-         | None -> ()
-         | Some { portable = backend } ->
-           Printf.printf "Switching to %s backend\n%!" label;
-           Sdf_runner.set_executor runner backend
-       in
        while not !should_exit do
          let () =
            let mtime, source =
@@ -282,7 +246,6 @@ let command =
            | Winit.SurfaceResized { width; height } ->
              Softbuffer.resize surface ~width ~height
            | Winit.KeyPressed { key_code; repeat = false; _ } ->
-             Option.iter (backend_for_key_code key_code) ~f:switch_backend;
              if key_code = 40 (* KeyV *)
              then (
                state.render_mode

@@ -47,7 +47,7 @@ let command =
          ; samples_y = height
          }
        in
-       let runner = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
+       let runner = Sdf_runner.create () in
        List.iter (oracle_registry ()) ~f:(fun (name, { portable = oracle }) ->
          Sdf_runner.add_oracle runner ~name oracle);
        let trace =

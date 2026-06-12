@@ -16,7 +16,6 @@ module type S = sig @@ portable
     :  t
     -> par:Parallel.t @ local
     -> trace:Phase_trace.t
-    -> exec:(module Executor.S) @ shareable
     -> oracles:Prepared.t Map.M(Oracle_key).t
     -> sample_region:Sample_region.t
     -> Prepared.t

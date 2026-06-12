@@ -21,39 +21,34 @@ The expression flows through two IRs, both defined here:
   elimination as it goes. `Expr_graph_register_minimizer` then runs a
   liveness-based pass to shrink the register file.
 
-## The `Executor` abstraction
+## Evaluators
 
-`executor_intf.ml` / `executor.ml` define the interface every evaluator
-implements, and this is the most important structural idea in the library.
-There are two module-type "shapes":
+There is **one production evaluator**: `Expr_graph_batch_eval`, a SIMD register
+VM that evaluates 4 pixels at a time (`float32x4#`). It exposes the batch
+shape directly — `Prepared.of_tree`, `Batch.create`/`create_sub`,
+`Batch.run`, `Result.get_output` — and everything that evaluates grids
+(`Tiled_eval`, `Sdf_contour`) calls it by name; there is no executor
+abstraction to swap implementations.
 
-- **`S_single`** — evaluate one `(x, y)` point: `run … ~x ~y → Value.t`.
-- **`S_batch`** — evaluate a whole `Sample_region.t` (a rectangular grid)
-  single-threaded, returning an indexable result.
+The scalar register VM, `Expr_graph_eval`, is also production code, in two
+supporting roles:
 
-Adapter functors convert between shapes so each backend only has to implement
-one:
+- `Expr_graph_eval.Private.run` is the SIMD batch's **scalar tail** for widths
+  not divisible by 4.
+- `Expr_graph_eval.Single` evaluates one `(x, y)` point; the passthrough
+  oracle samples through it.
 
-```
-Single_to_batch   : S_single  → S_batch     (loop over pixels)
-Batch_to_single   : S_batch   → S_single     (1×1 region)
-```
+Both must produce bitwise-identical results (see "Arithmetic Semantics" in
+`../CLAUDE.md`). The reference tree interpreter (`Expr_tree_eval`) and the
+module-type "shapes" (`S_single`/`S_batch`) that the bisimulation/differential
+test suites functorize over live in `../for_testing` (library
+`sdf_for_testing`), along with `Single_to_batch`/`Batch_to_single` adapter
+functors — none of it ships in the `sdf` library.
 
-Parallelism lives above the executor, in the tiled machinery: `Tiled_eval`
-(driven by `Tile_scheduler`) runs one `S_batch` sub-batch per tile as a
-`Parallel.for_` task. A `Tile_scheduler.Cull.Nothing` schedule degenerates to a
-dense, every-sample parallel evaluation.
-
-## Evaluator backends
-
-All three implement `Executor.S` (i.e. expose `Single` and `Batch`
-sub-modules), so they are interchangeable:
-
-| Module | Strategy | Role |
-|--------|----------|------|
-| `Expr_tree_eval` | walks the `Expr_tree` directly (scalar) | reference interpreter; used in tests / bisimulation |
-| `Expr_graph_eval` | scalar register VM over `Expr_graph` instructions | straightforward graph evaluator |
-| `Expr_graph_batch_eval` | **SIMD** register VM, 4 pixels at a time (`float32x4#`) | fastest; the production/benchmark path |
+Parallelism lives above the evaluator, in the tiled machinery: `Tiled_eval`
+(driven by `Tile_scheduler`) runs one sub-batch per tile as a `Parallel.for_`
+task. A `Tile_scheduler.Cull.Nothing` schedule degenerates to a dense,
+every-sample parallel evaluation.
 
 `Expr_graph_batch_eval` builds on `Simd` (`simd.ml` + `simd_stubs.c`), which
 binds vec128 intrinsics: `float32x4#`/`int32x4#` arithmetic, comparisons,
@@ -87,8 +82,9 @@ later expressions.
   dependency graph between oracles, and topologically sorts them into levels
   (Kahn's algorithm) so independent oracles in the same level can be prepared in
   parallel; a cycle degrades to emitting the remainder as one group.
-- `Oracle.prepare` takes the executor module, a `Parallel.t`, the already-prepared
-  upstream oracles, and a region, and produces a `Prepared_oracle.t`.
+- `Oracle.S.prepare` takes a `Parallel.t`, the already-prepared upstream
+  oracles, and a region, and produces a `Prepared_oracle.t`. Implementations
+  evaluate with the production evaluators directly.
 
 ## File map
 
@@ -98,10 +94,8 @@ later expressions.
 | `expr_tree.ml` | typed expression tree + smart constructors |
 | `expr_graph.ml` | register-IR lowering + CSE |
 | `expr_graph_register_minimizer.ml` | liveness-based register reduction |
-| `expr_tree_eval.ml` | scalar tree interpreter (reference) |
-| `expr_graph_eval.ml` | scalar register-VM evaluator |
-| `expr_graph_batch_eval.ml` | SIMD register-VM evaluator |
-| `executor_intf.ml` / `executor.ml` | `Single`/`Batch` interface + adapter functors |
+| `expr_graph_eval.ml` | scalar register-VM evaluator (SIMD tail + `Single` point evaluator) |
+| `expr_graph_batch_eval.ml` | SIMD register-VM evaluator (the production path) |
 | `value.ml` | unboxed 32-bit runtime value + arrays |
 | `sample_region.ml` / `sample_result.ml` | sampling grid + results |
 | `simd.ml` / `simd_stubs.c` | vec128 intrinsic bindings |
@@ -125,7 +119,7 @@ validate operand types and return `t Or_error.t`.
 
 Add an exception-throwing version to `Expr_tree.Direct`.
 
-### 3. `src/expr_tree_eval.ml`
+### 3. `for_testing/expr_tree_eval.ml`
 
 Add the new case to `eval_float` (if it produces a float) or `eval_bool` (if it
 produces a bool). Also add it to the error arm of the *other* function (e.g. a

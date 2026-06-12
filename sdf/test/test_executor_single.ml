@@ -1,5 +1,6 @@
 open! Core
 open Sdf
+open Sdf_for_testing
 open Helpers
 
 module Make_tests (Implementation : Executor.S_single) = struct
@@ -258,7 +259,7 @@ end
 
 module _ = Make_tests (Expr_tree_eval.Single)
 module _ = Make_tests (Expr_graph_eval.Single)
-module _ = Make_tests (Expr_graph_batch_eval.Single)
+module _ = Make_tests (Executor.Batch_to_single (Expr_graph_batch_eval))
 
 (* Error-behavior tests specific to the tree evaluator (the graph evaluator does not
    produce errors for unbound variables; it silently returns zero). *)

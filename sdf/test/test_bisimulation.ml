@@ -1,5 +1,6 @@
 open! Core
 open Sdf
+open Sdf_for_testing
 open Helpers
 
 let loc = Stdlib.Lexing.dummy_pos
@@ -101,10 +102,12 @@ let gen_expr ~depth (type_ : Expr_tree.Type.t) =
 
 (* --- Shared bisimulation infrastructure --- *)
 
+module Batch_eval_single = Executor.Batch_to_single (Expr_graph_batch_eval)
+
 let backends : (string * (module Executor.S_single)) list =
   [ "tree", (module Expr_tree_eval.Single)
   ; "graph", (module Expr_graph_eval.Single)
-  ; "batch", (module Expr_graph_batch_eval.Single)
+  ; "batch", (module Batch_eval_single)
   ]
 ;;
 

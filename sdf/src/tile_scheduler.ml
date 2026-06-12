@@ -142,64 +142,64 @@ let schedule range ~vars ~oracles ~region ~tile_cells ~cull =
   | Nothing -> all_active ~region ~tile_cells
   | No_contour | Constant_outside _ ->
     make_grid ~region ~tile_cells ~f:(fun ~tiles_x ~tiles_y ~lo ~hi ->
-    let last_sample_x = region.samples_x - 1
-    and last_sample_y = region.samples_y - 1 in
-    (* Inclusive sample-index extent of the tile rectangle [t0, t1). The world box hulls
+      let last_sample_x = region.samples_x - 1
+      and last_sample_y = region.samples_y - 1 in
+      (* Inclusive sample-index extent of the tile rectangle [t0, t1). The world box hulls
        the two extreme sample coordinates; [Sample_region.x_at] is monotone in the index
        (a monotone exact function composed with monotone float rounding), so the box
        contains every sample coordinate in between. *)
-    let sample_extent ~t0 ~t1 ~last =
-      let s0 = t0 * tile_cells in
-      let s1 = Int.min (t1 * tile_cells) last in
-      s0, Int.max s1 s0
-    in
-    let box_x ~tx0 ~tx1 =
-      let s0, s1 = sample_extent ~t0:tx0 ~t1:tx1 ~last:last_sample_x in
-      Interval.create
-        ~lo:(Sample_region.x_at region s0)
-        ~hi:(Sample_region.x_at region s1)
-    in
-    let box_y ~ty0 ~ty1 =
-      let s0, s1 = sample_extent ~t0:ty0 ~t1:ty1 ~last:last_sample_y in
-      Interval.create
-        ~lo:(Sample_region.y_at region s0)
-        ~hi:(Sample_region.y_at region s1)
-    in
-    let fill ~tx0 ~tx1 ~ty0 ~ty1 (interval : Interval.t) =
-      let #{ Interval.lo = ilo; hi = ihi } = interval in
-      for ty = ty0 to ty1 - 1 do
-        for tx = tx0 to tx1 - 1 do
-          let i = (ty * tiles_x) + tx in
-          lo.(i) <- Float32_u.to_float ilo;
-          hi.(i) <- Float32_u.to_float ihi
-        done
-      done
-    in
-    let rec descend ~tx0 ~tx1 ~ty0 ~ty1 =
-      let bound =
-        Expr_graph_range_eval.run
-          range
-          ~vars
-          ~oracles
-          ~x:(box_x ~tx0 ~tx1)
-          ~y:(box_y ~ty0 ~ty1)
+      let sample_extent ~t0 ~t1 ~last =
+        let s0 = t0 * tile_cells in
+        let s1 = Int.min (t1 * tile_cells) last in
+        s0, Int.max s1 s0
       in
-      if Cull.culls cull bound
-      then fill ~tx0 ~tx1 ~ty0 ~ty1 bound
-      else (
-        let w = tx1 - tx0
-        and h = ty1 - ty0 in
-        if w = 1 && h = 1
-        then (* stays NaN = Active *) ()
-        else if w >= h
-        then (
-          let mid = tx0 + (w / 2) in
-          descend ~tx0 ~tx1:mid ~ty0 ~ty1;
-          descend ~tx0:mid ~tx1 ~ty0 ~ty1)
+      let box_x ~tx0 ~tx1 =
+        let s0, s1 = sample_extent ~t0:tx0 ~t1:tx1 ~last:last_sample_x in
+        Interval.create
+          ~lo:(Sample_region.x_at region s0)
+          ~hi:(Sample_region.x_at region s1)
+      in
+      let box_y ~ty0 ~ty1 =
+        let s0, s1 = sample_extent ~t0:ty0 ~t1:ty1 ~last:last_sample_y in
+        Interval.create
+          ~lo:(Sample_region.y_at region s0)
+          ~hi:(Sample_region.y_at region s1)
+      in
+      let fill ~tx0 ~tx1 ~ty0 ~ty1 (interval : Interval.t) =
+        let #{ Interval.lo = ilo; hi = ihi } = interval in
+        for ty = ty0 to ty1 - 1 do
+          for tx = tx0 to tx1 - 1 do
+            let i = (ty * tiles_x) + tx in
+            lo.(i) <- Float32_u.to_float ilo;
+            hi.(i) <- Float32_u.to_float ihi
+          done
+        done
+      in
+      let rec descend ~tx0 ~tx1 ~ty0 ~ty1 =
+        let bound =
+          Expr_graph_range_eval.run
+            range
+            ~vars
+            ~oracles
+            ~x:(box_x ~tx0 ~tx1)
+            ~y:(box_y ~ty0 ~ty1)
+        in
+        if Cull.culls cull bound
+        then fill ~tx0 ~tx1 ~ty0 ~ty1 bound
         else (
-          let mid = ty0 + (h / 2) in
-          descend ~tx0 ~tx1 ~ty0 ~ty1:mid;
-          descend ~tx0 ~tx1 ~ty0:mid ~ty1))
-    in
-    if tiles_x > 0 && tiles_y > 0 then descend ~tx0:0 ~tx1:tiles_x ~ty0:0 ~ty1:tiles_y)
+          let w = tx1 - tx0
+          and h = ty1 - ty0 in
+          if w = 1 && h = 1
+          then (* stays NaN = Active *) ()
+          else if w >= h
+          then (
+            let mid = tx0 + (w / 2) in
+            descend ~tx0 ~tx1:mid ~ty0 ~ty1;
+            descend ~tx0:mid ~tx1 ~ty0 ~ty1)
+          else (
+            let mid = ty0 + (h / 2) in
+            descend ~tx0 ~tx1 ~ty0 ~ty1:mid;
+            descend ~tx0 ~tx1 ~ty0:mid ~ty1))
+      in
+      if tiles_x > 0 && tiles_y > 0 then descend ~tx0:0 ~tx1:tiles_x ~ty0:0 ~ty1:tiles_y)
 ;;

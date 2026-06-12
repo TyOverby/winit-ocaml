@@ -3,9 +3,8 @@ open Sdf
 
 type t
 
-val create : (module Executor.S) @ portable -> t
+val create : unit -> t
 val add_oracle : t -> name:string -> (module Oracle.S) @ portable -> unit
-val set_executor : t -> (module Executor.S) @ portable -> unit
 
 (** Every [run*] function takes an optional [trace] writer (default: a no-op null writer).
     When given a live writer, the runner records coarse phases beneath the current span:

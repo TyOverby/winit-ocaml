@@ -39,7 +39,6 @@ let prepare_oracle tree region scheduler =
       |> Sdf_resample_oracle.prepare
            ~par
            ~trace:(Phase_trace.null ())
-           ~exec:(Obj.magic Obj.magic (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
            ~oracles:empty_oracles
            ~sample_region:region
     in
@@ -100,14 +99,14 @@ let build_dense_reference tree region =
   let expand_by = 2 in
   let expanded = Sample_region.expand region ~by_:expand_by in
   let module E = Sdf.Expr_graph_batch_eval in
-  let pb = E.Batch.Prepared.of_tree tree in
-  let batch = E.Batch.Batch.create pb expanded in
-  let result = E.Batch.Batch.run batch ~oracles:(Map.empty (module Oracle.Key)) in
+  let pb = E.Prepared.of_tree tree in
+  let batch = E.Batch.create pb expanded in
+  let result = E.Batch.run batch ~oracles:(Map.empty (module Oracle.Key)) in
   let ew = expanded.samples_x
   and eh = expanded.samples_y in
   let grid : float32# array = Array.create ~len:(ew * eh) #0.0s in
   for i = 0 to (ew * eh) - 1 do
-    grid.(i) <- Value.to_float (E.Batch.Result.get_output result ~px:i)
+    grid.(i) <- Value.to_float (E.Result.get_output result ~px:i)
   done;
   let march_out : float32# array = Array.create ~len:(ew * eh * 2 * 4) #0.0s in
   let length = March.run grid march_out ew eh in

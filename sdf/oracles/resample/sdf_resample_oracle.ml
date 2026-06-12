@@ -66,28 +66,13 @@ let create = function
   | _ -> failwith "expected exactly one tree"
 ;;
 
-let make
-  (type (a : value mod contended portable) (b : value mod contended portable))
-  tree
-  ~par
-  ~trace
-  ~(exec : (module Executor.S with type Single.t = a and type Single.Variable_idx.t = b))
-  ~oracles
-  ~sample_region
-  =
-  let module E = (val exec) in
+let prepare tree ~par ~trace ~oracles ~sample_region =
   let expand_by = 2 in
   let segments =
     let sample_region = Sample_region.expand sample_region ~by_:expand_by in
     let ~segments, ~length, ~stats:_ =
       Phase_trace.span trace "extract-contour" ~f:(fun () ->
-        Sdf_contour.extract
-          ~exec:(module E : Executor.S)
-          ~par
-          ~trace
-          ~oracles
-          ~region:sample_region
-          tree)
+        Sdf_contour.extract ~par ~trace ~oracles ~region:sample_region tree)
     in
     (* Marching-squares output is a level-set contour, so the index may resolve
        range-query signs with the midpoint probe — without it, [sample_range] reports both
@@ -114,8 +99,4 @@ let make
     ; offset_y = of_int expand_by - (sample_region.Sample_region.start_y / step_y)
     ; dist_scale = step_x
     }
-;;
-
-let prepare tree ~par ~trace ~(exec : (module Executor.S)) ~oracles ~sample_region =
-  make tree ~par ~trace ~exec:(Obj.magic Obj.magic_portable exec) ~oracles ~sample_region
 ;;

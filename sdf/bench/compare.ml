@@ -84,8 +84,7 @@ let () =
               in
               let compare_case label bc ac =
                 match bc, ac with
-                | ( Some (bc : Bench_types.Case.t)
-                  , Some (ac : Bench_types.Case.t) ) ->
+                | Some (bc : Bench_types.Case.t), Some (ac : Bench_types.Case.t) ->
                   printf
                     "  %-20s  %8.3fms -> %8.3fms  %s\n"
                     label

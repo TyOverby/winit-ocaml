@@ -5,6 +5,7 @@
   core
   sdf
   sdf_contour
+  sdf_for_testing
   sdf_test
   march
   line_join

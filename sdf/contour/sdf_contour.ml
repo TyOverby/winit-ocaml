@@ -11,7 +11,6 @@ module Stats = struct
 end
 
 let extract
-  ~exec:(module E : Executor.S)
   ~par
   ?(trace = Phase_trace.null ())
   ~oracles
@@ -70,7 +69,8 @@ let extract
     done
   done;
   let prepared =
-    Phase_trace.span trace "batch-prepare" ~f:(fun () -> E.Batch.Prepared.of_tree tree)
+    Phase_trace.span trace "batch-prepare" ~f:(fun () ->
+      Expr_graph_batch_eval.Prepared.of_tree tree)
   in
   (* Every active tile gets a fixed-size slot in [staging] (sized for the 2-segments-per-
      cell worst case over a full tile's sample patch), written by its own parallel task;
@@ -97,12 +97,19 @@ let extract
         let sx = Tile_scheduler.tile_samples_x sched ~tx
         and sy = Tile_scheduler.tile_samples_y sched ~ty in
         let batch =
-          E.Batch.Batch.create_sub prepared region ~x0 ~y0 ~samples_x:sx ~samples_y:sy
+          Expr_graph_batch_eval.Batch.create_sub
+            prepared
+            region
+            ~x0
+            ~y0
+            ~samples_x:sx
+            ~samples_y:sy
         in
-        let result = E.Batch.Batch.run batch ~oracles in
+        let result = Expr_graph_batch_eval.Batch.run batch ~oracles in
         let patch : float32# array = Array.create ~len:(sx * sy) #0.0s in
         for i = 0 to (sx * sy) - 1 do
-          patch.(i) <- Value.to_float (E.Batch.Result.get_output result ~px:i)
+          patch.(i)
+          <- Value.to_float (Expr_graph_batch_eval.Result.get_output result ~px:i)
         done;
         let scratch : float32# array = Array.create ~len:(sx * sy * 2 * 4) #0.0s in
         let count = March.run_offset patch scratch sx sy ~ox:x0 ~oy:y0 in

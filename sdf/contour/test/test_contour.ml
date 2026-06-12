@@ -1,5 +1,11 @@
 open! Core
 open Sdf
+open Sdf_for_testing
+
+(* [Sdf_contour.extract] always evaluates with the SIMD batch evaluator; the differential
+   tests below compute their *dense reference* with each evaluator, so a mismatch flags a
+   tiling bug or a cross-backend disagreement. *)
+module Graph_eval_batch = Executor.Single_to_batch (Expr_graph_eval.Single)
 
 let here = Stdlib.Lexing.dummy_pos
 let ok = Or_error.ok_exn
@@ -32,15 +38,15 @@ let square_region ~size =
 ;;
 
 (* The dense reference pipeline: sample the whole grid sequentially, march it whole. *)
-let dense_segments (module E : Executor.S) tree ~(region : Sample_region.t) =
-  let prepared = E.Batch.Prepared.of_tree tree in
-  let batch = E.Batch.Batch.create prepared region in
-  let result = E.Batch.Batch.run batch ~oracles:no_oracles in
+let dense_segments (module E : Executor.S_batch) tree ~(region : Sample_region.t) =
+  let prepared = E.Prepared.of_tree tree in
+  let batch = E.Batch.create prepared region in
+  let result = E.Batch.run batch ~oracles:no_oracles in
   let w = region.samples_x
   and h = region.samples_y in
   let grid : float32# array = Array.create ~len:(w * h) #0.0s in
   for i = 0 to (w * h) - 1 do
-    grid.(i) <- Value.to_float (E.Batch.Result.get_output result ~px:i)
+    grid.(i) <- Value.to_float (E.Result.get_output result ~px:i)
   done;
   let out : float32# array = Array.create ~len:(w * h * 2 * 4) #0.0s in
   let length = March.run grid out w h in
@@ -61,19 +67,19 @@ let segment_list (segments : float32# array) ~length =
 
 (* [dense_segments_with_oracles] generalises [dense_segments] to accept an oracle map. *)
 let dense_segments_with_oracles
-  (module E : Executor.S)
+  (module E : Executor.S_batch)
   tree
   ~(region : Sample_region.t)
   ~oracles
   =
-  let prepared = E.Batch.Prepared.of_tree tree in
-  let batch = E.Batch.Batch.create prepared region in
-  let result = E.Batch.Batch.run batch ~oracles in
+  let prepared = E.Prepared.of_tree tree in
+  let batch = E.Batch.create prepared region in
+  let result = E.Batch.run batch ~oracles in
   let w = region.samples_x
   and h = region.samples_y in
   let grid : float32# array = Array.create ~len:(w * h) #0.0s in
   for i = 0 to (w * h) - 1 do
-    grid.(i) <- Value.to_float (E.Batch.Result.get_output result ~px:i)
+    grid.(i) <- Value.to_float (E.Result.get_output result ~px:i)
   done;
   let out : float32# array = Array.create ~len:(w * h * 2 * 4) #0.0s in
   let length = March.run grid out w h in
@@ -93,7 +99,6 @@ let%expect_test "tiled extraction is bitwise identical to dense march (circle)" 
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     let ~segments, ~length, ~stats =
       Sdf_contour.extract
-        ~exec:(Obj.magic Obj.magic (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
         ~par
         ~oracles:(Map.empty (module Oracle.Key))
         ~region
@@ -140,19 +145,19 @@ let gen_region =
 
 (* Run one differential trial (dense vs tiled) for a given backend; raises on mismatch.
    [no_oracles] is not captured — a fresh empty map is constructed inside the closure. *)
-let run_differential_trial (module E : Executor.S) scheduler tree ~region ~tile_cells =
+let run_differential_trial
+  (module E : Executor.S_batch)
+  scheduler
+  tree
+  ~region
+  ~tile_cells
+  =
   let dense_out, dense_len = dense_segments (module E) tree ~region in
   let dense = segment_list dense_out ~length:dense_len in
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     let empty_oracles = Map.empty (module Oracle.Key) in
     let ~segments, ~length, ~stats =
-      Sdf_contour.extract
-        ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
-        ~par
-        ~oracles:empty_oracles
-        ~region
-        ~tile_cells
-        tree
+      Sdf_contour.extract ~par ~oracles:empty_oracles ~region ~tile_cells tree
     in
     let tiled = segment_list segments ~length in
     if not ([%compare.equal: (Int32.t * Int32.t * Int32.t * Int32.t) list] dense tiled)
@@ -205,7 +210,7 @@ let%test_unit "quickcheck differential: Expr_tree_eval" =
     ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
     ~f:(fun (tree, region, tile_cells) ->
       run_differential_trial
-        (module Sdf.Expr_tree_eval)
+        (module Expr_tree_eval.Batch)
         scheduler
         tree
         ~region
@@ -226,12 +231,7 @@ let%test_unit "quickcheck differential: Expr_graph_eval" =
     ~trials:Quickcheck_trials.trials
     ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
     ~f:(fun (tree, region, tile_cells) ->
-      run_differential_trial
-        (module Sdf.Expr_graph_eval)
-        scheduler
-        tree
-        ~region
-        ~tile_cells)
+      run_differential_trial (module Graph_eval_batch) scheduler tree ~region ~tile_cells)
 ;;
 
 (* ======================================================================= *)
@@ -266,8 +266,6 @@ let%test_unit "quickcheck stats sanity" =
       Parallel_scheduler.parallel scheduler ~f:(fun par ->
         let ~segments:_, ~length:_, ~stats =
           Sdf_contour.extract
-            ~exec:
-              (Obj.magic Obj.magic (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
             ~par
             ~oracles:(Map.empty (module Oracle.Key))
             ~region
@@ -286,14 +284,13 @@ let%test_unit "quickcheck stats sanity" =
 (* ======================================================================= *)
 
 (* Helper that runs both pipelines and prints summary. *)
-let seam_test (module E : Executor.S) tree ~region ~tile_cells =
+let seam_test (module E : Executor.S_batch) tree ~region ~tile_cells =
   let dense_out, dense_len = dense_segments (module E) tree ~region in
   let dense = segment_list dense_out ~length:dense_len in
   let scheduler = Parallel_scheduler.create () in
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     let ~segments, ~length, ~stats =
       Sdf_contour.extract
-        ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
         ~par
         ~oracles:(Map.empty (module Oracle.Key))
         ~region
@@ -468,7 +465,6 @@ let%expect_test "line_join: circle crossing many tiles gives same shape \
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     let ~segments, ~length, ~stats:_ =
       Sdf_contour.extract
-        ~exec:(Obj.magic Obj.magic (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
         ~par
         ~oracles:(Map.empty (module Oracle.Key))
         ~region
@@ -534,7 +530,6 @@ let%expect_test "bool-typed tree: lt coord_x (f #16.s) matches dense" =
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
     let ~segments, ~length, ~stats =
       Sdf_contour.extract
-        ~exec:(Obj.magic Obj.magic (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
         ~par
         ~oracles:(Map.empty (module Oracle.Key))
         ~region
@@ -591,10 +586,6 @@ let%expect_test "oracle passthrough: extract matches dense (circle inside passth
              let p =
                M.create (snd oracle_key)
                |> M.prepare
-                    ~exec:
-                      (Obj.magic
-                         Obj.magic
-                         (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
                     ~par
                     ~trace:(Phase_trace.null ())
                     ~oracles:prepared
@@ -608,13 +599,7 @@ let%expect_test "oracle passthrough: extract matches dense (circle inside passth
     in
     let dense = segment_list dense_out ~length:dense_len in
     let ~segments, ~length, ~stats =
-      Sdf_contour.extract
-        ~exec:(Obj.magic Obj.magic (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
-        ~par
-        ~oracles
-        ~region
-        ~tile_cells:16
-        tree
+      Sdf_contour.extract ~par ~oracles ~region ~tile_cells:16 tree
     in
     let tiled = segment_list segments ~length in
     printf "dense: %d, tiled: %d\n" dense_len length;

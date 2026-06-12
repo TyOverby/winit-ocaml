@@ -1,5 +1,6 @@
 open! Core
 open Sdf
+open Sdf_for_testing
 open Helpers
 
 (* ===== Helpers ===== *)
@@ -188,6 +189,6 @@ module Make_tests (E : Executor.S_batch) = struct
   ;;
 end
 
-module _ = Make_tests (Expr_graph_eval.Batch)
-module _ = Make_tests (Expr_graph_batch_eval.Batch)
+module _ = Make_tests (Expr_graph_batch_eval)
 module _ = Make_tests (Executor.Single_to_batch (Expr_graph_eval.Single))
+module _ = Make_tests (Expr_tree_eval.Batch)

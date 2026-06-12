@@ -3,15 +3,6 @@ open! Core
 let grid_width = 1000
 let grid_height = 1000
 
-(* The available evaluation backends, each a [(module Sdf.Executor.S)], selected by the
-   [-strategy] flag. These mirror the backends offered by the neon UI. *)
-let backends : (string * (module Sdf.Executor.S) portable) list =
-  [ "batch", { portable = (module Sdf.Expr_graph_batch_eval) }
-  ; "graph", { portable = (module Sdf.Expr_graph_eval) }
-  ; "tree", { portable = (module Sdf.Expr_tree_eval) }
-  ]
-;;
-
 (* Oracles that the example scenes may reference (e.g. [resample(...)]). Registering them
    lets the runner compile scenes that depend on them. *)
 let oracle_registry : (string * (module Sdf.Oracle.S) portable) list =
@@ -156,9 +147,9 @@ type sample =
 (* Drive [runner] through the selected cache states for [source] and return their timings.
 
    The runner is stateful, so order matters:
-   - Prime with the canonical source at offset 0 (untimed) to populate the cache. This runs
-     unconditionally so that [hot]/[warm] see a populated cache regardless of which states
-     are selected.
+   - Prime with the canonical source at offset 0 (untimed) to populate the cache. This
+     runs unconditionally so that [hot]/[warm] see a populated cache regardless of which
+     states are selected.
    - [hot]: same source, same region -> served from cache.
    - [warm]: same source, fresh region -> grid re-evaluated, compile reused.
    - [cold]: a perturbed source at a fresh region -> full recompile + re-eval. The
@@ -334,8 +325,8 @@ let neo_files_of_path path =
   | `No | `Unknown -> [ path ]
 ;;
 
-let make_runner backend =
-  let runner = Sdf_runner.create backend in
+let make_runner () =
+  let runner = Sdf_runner.create () in
   List.iter oracle_registry ~f:(fun (name, { portable = oracle }) ->
     Sdf_runner.add_oracle runner ~name oracle);
   runner
@@ -345,8 +336,7 @@ let () =
   Command_unix.run
     (Command.basic
        ~summary:"Run SDF benchmarks"
-       (let%map_open.Command path =
-          anon (maybe ("PATH" %: string))
+       (let%map_open.Command path = anon (maybe ("PATH" %: string))
         and dir =
           flag
             "-dir"
@@ -360,24 +350,8 @@ let () =
             "-budget"
             (optional_with_default 10.0 float)
             ~doc:"SECONDS time budget for benchmarking (default: 10)"
-        and dump_sexp = flag "-dump-sexp" no_arg ~doc:" output results as sexp"
-        and strategy =
-          flag
-            "-strategy"
-            (optional_with_default "batch" string)
-            ~doc:"STRATEGY evaluation backend: batch (default), graph, tree"
-        in
+        and dump_sexp = flag "-dump-sexp" no_arg ~doc:" output results as sexp" in
         fun () ->
-          let backend =
-            match List.Assoc.find backends strategy ~equal:String.equal with
-            | Some backend -> backend
-            | None ->
-              eprintf
-                "Unknown strategy: %s (expected %s)\n"
-                strategy
-                (String.concat ~sep:", " (List.map backends ~f:fst));
-              exit 1
-          in
           let sel =
             if run_cold || run_hot || run_warm
             then { Selection.cold = run_cold; hot = run_hot; warm = run_warm }
@@ -389,14 +363,14 @@ let () =
           then (
             eprintf "No .neo files found in %s\n" target;
             exit 1);
-          let runner = make_runner backend.portable in
+          let runner = make_runner () in
           let canvas = Image_buf.create ~width:grid_width ~height:grid_height #0l in
           let sources =
             List.map files ~f:(fun path ->
               Filename.basename path, path, In_channel.read_all path)
           in
           (* Warmup pass: spin up worker domains and populate caches. *)
-          eprintf "Warming up %s backend...\n%!" strategy;
+          eprintf "Warming up...\n%!";
           List.iter sources ~f:(fun (_name, path, source) ->
             let (_ : sample) = sample_one runner ~canvas ~filename:path ~source ~sel in
             ());
@@ -438,8 +412,9 @@ let () =
               eprintf "done\n%!";
               let all = est :: samples in
               let n = List.length all in
-              (* A selected state has [Some] timing in every sample, so [filter_map] yields
-                 one entry per sample; a deselected state yields an empty list and [None]. *)
+              (* A selected state has [Some] timing in every sample, so [filter_map]
+                 yields one entry per sample; a deselected state yields an empty list and
+                 [None]. *)
               let case get =
                 match List.filter_map all ~f:get with
                 | [] -> None

@@ -119,111 +119,46 @@ let rec run ~variables ~instructions ~registers ~oracles ~x ~y =
   done
 ;;
 
-module Batch_impl : Executor.S_batch = struct
-  module Variable_idx = struct
-    type t = int
-  end
+module Single = struct
+  module Variable_idx = String
 
-  module Prepared = struct
-    type t =
-      { instructions : Expr_graph.t
-      ; final_register : int
-      ; register_count : int
-      ; var_mapping : (string * int) list
-      ; num_vars : int
-      ; oracle_keys : Oracle_key.t iarray
-      }
+  type t =
+    { instructions : Expr_graph.t
+    ; final_register : int
+    ; register_count : int
+    ; var_mapping : (string * int) list
+    ; num_vars : int
+    ; oracle_keys : Oracle_key.t iarray
+    }
 
-    let of_tree tree =
-      let ~instructions, ~final_register, ~register_count:_, ~var_mapping, ~oracle_keys =
-        Expr_graph.from_tree tree
-      in
-      let ~instructions, ~final_register, ~register_count =
-        Expr_graph_register_minimizer.minimize ~instructions ~final_register
-      in
-      let num_vars = Hashtbl.length var_mapping in
-      let var_mapping = Hashtbl.to_alist var_mapping in
-      { instructions; final_register; register_count; var_mapping; num_vars; oracle_keys }
-    ;;
+  let of_tree tree =
+    let ~instructions, ~final_register, ~register_count:_, ~var_mapping, ~oracle_keys =
+      Expr_graph.from_tree tree
+    in
+    let ~instructions, ~final_register, ~register_count =
+      Expr_graph_register_minimizer.minimize ~instructions ~final_register
+    in
+    let num_vars = Hashtbl.length var_mapping in
+    let var_mapping = Hashtbl.to_alist var_mapping in
+    { instructions; final_register; register_count; var_mapping; num_vars; oracle_keys }
+  ;;
 
-    let lookup_variable { var_mapping; _ } s =
-      match List.Assoc.find var_mapping s ~equal:String.equal with
-      | Some v -> v
-      | None -> raise_s [%message "variable not found" (s : string)]
-    ;;
-  end
+  let lookup_variable _t name = name
 
-  module Result = struct
-    type t = Value.Array.t
-
-    let get_output t ~px = Value.Array.get t px
-  end
-
-  module Batch = struct
-    type t =
-      { prepared : Prepared.t
-      ; variables : Value.Array.t
-      ; registers : Value.Array.t iarray
-      ; x_coords : int32# array
-      ; y_coords : int32# array
-      ; len : int
-      }
-
-    let create_sub (prepared : Prepared.t) region ~x0 ~y0 ~samples_x ~samples_y =
-      let len = samples_x * samples_y in
-      let variables = Value.Array.create ~len:prepared.num_vars in
-      let registers =
-        Iarray.init len ~f:(fun _ -> Value.Array.create ~len:prepared.register_count)
-      in
-      let x_coords = Array.create ~len #0l in
-      let y_coords = Array.create ~len #0l in
-      for i = 0 to len - 1 do
-        let col = i mod samples_x in
-        let row = i / samples_x in
-        Array.set x_coords i (Float32_u.to_bits (Sample_region.x_at region (x0 + col)));
-        Array.set y_coords i (Float32_u.to_bits (Sample_region.y_at region (y0 + row)))
-      done;
-      { prepared; variables; registers; x_coords; y_coords; len }
-    ;;
-
-    let create (prepared : Prepared.t) (region : Sample_region.t) =
-      create_sub
-        prepared
-        region
-        ~x0:0
-        ~y0:0
-        ~samples_x:region.samples_x
-        ~samples_y:region.samples_y
-    ;;
-
-    let set_variable t ~var value = Value.Array.set t.variables var value
-
-    let run
-      { prepared = { instructions; final_register; oracle_keys; _ }
-      ; variables
-      ; registers
-      ; x_coords
-      ; y_coords
-      ; len
-      }
-      ~oracles
-      =
-      let oracles = Iarray.map oracle_keys ~f:(fun key -> Map.find_exn oracles key) in
-      let out = Value.Array.create ~len in
-      for i = 0 to len - 1 do
-        let registers = Iarray.get registers i in
-        let x = Float32_u.of_bits (Array.get x_coords i) in
-        let y = Float32_u.of_bits (Array.get y_coords i) in
-        run ~variables ~instructions ~registers ~oracles ~x ~y;
-        Value.Array.set out i (Value.Array.get registers final_register)
-      done;
-      out
-    ;;
-  end
+  let run t ~vars ~oracles ~x ~y =
+    let variables = Value.Array.create ~len:t.num_vars in
+    (* Variables the program doesn't mention are ignored; program variables absent from
+       [vars] keep the array's zero default. *)
+    Map.iteri vars ~f:(fun ~key ~data ->
+      match List.Assoc.find t.var_mapping key ~equal:String.equal with
+      | Some idx -> Value.Array.set variables idx (Value.unbox data)
+      | None -> ());
+    let registers = Value.Array.create ~len:t.register_count in
+    let oracles = Iarray.map t.oracle_keys ~f:(fun key -> Map.find_exn oracles key) in
+    run ~variables ~instructions:t.instructions ~registers ~oracles ~x ~y;
+    Value.Array.get registers t.final_register
+  ;;
 end
-
-module Single : Executor.S_single = Executor.Batch_to_single (Batch_impl)
-module Batch : Executor.S_batch = Batch_impl
 
 module Private = struct
   let run = run
