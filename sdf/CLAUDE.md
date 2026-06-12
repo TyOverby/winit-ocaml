@@ -103,7 +103,7 @@ overhead during grid evaluation.
 ### Further documentation
 
 - **`src/CLAUDE.md`** — internals of the core library: the `Executor`
-  abstraction (`Single`/`Batch`/`Parallel` shapes + adapter functors), the three
+  abstraction (`Single`/`Batch` shapes + adapter functors), the three
   interchangeable evaluator backends (including the SIMD `Expr_graph_batch_eval`),
   unboxed runtime values, sampling regions, and oracles (named precomputed
   sub-fields).

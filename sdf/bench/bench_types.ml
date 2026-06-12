@@ -37,7 +37,7 @@ module Case = struct
 end
 
 module Benchmark_result = struct
-  (* Each [Sdf_runner.run] is timed in three cache states:
+  (* Each [Sdf_runner.run_tiled] is timed in three cache states:
 
      - [cold]: a source the runner has never seen, evaluated at a fresh region, so it
        re-parses, re-compiles, prepares, and evaluates the whole grid.

@@ -52,8 +52,8 @@ let segment_list (segments : float32# array) ~length =
   |> List.sort ~compare:[%compare: Int32.t * Int32.t * Int32.t * Int32.t]
 ;;
 
-(* Dense reference: sample the whole grid via the batch evaluator, then march it. *)
-let dense_contour tree region =
+(* Dense reference: sample the whole grid via the batch evaluator. *)
+let dense_grid tree region =
   let module E = Sdf.Expr_graph_batch_eval in
   let prepared = E.Batch.Prepared.of_tree tree in
   let batch = E.Batch.Batch.create prepared region in
@@ -64,6 +64,38 @@ let dense_contour tree region =
   for i = 0 to (w * h) - 1 do
     grid.(i) <- Value.to_float (E.Batch.Result.get_output result ~px:i)
   done;
+  grid
+;;
+
+(* Dense reference for scenes the helpers above can't evaluate directly (e.g. ones with
+   oracles): a tiled run that culls nothing, so every sample is evaluated. *)
+let dense_grid_via_runner runner ~region ~filename source =
+  let w = region.Sample_region.samples_x
+  and h = region.Sample_region.samples_y in
+  let grid : float32# array = Array.create ~len:(w * h) #0.0s in
+  let result =
+    Sdf_runner.run_tiled runner ~region ~filename source ~cull:Tile_scheduler.Cull.Nothing
+  in
+  Tiled_eval.Result.iter
+    result
+    ~fill:(fun ~x0:_ ~y0:_ ~samples_x:_ ~samples_y:_ _ ->
+      (* [Cull.Nothing] never culls a tile. *)
+      assert false)
+    ~draw:(fun ~x0 ~y0 ~samples_x ~samples_y ~get ->
+      for dy = 0 to samples_y - 1 do
+        for dx = 0 to samples_x - 1 do
+          grid.(((y0 + dy) * w) + (x0 + dx))
+          <- Value.to_float (get ((dy * samples_x) + dx))
+        done
+      done);
+  grid
+;;
+
+(* Dense reference: sample the whole grid via the batch evaluator, then march it. *)
+let dense_contour tree region =
+  let w = region.Sample_region.samples_x
+  and h = region.Sample_region.samples_y in
+  let grid = dense_grid tree region in
   let out : float32# array = Array.create ~len:(w * h * 2 * 4) #0.0s in
   let length = March.run grid out w h in
   out, length
@@ -105,24 +137,10 @@ let%expect_test "run_contour equals dense march (circle)" =
 let%expect_test "run_tiled: active tiles bitwise equal, culled tiles interval-sound" =
   let region = circle_region in
   let runner = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
-  (* Dense reference grid from Sdf_runner.run *)
+  (* Dense reference grid from the batch evaluator (the tree mirrors [circle_source]) *)
   let w = region.Sample_region.samples_x
   and h = region.Sample_region.samples_y in
-  let dense_grid : float32# array = Array.create ~len:(w * h) #0.0s in
-  let dense_grid_p = Stdlib.Obj.magic_portable dense_grid in
-  Sdf_runner.run
-    runner
-    ~region
-    ~filename:"test.neo"
-    circle_source
-    ~f:(fun _par result get ->
-      let dense_grid = Stdlib.Obj.magic_uncontended dense_grid_p in
-      let result = Stdlib.Obj.magic Stdlib.Obj.magic result in
-      for y = 0 to h - 1 do
-        for x = 0 to w - 1 do
-          dense_grid.((y * w) + x) <- Value.to_float (get result ~x ~y)
-        done
-      done);
+  let dense_grid = dense_grid (circle_tree ~cx:#32.s ~cy:#32.s ~r:#20.s) region in
   (* Tiled eval *)
   let tiled =
     Sdf_runner.run_tiled
@@ -358,21 +376,13 @@ let%expect_test "run_contour: boundary-crossing resample oracle equals dense mar
   Sdf_runner.add_oracle runner_dense ~name:"resample" (module Sdf_resample_oracle);
   let w = region.Sample_region.samples_x
   and h = region.Sample_region.samples_y in
-  let dense_grid : float32# array = Array.create ~len:(w * h) #0.0s in
-  let dense_grid_p = Stdlib.Obj.magic_portable dense_grid in
-  Sdf_runner.run
-    runner_dense
-    ~region
-    ~filename:"test.neo"
-    resample_boundary_source
-    ~f:(fun _par result get ->
-      let dense_grid = Stdlib.Obj.magic_uncontended dense_grid_p in
-      let result = Stdlib.Obj.magic Stdlib.Obj.magic result in
-      for y = 0 to h - 1 do
-        for x = 0 to w - 1 do
-          dense_grid.((y * w) + x) <- Value.to_float (get result ~x ~y)
-        done
-      done);
+  let dense_grid =
+    dense_grid_via_runner
+      runner_dense
+      ~region
+      ~filename:"test.neo"
+      resample_boundary_source
+  in
   let dense_out : float32# array = Array.create ~len:(w * h * 2 * 4) #0.0s in
   let dense_len = March.run dense_grid dense_out w h in
   let dense_segs = segment_list dense_out ~length:dense_len in
@@ -411,21 +421,13 @@ let%expect_test "run_tiled: boundary-crossing resample oracle — active bitwise
   (* Dense reference grid *)
   let runner_dense = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
   Sdf_runner.add_oracle runner_dense ~name:"resample" (module Sdf_resample_oracle);
-  let dense_grid : float32# array = Array.create ~len:(w * h) #0.0s in
-  let dense_grid_p = Stdlib.Obj.magic_portable dense_grid in
-  Sdf_runner.run
-    runner_dense
-    ~region
-    ~filename:"test.neo"
-    resample_boundary_source
-    ~f:(fun _par result get ->
-      let dense_grid = Stdlib.Obj.magic_uncontended dense_grid_p in
-      let result = Stdlib.Obj.magic Stdlib.Obj.magic result in
-      for y = 0 to h - 1 do
-        for x = 0 to w - 1 do
-          dense_grid.((y * w) + x) <- Value.to_float (get result ~x ~y)
-        done
-      done);
+  let dense_grid =
+    dense_grid_via_runner
+      runner_dense
+      ~region
+      ~filename:"test.neo"
+      resample_boundary_source
+  in
   (* Tiled eval *)
   let runner = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
   Sdf_runner.add_oracle runner ~name:"resample" (module Sdf_resample_oracle);

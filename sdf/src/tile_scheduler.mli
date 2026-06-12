@@ -26,6 +26,10 @@ module Cull : sig
   (** The reason a tile may be skipped. Comparable (not a closure) so that schedules can
       be cached keyed on it. A [top] interval never satisfies any predicate. *)
   type t =
+    | Nothing
+    (** Cull no tiles: every tile is active, so the consumer sees a dense evaluation of
+        the whole grid (the interval evaluator is never consulted). For renderings that
+        vary everywhere and so can never skip a tile. *)
     | No_contour
     (** Cull tiles that the zero contour provably misses: every sample is strictly
         positive (marching squares treats a corner as inside iff [v <= 0]) or every sample

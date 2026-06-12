@@ -264,4 +264,3 @@ module (Single @ portable) : Executor.S_single = struct
 end
 
 module (Batch @ portable) : Executor.S_batch = Executor.Single_to_batch (Single)
-module (Parallel @ portable) : Executor.S_parallel = Executor.Batch_to_parallel (Batch)

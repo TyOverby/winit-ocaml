@@ -143,25 +143,6 @@ let draw_tiled
       [%message "" ~copy_pixels:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)]
 ;;
 
-let draw_dense runner ~trace ~region ~filename ~source ~canvas ~color_pixel ~show_timings =
-  let width = region.Sdf.Sample_region.samples_x in
-  let height = region.Sdf.Sample_region.samples_y in
-  Sdf_runner.run runner ~trace ~region ~filename source ~f:(fun par result get ->
-    let before = Core.Time_ns.now () in
-    Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
-      for x = 0 to width - 1 do
-        let dist =
-          Float32_u.to_float (Sdf.Value.to_float (get (Obj.magic Obj.magic result) ~x ~y))
-        in
-        Image_buf.set canvas ~x ~y (color_pixel dist)
-      done);
-    let after = Core.Time_ns.now () in
-    if show_timings
-    then
-      print_s
-        [%message "" ~copy_pixels:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)])
-;;
-
 let draw_shape (state : state) runner ~trace ~filename ~source ~show_timings =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
@@ -178,13 +159,16 @@ let draw_shape (state : state) runner ~trace ~filename ~source ~show_timings =
   in
   match state.render_mode with
   | Rings ->
-    draw_dense
+    (* Rings shading varies everywhere, so no tile can be culled: every pixel is sampled,
+       like the old dense path, but evaluated tile-by-tile in parallel. *)
+    draw_tiled
       runner
       ~trace
       ~region
       ~filename
       ~source
       ~canvas
+      ~cull:Nothing
       ~color_pixel:color_rings
       ~show_timings
   | Grayscale ->
@@ -215,8 +199,8 @@ let draw_shape (state : state) runner ~trace ~filename ~source ~show_timings =
       ~show_timings
 ;;
 
-(* The available evaluation backends, each a [(module Batch_backend_intf.S_parallel)],
-   selected by the [-backend] flag. *)
+(* The available evaluation backends, each a [(module Sdf.Executor.S)], selected by the
+   [-backend] flag. *)
 let backends : (string * (module Sdf.Executor.S) portable) list =
   [ "batch", { portable = (module Sdf.Expr_graph_batch_eval) }
   ; "graph", { portable = (module Sdf.Expr_graph_eval) }

@@ -2,6 +2,7 @@ open! Core
 
 module Cull = struct
   type t =
+    | Nothing
     | No_contour
     | Constant_outside of
         { below : float
@@ -16,6 +17,7 @@ module Cull = struct
       let #{ Interval.lo; hi } = interval in
       let open Float32_u.O in
       match t with
+      | Nothing -> false
       | No_contour -> lo > #0.s || hi <= #0.s
       | Constant_outside { below; above } ->
         hi <= Float32_u.of_float below || lo > Float32_u.of_float above)
@@ -134,7 +136,12 @@ let all_active ~region ~tile_cells =
 ;;
 
 let schedule range ~vars ~oracles ~region ~tile_cells ~cull =
-  make_grid ~region ~tile_cells ~f:(fun ~tiles_x ~tiles_y ~lo ~hi ->
+  (* [Nothing] never culls, so skip the subdivision (it would interval-evaluate every
+     rectangle of the recursion tree just to mark everything active). *)
+  match (cull : Cull.t) with
+  | Nothing -> all_active ~region ~tile_cells
+  | No_contour | Constant_outside _ ->
+    make_grid ~region ~tile_cells ~f:(fun ~tiles_x ~tiles_y ~lo ~hi ->
     let last_sample_x = region.samples_x - 1
     and last_sample_y = region.samples_y - 1 in
     (* Inclusive sample-index extent of the tile rectangle [t0, t1). The world box hulls

@@ -35,32 +35,6 @@ let set_executor t ((module E : Executor.S) @ portable) =
     add_oracle t ~name oracle)
 ;;
 
-let run
-  :  _ -> ?trace:Phase_trace.t -> region:_ -> filename:_ -> _
-  -> f:
-       ('a.
-        Parallel.t @ local
-        -> 'a @ contended portable
-        -> ('a -> x:int -> y:int -> Value.t) @ portable
-        -> unit)
-     @ once shareable
-  -> unit
-  =
-  fun { inner = T { vtable; state }; _ }
-    ?(trace = Phase_trace.null ())
-    ~region
-    ~filename
-    source
-    ~f ->
-  let module B = (val vtable) in
-  Phase_trace.span trace "run" ~f:(fun () ->
-    let result = B.run state ~trace ~region ~filename source in
-    let scheduler = B.scheduler state in
-    Phase_trace.span trace "consume" ~f:(fun () ->
-      Parallel_scheduler.parallel scheduler ~f:(fun par ->
-        f par result B.E.Parallel.Result.get)))
-;;
-
 let run_contour
   { inner = T { vtable; state }; _ }
   ?(trace = Phase_trace.null ())

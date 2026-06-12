@@ -25,13 +25,11 @@ The expression flows through two IRs, both defined here:
 
 `executor_intf.ml` / `executor.ml` define the interface every evaluator
 implements, and this is the most important structural idea in the library.
-There are three module-type "shapes":
+There are two module-type "shapes":
 
 - **`S_single`** — evaluate one `(x, y)` point: `run … ~x ~y → Value.t`.
 - **`S_batch`** — evaluate a whole `Sample_region.t` (a rectangular grid)
   single-threaded, returning an indexable result.
-- **`S_parallel`** — evaluate a region across domains (via the Jane Street
-  `parallel` library), returning a `contended portable` result grid.
 
 Adapter functors convert between shapes so each backend only has to implement
 one:
@@ -39,18 +37,16 @@ one:
 ```
 Single_to_batch   : S_single  → S_batch     (loop over pixels)
 Batch_to_single   : S_batch   → S_single     (1×1 region)
-Batch_to_parallel : S_batch   → S_parallel   (one row per task)
-Parallel_to_single: S_single  → S_parallel
 ```
 
-`Batch_to_parallel` is where the parallelism lives: it splits the region by row,
-runs each row as a `Parallel.for_` task, and writes results into a shared
-`Grid` backed by a `Bigarray` wrapped in `Modes.Portended.t` (so the mutable
-grid mode-crosses contention and each worker domain can write disjoint pixels).
+Parallelism lives above the executor, in the tiled machinery: `Tiled_eval`
+(driven by `Tile_scheduler`) runs one `S_batch` sub-batch per tile as a
+`Parallel.for_` task. A `Tile_scheduler.Cull.Nothing` schedule degenerates to a
+dense, every-sample parallel evaluation.
 
 ## Evaluator backends
 
-All three implement `Executor.S` (i.e. expose `Single`, `Batch`, and `Parallel`
+All three implement `Executor.S` (i.e. expose `Single` and `Batch`
 sub-modules), so they are interchangeable:
 
 | Module | Strategy | Role |
@@ -105,7 +101,7 @@ later expressions.
 | `expr_tree_eval.ml` | scalar tree interpreter (reference) |
 | `expr_graph_eval.ml` | scalar register-VM evaluator |
 | `expr_graph_batch_eval.ml` | SIMD register-VM evaluator |
-| `executor_intf.ml` / `executor.ml` | `Single`/`Batch`/`Parallel` interface + adapter functors |
+| `executor_intf.ml` / `executor.ml` | `Single`/`Batch` interface + adapter functors |
 | `value.ml` | unboxed 32-bit runtime value + arrays |
 | `sample_region.ml` / `sample_result.ml` | sampling grid + results |
 | `simd.ml` / `simd_stubs.c` | vec128 intrinsic bindings |

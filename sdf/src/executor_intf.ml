@@ -64,42 +64,6 @@ module type S_batch = sig @@ portable
   end
 end
 
-module type S_parallel = sig @@ portable
-  module Variable_idx : sig
-    type t : value mod contended portable
-  end
-
-  module Prepared : sig
-    type t : value mod contended portable
-
-    val of_tree : Expr_tree.t -> t
-    val lookup_variable : t -> string -> Variable_idx.t option
-  end
-
-  module Result : sig
-    type t : value mod contended portable
-
-    val get : t -> x:int -> y:int -> Value.t @@ portable
-  end
-
-  module Batch : sig
-    type t : value
-
-    val create : Prepared.t -> Sample_region.t -> t
-    val set_variable : t -> var:Variable_idx.t -> Value.t -> unit
-
-    (** [trace] is the caller's writer; rows are recorded as forked lanes beneath the
-        span currently open on it (collapsing to one ["row"] summary node whose [max]
-        exposes load imbalance). Pass [Phase_trace.null ()] when not tracing. *)
-    val run
-      :  t
-      -> par:Parallel.t @ local
-      -> trace:Phase_trace.t
-      -> oracles:Prepared_oracle.t Map.M(Oracle_key).t
-      -> Result.t
-  end
-end
-
 (* An evaluator over ranges: instead of a single (x, y) point it takes inclusive
    coordinate intervals and returns an interval guaranteed to contain the value the
    scalar evaluator would produce at any point of the box. *)
@@ -138,7 +102,6 @@ end
 module type S = sig @@ portable
   module Single : S_single
   module Batch : S_batch
-  module Parallel : S_parallel
 end
 
 (* Defined after [S] so that [prepare] can reference [(module S)]. *)
@@ -146,12 +109,9 @@ end
 module type Executor = sig
   module type S_single = S_single
   module type S_batch = S_batch
-  module type S_parallel = S_parallel
   module type S_range = S_range
   module type S = S
 
-  module Batch_to_parallel (_ : S_batch) : S_parallel @ portable
   module Single_to_batch (_ : S_single) : S_batch @ portable
   module Batch_to_single (_ : S_batch) : S_single @ portable
-  module Parallel_to_single (_ : S_single) : S_parallel @ portable
 end

@@ -16,15 +16,6 @@ module type S = sig
 
   val create : unit -> t
   val add_oracle : t -> name:string -> (module Oracle.S) @ portable -> unit
-  val scheduler : t -> Parallel_scheduler.t
-
-  val run
-    :  t
-    -> trace:Phase_trace.t
-    -> region:Sample_region.t
-    -> filename:string
-    -> string
-    -> E.Parallel.Result.t
 
   (** The zero contour of the scene over [region], via {!Sdf_contour.extract} (tiles the
       contour provably misses are never sampled). Cached like [run]'s output. *)
