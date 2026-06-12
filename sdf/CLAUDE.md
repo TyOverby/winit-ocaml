@@ -76,10 +76,17 @@ its coordinates only, independent of batch width or lane position.
 `test/test_simd_tail_consistency.ml` pins this per-op over special values
 (half-integer ties, signed zeros, NaN, infinities), and the differential
 quickcheck suites in `test/test_create_sub.ml` and `contour/test` cover it
-end-to-end. Caveat: on amd64, SSE `minps`/`maxps` neither propagate NaN nor
-order the zeros the way the scalar `Float32_u.min`/`max` (and arm64 NEON)
-do; if this code ever runs on amd64, `Simd.f32x4_min`/`f32x4_max` need a
-correcting sequence — the consistency test will catch it.
+end-to-end. On amd64, SSE `minps`/`maxps` neither propagate NaN nor order
+the zeros the way the scalar `Float32_u.min`/`max` (and arm64 NEON) do, so
+`Simd.f32x4_min`/`f32x4_max` wrap them in a correcting sequence (equal
+operands → sign-OR/AND of the bits; NaN in the first operand wins); arm64
+still uses the single instruction.
+
+Separately from FP semantics, amd64 currently needs `Fiber_stack.pre_grow`
+called at the top of every parallel fiber that handles unboxed values: an
+OxCaml runtime/codegen bug corrupts in-flight `float32#`/`int32#` values
+when a fiber's stack is reallocated mid-computation (see
+`issues/open/amd64-fiber-stack-growth-corrupts-unboxed.md`).
 
 ### Runtime Representation
 

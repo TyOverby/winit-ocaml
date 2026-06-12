@@ -164,7 +164,7 @@ external f32x4_sqrt
 [@@noalloc]
 [@@builtin (amd64, "caml_sse_float32x4_sqrt") (arm64, "caml_neon_float32x4_sqrt")]
 
-external f32x4_min
+external f32x4_min_raw
   :  float32x4#
   -> float32x4#
   -> float32x4#
@@ -173,7 +173,7 @@ external f32x4_min
 [@@noalloc]
 [@@builtin (amd64, "caml_sse_float32x4_min") (arm64, "caml_neon_float32x4_min")]
 
-external f32x4_max
+external f32x4_max_raw
   :  float32x4#
   -> float32x4#
   -> float32x4#
@@ -181,11 +181,6 @@ external f32x4_max
   = "sdf_simd_unreachable" "sdf_simd_unreachable"
 [@@noalloc]
 [@@builtin (amd64, "caml_sse_float32x4_max") (arm64, "caml_neon_float32x4_max")]
-
-(* ---- float32x4 abs/neg (computational, avoids const builtins) ---- *)
-
-let[@inline] f32x4_neg (v : float32x4#) : float32x4# = f32x4_sub f32x4_zero v
-let[@inline] f32x4_abs (v : float32x4#) : float32x4# = f32x4_max v (f32x4_neg v)
 
 (* ---- float32x4 rounding ---- *)
 
@@ -296,4 +291,58 @@ let[@inline] f32x4_select (mask : int32x4#) ~(fail : float32x4#) ~(pass : float3
        mask
        ~fail:(int32x4_of_float32x4 fail)
        ~pass:(int32x4_of_float32x4 pass))
+;;
+
+(* ---- float32x4 min/max ----
+
+   Every backend must agree bitwise with the scalar [Float32_u.min]/[max] (plus the scalar
+   evaluators' sign-OR/AND tie-break for equal operands), which on arm64 is what NEON
+   [fmin]/[fmax] compute in one instruction. SSE [minps]/[maxps] disagree in two cases: a
+   NaN in the FIRST operand is dropped (the second operand wins whenever the comparison is
+   unordered), and equal operands — including [-0. = +0.] — return the second operand
+   instead of ordering the zeros. The amd64 path corrects both:
+
+   min a b = if a = b then a |bits| b (orders the zeros: min(-0,+0) = -0) else if a is NaN
+   then a (NaN propagates, preferring a's payload) else minps a b (covers a < b, b < a,
+   and NaN-in-b)
+
+   and symmetrically for max with a sign-AND on ties. *)
+
+let[@inline] f32x4_min (a : float32x4#) (b : float32x4#) : float32x4# =
+  match Sys.arch with
+  | Arm64 -> f32x4_min_raw a b
+  | Amd64 ->
+    let ai = int32x4_of_float32x4 a in
+    let bi = int32x4_of_float32x4 b in
+    let eq = amd64_f32x4_cmp 0x0 a b (* CMPEQPS: false on NaN, true on -0 = +0 *) in
+    let a_nan = amd64_f32x4_cmp 0x3 a a (* CMPUNORDPS: a is NaN *) in
+    let m = int32x4_of_float32x4 (f32x4_min_raw a b) in
+    let r = i32x4_select a_nan ~fail:m ~pass:ai in
+    float32x4_of_int32x4 (i32x4_select eq ~fail:r ~pass:(i32x4_or ai bi))
+;;
+
+let[@inline] f32x4_max (a : float32x4#) (b : float32x4#) : float32x4# =
+  match Sys.arch with
+  | Arm64 -> f32x4_max_raw a b
+  | Amd64 ->
+    let ai = int32x4_of_float32x4 a in
+    let bi = int32x4_of_float32x4 b in
+    let eq = amd64_f32x4_cmp 0x0 a b in
+    let a_nan = amd64_f32x4_cmp 0x3 a a in
+    let m = int32x4_of_float32x4 (f32x4_max_raw a b) in
+    let r = i32x4_select a_nan ~fail:m ~pass:ai in
+    float32x4_of_int32x4 (i32x4_select eq ~fail:r ~pass:(i32x4_and ai bi))
+;;
+
+(* ---- float32x4 abs/neg ----
+
+   Sign-bit operations on the integer view, matching the scalar backends' fneg/fabs
+   exactly (so [neg +0. = -0.] and NaN payloads survive). *)
+
+let[@inline] f32x4_neg (v : float32x4#) : float32x4# =
+  float32x4_of_int32x4 (i32x4_xor (int32x4_of_float32x4 v) (i32x4_set1 #0x80000000l))
+;;
+
+let[@inline] f32x4_abs (v : float32x4#) : float32x4# =
+  float32x4_of_int32x4 (i32x4_and (int32x4_of_float32x4 v) (i32x4_set1 #0x7fffffffl))
 ;;

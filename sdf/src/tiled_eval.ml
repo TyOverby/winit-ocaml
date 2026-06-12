@@ -50,6 +50,9 @@ let run
   ~cull
   (tree : Expr_tree.t)
   =
+  (* [run] is called on a parallel fiber; pre-grow its stack before the interval scheduler
+     starts juggling unboxed float32# bounds. See [Fiber_stack]. *)
+  Fiber_stack.pre_grow ();
   let sched =
     Phase_trace.span trace "tile-schedule" ~f:(fun () ->
       let sched =
@@ -110,6 +113,7 @@ let run
   Phase_trace.span trace "eval-tiles" ~f:(fun () ->
     let fk = Phase_trace.fork trace in
     Parallel.for_ par ~start:0 ~stop:num_active ~f:(fun _par k ->
+      Fiber_stack.pre_grow ();
       Phase_trace.with_fork fk ~name:"tile" ~f:(fun _trace ->
         let active_tx = Stdlib.Obj.magic_uncontended active_tx in
         let active_ty = Stdlib.Obj.magic_uncontended active_ty in

@@ -13,6 +13,7 @@ module Tiled_eval = Tiled_eval
 module Expr_graph_register_minimizer = Expr_graph_register_minimizer
 module Value = Value
 module Simd = Simd
+module Fiber_stack = Fiber_stack
 module Oracle = Oracle
 module Oracle_dependencies = Oracle_dependencies
 module Phase_trace = Phase_trace
