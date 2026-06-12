@@ -31,6 +31,10 @@ val transparency : t -> bool
 val get : t -> x:int -> y:int -> int32#
 val set : t -> x:int -> y:int -> int32# -> unit
 
+(** Fills a [w]x[h] rectangle whose top-left pixel is at ([x], [y]) with a constant color.
+    The rectangle is clipped to the image's bounds. *)
+val fill_rect : t -> x:int -> y:int -> w:int -> h:int -> int32# -> unit
+
 (** Copies a rectangular region of pixels from [from] into [to_]. [region] is in [from]'s
     pixel coordinates, while [x] and [y] specify the top-left pixel in the destination
     image. *)
