@@ -10,3 +10,9 @@ let pre_grow () =
   | Amd64 -> ignore (Sys.opaque_identity (grow 4096) : int)
   | Arm64 -> ()
 ;;
+
+let parallel scheduler ~f =
+  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+    pre_grow ();
+    f par)
+;;

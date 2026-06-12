@@ -14,3 +14,14 @@
     Repro and details: issues/open/amd64-fiber-stack-growth-corrupts-unboxed.md. Delete
     this module once the upstream fix lands. *)
 val pre_grow : unit -> unit
+
+(** Drop-in replacement for [Parallel_scheduler.parallel] that calls [pre_grow] on the
+    scheduler's root fiber before running [f]. Use this everywhere instead of calling
+    [Parallel_scheduler.parallel] directly: the root fiber is just as exposed to the bug
+    as the [Parallel.for_] task fibers (oracle preparation and one-off evaluations run on
+    it). *)
+val parallel
+  :  Parallel_scheduler.t
+  -> f:(Parallel.t @ local -> 'a) @ once shareable
+  -> 'a
+  @@ nonportable

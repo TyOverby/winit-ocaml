@@ -76,10 +76,15 @@ mechanism with `float32#` per-pixel coordinates.
 `sdf/src/fiber_stack.ml` (`Fiber_stack.pre_grow`, a no-op on arm64) forces the
 fiber's stack deep before any unboxed work. It is called at the top of:
 
-- each tile task in `Sdf_contour.extract` and `Tiled_eval.run`, and
+- each tile task in `Sdf_contour.extract` and `Tiled_eval.run`,
 - the entry of `Sdf_contour.extract` / `Tiled_eval.run` themselves (they run on
   the caller's parallel fiber, where the interval scheduler recurses with
-  unboxed bounds).
+  unboxed bounds), and
+- every scheduler root fiber, via `Fiber_stack.parallel` — a drop-in wrapper
+  for `Parallel_scheduler.parallel` that all call sites (runner, tests) go
+  through. The root fiber runs oracle preparation and one-off evaluations, so
+  it is just as exposed as the task fibers; this bit again after a refactor
+  moved evaluation onto it (`test_executor_with_oracle.ml` corruption).
 
 ## To close this issue
 

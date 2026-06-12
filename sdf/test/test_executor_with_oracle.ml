@@ -23,7 +23,7 @@ let make_test (module Implementation : Executor.S_single) =
 
     let run tree =
       let scheduler = Parallel_scheduler.create () in
-      Parallel_scheduler.parallel scheduler ~f:(fun par ->
+      Fiber_stack.parallel scheduler ~f:(fun par ->
         let oracle_registry = oracle_registry () in
         let oracles =
           Oracle_dependencies.extract_deps tree

@@ -536,7 +536,7 @@ let%expect_test "cond: maybe condition => hull of both branches" =
    inside the parallel closure; the [%expect] block sits outside it. *)
 let run_oracle_range_test tree ~x_lo ~x_hi ~y_lo ~y_hi =
   let scheduler = Parallel_scheduler.create () in
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+  Fiber_stack.parallel scheduler ~f:(fun par ->
     let oracles =
       Oracle_dependencies.extract_deps tree
       |> List.join

@@ -32,7 +32,7 @@ let square_region ~size =
 (* Prepare the oracle inside a parallel scheduler. Returns the prepared oracle. *)
 let prepare_oracle tree region scheduler =
   let prepared_box : Oracle.Prepared.t option ref = ref None in
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+  Fiber_stack.parallel scheduler ~f:(fun par ->
     let empty_oracles = Map.empty (module Oracle.Key) in
     let p =
       Sdf_resample_oracle.create [ tree ]

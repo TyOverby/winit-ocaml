@@ -136,7 +136,7 @@ let run_contour (t @ nonportable) ?(trace = Phase_trace.null ()) ~region ~filena
         let oracle_impls = oracles t in
         let fk = Phase_trace.fork trace in
         let result, oracles_with_region =
-          Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
+          Fiber_stack.parallel t.scheduler ~f:(fun par ->
             let traced =
               Phase_trace.with_fork fk ~f:(fun trace ->
                 let oracles, oracles_with_region =
@@ -183,7 +183,7 @@ let run_tiled
       let oracle_impls = oracles t in
       let fk = Phase_trace.fork trace in
       let result, oracles_with_region =
-        Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
+        Fiber_stack.parallel t.scheduler ~f:(fun par ->
           let traced =
             Phase_trace.with_fork fk ~f:(fun trace ->
               let oracles, oracles_with_region =

@@ -96,7 +96,7 @@ let%expect_test "tiled extraction is bitwise identical to dense march (circle)" 
   in
   let dense = segment_list dense_out ~length:dense_len in
   let scheduler = Parallel_scheduler.create () in
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+  Fiber_stack.parallel scheduler ~f:(fun par ->
     let ~segments, ~length, ~stats =
       Sdf_contour.extract
         ~par
@@ -154,7 +154,7 @@ let run_differential_trial
   =
   let dense_out, dense_len = dense_segments (module E) tree ~region in
   let dense = segment_list dense_out ~length:dense_len in
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+  Fiber_stack.parallel scheduler ~f:(fun par ->
     let empty_oracles = Map.empty (module Oracle.Key) in
     let ~segments, ~length, ~stats =
       Sdf_contour.extract ~par ~oracles:empty_oracles ~region ~tile_cells tree
@@ -263,7 +263,7 @@ let%test_unit "quickcheck stats sanity" =
     ~trials:Quickcheck_trials.trials
     ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
     ~f:(fun (tree, region, tile_cells) ->
-      Parallel_scheduler.parallel scheduler ~f:(fun par ->
+      Fiber_stack.parallel scheduler ~f:(fun par ->
         let ~segments:_, ~length:_, ~stats =
           Sdf_contour.extract
             ~par
@@ -288,7 +288,7 @@ let seam_test (module E : Executor.S_batch) tree ~region ~tile_cells =
   let dense_out, dense_len = dense_segments (module E) tree ~region in
   let dense = segment_list dense_out ~length:dense_len in
   let scheduler = Parallel_scheduler.create () in
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+  Fiber_stack.parallel scheduler ~f:(fun par ->
     let ~segments, ~length, ~stats =
       Sdf_contour.extract
         ~par
@@ -462,7 +462,7 @@ let%expect_test "line_join: circle crossing many tiles gives same shape \
   in
   let tiled_len_box = [| 0 |] in
   let scheduler = Parallel_scheduler.create () in
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+  Fiber_stack.parallel scheduler ~f:(fun par ->
     let ~segments, ~length, ~stats:_ =
       Sdf_contour.extract
         ~par
@@ -527,7 +527,7 @@ let%expect_test "bool-typed tree: lt coord_x (f #16.s) matches dense" =
   in
   let dense = segment_list dense_out ~length:dense_len in
   let scheduler = Parallel_scheduler.create () in
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+  Fiber_stack.parallel scheduler ~f:(fun par ->
     let ~segments, ~length, ~stats =
       Sdf_contour.extract
         ~par
@@ -571,7 +571,7 @@ let%expect_test "oracle passthrough: extract matches dense (circle inside passth
     }
   in
   let scheduler = Parallel_scheduler.create () in
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
+  Fiber_stack.parallel scheduler ~f:(fun par ->
     (* Prepare oracles exactly as test_executor_with_oracle.ml does. *)
     let oracle_registry = [ "passthrough", (module Sdf_passthrough_oracle : Oracle.S) ] in
     let oracles =

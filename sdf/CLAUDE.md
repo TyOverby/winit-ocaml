@@ -84,11 +84,16 @@ the zeros the way the scalar `Float32_u.min`/`max` (and arm64 NEON) do, so
 operands → sign-OR/AND of the bits; NaN in the first operand wins); arm64
 still uses the single instruction.
 
-Separately from FP semantics, amd64 currently needs `Fiber_stack.pre_grow`
-called at the top of every parallel fiber that handles unboxed values: an
-OxCaml runtime/codegen bug corrupts in-flight `float32#`/`int32#` values
-when a fiber's stack is reallocated mid-computation (see
-`issues/open/amd64-fiber-stack-growth-corrupts-unboxed.md`).
+Separately from FP semantics, amd64 currently needs every parallel fiber
+that handles unboxed values to pre-grow its stack: an OxCaml runtime/codegen
+bug corrupts in-flight `float32#`/`int32#` values when a fiber's stack is
+reallocated mid-computation (see
+`issues/open/amd64-fiber-stack-growth-corrupts-unboxed.md`). Always enter
+the scheduler through `Fiber_stack.parallel` rather than calling
+`Parallel_scheduler.parallel` directly — the root fiber is just as exposed
+as the task fibers (oracle preparation and one-off evaluations run on it) —
+and call `Fiber_stack.pre_grow` at the top of every `Parallel.for_` task
+body.
 
 ### Runtime Representation
 
