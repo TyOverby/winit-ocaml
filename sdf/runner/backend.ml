@@ -20,6 +20,7 @@ module type S = sig
 
   val run
     :  t
+    -> trace:Phase_trace.t
     -> region:Sample_region.t
     -> filename:string
     -> string
@@ -29,6 +30,7 @@ module type S = sig
       contour provably misses are never sampled). Cached like [run]'s output. *)
   val run_contour
     :  t
+    -> trace:Phase_trace.t
     -> region:Sample_region.t
     -> filename:string
     -> string
@@ -38,6 +40,7 @@ module type S = sig
       cache key includes [cull], since the verdicts depend on it. *)
   val run_tiled
     :  t
+    -> trace:Phase_trace.t
     -> region:Sample_region.t
     -> filename:string
     -> string
@@ -83,19 +86,26 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
     t.oracles <- { portable = (name, oracle) :: t.oracles.portable }
   ;;
 
-  let compile_sdf_from_source ~filename ~oracles ~source =
-    let oracle_names = List.map ~f:fst oracles |> String.Set.of_list in
-    let tree = Neo.compile ~oracle_names ~filename source |> Or_error.ok_exn in
-    let prepared = E.Parallel.Prepared.of_tree tree in
-    ~tree, ~prepared
+  let compile_sdf_from_source ~trace ~filename ~oracles ~source =
+    Phase_trace.span trace "compile" ~f:(fun () ->
+      let oracle_names = List.map ~f:fst oracles |> String.Set.of_list in
+      let tree =
+        Phase_trace.span trace "neo-compile" ~f:(fun () ->
+          Neo.compile ~oracle_names ~filename source |> Or_error.ok_exn)
+      in
+      let prepared =
+        Phase_trace.span trace "backend-prepare" ~f:(fun () ->
+          E.Parallel.Prepared.of_tree tree)
+      in
+      ~tree, ~prepared)
   ;;
 
-  let update_source_code t ~filename source =
+  let update_source_code t ~trace ~filename source =
     match t.last_run with
     | None ->
       t.dirty <- true;
       let ~tree, ~prepared =
-        compile_sdf_from_source ~filename ~oracles:t.oracles.portable ~source
+        compile_sdf_from_source ~trace ~filename ~oracles:t.oracles.portable ~source
       in
       let inner =
         { source
@@ -116,7 +126,7 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
       else (
         last_run.source <- source;
         let ~tree, ~prepared =
-          compile_sdf_from_source ~filename ~oracles:t.oracles.portable ~source
+          compile_sdf_from_source ~trace ~filename ~oracles:t.oracles.portable ~source
         in
         if Expr_tree.equal last_run.tree tree
         then last_run
@@ -141,8 +151,9 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
 
   (* Prepare every oracle the tree references, in dependency order, reusing oracles
      cached for the same region. Returns the prepared map plus the region-keyed map used
-     for the next frame's cache. Runs inside a parallel context. *)
-  let prepare_oracles ~oracle_impls ~tree ~prev_oracles ~region ~(par @ local) =
+     for the next frame's cache. Runs inside a parallel context; [trace] is the lane
+     writer of the surrounding [Phase_trace.with_fork]. *)
+  let prepare_oracles ~trace ~oracle_impls ~tree ~prev_oracles ~region ~(par @ local) =
     let result =
       Sdf.Oracle_dependencies.extract_deps tree
       (* perf: don't do this join, instead process all independent oracles in parallel *)
@@ -154,19 +165,20 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
                match Map.find prev_oracles (region, oracle_key) with
                | Some oracle -> oracle
                | None ->
-                 let module M =
-                   (val (List.Assoc.find_exn
-                           (Obj.magic Obj.magic oracle_impls)
-                           ~equal:String.equal
-                           key
-                         : (module Oracle.S)))
-                 in
-                 M.create tree
-                 |> M.prepare
-                      ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
-                      ~par
-                      ~oracles:prepared
-                      ~sample_region:region
+                 Phase_trace.span trace ("oracle:" ^ key) ~f:(fun () ->
+                   let module M =
+                     (val (List.Assoc.find_exn
+                             (Obj.magic Obj.magic oracle_impls)
+                             ~equal:String.equal
+                             key
+                           : (module Oracle.S)))
+                   in
+                   M.create tree
+                   |> M.prepare
+                        ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
+                        ~par
+                        ~oracles:prepared
+                        ~sample_region:region)
              in
              ( Map.set prepared ~key:oracle_key ~data:p
              , Map.set prepared_with_region ~key:(region, oracle_key) ~data:p ))
@@ -174,8 +186,8 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
     result
   ;;
 
-  let run (t @ nonportable) ~region ~filename source =
-    let last_run = update_source_code t ~filename source in
+  let run (t @ nonportable) ~trace ~region ~filename source =
+    let last_run = update_source_code t ~trace ~filename source in
     invalidate_caches_if_dirty t;
     match t.dirty, last_run with
     | false, { region = last_region; output = Some output; _ }
@@ -183,14 +195,25 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
     | _, { tree; prepared; oracles = prev_oracles; _ } ->
       last_run.region <- region;
       let oracle_impls = oracles t in
+      let fk = Phase_trace.fork trace in
       let result, oracles_with_region =
         Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
-          let oracles, oracles_with_region =
-            prepare_oracles ~oracle_impls ~tree ~prev_oracles ~region ~par
+          (* Bound rather than in tail position: the [with_fork] closure captures the
+             local [par], and a local closure cannot be an argument of a tail call. *)
+          let traced =
+            Phase_trace.with_fork fk ~f:(fun trace ->
+              let oracles, oracles_with_region =
+                Phase_trace.span trace "prepare-oracles" ~f:(fun () ->
+                  prepare_oracles ~trace ~oracle_impls ~tree ~prev_oracles ~region ~par)
+              in
+              let batch = E.Parallel.Batch.create prepared region in
+              let result =
+                Phase_trace.span trace "eval-grid" ~f:(fun () ->
+                  E.Parallel.Batch.run batch ~par ~oracles)
+              in
+              result, oracles_with_region)
           in
-          let batch = E.Parallel.Batch.create prepared region in
-          let result = E.Parallel.Batch.run batch ~par ~oracles in
-          result, oracles_with_region)
+          traced)
       in
       last_run.oracles <- oracles_with_region;
       last_run.output <- Some result;
@@ -198,8 +221,8 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
       result
   ;;
 
-  let run_contour (t @ nonportable) ~region ~filename source =
-    let last_run = update_source_code t ~filename source in
+  let run_contour (t @ nonportable) ~trace ~region ~filename source =
+    let last_run = update_source_code t ~trace ~filename source in
     invalidate_caches_if_dirty t;
     match t.dirty, last_run.contour with
     | false, Some (cached_region, result) when Sample_region.equal cached_region region
@@ -207,23 +230,30 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
     | _ ->
       let { tree; oracles = prev_oracles; _ } = last_run in
       let oracle_impls = oracles t in
+      let fk = Phase_trace.fork trace in
       let result, oracles_with_region =
         Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
-          let oracles, oracles_with_region =
-            prepare_oracles ~oracle_impls ~tree ~prev_oracles ~region ~par
+          let traced =
+            Phase_trace.with_fork fk ~f:(fun trace ->
+              let oracles, oracles_with_region =
+                Phase_trace.span trace "prepare-oracles" ~f:(fun () ->
+                  prepare_oracles ~trace ~oracle_impls ~tree ~prev_oracles ~region ~par)
+              in
+              let ~segments, ~length, ~stats =
+                Phase_trace.span trace "extract-contour" ~f:(fun () ->
+                  Sdf_contour.extract
+                    ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
+                    ~par
+                    ~oracles
+                    ~region
+                    tree)
+              in
+              ( { Modes.Portended.portended =
+                    Stdlib.Obj.magic_portable { Contour_result.segments; length; stats }
+                }
+              , oracles_with_region ))
           in
-          let ~segments, ~length, ~stats =
-            Sdf_contour.extract
-              ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
-              ~par
-              ~oracles
-              ~region
-              tree
-          in
-          ( { Modes.Portended.portended =
-                Stdlib.Obj.magic_portable { Contour_result.segments; length; stats }
-            }
-          , oracles_with_region ))
+          traced)
       in
       let result = Stdlib.Obj.magic_uncontended result.Modes.Portended.portended in
       last_run.oracles <- oracles_with_region;
@@ -232,8 +262,8 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
       result
   ;;
 
-  let run_tiled (t @ nonportable) ~region ~filename source ~cull =
-    let last_run = update_source_code t ~filename source in
+  let run_tiled (t @ nonportable) ~trace ~region ~filename source ~cull =
+    let last_run = update_source_code t ~trace ~filename source in
     invalidate_caches_if_dirty t;
     match t.dirty, last_run.tiled with
     | false, Some (cached_region, cached_cull, result)
@@ -242,21 +272,28 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
     | _ ->
       let { tree; oracles = prev_oracles; _ } = last_run in
       let oracle_impls = oracles t in
+      let fk = Phase_trace.fork trace in
       let result, oracles_with_region =
         Parallel_scheduler.parallel t.scheduler ~f:(fun par ->
-          let oracles, oracles_with_region =
-            prepare_oracles ~oracle_impls ~tree ~prev_oracles ~region ~par
+          let traced =
+            Phase_trace.with_fork fk ~f:(fun trace ->
+              let oracles, oracles_with_region =
+                Phase_trace.span trace "prepare-oracles" ~f:(fun () ->
+                  prepare_oracles ~trace ~oracle_impls ~tree ~prev_oracles ~region ~par)
+              in
+              let result =
+                Phase_trace.span trace "tiled-eval" ~f:(fun () ->
+                  Tiled_eval.run
+                    ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
+                    ~par
+                    ~oracles
+                    ~region
+                    ~cull
+                    tree)
+              in
+              result, oracles_with_region)
           in
-          let result =
-            Tiled_eval.run
-              ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
-              ~par
-              ~oracles
-              ~region
-              ~cull
-              tree
-          in
-          result, oracles_with_region)
+          traced)
       in
       last_run.oracles <- oracles_with_region;
       last_run.tiled <- Some (region, cull, result);

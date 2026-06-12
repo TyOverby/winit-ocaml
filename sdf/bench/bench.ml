@@ -41,14 +41,48 @@ let measure f =
   result, elapsed
 ;;
 
+module Phase_row = struct
+  type t =
+    { total_s : float
+    ; self_s : float
+    ; count : int
+    }
+end
+
+(* One timed [Sdf_runner.run]: its wall-clock time plus the per-phase breakdown of the
+   trace recorded during it, flattened to "parent/child" paths. *)
+type timed =
+  { elapsed_s : float
+  ; phases : (string * Phase_row.t) list
+  }
+
+let flatten_phases summary =
+  let rec go prefix acc (nodes : Phase_trace.Summary.t list) =
+    List.fold nodes ~init:acc ~f:(fun acc (node : Phase_trace.Summary.t) ->
+      let path = if String.is_empty prefix then node.name else prefix ^ "/" ^ node.name in
+      let row =
+        { Phase_row.total_s = Time_ns.Span.to_sec node.total
+        ; self_s = Time_ns.Span.to_sec node.self
+        ; count = node.count
+        }
+      in
+      go path ((path, row) :: acc) node.children)
+  in
+  List.rev (go "" [] summary)
+;;
+
 (* Time a single [Sdf_runner.run]. The grid is evaluated eagerly inside [run]; the
-   callback does no work so we measure only the runner's pipeline, not pixel readback. *)
+   callback does no work so we measure only the runner's pipeline, not pixel readback. The
+   trace is created and summarized outside the measured section. *)
 let time_run runner ~region ~filename source =
+  let trace = Phase_trace.create () in
   let (), elapsed =
     measure (fun () ->
-      Sdf_runner.run runner ~region ~filename source ~f:(fun _par _result _get -> ()))
+      Sdf_runner.run runner ~trace ~region ~filename source ~f:(fun _par _result _get ->
+        ()))
   in
-  elapsed
+  let summary = Phase_trace.Summary.of_captured (Phase_trace.finish trace) in
+  { elapsed_s = elapsed; phases = flatten_phases summary }
 ;;
 
 (* Region offsets are drawn from a monotonically increasing counter so that successive
@@ -62,9 +96,9 @@ let fresh_offset () =
 ;;
 
 type sample =
-  { cold_s : float
-  ; hot_s : float
-  ; warm_s : float
+  { cold : timed
+  ; hot : timed
+  ; warm : timed
   }
 
 (* Drive [runner] through the three cache states for [source] and return their timings.
@@ -78,15 +112,15 @@ type sample =
      the compiled tree, so the perturbation costs nothing beyond the recompile itself. *)
 let sample_one runner ~filename ~source =
   let hot_region = region_of 0 in
-  let (_ : float) = time_run runner ~region:hot_region ~filename source in
-  let hot_s = time_run runner ~region:hot_region ~filename source in
-  let warm_s = time_run runner ~region:(region_of (fresh_offset ())) ~filename source in
-  let cold_s =
+  let (_ : timed) = time_run runner ~region:hot_region ~filename source in
+  let hot = time_run runner ~region:hot_region ~filename source in
+  let warm = time_run runner ~region:(region_of (fresh_offset ())) ~filename source in
+  let cold =
     let offset = fresh_offset () in
     let perturbed = source ^ String.make offset '\n' in
     time_run runner ~region:(region_of offset) ~filename perturbed
   in
-  { cold_s; hot_s; warm_s }
+  { cold; hot; warm }
 ;;
 
 let compute_stats samples =
@@ -105,6 +139,53 @@ let compute_stats samples =
   ; max_s = sorted.(n - 1)
   ; median_s = sorted.(n / 2)
   ; stddev_s = Float.sqrt variance
+  }
+;;
+
+(* Aggregate the per-run phase rows of one cache state into per-path statistics. Paths are
+   kept in first-appearance order across runs; a run that lacks a path (e.g. an oracle
+   served from the cache) contributes zeros for it. *)
+let aggregate_phases (runs : timed list) : Bench_types.Phase_stats.t list =
+  let n = List.length runs in
+  let order =
+    let seen = Hash_set.create (module String) in
+    List.concat_map runs ~f:(fun r -> List.map r.phases ~f:fst)
+    |> List.filter ~f:(fun path ->
+      if Hash_set.mem seen path
+      then false
+      else (
+        Hash_set.add seen path;
+        true))
+  in
+  List.map order ~f:(fun path ->
+    let rows =
+      List.map runs ~f:(fun r -> List.Assoc.find r.phases path ~equal:String.equal)
+    in
+    let totals =
+      List.map rows ~f:(function
+        | Some (r : Phase_row.t) -> r.total_s
+        | None -> 0.0)
+    in
+    let selfs =
+      List.map rows ~f:(function
+        | Some (r : Phase_row.t) -> r.self_s
+        | None -> 0.0)
+    in
+    let count =
+      List.sum (module Int) rows ~f:(function
+        | Some r -> r.count
+        | None -> 0)
+    in
+    { Bench_types.Phase_stats.path
+    ; mean_count = Float.of_int count /. Float.of_int n
+    ; total = compute_stats totals
+    ; self = compute_stats selfs
+    })
+;;
+
+let compute_case (runs : timed list) : Bench_types.Case.t =
+  { time = compute_stats (List.map runs ~f:(fun r -> r.elapsed_s))
+  ; phases = aggregate_phases runs
   }
 ;;
 
@@ -174,7 +255,7 @@ let () =
           let estimates =
             List.map sources ~f:(fun (name, path, source) ->
               let s = sample_one runner ~filename:path ~source in
-              let est_total = s.cold_s +. s.hot_s +. s.warm_s in
+              let est_total = s.cold.elapsed_s +. s.hot.elapsed_s +. s.warm.elapsed_s in
               eprintf "  %s: %.3fms\n%!" name (est_total *. 1e3);
               name, path, source, s, est_total)
           in
@@ -199,9 +280,9 @@ let () =
               let n = List.length all in
               { Bench_types.Benchmark_result.name
               ; iterations = n
-              ; cold = compute_stats (List.map all ~f:(fun s -> s.cold_s))
-              ; hot = compute_stats (List.map all ~f:(fun s -> s.hot_s))
-              ; warm = compute_stats (List.map all ~f:(fun s -> s.warm_s))
+              ; cold = compute_case (List.map all ~f:(fun s -> s.cold))
+              ; hot = compute_case (List.map all ~f:(fun s -> s.hot))
+              ; warm = compute_case (List.map all ~f:(fun s -> s.warm))
               })
           in
           let suite =
@@ -216,7 +297,8 @@ let () =
           else
             List.iter results ~f:(fun b ->
               printf "=== %s (%d iterations) ===\n" b.name b.iterations;
-              let print_stat label (s : Bench_types.Stats.t) =
+              let print_case label (c : Bench_types.Case.t) =
+                let s = c.time in
                 printf
                   "  %-20s  mean: %10.3fms  stddev: %10.3fms  min: %10.3fms  max: \
                    %10.3fms  median: %10.3fms\n"
@@ -225,10 +307,19 @@ let () =
                   (s.stddev_s *. 1e3)
                   (s.min_s *. 1e3)
                   (s.max_s *. 1e3)
-                  (s.median_s *. 1e3)
+                  (s.median_s *. 1e3);
+                List.sort c.phases ~compare:(fun a b ->
+                  Float.compare b.total.mean_s a.total.mean_s)
+                |> List.iter ~f:(fun (p : Bench_types.Phase_stats.t) ->
+                  printf
+                    "      %-44s  mean: %9.3fms  self: %9.3fms  n: %.1f\n"
+                    p.path
+                    (p.total.mean_s *. 1e3)
+                    (p.self.mean_s *. 1e3)
+                    p.mean_count)
               in
-              print_stat "cold (recompile)" b.cold;
-              print_stat "warm (re-eval)" b.warm;
-              print_stat "hot (cached)" b.hot;
+              print_case "cold (recompile)" b.cold;
+              print_case "warm (re-eval)" b.warm;
+              print_case "hot (cached)" b.hot;
               printf "\n")))
 ;;

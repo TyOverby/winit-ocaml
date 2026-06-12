@@ -25,6 +25,11 @@ let command =
          "-filled"
          (optional_with_default true bool)
          ~doc:"BOOL Fill closed contours (default true); false exports only line segments"
+     and trace_file =
+       flag
+         "-trace-file"
+         (optional string)
+         ~doc:"FILE write a Perfetto trace (.fxt) of the export to FILE"
      in
      fun () ->
        let source = In_channel.read_all scene_file in
@@ -45,10 +50,23 @@ let command =
        let runner = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
        List.iter (oracle_registry ()) ~f:(fun (name, { portable = oracle }) ->
          Sdf_runner.add_oracle runner ~name oracle);
-       let ~segments:march_output, ~length:count, ~stats =
-         Sdf_runner.run_contour runner ~region ~filename:scene_file source
+       let trace =
+         match trace_file with
+         | None -> Phase_trace.null ()
+         | Some _ -> Phase_trace.create ~name:"neon-svg" ()
        in
-       let shapes = Line_join.f march_output ~length:count in
+       let ~segments:march_output, ~length:count, ~stats =
+         Sdf_runner.run_contour runner ~trace ~region ~filename:scene_file source
+       in
+       let shapes =
+         Phase_trace.span trace "line-join" ~f:(fun () ->
+           Line_join.f march_output ~length:count)
+       in
+       (match trace_file with
+        | None -> ()
+        | Some filename ->
+          Phase_trace_perfetto.write_file (Phase_trace.finish trace) ~filename;
+          printf "Wrote Perfetto trace to %s (open at https://ui.perfetto.dev)\n" filename);
        let stroke_width = 0.5 in
        let x = Float32_u.to_float x
        and y = Float32_u.to_float y in

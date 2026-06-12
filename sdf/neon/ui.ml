@@ -103,28 +103,39 @@ let color_rings (dist : float) : Int32_u.t =
 (* Render through the sparse tiled evaluator: culled tiles become flat color fills (black
    for provably-inside, white for provably-outside — consistent for both cull predicates
    we use), active tiles are colored per pixel from their sampled patch. *)
-let draw_tiled runner ~region ~filename ~source ~canvas ~cull ~color_pixel ~show_timings =
-  let result = Sdf_runner.run_tiled runner ~region ~filename source ~cull in
+let draw_tiled
+  runner
+  ~trace
+  ~region
+  ~filename
+  ~source
+  ~canvas
+  ~cull
+  ~color_pixel
+  ~show_timings
+  =
+  let result = Sdf_runner.run_tiled runner ~trace ~region ~filename source ~cull in
   let before = Core.Time_ns.now () in
-  Sdf.Tiled_eval.Result.iter
-    result
-    ~fill:(fun ~x0 ~y0 ~samples_x ~samples_y interval ->
-      let #{ Sdf.Interval.lo = _; hi } = interval in
-      let color = if Float32_u.O.(hi <= #0.s) then #0xFF000000l else #0xFFFFFFFFl in
-      for y = y0 to y0 + samples_y - 1 do
-        for x = x0 to x0 + samples_x - 1 do
-          Image_buf.set canvas ~x ~y color
-        done
-      done)
-    ~draw:(fun ~x0 ~y0 ~samples_x ~samples_y ~get ->
-      for j = 0 to samples_y - 1 do
-        for i = 0 to samples_x - 1 do
-          let dist =
-            Float32_u.to_float (Sdf.Value.to_float (get ((j * samples_x) + i)))
-          in
-          Image_buf.set canvas ~x:(x0 + i) ~y:(y0 + j) (color_pixel dist)
-        done
-      done);
+  Phase_trace.span trace "copy-pixels" ~f:(fun () ->
+    Sdf.Tiled_eval.Result.iter
+      result
+      ~fill:(fun ~x0 ~y0 ~samples_x ~samples_y interval ->
+        let #{ Sdf.Interval.lo = _; hi } = interval in
+        let color = if Float32_u.O.(hi <= #0.s) then #0xFF000000l else #0xFFFFFFFFl in
+        for y = y0 to y0 + samples_y - 1 do
+          for x = x0 to x0 + samples_x - 1 do
+            Image_buf.set canvas ~x ~y color
+          done
+        done)
+      ~draw:(fun ~x0 ~y0 ~samples_x ~samples_y ~get ->
+        for j = 0 to samples_y - 1 do
+          for i = 0 to samples_x - 1 do
+            let dist =
+              Float32_u.to_float (Sdf.Value.to_float (get ((j * samples_x) + i)))
+            in
+            Image_buf.set canvas ~x:(x0 + i) ~y:(y0 + j) (color_pixel dist)
+          done
+        done));
   let after = Core.Time_ns.now () in
   if show_timings
   then
@@ -132,10 +143,10 @@ let draw_tiled runner ~region ~filename ~source ~canvas ~cull ~color_pixel ~show
       [%message "" ~copy_pixels:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)]
 ;;
 
-let draw_dense runner ~region ~filename ~source ~canvas ~color_pixel ~show_timings =
+let draw_dense runner ~trace ~region ~filename ~source ~canvas ~color_pixel ~show_timings =
   let width = region.Sdf.Sample_region.samples_x in
   let height = region.Sdf.Sample_region.samples_y in
-  Sdf_runner.run runner ~region ~filename source ~f:(fun par result get ->
+  Sdf_runner.run runner ~trace ~region ~filename source ~f:(fun par result get ->
     let before = Core.Time_ns.now () in
     Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
       for x = 0 to width - 1 do
@@ -151,7 +162,7 @@ let draw_dense runner ~region ~filename ~source ~canvas ~color_pixel ~show_timin
         [%message "" ~copy_pixels:(Core.Time_ns.abs_diff before after : Time_ns.Span.t)])
 ;;
 
-let draw_shape (state : state) runner ~filename ~source ~show_timings =
+let draw_shape (state : state) runner ~trace ~filename ~source ~show_timings =
   let width = Image_buf.width state.canvas in
   let height = Image_buf.height state.canvas in
   let canvas = state.canvas in
@@ -169,6 +180,7 @@ let draw_shape (state : state) runner ~filename ~source ~show_timings =
   | Rings ->
     draw_dense
       runner
+      ~trace
       ~region
       ~filename
       ~source
@@ -180,6 +192,7 @@ let draw_shape (state : state) runner ~filename ~source ~show_timings =
        identical to the dense path. *)
     draw_tiled
       runner
+      ~trace
       ~region
       ~filename
       ~source
@@ -192,6 +205,7 @@ let draw_shape (state : state) runner ~filename ~source ~show_timings =
        scheduler skips are visible. *)
     draw_tiled
       runner
+      ~trace
       ~region
       ~filename
       ~source
@@ -229,6 +243,11 @@ let command =
     (let%map_open.Command scene_file = anon ("SCENE_FILE" %: string)
      and show_timings =
        flag "-timings" no_arg ~doc:" Print timing information for each frame"
+     and trace_file =
+       flag
+         "-trace-file"
+         (optional string)
+         ~doc:"FILE write a Perfetto trace (.fxt) of the session to FILE on exit"
      and backend =
        flag
          "-backend"
@@ -243,6 +262,11 @@ let command =
        in
        let surface = Softbuffer.create (Winit.get_handle window) in
        let state = create_state () in
+       let trace =
+         match trace_file with
+         | None -> Phase_trace.null ()
+         | Some _ -> Phase_trace.create ~name:"neon" ()
+       in
        let runner = Sdf_runner.create backend.portable in
        List.iter (oracle_registry ()) ~f:(fun (name, { portable = oracle }) ->
          Sdf_runner.add_oracle runner ~name oracle);
@@ -320,12 +344,14 @@ let command =
          (* Draw and present *)
          let before = Core.Time_ns.now () in
          (try
-            draw_shape
-              state
-              runner
-              ~filename:scene_file
-              ~source:!last_source
-              ~show_timings
+            Phase_trace.span trace "frame" ~f:(fun () ->
+              draw_shape
+                state
+                runner
+                ~trace
+                ~filename:scene_file
+                ~source:!last_source
+                ~show_timings)
           with
           | exn -> eprintf "%s\n%!" (Error.to_string_hum (Error.of_exn exn)));
          let after = Core.Time_ns.now () in
@@ -346,5 +372,12 @@ let command =
               ; h = Image_buf.height state.canvas
               };
          Softbuffer.present surface
-       done)
+       done;
+       match trace_file with
+       | None -> ()
+       | Some filename ->
+         Phase_trace_perfetto.write_file (Phase_trace.finish trace) ~filename;
+         eprintf
+           "Wrote Perfetto trace to %s (open at https://ui.perfetto.dev)\n%!"
+           filename)
 ;;

@@ -2,6 +2,7 @@
  (name sdf_runner)
  (libraries
   core
+  phase_trace
   sdf
   sdf_contour
   neo

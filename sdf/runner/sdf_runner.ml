@@ -36,7 +36,7 @@ let set_executor t ((module E : Executor.S) @ portable) =
 ;;
 
 let run
-  :  _ -> region:_ -> filename:_ -> _
+  :  _ -> ?trace:Phase_trace.t -> region:_ -> filename:_ -> _
   -> f:
        ('a.
         Parallel.t @ local
@@ -46,23 +46,45 @@ let run
      @ once shareable
   -> unit
   =
-  fun { inner = T { vtable; state }; _ } ~region ~filename source ~f ->
+  fun { inner = T { vtable; state }; _ }
+    ?(trace = Phase_trace.null ())
+    ~region
+    ~filename
+    source
+    ~f ->
   let module B = (val vtable) in
-  let result = B.run state ~region ~filename source in
-  let scheduler = B.scheduler state in
-  Parallel_scheduler.parallel scheduler ~f:(fun par ->
-    f par result B.E.Parallel.Result.get)
+  Phase_trace.span trace "run" ~f:(fun () ->
+    let result = B.run state ~trace ~region ~filename source in
+    let scheduler = B.scheduler state in
+    Phase_trace.span trace "consume" ~f:(fun () ->
+      Parallel_scheduler.parallel scheduler ~f:(fun par ->
+        f par result B.E.Parallel.Result.get)))
 ;;
 
-let run_contour { inner = T { vtable; state }; _ } ~region ~filename source =
+let run_contour
+  { inner = T { vtable; state }; _ }
+  ?(trace = Phase_trace.null ())
+  ~region
+  ~filename
+  source
+  =
   let module B = (val vtable) in
   let { Backend.Contour_result.segments; length; stats } =
-    B.run_contour state ~region ~filename source
+    Phase_trace.span trace "run-contour" ~f:(fun () ->
+      B.run_contour state ~trace ~region ~filename source)
   in
   ~segments, ~length, ~stats
 ;;
 
-let run_tiled { inner = T { vtable; state }; _ } ~region ~filename source ~cull =
+let run_tiled
+  { inner = T { vtable; state }; _ }
+  ?(trace = Phase_trace.null ())
+  ~region
+  ~filename
+  source
+  ~cull
+  =
   let module B = (val vtable) in
-  B.run_tiled state ~region ~filename source ~cull
+  Phase_trace.span trace "run-tiled" ~f:(fun () ->
+    B.run_tiled state ~trace ~region ~filename source ~cull)
 ;;

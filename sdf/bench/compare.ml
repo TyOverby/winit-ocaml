@@ -33,25 +33,67 @@ let () =
             match Map.find before_map name, Map.find after_map name with
             | Some b, Some a ->
               printf "=== %s (%d -> %d iterations) ===\n" name b.iterations a.iterations;
-              let compare_stat
-                label
-                (bs : Bench_types.Stats.t)
-                (a_s : Bench_types.Stats.t)
-                =
-                let ratio = bs.mean_s /. a_s.mean_s in
+              let describe_change before_s after_s =
+                let ratio = before_s /. after_s in
                 let pct = (ratio -. 1.0) *. 100.0 in
                 let direction = if Float.(pct >= 0.0) then "faster" else "slower" in
-                printf
-                  "  %-20s  %8.3fms -> %8.3fms  (%+.1f%% %s)\n"
-                  label
-                  (bs.mean_s *. 1e3)
-                  (a_s.mean_s *. 1e3)
-                  pct
-                  direction
+                sprintf "(%+.1f%% %s)" pct direction
               in
-              compare_stat "cold (recompile)" b.cold a.cold;
-              compare_stat "warm (re-eval)" b.warm a.warm;
-              compare_stat "hot (cached)" b.hot a.hot;
+              (* Phases are compared by path: the per-phase mean total before and after,
+                 plus entries that exist on only one side (a pipeline restructure). The
+                 union is ordered by the larger of the two means, so the most expensive
+                 phases come first. *)
+              let compare_phases
+                (b_phases : Bench_types.Phase_stats.t list)
+                (a_phases : Bench_types.Phase_stats.t list)
+                =
+                let to_map phases =
+                  List.map phases ~f:(fun (p : Bench_types.Phase_stats.t) -> p.path, p)
+                  |> String.Map.of_alist_exn
+                in
+                let b_map = to_map b_phases
+                and a_map = to_map a_phases in
+                Map.keys b_map @ Map.keys a_map
+                |> List.dedup_and_sort ~compare:String.compare
+                |> List.map ~f:(fun path ->
+                  path, Map.find b_map path, Map.find a_map path)
+                |> List.sort
+                     ~compare:
+                       (Comparable.lift Float.descending ~f:(fun (_, bp, ap) ->
+                          let mean p =
+                            Option.value_map
+                              p
+                              ~default:0.0
+                              ~f:(fun (p : Bench_types.Phase_stats.t) -> p.total.mean_s)
+                          in
+                          Float.max (mean bp) (mean ap)))
+                |> List.iter ~f:(fun (path, bp, ap) ->
+                  match bp, ap with
+                  | Some (bp : Bench_types.Phase_stats.t), Some ap ->
+                    printf
+                      "      %-44s  %8.3fms -> %8.3fms  %s\n"
+                      path
+                      (bp.total.mean_s *. 1e3)
+                      (ap.total.mean_s *. 1e3)
+                      (describe_change bp.total.mean_s ap.total.mean_s)
+                  | Some bp, None ->
+                    printf "      %-44s  %8.3fms -> (gone)\n" path (bp.total.mean_s *. 1e3)
+                  | None, Some ap ->
+                    printf "      %-44s  (new) -> %8.3fms\n" path (ap.total.mean_s *. 1e3)
+                  | None, None -> ())
+              in
+              let compare_case label (bc : Bench_types.Case.t) (ac : Bench_types.Case.t) =
+                printf
+                  "  %-20s  %8.3fms -> %8.3fms  %s\n"
+                  label
+                  (bc.time.mean_s *. 1e3)
+                  (ac.time.mean_s *. 1e3)
+                  (describe_change bc.time.mean_s ac.time.mean_s);
+                compare_phases bc.phases ac.phases
+              in
+              compare_case "cold (recompile)" b.cold a.cold;
+              compare_case "warm (re-eval)" b.warm a.warm;
+              compare_case "hot (cached)" b.hot a.hot;
               printf "\n"
             | Some _, None -> printf "=== %s (only in before) ===\n\n" name
             | None, Some _ -> printf "=== %s (only in after) ===\n\n" name

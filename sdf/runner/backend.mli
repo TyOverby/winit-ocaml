@@ -20,6 +20,7 @@ module type S = sig
 
   val run
     :  t
+    -> trace:Phase_trace.t
     -> region:Sample_region.t
     -> filename:string
     -> string
@@ -29,6 +30,7 @@ module type S = sig
       contour provably misses are never sampled). Cached like [run]'s output. *)
   val run_contour
     :  t
+    -> trace:Phase_trace.t
     -> region:Sample_region.t
     -> filename:string
     -> string
@@ -38,6 +40,7 @@ module type S = sig
       cache key includes [cull], since the verdicts depend on it. *)
   val run_tiled
     :  t
+    -> trace:Phase_trace.t
     -> region:Sample_region.t
     -> filename:string
     -> string

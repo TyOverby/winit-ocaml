@@ -11,6 +11,8 @@
   core_unix
   core_unix.command_unix
   image_buf
+  phase_trace
+  phase_trace_perfetto
   sdf
   neo
   sdf_runner

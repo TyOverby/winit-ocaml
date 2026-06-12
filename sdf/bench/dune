@@ -1,6 +1,7 @@
 (executables
  (names bench compare)
  (libraries
+  phase_trace
   sdf
   sdf_runner
   sdf_passthrough_oracle
