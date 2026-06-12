@@ -88,9 +88,13 @@ module type S_parallel = sig @@ portable
     val create : Prepared.t -> Sample_region.t -> t
     val set_variable : t -> var:Variable_idx.t -> Value.t -> unit
 
+    (** [trace] is the caller's writer; rows are recorded as forked lanes beneath the
+        span currently open on it (collapsing to one ["row"] summary node whose [max]
+        exposes load imbalance). Pass [Phase_trace.null ()] when not tracing. *)
     val run
       :  t
       -> par:Parallel.t @ local
+      -> trace:Phase_trace.t
       -> oracles:Prepared_oracle.t Map.M(Oracle_key).t
       -> Result.t
   end

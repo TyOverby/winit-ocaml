@@ -15,3 +15,4 @@ module Value = Value
 module Simd = Simd
 module Oracle = Oracle
 module Oracle_dependencies = Oracle_dependencies
+module Phase_trace = Phase_trace

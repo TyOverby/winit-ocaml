@@ -20,6 +20,8 @@ module Event = struct
         ; ts : int
         }
     | End of { ts : int }
+    | Args of { args : (string * Arg.t) list }
+    (** appended to the innermost span open at this point in the stream *)
 end
 
 (* A completed lane, as joined into the shared sink. Immutable, so it crosses contention
@@ -121,6 +123,16 @@ let span ?(args = []) t name ~f =
         raise exn)
 ;;
 
+let add_args t args =
+  match t.sink with
+  | None -> ()
+  | Some sink ->
+    if Atomic.get sink.live && not (List.is_empty t.open_stack)
+    then (
+      t.events_rev <- Args { args } :: t.events_rev;
+      t.n_events <- t.n_events + 1)
+;;
+
 module Fork = struct
   type t =
     | Inert
@@ -219,7 +231,7 @@ module Assemble = struct
   module Node = struct
     type t =
       { name : string
-      ; args : (string * Arg.t) list
+      ; mutable args : (string * Arg.t) list
       ; start : int
       ; mutable dur : int
       ; lane : int
@@ -254,6 +266,10 @@ module Assemble = struct
           | top :: rest ->
             top.Node.dur <- ts - top.start;
             stack := rest
+          | [] -> ())
+       | Args { args } ->
+         (match !stack with
+          | top :: _ -> top.Node.args <- top.Node.args @ args
           | [] -> ()));
       incr idx);
     List.rev !roots_rev
@@ -412,40 +428,40 @@ module Summary = struct
   let of_captured (captured : Captured.t) = summarize captured.roots
 
   let to_string_hum ?max_depth ts =
-    let buf = Buffer.create 256 in
     let span_str s = Time_ns.Span.to_string_hum ~decimals:2 s in
-    let rec go depth ~parent_total ts =
+    let label ~parent_total t =
+      let pct =
+        match parent_total with
+        | Some p when Time_ns.Span.( > ) p Time_ns.Span.zero ->
+          sprintf
+            " (%.0f%%)"
+            (100. *. (Time_ns.Span.to_ns t.total /. Time_ns.Span.to_ns p))
+        | _ -> ""
+      in
+      let count =
+        if t.count = 1 then "" else sprintf " n=%d max=%s" t.count (span_str t.max)
+      in
+      sprintf "%s: %s%s self=%s%s" t.name (span_str t.total) pct (span_str t.self) count
+    in
+    let rec node depth ~parent_total t : Expectree.t =
       let truncated =
         match max_depth with
-        | Some d -> depth >= d
+        | Some d -> depth + 1 >= d
         | None -> false
       in
-      if not truncated
-      then
-        List.sort ts ~compare:(fun a b -> Time_ns.Span.compare b.total a.total)
-        |> List.iter ~f:(fun t ->
-          let pct =
-            match parent_total with
-            | Some p when Time_ns.Span.( > ) p Time_ns.Span.zero ->
-              sprintf
-                " (%.0f%%)"
-                (100. *. (Time_ns.Span.to_ns t.total /. Time_ns.Span.to_ns p))
-            | _ -> ""
-          in
-          Buffer.add_string
-            buf
-            (sprintf
-               "%s%s: count=%d total=%s self=%s max=%s%s\n"
-               (String.make (depth * 2) ' ')
-               t.name
-               t.count
-               (span_str t.total)
-               (span_str t.self)
-               (span_str t.max)
-               pct);
-          go (depth + 1) ~parent_total:(Some t.total) t.children)
+      let lbl = label ~parent_total t in
+      if List.is_empty t.children || truncated
+      then Expectree.Leaf lbl
+      else
+        Expectree.Branch
+          (lbl, List.map t.children ~f:(node (depth + 1) ~parent_total:(Some t.total)))
     in
-    go 0 ~parent_total:None ts;
-    Buffer.contents buf
+    match max_depth with
+    | Some d when d <= 0 -> ""
+    | _ ->
+      (match List.map ts ~f:(node 0 ~parent_total:None) with
+       | [] -> ""
+       | [ root ] -> Expectree.to_string root
+       | roots -> Expectree.to_string (Expectree.Split roots))
   ;;
 end

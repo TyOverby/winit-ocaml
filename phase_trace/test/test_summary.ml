@@ -128,25 +128,26 @@ let%expect_test "first-appearance order is preserved in Summary.of_captured" =
 ;;
 
 (* ------------------------------------------------------------------ *)
-(* to_string_hum: children sorted by descending total *)
+(* to_string_hum: children rendered in execution (first-appearance) order, even when a
+   later sibling is more expensive *)
 
-let%expect_test "to_string_hum: children sorted descending by total" =
+let%expect_test "to_string_hum: children keep execution order, not cost order" =
   let c =
     captured
       [ span
           "root"
           ~start:0
           ~dur:1000
-          ~children:[ span "slow" ~start:0 ~dur:600; span "fast" ~start:700 ~dur:100 ]
+          ~children:[ span "fast" ~start:0 ~dur:100; span "slow" ~start:200 ~dur:600 ]
       ]
   in
   let s = Phase_trace.Summary.of_captured c in
   print_string (Phase_trace.Summary.to_string_hum s);
   [%expect
     {|
-    root: count=1 total=1us self=300ns max=1us
-      slow: count=1 total=600ns self=600ns max=600ns (60%)
-      fast: count=1 total=100ns self=100ns max=100ns (10%)
+    root: 1us self=300ns
+    ├─╴fast: 100ns (10%) self=100ns
+    ╰─╴slow: 600ns (60%) self=600ns
     |}]
 ;;
 
@@ -157,10 +158,9 @@ let%expect_test "to_string_hum: percent-of-parent shown" =
   in
   let s = Phase_trace.Summary.of_captured c in
   print_string (Phase_trace.Summary.to_string_hum s);
-  [%expect
-    {|
-    root: count=1 total=1us self=500ns max=1us
-      child: count=1 total=500ns self=500ns max=500ns (50%)
+  [%expect {|
+    root: 1us self=500ns
+    ╰─╴child: 500ns (50%) self=500ns
     |}]
 ;;
 
@@ -177,7 +177,7 @@ let%expect_test "to_string_hum: max_depth truncates" =
   in
   let s = Phase_trace.Summary.of_captured c in
   print_string (Phase_trace.Summary.to_string_hum ~max_depth:1 s);
-  [%expect {| l1: count=1 total=1us self=500ns max=1us |}]
+  [%expect {| l1: 1us self=500ns |}]
 ;;
 
 let%expect_test "to_string_hum: empty list produces empty string" =

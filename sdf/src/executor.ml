@@ -171,18 +171,20 @@ module Batch_to_parallel (B : S_batch) : S_parallel = struct
         B.Batch.set_variable b ~var value)
     ;;
 
-    let (run @ portable) t ~par ~oracles =
+    let (run @ portable) t ~par ~trace ~oracles =
       let { prepared; region; variables } = t in
       let width = region.samples_x in
       let height = region.samples_y in
       let result = Grid.create ~width ~height in
+      let fk = Phase_trace.fork trace in
       Parallel.for_ par ~start:0 ~stop:height ~f:(fun _par y ->
-        let b = B.Batch.create prepared (Sample_region.row region y) in
-        apply_variables b variables;
-        let row = B.Batch.run b ~oracles in
-        for x = 0 to width - 1 do
-          Grid.set result ~x ~y (B.Result.get_output row ~px:x)
-        done);
+        Phase_trace.with_fork fk ~name:"row" ~f:(fun _trace ->
+          let b = B.Batch.create prepared (Sample_region.row region y) in
+          apply_variables b variables;
+          let row = B.Batch.run b ~oracles in
+          for x = 0 to width - 1 do
+            Grid.set result ~x ~y (B.Result.get_output row ~px:x)
+          done));
       result
     ;;
   end

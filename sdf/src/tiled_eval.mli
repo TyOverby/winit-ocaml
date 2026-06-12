@@ -38,10 +38,15 @@ end
 
 (** Evaluate [tree] over [region]'s sample grid, skipping tiles that [cull] proves
     uninteresting. [Bool]-typed trees skip interval scheduling and evaluate every tile.
-    [tile_cells] defaults to 32. *)
+    [tile_cells] defaults to 32.
+
+    [trace] (default: a null writer) records phases on the calling thread: [tile-schedule]
+    (with tile counts as args), [batch-prepare], and [eval-tiles] with one forked ["tile"]
+    lane per active tile. *)
 val run
   :  exec:(module Executor.S)
   -> par:Parallel.t @ local
+  -> ?trace:Phase_trace.t
   -> oracles:Prepared_oracle.t Map.M(Oracle_key).t
   -> region:Sample_region.t
   -> ?tile_cells:int

@@ -38,6 +38,7 @@ let make_test (module Executor : Executor.S) =
                    |> M.prepare
                         ~exec:(Obj.magic Obj.magic (module Executor : Sdf.Executor.S))
                         ~par
+                        ~trace:(Phase_trace.null ())
                         ~oracles:prepared
                         ~sample_region:(Sdf.Sample_region.point ~x:#0.0s ~y:#0.0s)
                  in

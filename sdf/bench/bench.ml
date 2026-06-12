@@ -49,12 +49,50 @@ module Phase_row = struct
     }
 end
 
-(* One timed [Sdf_runner.run]: its wall-clock time plus the per-phase breakdown of the
-   trace recorded during it, flattened to "parent/child" paths. *)
+(* One timed frame: its wall-clock time plus the per-phase breakdown of the trace recorded
+   during it, flattened to "parent/child" paths. *)
 type timed =
   { elapsed_s : float
   ; phases : (string * Phase_row.t) list
   }
+
+(* The benchmark mirrors the neon UI's default (grayscale) frame as closely as possible: a
+   sparse tiled evaluation with the constant-outside cull, then a per-pixel copy of the
+   result into a canvas. [color_grayscale] is copied from sdf/neon/ui.ml. *)
+let cull = Sdf.Tile_scheduler.Cull.Constant_outside { below = 0.; above = 1. }
+
+let color_grayscale (dist : float) : Int32_u.t =
+  if Float.(dist <= 0.0)
+  then #0xFF000000l
+  else if Float.(dist <= 1.0)
+  then (
+    let component = dist *. 255.0 |> Float.to_int |> Int32_u.of_int_trunc in
+    Int32_u.(
+      component lor shift_left component 8 lor shift_left component 16 lor #0xFF000000l))
+  else #0xFFFFFFFFl
+;;
+
+let copy_pixels result ~canvas =
+  Sdf.Tiled_eval.Result.iter
+    result
+    ~fill:(fun ~x0 ~y0 ~samples_x ~samples_y interval ->
+      let #{ Sdf.Interval.lo = _; hi } = interval in
+      let color = if Float32_u.O.(hi <= #0.s) then #0xFF000000l else #0xFFFFFFFFl in
+      for y = y0 to y0 + samples_y - 1 do
+        for x = x0 to x0 + samples_x - 1 do
+          Image_buf.set canvas ~x ~y color
+        done
+      done)
+    ~draw:(fun ~x0 ~y0 ~samples_x ~samples_y ~get ->
+      for j = 0 to samples_y - 1 do
+        for i = 0 to samples_x - 1 do
+          let dist =
+            Float32_u.to_float (Sdf.Value.to_float (get ((j * samples_x) + i)))
+          in
+          Image_buf.set canvas ~x:(x0 + i) ~y:(y0 + j) (color_grayscale dist)
+        done
+      done)
+;;
 
 let flatten_phases summary =
   let rec go prefix acc (nodes : Phase_trace.Summary.t list) =
@@ -71,15 +109,14 @@ let flatten_phases summary =
   List.rev (go "" [] summary)
 ;;
 
-(* Time a single [Sdf_runner.run]. The grid is evaluated eagerly inside [run]; the
-   callback does no work so we measure only the runner's pipeline, not pixel readback. The
-   trace is created and summarized outside the measured section. *)
-let time_run runner ~region ~filename source =
+(* Time one UI-equivalent frame: [Sdf_runner.run_tiled] plus the pixel copy. The trace is
+   created and summarized outside the measured section. *)
+let time_run runner ~canvas ~region ~filename source =
   let trace = Phase_trace.create () in
   let (), elapsed =
     measure (fun () ->
-      Sdf_runner.run runner ~trace ~region ~filename source ~f:(fun _par _result _get ->
-        ()))
+      let result = Sdf_runner.run_tiled runner ~trace ~region ~filename source ~cull in
+      Phase_trace.span trace "copy-pixels" ~f:(fun () -> copy_pixels result ~canvas))
   in
   let summary = Phase_trace.Summary.of_captured (Phase_trace.finish trace) in
   { elapsed_s = elapsed; phases = flatten_phases summary }
@@ -110,15 +147,17 @@ type sample =
    - [cold]: a uniquely-perturbed source at a fresh region -> full recompile + re-eval.
      The trailing newlines change the source string (forcing a recompile) without changing
      the compiled tree, so the perturbation costs nothing beyond the recompile itself. *)
-let sample_one runner ~filename ~source =
+let sample_one runner ~canvas ~filename ~source =
   let hot_region = region_of 0 in
-  let (_ : timed) = time_run runner ~region:hot_region ~filename source in
-  let hot = time_run runner ~region:hot_region ~filename source in
-  let warm = time_run runner ~region:(region_of (fresh_offset ())) ~filename source in
+  let (_ : timed) = time_run runner ~canvas ~region:hot_region ~filename source in
+  let hot = time_run runner ~canvas ~region:hot_region ~filename source in
+  let warm =
+    time_run runner ~canvas ~region:(region_of (fresh_offset ())) ~filename source
+  in
   let cold =
     let offset = fresh_offset () in
     let perturbed = source ^ String.make offset '\n' in
-    time_run runner ~region:(region_of offset) ~filename perturbed
+    time_run runner ~canvas ~region:(region_of offset) ~filename perturbed
   in
   { cold; hot; warm }
 ;;
@@ -189,6 +228,65 @@ let compute_case (runs : timed list) : Bench_types.Case.t =
   }
 ;;
 
+(* Render the per-phase stats of one cache state as a box-drawing tree, rebuilding the
+   nesting from the "parent/child" paths. Children keep their first-appearance order,
+   which is the order the phases first executed. *)
+let phase_tree_lines (phases : Bench_types.Phase_stats.t list) ~indent =
+  let module Node = struct
+    type t =
+      { mutable stats : Bench_types.Phase_stats.t option
+      ; mutable children_rev : (string * t) list
+      }
+
+    let create () = { stats = None; children_rev = [] }
+  end
+  in
+  let root = Node.create () in
+  let find_or_add (node : Node.t) seg =
+    match List.Assoc.find node.children_rev seg ~equal:String.equal with
+    | Some child -> child
+    | None ->
+      let child = Node.create () in
+      node.children_rev <- (seg, child) :: node.children_rev;
+      child
+  in
+  List.iter phases ~f:(fun p ->
+    let node = List.fold (String.split p.path ~on:'/') ~init:root ~f:find_or_add in
+    node.stats <- Some p);
+  let label seg (stats : Bench_types.Phase_stats.t option) =
+    match stats with
+    | None -> seg
+    | Some p ->
+      let n =
+        if Float.( = ) p.mean_count 1.0 then "" else sprintf " n=%.0f" p.mean_count
+      in
+      sprintf
+        "%s: %.3fms self=%.3fms%s"
+        seg
+        (p.total.mean_s *. 1e3)
+        (p.self.mean_s *. 1e3)
+        n
+  in
+  let rec to_tree seg (node : Node.t) : Expectree.t =
+    let children =
+      List.rev node.children_rev |> List.map ~f:(fun (seg, child) -> to_tree seg child)
+    in
+    match children with
+    | [] -> Expectree.Leaf (label seg node.stats)
+    | children -> Expectree.Branch (label seg node.stats, children)
+  in
+  let roots =
+    List.rev root.children_rev |> List.map ~f:(fun (seg, child) -> to_tree seg child)
+  in
+  let rendered =
+    match roots with
+    | [] -> ""
+    | [ tree ] -> Expectree.to_string tree
+    | trees -> Expectree.to_string (Expectree.Split trees)
+  in
+  String.split_lines rendered |> List.map ~f:(fun line -> String.make indent ' ' ^ line)
+;;
+
 let discover_neo_files dir =
   Sys_unix.ls_dir dir
   |> List.filter ~f:(String.is_suffix ~suffix:".neo")
@@ -241,6 +339,7 @@ let () =
             eprintf "No .neo files found in %s\n" dir;
             exit 1);
           let runner = make_runner backend.portable in
+          let canvas = Image_buf.create ~width:grid_width ~height:grid_height #0l in
           let sources =
             List.map files ~f:(fun path ->
               Filename.basename path, path, In_channel.read_all path)
@@ -248,13 +347,13 @@ let () =
           (* Warmup pass: spin up worker domains and populate caches. *)
           eprintf "Warming up %s backend...\n%!" strategy;
           List.iter sources ~f:(fun (_name, path, source) ->
-            let (_ : sample) = sample_one runner ~filename:path ~source in
+            let (_ : sample) = sample_one runner ~canvas ~filename:path ~source in
             ());
           (* Estimation pass: one sample per file to size the iteration count. *)
           eprintf "Running estimation pass...\n%!";
           let estimates =
             List.map sources ~f:(fun (name, path, source) ->
-              let s = sample_one runner ~filename:path ~source in
+              let s = sample_one runner ~canvas ~filename:path ~source in
               let est_total = s.cold.elapsed_s +. s.hot.elapsed_s +. s.warm.elapsed_s in
               eprintf "  %s: %.3fms\n%!" name (est_total *. 1e3);
               name, path, source, s, est_total)
@@ -273,7 +372,7 @@ let () =
               eprintf "  %s: %d iterations... %!" name iterations;
               let samples =
                 List.init iterations ~f:(fun _ ->
-                  sample_one runner ~filename:path ~source)
+                  sample_one runner ~canvas ~filename:path ~source)
               in
               eprintf "done\n%!";
               let all = est :: samples in
@@ -308,15 +407,7 @@ let () =
                   (s.min_s *. 1e3)
                   (s.max_s *. 1e3)
                   (s.median_s *. 1e3);
-                List.sort c.phases ~compare:(fun a b ->
-                  Float.compare b.total.mean_s a.total.mean_s)
-                |> List.iter ~f:(fun (p : Bench_types.Phase_stats.t) ->
-                  printf
-                    "      %-44s  mean: %9.3fms  self: %9.3fms  n: %.1f\n"
-                    p.path
-                    (p.total.mean_s *. 1e3)
-                    (p.self.mean_s *. 1e3)
-                    p.mean_count)
+                List.iter (phase_tree_lines c.phases ~indent:6) ~f:print_endline
               in
               print_case "cold (recompile)" b.cold;
               print_case "warm (re-eval)" b.warm;

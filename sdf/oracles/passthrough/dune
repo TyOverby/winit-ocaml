@@ -1,5 +1,5 @@
 (library
  (name sdf_passthrough_oracle)
- (libraries base core sdf)
+ (libraries base core phase_trace sdf)
  (preprocess
   (pps ppx_jane ppx_builtin)))

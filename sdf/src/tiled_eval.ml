@@ -43,6 +43,7 @@ end
 let run
   ~exec:(module E : Executor.S)
   ~par
+  ?(trace = Phase_trace.null ())
   ~oracles
   ~region
   ?(tile_cells = 32)
@@ -50,17 +51,28 @@ let run
   (tree : Expr_tree.t)
   =
   let sched =
-    match tree.type_ with
-    | Float ->
-      let range = Expr_graph_range_eval.of_tree tree in
-      Tile_scheduler.schedule
-        range
-        ~vars:(Map.empty (module Expr_graph_range_eval.Variable_idx))
-        ~oracles
-        ~region
-        ~tile_cells
-        ~cull
-    | Bool -> Tile_scheduler.all_active ~region ~tile_cells
+    Phase_trace.span trace "tile-schedule" ~f:(fun () ->
+      let sched =
+        match tree.type_ with
+        | Float ->
+          let range = Expr_graph_range_eval.of_tree tree in
+          Tile_scheduler.schedule
+            range
+            ~vars:(Map.empty (module Expr_graph_range_eval.Variable_idx))
+            ~oracles
+            ~region
+            ~tile_cells
+            ~cull
+        | Bool -> Tile_scheduler.all_active ~region ~tile_cells
+      in
+      Phase_trace.add_args
+        trace
+        [ ( "tiles_total"
+          , Phase_trace.Arg.Int
+              (Tile_scheduler.tiles_x sched * Tile_scheduler.tiles_y sched) )
+        ; "tiles_active", Phase_trace.Arg.Int (Tile_scheduler.num_active sched)
+        ];
+      sched)
   in
   let tiles_x = Tile_scheduler.tiles_x sched
   and tiles_y = Tile_scheduler.tiles_y sched in
@@ -92,28 +104,33 @@ let run
   let values_portended =
     { Modes.Portended.portended = Stdlib.Obj.magic_portable values }
   in
-  let prepared = E.Batch.Prepared.of_tree tree in
-  Parallel.for_ par ~start:0 ~stop:num_active ~f:(fun _par k ->
-    let active_tx = Stdlib.Obj.magic_uncontended active_tx in
-    let active_ty = Stdlib.Obj.magic_uncontended active_ty in
-    let offsets = Stdlib.Obj.magic_uncontended offsets in
-    let values =
-      Stdlib.Obj.magic_uncontended values_portended.Modes.Portended.portended
-    in
-    let tx = active_tx.(k)
-    and ty = active_ty.(k) in
-    let x0 = Tile_scheduler.tile_x0 sched ~tx
-    and y0 = Tile_scheduler.tile_y0 sched ~ty in
-    let sx = Tile_scheduler.tile_samples_x sched ~tx
-    and sy = Tile_scheduler.tile_samples_y sched ~ty in
-    let batch =
-      E.Batch.Batch.create_sub prepared region ~x0 ~y0 ~samples_x:sx ~samples_y:sy
-    in
-    let result = E.Batch.Batch.run batch ~oracles in
-    let base = offsets.(k) in
-    for i = 0 to (sx * sy) - 1 do
-      Value.Array.set values (base + i) (E.Batch.Result.get_output result ~px:i)
-    done);
+  let prepared =
+    Phase_trace.span trace "batch-prepare" ~f:(fun () -> E.Batch.Prepared.of_tree tree)
+  in
+  Phase_trace.span trace "eval-tiles" ~f:(fun () ->
+    let fk = Phase_trace.fork trace in
+    Parallel.for_ par ~start:0 ~stop:num_active ~f:(fun _par k ->
+      Phase_trace.with_fork fk ~name:"tile" ~f:(fun _trace ->
+        let active_tx = Stdlib.Obj.magic_uncontended active_tx in
+        let active_ty = Stdlib.Obj.magic_uncontended active_ty in
+        let offsets = Stdlib.Obj.magic_uncontended offsets in
+        let values =
+          Stdlib.Obj.magic_uncontended values_portended.Modes.Portended.portended
+        in
+        let tx = active_tx.(k)
+        and ty = active_ty.(k) in
+        let x0 = Tile_scheduler.tile_x0 sched ~tx
+        and y0 = Tile_scheduler.tile_y0 sched ~ty in
+        let sx = Tile_scheduler.tile_samples_x sched ~tx
+        and sy = Tile_scheduler.tile_samples_y sched ~ty in
+        let batch =
+          E.Batch.Batch.create_sub prepared region ~x0 ~y0 ~samples_x:sx ~samples_y:sy
+        in
+        let result = E.Batch.Batch.run batch ~oracles in
+        let base = offsets.(k) in
+        for i = 0 to (sx * sy) - 1 do
+          Value.Array.set values (base + i) (E.Batch.Result.get_output result ~px:i)
+        done)));
   { Modes.Portended.portended =
       Stdlib.Obj.magic_portable { Result.sched; values; offsets }
   }

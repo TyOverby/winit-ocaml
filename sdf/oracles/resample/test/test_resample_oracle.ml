@@ -38,6 +38,7 @@ let prepare_oracle tree region scheduler =
       Sdf_resample_oracle.create [ tree ]
       |> Sdf_resample_oracle.prepare
            ~par
+           ~trace:(Phase_trace.null ())
            ~exec:(Obj.magic Obj.magic (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
            ~oracles:empty_oracles
            ~sample_region:region

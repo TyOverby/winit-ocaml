@@ -596,6 +596,7 @@ let%expect_test "oracle passthrough: extract matches dense (circle inside passth
                          Obj.magic
                          (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
                     ~par
+                    ~trace:(Phase_trace.null ())
                     ~oracles:prepared
                     ~sample_region:region
              in

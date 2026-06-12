@@ -70,6 +70,7 @@ let make
   (type (a : value mod contended portable) (b : value mod contended portable))
   tree
   ~par
+  ~trace
   ~(exec : (module Executor.S with type Single.t = a and type Single.Variable_idx.t = b))
   ~oracles
   ~sample_region
@@ -79,18 +80,24 @@ let make
   let segments =
     let sample_region = Sample_region.expand sample_region ~by_:expand_by in
     let ~segments, ~length, ~stats:_ =
-      Sdf_contour.extract
-        ~exec:(module E : Executor.S)
-        ~par
-        ~oracles
-        ~region:sample_region
-        tree
+      Phase_trace.span trace "extract-contour" ~f:(fun () ->
+        Sdf_contour.extract
+          ~exec:(module E : Executor.S)
+          ~par
+          ~trace
+          ~oracles
+          ~region:sample_region
+          tree)
     in
     (* Marching-squares output is a level-set contour, so the index may resolve
        range-query signs with the midpoint probe — without it, [sample_range] reports both
        signs for any box that overlaps the contour's extent in one axis, however far away,
        which defeats tile culling. *)
-    Nearest_seg.build ~assume_level_set:true segments ~length
+    Phase_trace.span
+      trace
+      "build-nearest-seg"
+      ~args:[ "segments", Phase_trace.Arg.Int length ]
+      ~f:(fun () -> Nearest_seg.build ~assume_level_set:true segments ~length)
   in
   let open Float32_u in
   let step_x = Sample_region.step_x sample_region
@@ -109,6 +116,6 @@ let make
     }
 ;;
 
-let prepare tree ~par ~(exec : (module Executor.S)) ~oracles ~sample_region =
-  make tree ~par ~exec:(Obj.magic Obj.magic_portable exec) ~oracles ~sample_region
+let prepare tree ~par ~trace ~(exec : (module Executor.S)) ~oracles ~sample_region =
+  make tree ~par ~trace ~exec:(Obj.magic Obj.magic_portable exec) ~oracles ~sample_region
 ;;

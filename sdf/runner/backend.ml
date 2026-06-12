@@ -177,6 +177,7 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
                    |> M.prepare
                         ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
                         ~par
+                        ~trace
                         ~oracles:prepared
                         ~sample_region:region)
              in
@@ -209,7 +210,7 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
               let batch = E.Parallel.Batch.create prepared region in
               let result =
                 Phase_trace.span trace "eval-grid" ~f:(fun () ->
-                  E.Parallel.Batch.run batch ~par ~oracles)
+                  E.Parallel.Batch.run batch ~par ~trace ~oracles)
               in
               result, oracles_with_region)
           in
@@ -244,6 +245,7 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
                   Sdf_contour.extract
                     ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
                     ~par
+                    ~trace
                     ~oracles
                     ~region
                     tree)
@@ -286,6 +288,7 @@ module Make (E : Executor.S @ portable) : S with module E = E = struct
                   Tiled_eval.run
                     ~exec:(Obj.magic Obj.magic (module E : Sdf.Executor.S))
                     ~par
+                    ~trace
                     ~oracles
                     ~region
                     ~cull

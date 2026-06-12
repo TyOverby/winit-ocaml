@@ -1,6 +1,8 @@
 (executables
  (names bench compare)
  (libraries
+  expectree
+  image_buf
   phase_trace
   sdf
   sdf_runner

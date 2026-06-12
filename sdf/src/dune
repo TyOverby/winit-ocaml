@@ -5,6 +5,7 @@
   base
   stdlib_upstream_compatible
   core
+  phase_trace
   parallel
   parallel.scheduler
   unboxed.float32_u

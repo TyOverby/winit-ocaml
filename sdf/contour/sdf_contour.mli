@@ -30,10 +30,15 @@ end
     [Bool]-typed trees skip interval scheduling and sample every tile (matching the dense
     pipeline's behavior of reinterpreting the bits).
 
-    [tile_cells] is the cull granularity in grid cells (default 32). *)
+    [tile_cells] is the cull granularity in grid cells (default 32).
+
+    [trace] (default: a null writer) records phases on the calling thread: [tile-schedule]
+    (with tile counts as args), [batch-prepare], [march-tiles] with one forked ["tile"]
+    lane per active tile, and [stitch-segments]. *)
 val extract
   :  exec:(module Executor.S)
   -> par:Parallel.t @ local
+  -> ?trace:Phase_trace.t
   -> oracles:Oracle.Prepared.t Map.M(Oracle.Key).t
   -> region:Sample_region.t
   -> ?tile_cells:int

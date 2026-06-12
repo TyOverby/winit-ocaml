@@ -549,6 +549,7 @@ let run_oracle_range_test tree ~x_lo ~x_hi ~y_lo ~y_hi =
                |> Sdf_passthrough_oracle.prepare
                     ~exec:(Obj.magic Obj.magic (module Expr_graph_eval : Sdf.Executor.S))
                     ~par
+                    ~trace:(Phase_trace.null ())
                     ~oracles:prepared
                     ~sample_region:(Sample_region.point ~x:#0.0s ~y:#0.0s)
              in

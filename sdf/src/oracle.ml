@@ -9,9 +9,13 @@ module type S = sig @@ portable
 
   val create : Expr_tree.t list -> t
 
+  (** [trace] is the writer of the thread calling [prepare]; implementations record their
+      internal phases beneath the span currently open on it. Pass [Phase_trace.null ()]
+      when not tracing. *)
   val prepare
     :  t
     -> par:Parallel.t @ local
+    -> trace:Phase_trace.t
     -> exec:(module Executor.S) @ shareable
     -> oracles:Prepared.t Map.M(Oracle_key).t
     -> sample_region:Sample_region.t

@@ -83,6 +83,11 @@ val is_recording : t -> bool
     body may close over local values — notably a [Parallel.t @ local] — and once values. *)
 val span : ?args:(string * Arg.t) list -> t -> string -> f:(unit -> 'a) @ local once -> 'a
 
+(** [add_args t args] appends [args] to the span currently open on [t] — for data only
+    known once the phase has started or finished its work, e.g. how many tiles a
+    scheduling pass culled. No-op when no span is open or [t] is not recording. *)
+val add_args : t -> (string * Arg.t) list -> unit
+
 module Fork : sig
   (** A capture of a writer's current position that can cross into parallel tasks: the
       kind annotation lets a [Parallel.for_] closure capture it, where the writer itself
@@ -162,7 +167,9 @@ module Summary : sig
 
   val of_captured : Captured.t -> t list
 
-  (** Indented tree, children sorted by descending [total], one line per node with count /
-      total / self / max and percent-of-parent. [max_depth] truncates the tree. *)
+  (** Box-drawing tree, one line per node with total / self / percent-of-parent (plus
+      count and max when a node merges several spans). Nodes are rendered in the order
+      given — {!of_captured}'s first-appearance order, i.e. the order the phases first
+      executed. [max_depth] truncates the tree. *)
   val to_string_hum : ?max_depth:int -> t list -> string
 end
