@@ -122,13 +122,18 @@ let time_run runner ~canvas ~region ~filename source =
   { elapsed_s = elapsed; phases = flatten_phases summary }
 ;;
 
-(* Region offsets are drawn from a monotonically increasing counter so that successive
-   warm/cold runs always sample a region the runner has not just cached. The "hot" region
-   is fixed at offset 0 and never reused for warm/cold. *)
+(* Warm/cold regions cycle through a small fixed set of offsets so that every run of the
+   benchmark averages over the same regions: the active-tile count depends on where tile
+   boundaries fall relative to the scene, so each offset has its own (deterministic)
+   count, and drawing offsets from an unbounded counter made the reported per-phase counts
+   vary with the timing-derived iteration count. Offset 0 is reserved for the hot region,
+   and the cycle never repeats an offset twice in a row, so successive warm/cold runs
+   still defeat the runner's last-region caches. *)
+let offset_cycle_length = 8
 let next_offset = ref 0
 
 let fresh_offset () =
-  incr next_offset;
+  next_offset := (!next_offset mod offset_cycle_length) + 1;
   !next_offset
 ;;
 
@@ -144,9 +149,10 @@ type sample =
    - Prime with the canonical source at offset 0 (untimed) to populate the cache.
    - [hot]: same source, same region -> served from cache.
    - [warm]: same source, fresh region -> grid re-evaluated, compile reused.
-   - [cold]: a uniquely-perturbed source at a fresh region -> full recompile + re-eval.
-     The trailing newlines change the source string (forcing a recompile) without changing
-     the compiled tree, so the perturbation costs nothing beyond the recompile itself. *)
+   - [cold]: a perturbed source at a fresh region -> full recompile + re-eval. The
+     trailing newlines change the source string (forcing a recompile, since the runner
+     only compares against the immediately preceding source) without changing the compiled
+     tree, so the perturbation costs nothing beyond the recompile itself. *)
 let sample_one runner ~canvas ~filename ~source =
   let hot_region = region_of 0 in
   let (_ : timed) = time_run runner ~canvas ~region:hot_region ~filename source in
@@ -361,7 +367,14 @@ let () =
           let total_est =
             List.sum (module Float) estimates ~f:(fun (_, _, _, _, t) -> t)
           in
-          let iterations = Int.max 1 (int_of_float (budget /. total_est)) in
+          (* Rounded up to whole offset cycles so that every case's samples sweep the same
+             multiset of regions no matter how many iterations the budget buys — otherwise
+             a partial cycle skews the per-phase mean counts between runs. *)
+          let iterations =
+            Int.round_up
+              ~to_multiple_of:offset_cycle_length
+              (Int.max 1 (int_of_float (budget /. total_est)))
+          in
           eprintf
             "Estimated time per pass: %.3fms\nRunning %d iterations...\n%!"
             (total_est *. 1e3)
