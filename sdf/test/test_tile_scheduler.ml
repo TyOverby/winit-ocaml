@@ -10,6 +10,7 @@ let schedule ?(tile_cells = 8) ?(cull = Tile_scheduler.Cull.No_contour) tree ~re
   let range = Expr_graph_range_eval.of_tree tree in
   Tile_scheduler.schedule
     range
+    ~par:Parallel.sequential
     ~vars:empty_vars
     ~oracles:no_oracles
     ~region
@@ -215,6 +216,7 @@ let%test_unit "quickcheck: No_contour culled tiles contain all scalar samples" =
       let sched =
         Tile_scheduler.schedule
           range
+          ~par:Parallel.sequential
           ~vars:empty_vars
           ~oracles:no_oracles
           ~region
@@ -305,6 +307,7 @@ let%test_unit "quickcheck: Constant_outside culled tiles satisfy range predicate
       let sched =
         Tile_scheduler.schedule
           range
+          ~par:Parallel.sequential
           ~vars:empty_vars
           ~oracles:no_oracles
           ~region
@@ -487,6 +490,7 @@ let%expect_test "flipped region: circle verdict map" =
   let sched =
     Tile_scheduler.schedule
       range
+      ~par:Parallel.sequential
       ~vars:empty_vars
       ~oracles:no_oracles
       ~region

@@ -110,7 +110,7 @@ let tile_count ~samples ~tile_cells =
   if samples <= 0 then 0 else Int.max 1 ((samples - 1 + tile_cells - 1) / tile_cells)
 ;;
 
-let make_grid ~(region : Sample_region.t) ~tile_cells ~f =
+let make_grid ~(region : Sample_region.t) ~tile_cells ~(f @ local) =
   if tile_cells < 1
   then raise_s [%message "Tile_scheduler: tile_cells must be >= 1" (tile_cells : int)];
   let samples_x = region.samples_x
@@ -135,73 +135,238 @@ let all_active ~region ~tile_cells =
   make_grid ~region ~tile_cells ~f:(fun ~tiles_x:_ ~tiles_y:_ ~lo:_ ~hi:_ -> ())
 ;;
 
-let schedule range ~vars ~oracles ~region ~tile_cells ~cull =
+(* The per-task state of the subdivision: a prepared {!Expr_graph_range_eval.Context}.
+   [vars] and [oracles] are invariant across the whole subdivision recursion — only the
+   coordinate box changes — so [create] resolves them (and allocates the lo/hi register
+   buffers) once, and every [eval] is an allocation-free [run_with_context]. A context
+   holds mutable scratch buffers, so it must not be shared across concurrent tasks: each
+   parallel task creates its own state at its top and reuses it for every rectangle that
+   task evaluates serially. *)
+module Task_state = struct
+  type t = { context : Expr_graph_range_eval.Context.t }
+
+  let create range ~vars ~oracles =
+    { context = Expr_graph_range_eval.Context.create range ~vars ~oracles }
+  ;;
+
+  let eval t ~x ~y = Expr_graph_range_eval.run_with_context t.context ~x ~y
+end
+
+(* Inclusive sample-index extent of the tile rectangle [t0, t1). The world box hulls the
+   two extreme sample coordinates; [Sample_region.x_at] is monotone in the index (a
+   monotone exact function composed with monotone float rounding), so the box contains
+   every sample coordinate in between. *)
+let sample_extent ~tile_cells ~t0 ~t1 ~last =
+  let s0 = t0 * tile_cells in
+  let s1 = Int.min (t1 * tile_cells) last in
+  s0, Int.max s1 s0
+;;
+
+let box_x ~(region : Sample_region.t) ~tile_cells ~tx0 ~tx1 =
+  let s0, s1 = sample_extent ~tile_cells ~t0:tx0 ~t1:tx1 ~last:(region.samples_x - 1) in
+  Interval.create ~lo:(Sample_region.x_at region s0) ~hi:(Sample_region.x_at region s1)
+;;
+
+let box_y ~(region : Sample_region.t) ~tile_cells ~ty0 ~ty1 =
+  let s0, s1 = sample_extent ~tile_cells ~t0:ty0 ~t1:ty1 ~last:(region.samples_y - 1) in
+  Interval.create ~lo:(Sample_region.y_at region s0) ~hi:(Sample_region.y_at region s1)
+;;
+
+let fill ~tiles_x ~lo ~hi ~tx0 ~tx1 ~ty0 ~ty1 (interval : Interval.t) =
+  let #{ Interval.lo = ilo; hi = ihi } = interval in
+  for ty = ty0 to ty1 - 1 do
+    for tx = tx0 to tx1 - 1 do
+      let i = (ty * tiles_x) + tx in
+      lo.(i) <- Float32_u.to_float ilo;
+      hi.(i) <- Float32_u.to_float ihi
+    done
+  done
+;;
+
+(* The serial subdivision: interval-evaluate the rectangle [tx0, tx1) x [ty0, ty1); fill
+   it if the bound culls, otherwise split the longer axis and recurse (a single un-culled
+   tile stays Active). [schedule] runs the levels of this same recursion above the grain
+   as parallel tasks; the split choices below must stay in lockstep with the parallel
+   driver so both evaluate exactly the same rectangles. *)
+let rec descend state ~region ~tile_cells ~cull ~tiles_x ~lo ~hi ~tx0 ~tx1 ~ty0 ~ty1 =
+  let bound =
+    Task_state.eval
+      state
+      ~x:(box_x ~region ~tile_cells ~tx0 ~tx1)
+      ~y:(box_y ~region ~tile_cells ~ty0 ~ty1)
+  in
+  if Cull.culls cull bound
+  then fill ~tiles_x ~lo ~hi ~tx0 ~tx1 ~ty0 ~ty1 bound
+  else (
+    let w = tx1 - tx0
+    and h = ty1 - ty0 in
+    if w = 1 && h = 1
+    then (* stays NaN = Active *) ()
+    else if w >= h
+    then (
+      let mid = tx0 + (w / 2) in
+      descend state ~region ~tile_cells ~cull ~tiles_x ~lo ~hi ~tx0 ~tx1:mid ~ty0 ~ty1;
+      descend state ~region ~tile_cells ~cull ~tiles_x ~lo ~hi ~tx0:mid ~tx1 ~ty0 ~ty1)
+    else (
+      let mid = ty0 + (h / 2) in
+      descend state ~region ~tile_cells ~cull ~tiles_x ~lo ~hi ~tx0 ~tx1 ~ty0 ~ty1:mid;
+      descend state ~region ~tile_cells ~cull ~tiles_x ~lo ~hi ~tx0 ~tx1 ~ty0:mid ~ty1))
+;;
+
+(* One node of the subdivision run as its own parallel task: rectangles of more than
+   [grain] tiles interval-evaluate themselves and, when they must split, fork their two
+   halves as parallel tasks (they are independent: they write disjoint tile-index ranges
+   of [lo]/[hi]); rectangles at or below the grain finish with the serial [descend] —
+   without a grain the deep levels would drown in per-task scheduling overhead. [grain]
+   targets ~128 leaf tasks on a square grid while never going below 4 tiles per leaf
+   (measured on boxes.neo's 32x32 tile grid: coarser grains leave the deep levels too
+   serial, finer ones pay more in task overhead than they recover).
+
+   A child can only be evaluated after its parent's verdict, so the fork tree mirrors the
+   recursion tree exactly: the same rectangles are evaluated, with the same split choices
+   (which must stay in lockstep with [descend]); only the order changes.
+
+   [inputs] is the evaluator inputs plus the verdict arrays; they don't all mode-cross on
+   their own, so the [Portended] wrapper carries them into the tasks (the same pattern as
+   the result grid in [Tiled_eval]). The maps are immutable and only ever read; [lo]/[hi]
+   are written at disjoint indices, the same pattern as the tile arrays in [Tiled_eval]. *)
+let rec descend_par
+  (par @ local)
+  inputs
+  ~region
+  ~tile_cells
+  ~cull
+  ~tiles_x
+  ~grain
+  ~tx0
+  ~tx1
+  ~ty0
+  ~ty1
+  =
+  (* This may be the first thing to run on a fresh fiber; pre-grow its stack before any
+     unboxed float32# bounds are in flight. See [Fiber_stack]. *)
+  Fiber_stack.pre_grow ();
+  (* Every task gets its own interval-evaluation state: the [Task_state] context holds
+     mutable scratch buffers, so it is created here, inside the task, from the portable
+     inputs — never shared across concurrent tasks. *)
+  let range, vars, oracles, lo, hi =
+    Stdlib.Obj.magic_uncontended inputs.Modes.Portended.portended
+  in
+  let state = Task_state.create range ~vars ~oracles in
+  let w = tx1 - tx0
+  and h = ty1 - ty0 in
+  if w * h <= grain
+  then descend state ~region ~tile_cells ~cull ~tiles_x ~lo ~hi ~tx0 ~tx1 ~ty0 ~ty1
+  else (
+    let bound =
+      Task_state.eval
+        state
+        ~x:(box_x ~region ~tile_cells ~tx0 ~tx1)
+        ~y:(box_y ~region ~tile_cells ~ty0 ~ty1)
+    in
+    if Cull.culls cull bound
+    then fill ~tiles_x ~lo ~hi ~tx0 ~tx1 ~ty0 ~ty1 bound
+    else if (* w * h > grain >= 1, so the rectangle is splittable; same split choice as
+               [descend]. *)
+            w >= h
+    then (
+      let mid = tx0 + (w / 2) in
+      let #((), ()) =
+        Parallel.fork_join2
+          par
+          (fun par ->
+            descend_par
+              par
+              inputs
+              ~region
+              ~tile_cells
+              ~cull
+              ~tiles_x
+              ~grain
+              ~tx0
+              ~tx1:mid
+              ~ty0
+              ~ty1)
+          (fun par ->
+            descend_par
+              par
+              inputs
+              ~region
+              ~tile_cells
+              ~cull
+              ~tiles_x
+              ~grain
+              ~tx0:mid
+              ~tx1
+              ~ty0
+              ~ty1)
+      in
+      ())
+    else (
+      let mid = ty0 + (h / 2) in
+      let #((), ()) =
+        Parallel.fork_join2
+          par
+          (fun par ->
+            descend_par
+              par
+              inputs
+              ~region
+              ~tile_cells
+              ~cull
+              ~tiles_x
+              ~grain
+              ~tx0
+              ~tx1
+              ~ty0
+              ~ty1:mid)
+          (fun par ->
+            descend_par
+              par
+              inputs
+              ~region
+              ~tile_cells
+              ~cull
+              ~tiles_x
+              ~grain
+              ~tx0
+              ~tx1
+              ~ty0:mid
+              ~ty1)
+      in
+      ()))
+;;
+
+let schedule range ~(par @ local) ~vars ~oracles ~region ~tile_cells ~cull =
   (* [Nothing] never culls, so skip the subdivision (it would interval-evaluate every
      rectangle of the recursion tree just to mark everything active). *)
   match (cull : Cull.t) with
   | Nothing -> all_active ~region ~tile_cells
   | No_contour | Constant_outside _ ->
-    (* [vars] and [oracles] are invariant across the whole subdivision recursion — only
-       the coordinate box changes — so resolve them (and allocate the register buffers)
-       once and share the context across every [descend] evaluation. *)
-    let context = Expr_graph_range_eval.Context.create range ~vars ~oracles in
-    make_grid ~region ~tile_cells ~f:(fun ~tiles_x ~tiles_y ~lo ~hi ->
-      let last_sample_x = region.samples_x - 1
-      and last_sample_y = region.samples_y - 1 in
-      (* Inclusive sample-index extent of the tile rectangle [t0, t1). The world box hulls
-       the two extreme sample coordinates; [Sample_region.x_at] is monotone in the index
-       (a monotone exact function composed with monotone float rounding), so the box
-       contains every sample coordinate in between. *)
-      let sample_extent ~t0 ~t1 ~last =
-        let s0 = t0 * tile_cells in
-        let s1 = Int.min (t1 * tile_cells) last in
-        s0, Int.max s1 s0
-      in
-      let box_x ~tx0 ~tx1 =
-        let s0, s1 = sample_extent ~t0:tx0 ~t1:tx1 ~last:last_sample_x in
-        Interval.create
-          ~lo:(Sample_region.x_at region s0)
-          ~hi:(Sample_region.x_at region s1)
-      in
-      let box_y ~ty0 ~ty1 =
-        let s0, s1 = sample_extent ~t0:ty0 ~t1:ty1 ~last:last_sample_y in
-        Interval.create
-          ~lo:(Sample_region.y_at region s0)
-          ~hi:(Sample_region.y_at region s1)
-      in
-      let fill ~tx0 ~tx1 ~ty0 ~ty1 (interval : Interval.t) =
-        let #{ Interval.lo = ilo; hi = ihi } = interval in
-        for ty = ty0 to ty1 - 1 do
-          for tx = tx0 to tx1 - 1 do
-            let i = (ty * tiles_x) + tx in
-            lo.(i) <- Float32_u.to_float ilo;
-            hi.(i) <- Float32_u.to_float ihi
-          done
-        done
-      in
-      let rec descend ~tx0 ~tx1 ~ty0 ~ty1 =
-        let bound =
-          Expr_graph_range_eval.run_with_context
-            context
-            ~x:(box_x ~tx0 ~tx1)
-            ~y:(box_y ~ty0 ~ty1)
-        in
-        if Cull.culls cull bound
-        then fill ~tx0 ~tx1 ~ty0 ~ty1 bound
-        else (
-          let w = tx1 - tx0
-          and h = ty1 - ty0 in
-          if w = 1 && h = 1
-          then (* stays NaN = Active *) ()
-          else if w >= h
-          then (
-            let mid = tx0 + (w / 2) in
-            descend ~tx0 ~tx1:mid ~ty0 ~ty1;
-            descend ~tx0:mid ~tx1 ~ty0 ~ty1)
-          else (
-            let mid = ty0 + (h / 2) in
-            descend ~tx0 ~tx1 ~ty0 ~ty1:mid;
-            descend ~tx0 ~tx1 ~ty0:mid ~ty1))
-      in
-      if tiles_x > 0 && tiles_y > 0 then descend ~tx0:0 ~tx1:tiles_x ~ty0:0 ~ty1:tiles_y)
+    (* Bound (not tail-called) so the closure below may be a local allocation (it captures
+       the local [par]). *)
+    let t =
+      make_grid ~region ~tile_cells ~f:(fun ~tiles_x ~tiles_y ~lo ~hi ->
+        if tiles_x > 0 && tiles_y > 0
+        then (
+          let grain = Int.max 4 (tiles_x * tiles_y / 128) in
+          let inputs =
+            { Modes.Portended.portended =
+                Stdlib.Obj.magic_portable (range, vars, oracles, lo, hi)
+            }
+          in
+          descend_par
+            par
+            inputs
+            ~region
+            ~tile_cells
+            ~cull
+            ~tiles_x
+            ~grain
+            ~tx0:0
+            ~tx1:tiles_x
+            ~ty0:0
+            ~ty1:tiles_y))
+    in
+    t
 ;;
