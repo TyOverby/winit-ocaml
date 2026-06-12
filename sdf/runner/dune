@@ -1,5 +1,12 @@
 (library
  (name sdf_runner)
- (libraries core sdf sdf_contour neo parallel parallel.scheduler unboxed.float32_u)
+ (libraries
+  core
+  sdf
+  sdf_contour
+  neo
+  parallel
+  parallel.scheduler
+  unboxed.float32_u)
  (preprocess
   (pps ppx_jane)))

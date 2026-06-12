@@ -1,10 +1,9 @@
 (* Scratch harness: why do tiles far from the boxes.neo rectangle fail to cull?
 
-   Replicates the resample pipeline for the boxes.neo scene (single rectangle),
-   then runs Nearest_seg.query_range over a 32px tile grid and prints the
-   No_contour verdict map. For straddling tiles far from the contour, dissects
-   the range query in float64: which segments are sign candidates, and what are
-   their cross-product ranges over the tile? *)
+   Replicates the resample pipeline for the boxes.neo scene (single rectangle), then runs
+   Nearest_seg.query_range over a 32px tile grid and prints the No_contour verdict map.
+   For straddling tiles far from the contour, dissects the range query in float64: which
+   segments are sign candidates, and what are their cross-product ranges over the tile? *)
 
 open! Core
 module F = Float32_u
@@ -17,7 +16,8 @@ let rect rx ry w h px py =
   let dx = Float.abs (px -. cx) -. hw
   and dy = Float.abs (py -. cy) -. hh in
   let outside =
-    Float.sqrt ((Float.max dx 0. *. Float.max dx 0.) +. (Float.max dy 0. *. Float.max dy 0.))
+    Float.sqrt
+      ((Float.max dx 0. *. Float.max dx 0.) +. (Float.max dy 0. *. Float.max dy 0.))
   in
   let inside = Float.min (Float.max dx dy) 0. in
   outside +. inside
@@ -45,7 +45,12 @@ let run_field name field =
   (* Tile grid in segment (grid-index) space, 32px tiles. *)
   let tile = 32 in
   let tiles = width / tile in
-  printf "\nverdict map (%dx%d tiles of %dpx): '+' all-positive, '-' all-negative, 'o' straddle\n" tiles tiles tile;
+  printf
+    "\n\
+     verdict map (%dx%d tiles of %dpx): '+' all-positive, '-' all-negative, 'o' straddle\n"
+    tiles
+    tiles
+    tile;
   for ty = 0 to tiles - 1 do
     for tx = 0 to tiles - 1 do
       let x_lo = F.of_float (Float.of_int (tx * tile))
@@ -62,9 +67,9 @@ let run_field name field =
     done;
     printf "\n"
   done;
-  (* Dissect a few interesting tiles: one far above the box (in the column band),
-     one far to the left (row band), one diagonal. Box in grid space: the rect is
-     at world (150,50)-(350,300), grid = world - start = world + 2. *)
+  (* Dissect a few interesting tiles: one far above the box (in the column band), one far
+     to the left (row band), one diagonal. Box in grid space: the rect is at world
+     (150,50)-(350,300), grid = world - start = world + 2. *)
   let dissect name tx ty =
     let qx0 = Float.of_int (tx * tile)
     and qx1 = Float.of_int ((tx + 1) * tile)
@@ -89,8 +94,8 @@ let run_field name field =
       qy1
       (F.to_float lo)
       (F.to_float hi);
-    (* float64 brute force: per-segment box min/max distance, then sign candidacy
-       exactly as process_seg_range does. *)
+    (* float64 brute force: per-segment box min/max distance, then sign candidacy exactly
+       as process_seg_range does. *)
     let pt_seg_d2 px py x1 y1 x2 y2 =
       let abx = x2 -. x1
       and aby = y2 -. y1 in
@@ -178,8 +183,8 @@ let run_field name field =
     printf "  (%d sign candidates total)\n" !shown
   in
   ignore dissect;
-  (* The real fix: an index built with ~assume_level_set:true resolves ambiguous
-     signs with a midpoint probe inside query_range. *)
+  (* The real fix: an index built with ~assume_level_set:true resolves ambiguous signs
+     with a midpoint probe inside query_range. *)
   let tp = Nearest_seg.build ~assume_level_set:true out ~length:count in
   printf "\nverdict map with ~assume_level_set:true:\n";
   let active_before = ref 0
@@ -218,8 +223,8 @@ let run_field name field =
     !active_before
     !active_after
     (tiles * tiles);
-  (* Soundness sweep: every culled tile's claimed sign must agree with the scalar
-     query at every grid point inside the tile. *)
+  (* Soundness sweep: every culled tile's claimed sign must agree with the scalar query at
+     every grid point inside the tile. *)
   let violations = ref 0 in
   for ty = 0 to tiles - 1 do
     for tx = 0 to tiles - 1 do
@@ -244,7 +249,8 @@ let run_field name field =
             if !violations <= 5
             then
               printf
-                "CONTAINMENT VIOLATION tile (%d,%d) point (%d,%d): q=%.4f not in [%.4f, %.4f]\n"
+                "CONTAINMENT VIOLATION tile (%d,%d) point (%d,%d): q=%.4f not in [%.4f, \
+                 %.4f]\n"
                 tx
                 ty
                 gx
@@ -261,9 +267,9 @@ let run_field name field =
 
 let () =
   run_field "interior box (closed contour)" (fun px py -> rect 150. 50. 200. 250. px py);
-  (* Adversary: the rectangle extends past the right region boundary, so march clips
-     it there, leaving open chain ends. Tiles in the sign-flip wedge past those ends
-     must keep both signs. *)
+  (* Adversary: the rectangle extends past the right region boundary, so march clips it
+     there, leaving open chain ends. Tiles in the sign-flip wedge past those ends must
+     keep both signs. *)
   run_field "box clipped at right boundary (open ends)" (fun px py ->
     rect 150. 50. 600. 250. px py);
   (* Adversary: clipped at top AND bottom: two separate vertical strips of contour. *)

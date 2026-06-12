@@ -16,8 +16,8 @@ module Prepared = struct
     }
 
   (* The segments live in the expanded grid's index space (March emits cell-index
-     coordinates), so map world coordinates to grid indices before querying, and scale
-     the resulting distance (measured in grid cells) back to world units. *)
+     coordinates), so map world coordinates to grid indices before querying, and scale the
+     resulting distance (measured in grid cells) back to world units. *)
   let sample { segments; inv_step_x; inv_step_y; offset_x; offset_y; dist_scale } ~x ~y =
     let open Float32_u in
     let x = (x * inv_step_x) + offset_x
@@ -26,10 +26,10 @@ module Prepared = struct
   ;;
 
   (* The world -> grid-index map is affine and applied per-endpoint with the same float32
-     arithmetic as [sample], so (after reordering for a negative step) the transformed
-     box contains every transformed sample point. Likewise the final [dist_scale]
-     multiply is monotone. Anything non-finite (an unbounded coordinate range would
-     transform to an infinite grid box) falls back to the full range. *)
+     arithmetic as [sample], so (after reordering for a negative step) the transformed box
+     contains every transformed sample point. Likewise the final [dist_scale] multiply is
+     monotone. Anything non-finite (an unbounded coordinate range would transform to an
+     infinite grid box) falls back to the full range. *)
   let sample_range
     { segments; inv_step_x; inv_step_y; offset_x; offset_y; dist_scale }
     ~x
@@ -37,7 +37,7 @@ module Prepared = struct
     =
     if Interval.is_top x || Interval.is_top y
     then Interval.top
-    else (
+    else
       let open Float32_u in
       let #{ Interval.lo = xl; hi = xh } = x in
       let #{ Interval.lo = yl; hi = yh } = y in
@@ -57,7 +57,7 @@ module Prepared = struct
         let a = lo * dist_scale
         and b = hi * dist_scale in
         Interval.create ~lo:(min a b) ~hi:(max a b))
-      else Interval.top)
+      else Interval.top
   ;;
 end
 
@@ -87,9 +87,9 @@ let make
         tree
     in
     (* Marching-squares output is a level-set contour, so the index may resolve
-       range-query signs with the midpoint probe — without it, [sample_range] reports
-       both signs for any box that overlaps the contour's extent in one axis, however
-       far away, which defeats tile culling. *)
+       range-query signs with the midpoint probe — without it, [sample_range] reports both
+       signs for any box that overlaps the contour's extent in one axis, however far away,
+       which defeats tile culling. *)
     Nearest_seg.build ~assume_level_set:true segments ~length
   in
   let open Float32_u in

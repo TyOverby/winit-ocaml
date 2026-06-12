@@ -5,8 +5,8 @@ type render_mode =
   | Rings
   | Tiles
   (** [Rings] with the tile culling made visible: tiles the interval evaluator proves
-      sign-uniform are never sampled and render as flat black (inside) or white
-      (outside); only the remaining tiles get the rings shader. *)
+      sign-uniform are never sampled and render as flat black (inside) or white (outside);
+      only the remaining tiles get the rings shader. *)
 [@@deriving sexp_of]
 
 type state =
@@ -100,9 +100,9 @@ let color_rings (dist : float) : Int32_u.t =
     lor #0xFF000000l)
 ;;
 
-(* Render through the sparse tiled evaluator: culled tiles become flat color fills
-   (black for provably-inside, white for provably-outside — consistent for both cull
-   predicates we use), active tiles are colored per pixel from their sampled patch. *)
+(* Render through the sparse tiled evaluator: culled tiles become flat color fills (black
+   for provably-inside, white for provably-outside — consistent for both cull predicates
+   we use), active tiles are colored per pixel from their sampled patch. *)
 let draw_tiled runner ~region ~filename ~source ~canvas ~cull ~color_pixel ~show_timings =
   let result = Sdf_runner.run_tiled runner ~region ~filename source ~cull in
   let before = Core.Time_ns.now () in
@@ -167,7 +167,14 @@ let draw_shape (state : state) runner ~filename ~source ~show_timings =
   in
   match state.render_mode with
   | Rings ->
-    draw_dense runner ~region ~filename ~source ~canvas ~color_pixel:color_rings ~show_timings
+    draw_dense
+      runner
+      ~region
+      ~filename
+      ~source
+      ~canvas
+      ~color_pixel:color_rings
+      ~show_timings
   | Grayscale ->
     (* The grayscale ramp is constant outside (0, 1], so culling there renders pixels
        identical to the dense path. *)
@@ -181,8 +188,8 @@ let draw_shape (state : state) runner ~filename ~source ~show_timings =
       ~color_pixel:color_grayscale
       ~show_timings
   | Tiles ->
-    (* Rings shading, but with the contour cull predicate and flat fills, so the tiles
-       the scheduler skips are visible. *)
+    (* Rings shading, but with the contour cull predicate and flat fills, so the tiles the
+       scheduler skips are visible. *)
     draw_tiled
       runner
       ~region

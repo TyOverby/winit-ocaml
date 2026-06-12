@@ -19,12 +19,12 @@ type t : value mod contended portable
     marching squares emits them: consistently wound chains that never cross mid-segment,
     whose shared vertices are bitwise-identical, and whose only sign discontinuities at
     nonzero magnitude are past open chain ends (where a contour was clipped at the
-    sample-region boundary). Under that assumption {!query_range} may use a midpoint
-    probe to resolve an otherwise-ambiguous sign, which makes its intervals dramatically
-    tighter far from the contour (see {!query_range}). Do {e not} set it for arbitrary
-    segment soups: two nearby same-wound strands (impossible in a level set) have a
-    genuine sign discontinuity between them that the probe cannot detect, and the
-    containment guarantee of {!query_range} would be lost. *)
+    sample-region boundary). Under that assumption {!query_range} may use a midpoint probe
+    to resolve an otherwise-ambiguous sign, which makes its intervals dramatically tighter
+    far from the contour (see {!query_range}). Do {e not} set it for arbitrary segment
+    soups: two nearby same-wound strands (impossible in a level set) have a genuine sign
+    discontinuity between them that the probe cannot detect, and the containment guarantee
+    of {!query_range} would be lost. *)
 val build : ?assume_level_set:bool -> float32# array -> length:int -> t
 
 (** [query t ~x ~y] returns the signed distance from the point [(x, y)] to the nearest
@@ -50,25 +50,26 @@ val build : ?assume_level_set:bool -> float32# array -> length:int -> t
     extent, where the infinite-line test of the more nearly collinear segment is
     meaningless). Candidates whose squared distances agree to within a few float32 ulps
     are therefore treated as ties (clamped projections also reuse the stored endpoint
-    coordinates, so segments sharing a bitwise-identical vertex tie exactly), and the
-    sign comes from the tying segment whose infinite line the query point deviates from
-    the most (the 2D angle-weighted-pseudonormal rule), which gives the correct sign at
-    every vertex of a consistently wound contour.
+    coordinates, so segments sharing a bitwise-identical vertex tie exactly), and the sign
+    comes from the tying segment whose infinite line the query point deviates from the
+    most (the 2D angle-weighted-pseudonormal rule), which gives the correct sign at every
+    vertex of a consistently wound contour.
 
     Returns [+inf] for an empty index. Runs in O(log n) on well-distributed inputs. *)
 val query : t -> x:float32# -> y:float32# -> float32#
 
 (** An inclusive range of query results, as returned by {!query_range}. *)
 module Interval : sig
-  type t = #{ lo : float32#
-            ; hi : float32#
-            }
+  type t =
+    #{ lo : float32#
+     ; hi : float32#
+     }
 end
 
 (** [query_range t ~x_lo ~y_lo ~x_hi ~y_hi] returns an interval guaranteed to contain
-    [query t ~x ~y] for every point (x, y) of the axis-aligned box
-    [x_lo, x_hi] × [y_lo, y_hi] (the bounds of each axis are swapped if given out of
-    order). Coordinates must be finite.
+    [query t ~x ~y] for every point (x, y) of the axis-aligned box [x_lo, x_hi] ×
+    [y_lo, y_hi] (the bounds of each axis are swapped if given out of order). Coordinates
+    must be finite.
 
     The magnitude bounds are the exact min distance from the box to the contour and a
     branch-and-bound upper bound on the max distance, both padded outward by a small
@@ -90,8 +91,8 @@ end
     whenever an {e unsafe vertex} — an open chain end, junction, or degenerate segment,
     where the sign can jump at nonzero magnitude — could be the nearest contour point of
     any box point, so those regions keep the conservative both-signs answer. Without the
-    probe, far-from-the-contour boxes that overlap the contour's bounding box in one
-    axis typically report both signs (perpendicular far edges of the contour enter the
+    probe, far-from-the-contour boxes that overlap the contour's bounding box in one axis
+    typically report both signs (perpendicular far edges of the contour enter the
     sign-candidate set), making the interval straddle zero needlessly.
 
     Returns [[+inf, +inf]] for an empty index. *)
@@ -106,9 +107,9 @@ val query_range
 (** A brute-force O(n) reference implementation of the index, kept as a testing oracle.
 
     [build] and [query] have the same meaning and signed-distance semantics as the
-    top-level {!val:build} and {!val:query}, but [query] simply scans every segment with no
-    spatial pruning. It uses the same [float32#] arithmetic and the same tie-break rule as
-    the real index, so the two agree except in degenerate cases where both the distance
+    top-level {!val:build} and {!val:query}, but [query] simply scans every segment with
+    no spatial pruning. It uses the same [float32#] arithmetic and the same tie-break rule
+    as the real index, so the two agree except in degenerate cases where both the distance
     and the tie-break metric tie exactly across segments with different signs. Intended
     for bisimulation tests, not production use. *)
 module Dummy : sig
@@ -118,8 +119,8 @@ module Dummy : sig
   val query : t -> x:float32# -> y:float32# -> float32#
 
   (** Brute-force [query_range]: identical per-segment bounds and sign logic as the
-      top-level {!val:query_range}, but scanning every segment. The two can differ only
-      in tightness (the indexed version may skip segments that cannot affect the bounds),
+      top-level {!val:query_range}, but scanning every segment. The two can differ only in
+      tightness (the indexed version may skip segments that cannot affect the bounds),
       never in soundness. *)
   val query_range
     :  t

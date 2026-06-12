@@ -1,8 +1,8 @@
 open! Core
 
 (* Registers hold intervals, stored across two parallel [Value.Array]s ([lo] / [hi]).
-   Float registers hold the interval endpoints; bool registers hold a three-valued
-   boolean as its (smallest, largest) possible value, with [false < true]. *)
+   Float registers hold the interval endpoints; bool registers hold a three-valued boolean
+   as its (smallest, largest) possible value, with [false < true]. *)
 
 let[@inline] get_f lo hi r : Interval.t =
   #{ Interval.lo = Value.Array.get_float lo r; hi = Value.Array.get_float hi r }
@@ -19,7 +19,12 @@ let[@inline] get_b lo hi r : Interval.Bool.t =
    }
 ;;
 
-let[@inline] set_b lo hi r (#{ Interval.Bool.can_be_false; can_be_true } : Interval.Bool.t) =
+let[@inline] set_b
+  lo
+  hi
+  r
+  (#{ Interval.Bool.can_be_false; can_be_true } : Interval.Bool.t)
+  =
   Value.Array.set_bool lo r (not can_be_false);
   Value.Array.set_bool hi r can_be_true
 ;;
@@ -48,15 +53,15 @@ let rec run ~variables ~instructions ~lo ~hi ~oracles ~(x : Interval.t) ~(y : In
       else if Interval.Bool.definitely_false c
       then run ~variables ~instructions:else_ ~lo ~hi ~oracles ~x ~y
       else (
-        (* The condition can go either way within the box: evaluate both branches and
-           join their results. This is sound because we run the graph straight out of
+        (* The condition can go either way within the box: evaluate both branches and join
+           their results. This is sound because we run the graph straight out of
            [Expr_graph.from_tree] (see [of_tree] below), where the two branches write
            disjoint registers.
 
-           The join works on the raw register bits through the float view: float
-           intervals join by IEEE min/max (a NaN endpoint, i.e. "top", propagates), and
-           bools are stored as bits 0/1, which read as +0.0 and a positive denormal —
-           ordered the same way as the bools they encode. *)
+           The join works on the raw register bits through the float view: float intervals
+           join by IEEE min/max (a NaN endpoint, i.e. "top", propagates), and bools are
+           stored as bits 0/1, which read as +0.0 and a positive denormal — ordered the
+           same way as the bools they encode. *)
         run ~variables ~instructions:then_ ~lo ~hi ~oracles ~x ~y;
         let t_lo = Value.Array.get_float lo out
         and t_hi = Value.Array.get_float hi out in

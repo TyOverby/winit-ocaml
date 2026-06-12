@@ -130,11 +130,11 @@ let rec run_simd
           out_arr
           px
           (Simd.f32x4_select neg_mask ~fail:(Simd.f32x4_sqrt v) ~pass:Simd.f32x4_zero))
-    (* Abs and Neg are sign-bit operations on the integer view, not float arithmetic:
-       the scalar backends compile to fabs/fneg, which clear/flip the sign bit even on
-       zeros and NaNs, and every backend (including this batch's own scalar tail) must
-       produce bitwise-identical values. [max(v, 0 - v)]-style implementations differ on
-       [-0.] and NaN payloads. *)
+    (* Abs and Neg are sign-bit operations on the integer view, not float arithmetic: the
+       scalar backends compile to fabs/fneg, which clear/flip the sign bit even on zeros
+       and NaNs, and every backend (including this batch's own scalar tail) must produce
+       bitwise-identical values. [max(v, 0 - v)]-style implementations differ on [-0.] and
+       NaN payloads. *)
     | Abs a ->
       let a_arr = Array.unsafe_get register_bank a in
       let mask = Simd.i32x4_set1 #0x7fffffffl in

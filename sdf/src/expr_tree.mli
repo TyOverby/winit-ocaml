@@ -69,6 +69,7 @@ val div : loc:Source_code_position.t -> t -> t -> t Or_error.t
 
 (** Sqrt is total: [sqrt x = 0] for [x < 0] in every evaluator. *)
 val sqrt : loc:Source_code_position.t -> t -> t Or_error.t
+
 val abs : loc:Source_code_position.t -> t -> t Or_error.t
 val neg : loc:Source_code_position.t -> t -> t Or_error.t
 val sign : loc:Source_code_position.t -> t -> t Or_error.t

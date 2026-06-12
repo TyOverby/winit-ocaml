@@ -93,7 +93,13 @@ let%expect_test "float_literal" =
   let interval = eval_range tree ~x_lo:(-100.0) ~x_hi:100.0 ~y_lo:(-100.0) ~y_hi:100.0 in
   print_string (Interval.to_string interval);
   [%expect {| [3.1400001, 3.1400001] |}];
-  check_containment_grid tree ~x_lo:(-100.0) ~x_hi:100.0 ~y_lo:(-100.0) ~y_hi:100.0 interval
+  check_containment_grid
+    tree
+    ~x_lo:(-100.0)
+    ~x_hi:100.0
+    ~y_lo:(-100.0)
+    ~y_hi:100.0
+    interval
 ;;
 
 let%expect_test "bool_literal true" =
@@ -339,11 +345,16 @@ let%expect_test "cos: basic interval" =
 ;;
 
 let%expect_test "cos: interval away from peaks" =
-  (* x in [pi/4, 3pi/4]: cos goes from sqrt(2)/2 down to -sqrt(2)/2;
-     no critical point (0 or 2pi) inside, so endpoints bound it *)
+  (* x in [pi/4, 3pi/4]: cos goes from sqrt(2)/2 down to -sqrt(2)/2; no critical point (0
+     or 2pi) inside, so endpoints bound it *)
   let tree = cos coord_x in
   let interval =
-    eval_range tree ~x_lo:(Float.pi /. 4.0) ~x_hi:(3.0 *. Float.pi /. 4.0) ~y_lo:0.0 ~y_hi:0.0
+    eval_range
+      tree
+      ~x_lo:(Float.pi /. 4.0)
+      ~x_hi:(3.0 *. Float.pi /. 4.0)
+      ~y_lo:0.0
+      ~y_hi:0.0
   in
   print_string (Interval.to_string interval);
   [%expect {| [-0.707126796, 0.707126796] |}];
@@ -386,9 +397,7 @@ let%expect_test "max" =
 let%expect_test "lt: definitely true" =
   (* x in [1,2] < y in [3,4] always *)
   let tree = lt coord_x coord_y in
-  let interval =
-    eval_range_bool tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:3.0 ~y_hi:4.0
-  in
+  let interval = eval_range_bool tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:3.0 ~y_hi:4.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| true |}];
   check_containment_grid_bool tree ~x_lo:1.0 ~x_hi:2.0 ~y_lo:3.0 ~y_hi:4.0 interval
@@ -397,9 +406,7 @@ let%expect_test "lt: definitely true" =
 let%expect_test "lt: definitely false" =
   (* x in [3,4] < y in [1,2] never *)
   let tree = lt coord_x coord_y in
-  let interval =
-    eval_range_bool tree ~x_lo:3.0 ~x_hi:4.0 ~y_lo:1.0 ~y_hi:2.0
-  in
+  let interval = eval_range_bool tree ~x_lo:3.0 ~x_hi:4.0 ~y_lo:1.0 ~y_hi:2.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| false |}];
   check_containment_grid_bool tree ~x_lo:3.0 ~x_hi:4.0 ~y_lo:1.0 ~y_hi:2.0 interval
@@ -407,9 +414,7 @@ let%expect_test "lt: definitely false" =
 
 let%expect_test "lt: overlapping => maybe" =
   let tree = lt coord_x coord_y in
-  let interval =
-    eval_range_bool tree ~x_lo:1.0 ~x_hi:5.0 ~y_lo:3.0 ~y_hi:7.0
-  in
+  let interval = eval_range_bool tree ~x_lo:1.0 ~x_hi:5.0 ~y_lo:3.0 ~y_hi:7.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| maybe |}];
   check_containment_grid_bool tree ~x_lo:1.0 ~x_hi:5.0 ~y_lo:3.0 ~y_hi:7.0 interval
@@ -417,9 +422,7 @@ let%expect_test "lt: overlapping => maybe" =
 
 let%expect_test "gt: definitely true" =
   let tree = gt coord_x coord_y in
-  let interval =
-    eval_range_bool tree ~x_lo:5.0 ~x_hi:10.0 ~y_lo:1.0 ~y_hi:3.0
-  in
+  let interval = eval_range_bool tree ~x_lo:5.0 ~x_hi:10.0 ~y_lo:1.0 ~y_hi:3.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| true |}];
   check_containment_grid_bool tree ~x_lo:5.0 ~x_hi:10.0 ~y_lo:1.0 ~y_hi:3.0 interval
@@ -427,9 +430,7 @@ let%expect_test "gt: definitely true" =
 
 let%expect_test "lte: definitely true" =
   let tree = lte coord_x coord_y in
-  let interval =
-    eval_range_bool tree ~x_lo:1.0 ~x_hi:3.0 ~y_lo:3.0 ~y_hi:5.0
-  in
+  let interval = eval_range_bool tree ~x_lo:1.0 ~x_hi:3.0 ~y_lo:3.0 ~y_hi:5.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| true |}];
   check_containment_grid_bool tree ~x_lo:1.0 ~x_hi:3.0 ~y_lo:3.0 ~y_hi:5.0 interval
@@ -437,9 +438,7 @@ let%expect_test "lte: definitely true" =
 
 let%expect_test "gte: definitely true" =
   let tree = gte coord_x coord_y in
-  let interval =
-    eval_range_bool tree ~x_lo:5.0 ~x_hi:10.0 ~y_lo:2.0 ~y_hi:5.0
-  in
+  let interval = eval_range_bool tree ~x_lo:5.0 ~x_hi:10.0 ~y_lo:2.0 ~y_hi:5.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| true |}];
   check_containment_grid_bool tree ~x_lo:5.0 ~x_hi:10.0 ~y_lo:2.0 ~y_hi:5.0 interval
@@ -447,9 +446,7 @@ let%expect_test "gte: definitely true" =
 
 let%expect_test "and_: both true" =
   let tree = and_ (b true) (b true) in
-  let interval =
-    eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0
-  in
+  let interval = eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| true |}];
   check_containment_grid_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 interval
@@ -457,9 +454,7 @@ let%expect_test "and_: both true" =
 
 let%expect_test "and_: one false" =
   let tree = and_ (b true) (b false) in
-  let interval =
-    eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0
-  in
+  let interval = eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| false |}];
   check_containment_grid_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 interval
@@ -468,9 +463,7 @@ let%expect_test "and_: one false" =
 let%expect_test "and_: maybe and true => maybe" =
   (* x < 5 is maybe over [0,10], so (x < 5) && true = maybe *)
   let tree = and_ (lt coord_x (f #5.0s)) (b true) in
-  let interval =
-    eval_range_bool tree ~x_lo:0.0 ~x_hi:10.0 ~y_lo:0.0 ~y_hi:0.0
-  in
+  let interval = eval_range_bool tree ~x_lo:0.0 ~x_hi:10.0 ~y_lo:0.0 ~y_hi:0.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| maybe |}];
   check_containment_grid_bool tree ~x_lo:0.0 ~x_hi:10.0 ~y_lo:0.0 ~y_hi:0.0 interval
@@ -478,9 +471,7 @@ let%expect_test "and_: maybe and true => maybe" =
 
 let%expect_test "or_: one true" =
   let tree = or_ (b false) (b true) in
-  let interval =
-    eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0
-  in
+  let interval = eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| true |}];
   check_containment_grid_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 interval
@@ -488,9 +479,7 @@ let%expect_test "or_: one true" =
 
 let%expect_test "or_: both false" =
   let tree = or_ (b false) (b false) in
-  let interval =
-    eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0
-  in
+  let interval = eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| false |}];
   check_containment_grid_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 interval
@@ -498,9 +487,7 @@ let%expect_test "or_: both false" =
 
 let%expect_test "xor: true xor false = true" =
   let tree = xor (b true) (b false) in
-  let interval =
-    eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0
-  in
+  let interval = eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| true |}];
   check_containment_grid_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 interval
@@ -508,9 +495,7 @@ let%expect_test "xor: true xor false = true" =
 
 let%expect_test "xor: true xor true = false" =
   let tree = xor (b true) (b true) in
-  let interval =
-    eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0
-  in
+  let interval = eval_range_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 in
   print_string (Interval.Bool.to_string interval);
   [%expect {| false |}];
   check_containment_grid_bool tree ~x_lo:0.0 ~x_hi:1.0 ~y_lo:0.0 ~y_hi:1.0 interval
@@ -547,8 +532,8 @@ let%expect_test "cond: maybe condition => hull of both branches" =
 
 (* Range-evaluate a tree that references passthrough oracles (preparing them first,
    following the recipe in test_executor_with_oracle.ml), print the resulting range, and
-   check scalar samples at the box corners and center fall inside it. The printing
-   happens inside the parallel closure; the [%expect] block sits outside it. *)
+   check scalar samples at the box corners and center fall inside it. The printing happens
+   inside the parallel closure; the [%expect] block sits outside it. *)
 let run_oracle_range_test tree ~x_lo ~x_hi ~y_lo ~y_hi =
   let scheduler = Parallel_scheduler.create () in
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
@@ -562,8 +547,7 @@ let run_oracle_range_test tree ~x_lo ~x_hi ~y_lo ~y_hi =
              let p =
                Sdf_passthrough_oracle.create args
                |> Sdf_passthrough_oracle.prepare
-                    ~exec:
-                      (Obj.magic Obj.magic (module Expr_graph_eval : Sdf.Executor.S))
+                    ~exec:(Obj.magic Obj.magic (module Expr_graph_eval : Sdf.Executor.S))
                     ~par
                     ~oracles:prepared
                     ~sample_region:(Sample_region.point ~x:#0.0s ~y:#0.0s)
@@ -630,8 +614,7 @@ let%expect_test "oracle: passthrough sample_range through a chained oracle" =
 let gen_coord_box =
   let open Quickcheck.Generator.Let_syntax in
   let coord =
-    Quickcheck.Generator.union
-      [ Float.gen_incl (-1e6) 1e6; Float.quickcheck_generator ]
+    Quickcheck.Generator.union [ Float.gen_incl (-1e6) 1e6; Float.quickcheck_generator ]
   in
   let%bind x1 = coord in
   let%bind x2 = coord in
@@ -655,7 +638,12 @@ let interp lo hi t =
 (* Sample 5 random points inside the box plus 4 corners and the center. *)
 let box_sample_points x_lo x_hi y_lo y_hi rng =
   let corners =
-    [ x_lo, y_lo; x_lo, y_hi; x_hi, y_lo; x_hi, y_hi; interp x_lo x_hi 0.5, interp y_lo y_hi 0.5 ]
+    [ x_lo, y_lo
+    ; x_lo, y_hi
+    ; x_hi, y_lo
+    ; x_hi, y_hi
+    ; interp x_lo x_hi 0.5, interp y_lo y_hi 0.5
+    ]
   in
   let random_pts =
     List.init 5 ~f:(fun _ ->
@@ -680,14 +668,10 @@ let%test_unit "quickcheck: range evaluator contains all scalar float results" =
       then (
         let t = Expr_graph_range_eval.of_tree tree in
         let x =
-          Interval.create
-            ~lo:(Float32_u.of_float x_lo)
-            ~hi:(Float32_u.of_float x_hi)
+          Interval.create ~lo:(Float32_u.of_float x_lo) ~hi:(Float32_u.of_float x_hi)
         in
         let y =
-          Interval.create
-            ~lo:(Float32_u.of_float y_lo)
-            ~hi:(Float32_u.of_float y_hi)
+          Interval.create ~lo:(Float32_u.of_float y_lo) ~hi:(Float32_u.of_float y_hi)
         in
         let interval =
           Expr_graph_range_eval.run t ~vars:empty_vars ~oracles:empty_oracles ~x ~y
@@ -725,14 +709,10 @@ let%test_unit "quickcheck: range evaluator contains all scalar bool results" =
       then (
         let t = Expr_graph_range_eval.of_tree tree in
         let x =
-          Interval.create
-            ~lo:(Float32_u.of_float x_lo)
-            ~hi:(Float32_u.of_float x_hi)
+          Interval.create ~lo:(Float32_u.of_float x_lo) ~hi:(Float32_u.of_float x_hi)
         in
         let y =
-          Interval.create
-            ~lo:(Float32_u.of_float y_lo)
-            ~hi:(Float32_u.of_float y_hi)
+          Interval.create ~lo:(Float32_u.of_float y_lo) ~hi:(Float32_u.of_float y_hi)
         in
         let interval =
           Expr_graph_range_eval.run_bool t ~vars:empty_vars ~oracles:empty_oracles ~x ~y

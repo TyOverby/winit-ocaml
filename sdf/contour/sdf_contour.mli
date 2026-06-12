@@ -10,9 +10,9 @@ open Sdf
     Equivalence is exact, not approximate: active tiles are sampled at bitwise the same
     coordinates the dense grid would use ({!Executor.S_batch.Batch.create_sub}) and
     marched with global cell offsets ({!March.run_offset}), so the emitted segments are
-    bitwise identical to a dense run's — including the shared endpoints at tile seams
-    that [line_join] stitches by exact equality. Culled tiles are sign-uniform on every
-    sample they cover, so the dense run would emit nothing there. *)
+    bitwise identical to a dense run's — including the shared endpoints at tile seams that
+    [line_join] stitches by exact equality. Culled tiles are sign-uniform on every sample
+    they cover, so the dense run would emit nothing there. *)
 
 module Stats : sig
   type t =

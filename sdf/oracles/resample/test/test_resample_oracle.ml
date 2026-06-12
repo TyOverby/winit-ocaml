@@ -48,7 +48,7 @@ let prepare_oracle tree region scheduler =
 ;;
 
 (* ======================================================================= *)
-(* Test A1: Smoke — sample_range containment                               *)
+(* Test A1: Smoke — sample_range containment *)
 (* ======================================================================= *)
 
 let%expect_test "resample oracle: sample_range contains sample value" =
@@ -91,7 +91,7 @@ let%expect_test "resample oracle: sample_range contains sample value" =
 ;;
 
 (* ======================================================================= *)
-(* Test A2: Dense reference pipeline vs. oracle sample at 9x9 grid points  *)
+(* Test A2: Dense reference pipeline vs. oracle sample at 9x9 grid points *)
 (* ======================================================================= *)
 
 (* Replicate sdf_resample_oracle.ml's make logic to build a reference sampler. *)
@@ -102,7 +102,8 @@ let build_dense_reference tree region =
   let pb = E.Batch.Prepared.of_tree tree in
   let batch = E.Batch.Batch.create pb expanded in
   let result = E.Batch.Batch.run batch ~oracles:(Map.empty (module Oracle.Key)) in
-  let ew = expanded.samples_x and eh = expanded.samples_y in
+  let ew = expanded.samples_x
+  and eh = expanded.samples_y in
   let grid : float32# array = Array.create ~len:(ew * eh) #0.0s in
   for i = 0 to (ew * eh) - 1 do
     grid.(i) <- Value.to_float (E.Batch.Result.get_output result ~px:i)
@@ -111,8 +112,10 @@ let build_dense_reference tree region =
   let length = March.run grid march_out ew eh in
   let ref_segs = Nearest_seg.build march_out ~length in
   let open Float32_u in
-  let step_x = Sample_region.step_x region and step_y = Sample_region.step_y region in
-  let inv_step_x = #1.s / step_x and inv_step_y = #1.s / step_y in
+  let step_x = Sample_region.step_x region
+  and step_y = Sample_region.step_y region in
+  let inv_step_x = #1.s / step_x
+  and inv_step_y = #1.s / step_y in
   let offset_x = of_int expand_by - (region.Sample_region.start_x / step_x) in
   let offset_y = of_int expand_by - (region.Sample_region.start_y / step_y) in
   let dist_scale = step_x in
@@ -149,7 +152,7 @@ let%expect_test "resample oracle: oracle sample matches dense reference (9x9 gri
 ;;
 
 (* ======================================================================= *)
-(* Test A3: 200 random points, oracle vs dense reference                   *)
+(* Test A3: 200 random points, oracle vs dense reference *)
 (* ======================================================================= *)
 
 let%test_unit "resample oracle: bitwise equality vs dense ref (200 pts)" =
@@ -173,7 +176,7 @@ let%test_unit "resample oracle: bitwise equality vs dense ref (200 pts)" =
 ;;
 
 (* ======================================================================= *)
-(* Test A4: sample_range soundness — corners and centre inside range       *)
+(* Test A4: sample_range soundness — corners and centre inside range *)
 (* ======================================================================= *)
 
 let%test_unit "resample oracle: sample_range sound for 100 random boxes" =
@@ -206,19 +209,19 @@ let%test_unit "resample oracle: sample_range sound for 100 random boxes" =
     check cx cy
   done;
   if !failures > 0
-  then Error.raise_s [%message "sample_range containment failures" ~count:(!failures : int)]
+  then
+    Error.raise_s [%message "sample_range containment failures" ~count:(!failures : int)]
 ;;
 
 (* ======================================================================= *)
-(* A helper: sweep random boxes over a prepared oracle and check            *)
-(* containment at corners, centre, and random interior points.              *)
+(* A helper: sweep random boxes over a prepared oracle and check *)
+(* containment at corners, centre, and random interior points. *)
 (* ======================================================================= *)
 
-(* [check_containment_sweep ~prepared ~region_size ~rng ~num_boxes
-   ~max_box_size ~num_random_pts] sweeps [num_boxes] random boxes whose
-   corners lie in [0, region_size] and whose side lengths are at most
-   [max_box_size].  For each box it checks the 4 corners, the centre, and
-   [num_random_pts] random interior points.  Returns the total failure count. *)
+(* [check_containment_sweep ~prepared ~region_size ~rng ~num_boxes ~max_box_size ~num_random_pts]
+   sweeps [num_boxes] random boxes whose corners lie in [0, region_size] and whose side
+   lengths are at most [max_box_size]. For each box it checks the 4 corners, the centre,
+   and [num_random_pts] random interior points. Returns the total failure count. *)
 let check_containment_sweep
   ~prepared
   ~region_size
@@ -254,8 +257,12 @@ let check_containment_sweep
     for _ = 1 to num_random_pts do
       let tx = Random.State.float rng 1.0 in
       let ty = Random.State.float rng 1.0 in
-      let px = Float32_u.((x0 * Float32_u.of_float (1.0 -. tx)) + (x1 * Float32_u.of_float tx)) in
-      let py = Float32_u.((y0 * Float32_u.of_float (1.0 -. ty)) + (y1 * Float32_u.of_float ty)) in
+      let px =
+        Float32_u.((x0 * Float32_u.of_float (1.0 -. tx)) + (x1 * Float32_u.of_float tx))
+      in
+      let py =
+        Float32_u.((y0 * Float32_u.of_float (1.0 -. ty)) + (y1 * Float32_u.of_float ty))
+      in
       check px py
     done
   done;
@@ -263,11 +270,11 @@ let check_containment_sweep
 ;;
 
 (* ======================================================================= *)
-(* Test A5: Boundary-crossing shapes — containment with open chain ends    *)
+(* Test A5: Boundary-crossing shapes — containment with open chain ends *)
 (* ======================================================================= *)
 
-(* Circle clipped at the LEFT edge: centre x=0, y=16, radius=12.
-   Contour crosses x=0 so there are open chain ends at the left boundary. *)
+(* Circle clipped at the LEFT edge: centre x=0, y=16, radius=12. Contour crosses x=0 so
+   there are open chain ends at the left boundary. *)
 let%test_unit "resample oracle: boundary-crossing circle (left edge) containment" =
   let tree = circle ~cx:#0.s ~cy:#16.s ~r:#12.s in
   let region = square_region ~size:32 in
@@ -287,11 +294,12 @@ let%test_unit "resample oracle: boundary-crossing circle (left edge) containment
   then
     Error.raise_s
       [%message
-        "left-edge clipped circle: sample_range containment failures" ~count:(failures : int)]
+        "left-edge clipped circle: sample_range containment failures"
+          ~count:(failures : int)]
 ;;
 
-(* Circle clipped at the TOP edge: centre x=16, y=0, radius=10.
-   Contour crosses y=0 so there are open chain ends at the top boundary. *)
+(* Circle clipped at the TOP edge: centre x=16, y=0, radius=10. Contour crosses y=0 so
+   there are open chain ends at the top boundary. *)
 let%test_unit "resample oracle: boundary-crossing circle (top edge) containment" =
   let tree = circle ~cx:#16.s ~cy:#0.s ~r:#10.s in
   let region = square_region ~size:32 in
@@ -311,11 +319,12 @@ let%test_unit "resample oracle: boundary-crossing circle (top edge) containment"
   then
     Error.raise_s
       [%message
-        "top-edge clipped circle: sample_range containment failures" ~count:(failures : int)]
+        "top-edge clipped circle: sample_range containment failures"
+          ~count:(failures : int)]
 ;;
 
-(* Circle crossing a CORNER: centre x=0, y=0, radius=14.
-   Contour is clipped at both x=0 and y=0 simultaneously. *)
+(* Circle crossing a CORNER: centre x=0, y=0, radius=14. Contour is clipped at both x=0
+   and y=0 simultaneously. *)
 let%test_unit "resample oracle: boundary-crossing circle (corner) containment" =
   let tree = circle ~cx:#0.s ~cy:#0.s ~r:#14.s in
   let region = square_region ~size:32 in
@@ -338,9 +347,9 @@ let%test_unit "resample oracle: boundary-crossing circle (corner) containment" =
         "corner-clipped circle: sample_range containment failures" ~count:(failures : int)]
 ;;
 
-(* Also test each clipped circle with boxes that deliberately hug the boundary
-   or span from far inside to the boundary, in a dedicated expect test so we
-   can see the violation count directly. *)
+(* Also test each clipped circle with boxes that deliberately hug the boundary or span
+   from far inside to the boundary, in a dedicated expect test so we can see the violation
+   count directly. *)
 let%expect_test "resample oracle: boundary-clipped circles — violation count" =
   let scheduler = Parallel_scheduler.create () in
   let region = square_region ~size:32 in
@@ -367,13 +376,17 @@ let%expect_test "resample oracle: boundary-clipped circles — violation count" 
       for _ = 1 to 10 do
         let tx = Random.State.float rng 1.0 in
         let ty = Random.State.float rng 1.0 in
-        let px = Float32_u.((x0 * Float32_u.of_float (1.0 -. tx)) + (x1 * Float32_u.of_float tx)) in
-        let py = Float32_u.((y0 * Float32_u.of_float (1.0 -. ty)) + (y1 * Float32_u.of_float ty)) in
+        let px =
+          Float32_u.((x0 * Float32_u.of_float (1.0 -. tx)) + (x1 * Float32_u.of_float tx))
+        in
+        let py =
+          Float32_u.((y0 * Float32_u.of_float (1.0 -. ty)) + (y1 * Float32_u.of_float ty))
+        in
         check px py
       done
     in
-    (* Boxes straddling x=0 boundary: negative lo clamped to 0 in world coords
-       but actually just small boxes starting at 0 *)
+    (* Boxes straddling x=0 boundary: negative lo clamped to 0 in world coords but
+       actually just small boxes starting at 0 *)
     for i = 0 to 15 do
       let y_lo = Float32_u.of_float (Float.of_int i *. 2.0) in
       let y_hi = Float32_u.(y_lo + #2.s) in
@@ -396,7 +409,8 @@ let%expect_test "resample oracle: boundary-clipped circles — violation count" 
   check_shape "left-edge circle (cx=0,cy=16,r=12)" (circle ~cx:#0.s ~cy:#16.s ~r:#12.s);
   check_shape "top-edge circle (cx=16,cy=0,r=10)" (circle ~cx:#16.s ~cy:#0.s ~r:#10.s);
   check_shape "corner circle (cx=0,cy=0,r=14)" (circle ~cx:#0.s ~cy:#0.s ~r:#14.s);
-  [%expect {|
+  [%expect
+    {|
     left-edge circle (cx=0,cy=16,r=12) violations: 0
     top-edge circle (cx=16,cy=0,r=10) violations: 0
     corner circle (cx=0,cy=0,r=14) violations: 0
@@ -407,11 +421,10 @@ let%expect_test "resample oracle: boundary-clipped circles — violation count" 
 (* Test A6: Probe is active — interior box far from contour reports lo > 0 *)
 (* ======================================================================= *)
 
-(* For the INTERIOR circle (cx=16, cy=16, r=8), the box x∈[14,18], y∈[28,31]
-   is far above the circle (min distance to contour ≈ 28-24 = 4 world units).
-   Without the midpoint probe the interval would straddle zero because the
-   contour's horizontal extent [8,24] overlaps [14,18].  With the probe,
-   lo > 0 (every point in the box is outside). *)
+(* For the INTERIOR circle (cx=16, cy=16, r=8), the box x∈[14,18], y∈[28,31] is far above
+   the circle (min distance to contour ≈ 28-24 = 4 world units). Without the midpoint
+   probe the interval would straddle zero because the contour's horizontal extent [8,24]
+   overlaps [14,18]. With the probe, lo > 0 (every point in the box is outside). *)
 let%expect_test "resample oracle: sample_range interval lo > 0 far above interior circle" =
   let tree = circle ~cx:#16.s ~cy:#16.s ~r:#8.s in
   let region = square_region ~size:32 in
@@ -425,7 +438,8 @@ let%expect_test "resample oracle: sample_range interval lo > 0 far above interio
   let hi = Float32_u.to_float hi in
   printf "sample_range for x=[14,18] y=[28,31]: [%.4f, %.4f]\n" lo hi;
   printf "lo > 0 (probe resolved sign): %b\n" (Float.( > ) lo 0.0);
-  [%expect {|
+  [%expect
+    {|
     sample_range for x=[14,18] y=[28,31]: [3.9988, 7.2813]
     lo > 0 (probe resolved sign): true
     |}]

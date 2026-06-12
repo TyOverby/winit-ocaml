@@ -87,8 +87,8 @@ let run
   done;
   let values = Value.Array.create ~len:!total in
   (* [Value.Array.t] is abstract, so unlike the plain int arrays it doesn't mode-cross on
-     its own; the [Portended] wrapper carries it into the parallel tasks (each task
-     writes a disjoint slice). *)
+     its own; the [Portended] wrapper carries it into the parallel tasks (each task writes
+     a disjoint slice). *)
   let values_portended =
     { Modes.Portended.portended = Stdlib.Obj.magic_portable values }
   in

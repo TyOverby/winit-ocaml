@@ -10,15 +10,16 @@ open! Core
     {e conservative}: if the scalar operation applied to any values drawn from the input
     intervals can produce [v], then [v] is contained in the output interval.
 
-    NaN is handled through a distinguished "top" interval: an interval with a NaN
-    endpoint means "any float value, possibly NaN". Operations that could produce NaN for
-    some inputs in range return {!top}. Because the language's division and square root
-    are total ([x / 0 = 0] and [sqrt x = 0] for [x < 0]), NaN can only arise from
-    arithmetic on infinities ([inf - inf], [0 * inf], [inf / inf]) or trig of an
-    infinity, so [top] is rare in practice. *)
-type t = #{ lo : Float32_u.t
-          ; hi : Float32_u.t
-          }
+    NaN is handled through a distinguished "top" interval: an interval with a NaN endpoint
+    means "any float value, possibly NaN". Operations that could produce NaN for some
+    inputs in range return {!top}. Because the language's division and square root are
+    total ([x / 0 = 0] and [sqrt x = 0] for [x < 0]), NaN can only arise from arithmetic
+    on infinities ([inf - inf], [0 * inf], [inf / inf]) or trig of an infinity, so [top]
+    is rare in practice. *)
+type t =
+  #{ lo : Float32_u.t
+   ; hi : Float32_u.t
+   }
 
 (** The interval of all values, including NaN. Both endpoints are NaN. *)
 val top : t
@@ -45,9 +46,10 @@ val to_string : t -> string
 (** A three-valued boolean: the set of booleans a boolean subexpression can take over the
     region. At least one of the two fields is always true. *)
 module Bool : sig
-  type t = #{ can_be_false : bool
-            ; can_be_true : bool
-            }
+  type t =
+    #{ can_be_false : bool
+     ; can_be_true : bool
+     }
 
   val of_point : bool -> t
   val maybe : t
@@ -62,10 +64,10 @@ module Bool : sig
   val to_string : t -> string
 end
 
-(** Interval versions of the float-valued primitives. Semantics match the scalar
-    evaluator exactly, e.g. [div] and [sqrt] are total ([x / 0 = 0], [sqrt x = 0] for
-    [x < 0]), [sign] maps NaN to 0, [min]/[max] propagate NaN from either argument, and
-    [round] rounds half-integers to even (the hardware rounding of the SIMD backend). *)
+(** Interval versions of the float-valued primitives. Semantics match the scalar evaluator
+    exactly, e.g. [div] and [sqrt] are total ([x / 0 = 0], [sqrt x = 0] for [x < 0]),
+    [sign] maps NaN to 0, [min]/[max] propagate NaN from either argument, and [round]
+    rounds half-integers to even (the hardware rounding of the SIMD backend). *)
 
 val add : t -> t -> t
 val sub : t -> t -> t
@@ -81,8 +83,8 @@ val round : t -> t
 val min : t -> t -> t
 val max : t -> t -> t
 
-(** Interval comparisons: definite only when the operand intervals don't overlap the
-    other side. Comparisons against [top] are always {!Bool.maybe}. *)
+(** Interval comparisons: definite only when the operand intervals don't overlap the other
+    side. Comparisons against [top] are always {!Bool.maybe}. *)
 
 val lt : t -> t -> Bool.t
 val gt : t -> t -> Bool.t

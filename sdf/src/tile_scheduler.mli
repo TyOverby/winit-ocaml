@@ -28,8 +28,8 @@ module Cull : sig
   type t =
     | No_contour
     (** Cull tiles that the zero contour provably misses: every sample is strictly
-        positive (marching squares treats a corner as inside iff [v <= 0]) or every
-        sample is [<= 0]. *)
+        positive (marching squares treats a corner as inside iff [v <= 0]) or every sample
+        is [<= 0]. *)
     | Constant_outside of
         { below : float
         ; above : float
@@ -65,8 +65,8 @@ val tile_x0 : t -> tx:int -> int
 
 val tile_y0 : t -> ty:int -> int
 
-(** Number of samples covered by tile [tx] in x, including the boundary column shared
-    with tile [tx + 1]. The tile spans [tile_samples_x - 1] cells (0 for a degenerate
+(** Number of samples covered by tile [tx] in x, including the boundary column shared with
+    tile [tx + 1]. The tile spans [tile_samples_x - 1] cells (0 for a degenerate
     one-sample-wide grid). *)
 val tile_samples_x : t -> tx:int -> int
 

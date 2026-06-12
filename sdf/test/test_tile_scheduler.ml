@@ -41,7 +41,8 @@ let%expect_test "circle verdict map" =
     "tiles: %d, active: %d\n"
     (Tile_scheduler.num_tiles t)
     (Tile_scheduler.num_active t);
-  [%expect {|
+  [%expect
+    {|
     ++++++++
     ++....++
     +..--..+
@@ -57,7 +58,8 @@ let%expect_test "circle verdict map" =
 let%expect_test "everything positive culls at the root" =
   let t = schedule (add (f #5.s) (abs coord_x)) ~region:(region ~size:64) in
   print_endline (Tile_scheduler.to_string_hum t);
-  [%expect {|
+  [%expect
+    {|
     ++++++++
     ++++++++
     ++++++++
@@ -72,9 +74,7 @@ let%expect_test "everything positive culls at the root" =
 let%expect_test "top stays fully active" =
   (* inf - inf = NaN everywhere: the bound is [top], which never culls. *)
   let t =
-    schedule
-      (sub (f Float32_u.infinity) (f Float32_u.infinity))
-      ~region:(region ~size:32)
+    schedule (sub (f Float32_u.infinity) (f Float32_u.infinity)) ~region:(region ~size:32)
   in
   print_endline (Tile_scheduler.to_string_hum t);
   [%expect {|
@@ -93,7 +93,8 @@ let%expect_test "grayscale band cull" =
       ~cull:(Constant_outside { below = 0.; above = 1. })
   in
   print_endline (Tile_scheduler.to_string_hum t);
-  [%expect {|
+  [%expect
+    {|
     ++++++++
     ++....++
     +..--..+
@@ -122,13 +123,12 @@ let eval_scalar tree ~x ~y =
 
 (* ===== Quickcheck: cull soundness for No_contour ===== *)
 
-(* Generate a random Sample_region.t with small sample counts (1..40 per axis)
-   and arbitrary start/end coordinates including flipped (start > end). *)
+(* Generate a random Sample_region.t with small sample counts (1..40 per axis) and
+   arbitrary start/end coordinates including flipped (start > end). *)
 let gen_region =
   let open Quickcheck.Generator.Let_syntax in
   let coord =
-    Quickcheck.Generator.union
-      [ Float.gen_incl (-1e6) 1e6; Float.quickcheck_generator ]
+    Quickcheck.Generator.union [ Float.gen_incl (-1e6) 1e6; Float.quickcheck_generator ]
   in
   let%bind samples_x = Int.gen_incl 1 40 in
   let%bind samples_y = Int.gen_incl 1 40 in
@@ -147,8 +147,8 @@ let gen_region =
 
 let gen_tile_cells = Int.gen_incl 1 8
 
-(* Check that every sample in the tile's footprint is contained in the culled
-   interval, and that the sign-uniformity promised by No_contour holds. *)
+(* Check that every sample in the tile's footprint is contained in the culled interval,
+   and that the sign-uniformity promised by No_contour holds. *)
 let check_no_contour_culled_tile tree region sched ~tx ~ty interval =
   let x0 = Tile_scheduler.tile_x0 sched ~tx in
   let y0 = Tile_scheduler.tile_y0 sched ~ty in
@@ -165,39 +165,39 @@ let check_no_contour_culled_tile tree region sched ~tx ~ty interval =
       then (
         let v = eval_scalar tree ~x ~y in
         let v32 = Float32_u.of_float (Float32_u.to_float v) in
-        (if not (Interval.contains interval v32)
-         then
-           Error.raise_s
-             [%message
-               "No_contour: culled tile sample outside interval"
-                 ~tree:(Expr_tree.sexp_of_t tree : Sexp.t)
-                 ~region:(Sample_region.sexp_of_t region : Sexp.t)
-                 ~tx:(tx : int)
-                 ~ty:(ty : int)
-                 ~col:(col : int)
-                 ~row:(row : int)
-                 ~value:(Float32_u.to_string v : string)
-                 ~interval:(Interval.to_string interval : string)]);
+        if not (Interval.contains interval v32)
+        then
+          Error.raise_s
+            [%message
+              "No_contour: culled tile sample outside interval"
+                ~tree:(Expr_tree.sexp_of_t tree : Sexp.t)
+                ~region:(Sample_region.sexp_of_t region : Sexp.t)
+                ~tx:(tx : int)
+                ~ty:(ty : int)
+                ~col:(col : int)
+                ~row:(row : int)
+                ~value:(Float32_u.to_string v : string)
+                ~interval:(Interval.to_string interval : string)];
         (* Sign-uniformity: all values > 0, or all <= 0. *)
         let open Float32_u.O in
-        (if lo > #0.s
-         then (
-           if not Float.(Float32_u.to_float v > 0.0)
-           then
-             Error.raise_s
-               [%message
-                 "No_contour: lo>0 but sample <= 0"
-                   ~value:(Float32_u.to_string v : string)
-                   ~interval:(Interval.to_string interval : string)])
-         else if hi <= #0.s
-         then
-           if Float.(Float32_u.to_float v > 0.0)
-           then
-             Error.raise_s
-               [%message
-                 "No_contour: hi<=0 but sample > 0"
-                   ~value:(Float32_u.to_string v : string)
-                   ~interval:(Interval.to_string interval : string)]))
+        if lo > #0.s
+        then (
+          if not Float.(Float32_u.to_float v > 0.0)
+          then
+            Error.raise_s
+              [%message
+                "No_contour: lo>0 but sample <= 0"
+                  ~value:(Float32_u.to_string v : string)
+                  ~interval:(Interval.to_string interval : string)])
+        else if hi <= #0.s
+        then
+          if Float.(Float32_u.to_float v > 0.0)
+          then
+            Error.raise_s
+              [%message
+                "No_contour: hi<=0 but sample > 0"
+                  ~value:(Float32_u.to_string v : string)
+                  ~interval:(Interval.to_string interval : string)])
     done
   done
 ;;
@@ -208,8 +208,7 @@ let%test_unit "quickcheck: No_contour culled tiles contain all scalar samples" =
        (Test_bisimulation.gen_float_expr ~depth:3)
        gen_region
        gen_tile_cells)
-    ~sexp_of:
-      [%sexp_of: Expr_tree.t * Sample_region.t * int]
+    ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
     ~trials:500
     ~f:(fun (tree, region, tile_cells) ->
       let range = Expr_graph_range_eval.of_tree tree in
@@ -252,41 +251,41 @@ let check_constant_outside_culled_tile tree region sched ~tx ~ty interval ~below
       then (
         let v = eval_scalar tree ~x ~y in
         let v32 = Float32_u.of_float (Float32_u.to_float v) in
-        (if not (Interval.contains interval v32)
-         then
-           Error.raise_s
-             [%message
-               "Constant_outside: culled tile sample outside interval"
-                 ~tree:(Expr_tree.sexp_of_t tree : Sexp.t)
-                 ~region:(Sample_region.sexp_of_t region : Sexp.t)
-                 ~tx:(tx : int)
-                 ~ty:(ty : int)
-                 ~col:(col : int)
-                 ~row:(row : int)
-                 ~value:(Float32_u.to_string v : string)
-                 ~interval:(Interval.to_string interval : string)]);
+        if not (Interval.contains interval v32)
+        then
+          Error.raise_s
+            [%message
+              "Constant_outside: culled tile sample outside interval"
+                ~tree:(Expr_tree.sexp_of_t tree : Sexp.t)
+                ~region:(Sample_region.sexp_of_t region : Sexp.t)
+                ~tx:(tx : int)
+                ~ty:(ty : int)
+                ~col:(col : int)
+                ~row:(row : int)
+                ~value:(Float32_u.to_string v : string)
+                ~interval:(Interval.to_string interval : string)];
         (* Constant_outside: all <= below or all > above *)
         let open Float32_u.O in
-        (if hi <= below32
-         then (
-           if Float.(Float32_u.to_float v > below)
-           then
-             Error.raise_s
-               [%message
-                 "Constant_outside: hi<=below but sample > below"
-                   ~value:(Float32_u.to_string v : string)
-                   ~below:(below : float)
-                   ~interval:(Interval.to_string interval : string)])
-         else if lo > above32
-         then
-           if Float.(Float32_u.to_float v <= above)
-           then
-             Error.raise_s
-               [%message
-                 "Constant_outside: lo>above but sample <= above"
-                   ~value:(Float32_u.to_string v : string)
-                   ~above:(above : float)
-                   ~interval:(Interval.to_string interval : string)]))
+        if hi <= below32
+        then (
+          if Float.(Float32_u.to_float v > below)
+          then
+            Error.raise_s
+              [%message
+                "Constant_outside: hi<=below but sample > below"
+                  ~value:(Float32_u.to_string v : string)
+                  ~below:(below : float)
+                  ~interval:(Interval.to_string interval : string)])
+        else if lo > above32
+        then
+          if Float.(Float32_u.to_float v <= above)
+          then
+            Error.raise_s
+              [%message
+                "Constant_outside: lo>above but sample <= above"
+                  ~value:(Float32_u.to_string v : string)
+                  ~above:(above : float)
+                  ~interval:(Interval.to_string interval : string)])
     done
   done
 ;;
@@ -299,8 +298,7 @@ let%test_unit "quickcheck: Constant_outside culled tiles satisfy range predicate
        (Test_bisimulation.gen_float_expr ~depth:3)
        gen_region
        gen_tile_cells)
-    ~sexp_of:
-      [%sexp_of: Expr_tree.t * Sample_region.t * int]
+    ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
     ~trials:500
     ~f:(fun (tree, region, tile_cells) ->
       let range = Expr_graph_range_eval.of_tree tree in
@@ -371,7 +369,8 @@ let all_active_geom ~samples_x ~samples_y ~tile_cells =
 let%expect_test "geometry: single-sample grid (1x1)" =
   let sched = all_active_geom ~samples_x:1 ~samples_y:1 ~tile_cells:4 in
   print_geometry sched ~label:"1x1/tile4";
-  [%expect {|
+  [%expect
+    {|
     1x1/tile4: tiles_x=1 tiles_y=1
       tile x0: x0=0 samples_x=1
       tile y0: y0=0 samples_y=1
@@ -381,7 +380,8 @@ let%expect_test "geometry: single-sample grid (1x1)" =
 let%expect_test "geometry: 1xN strip" =
   let sched = all_active_geom ~samples_x:1 ~samples_y:5 ~tile_cells:4 in
   print_geometry sched ~label:"1x5/tile4";
-  [%expect {|
+  [%expect
+    {|
     1x5/tile4: tiles_x=1 tiles_y=1
       tile x0: x0=0 samples_x=1
       tile y0: y0=0 samples_y=5
@@ -391,7 +391,8 @@ let%expect_test "geometry: 1xN strip" =
 let%expect_test "geometry: samples smaller than one tile" =
   let sched = all_active_geom ~samples_x:3 ~samples_y:3 ~tile_cells:8 in
   print_geometry sched ~label:"3x3/tile8";
-  [%expect {|
+  [%expect
+    {|
     3x3/tile8: tiles_x=1 tiles_y=1
       tile x0: x0=0 samples_x=3
       tile y0: y0=0 samples_y=3
@@ -399,13 +400,13 @@ let%expect_test "geometry: samples smaller than one tile" =
 ;;
 
 let%expect_test "geometry: size not a multiple of tile_cells" =
-  (* 10 samples, tile_cells=3: ceil(9/3)=3 tiles in x.
-     Tile 0: x0=0, samples=4 (covers cols 0..3)
-     Tile 1: x0=3, samples=4 (covers cols 3..6)
-     Tile 2: x0=6, samples=4 (covers cols 6..9) *)
+  (* 10 samples, tile_cells=3: ceil(9/3)=3 tiles in x. Tile 0: x0=0, samples=4 (covers
+     cols 0..3) Tile 1: x0=3, samples=4 (covers cols 3..6) Tile 2: x0=6, samples=4 (covers
+     cols 6..9) *)
   let sched = all_active_geom ~samples_x:10 ~samples_y:4 ~tile_cells:3 in
   print_geometry sched ~label:"10x4/tile3";
-  [%expect {|
+  [%expect
+    {|
     10x4/tile3: tiles_x=3 tiles_y=1
       tile x0: x0=0 samples_x=4
       tile x1: x0=3 samples_x=4
@@ -415,8 +416,8 @@ let%expect_test "geometry: size not a multiple of tile_cells" =
 ;;
 
 let%expect_test "geometry: last sample of last tile is samples_x-1" =
-  (* For any tiling, the last sample column covered by the last x-tile must be
-     exactly samples_x - 1. *)
+  (* For any tiling, the last sample column covered by the last x-tile must be exactly
+     samples_x - 1. *)
   let check ~samples ~tile_cells =
     let sched = all_active_geom ~samples_x:samples ~samples_y:1 ~tile_cells in
     let last_tx = Tile_scheduler.tiles_x sched - 1 in
@@ -437,7 +438,8 @@ let%expect_test "geometry: last sample of last tile is samples_x-1" =
   check ~samples:9 ~tile_cells:4;
   check ~samples:16 ~tile_cells:4;
   check ~samples:17 ~tile_cells:4;
-  [%expect {|
+  [%expect
+    {|
     samples=1 tile_cells=1 last_col=0 expected=0 OK
     samples=4 tile_cells=8 last_col=3 expected=3 OK
     samples=8 tile_cells=4 last_col=7 expected=7 OK
@@ -448,8 +450,8 @@ let%expect_test "geometry: last sample of last tile is samples_x-1" =
 ;;
 
 let%expect_test "geometry: adjacent tiles share boundary sample" =
-  (* For a 9-sample, tile_cells=4 grid: tiles are [0..4], [4..8].
-     The last sample of tile 0 equals the first sample of tile 1 (col 4). *)
+  (* For a 9-sample, tile_cells=4 grid: tiles are [0..4], [4..8]. The last sample of tile
+     0 equals the first sample of tile 1 (col 4). *)
   let sched = all_active_geom ~samples_x:9 ~samples_y:1 ~tile_cells:4 in
   for tx = 0 to Tile_scheduler.tiles_x sched - 2 do
     let x0_curr = Tile_scheduler.tile_x0 sched ~tx in
@@ -491,9 +493,13 @@ let%expect_test "flipped region: circle verdict map" =
       ~tile_cells:8
       ~cull:Tile_scheduler.Cull.No_contour
   in
-  printf "tiles: %d active: %d\n" (Tile_scheduler.num_tiles sched) (Tile_scheduler.num_active sched);
+  printf
+    "tiles: %d active: %d\n"
+    (Tile_scheduler.num_tiles sched)
+    (Tile_scheduler.num_active sched);
   print_endline (Tile_scheduler.to_string_hum sched);
-  [%expect {|
+  [%expect
+    {|
     tiles: 64 active: 20
     ++++++++
     ++....++

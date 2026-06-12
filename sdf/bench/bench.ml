@@ -21,8 +21,8 @@ let oracle_registry : (string * (module Sdf.Oracle.S) portable) list =
 ;;
 
 (* A 1000x1000 sample region shifted by [offset] samples in both axes. Shifting the region
-   leaves the grid size unchanged but defeats the runner's per-region result cache, forcing
-   the grid to be re-evaluated. *)
+   leaves the grid size unchanged but defeats the runner's per-region result cache,
+   forcing the grid to be re-evaluated. *)
 let region_of offset =
   let open Float32_u in
   { Sdf.Sample_region.start_x = of_int offset
@@ -41,8 +41,8 @@ let measure f =
   result, elapsed
 ;;
 
-(* Time a single [Sdf_runner.run]. The grid is evaluated eagerly inside [run]; the callback
-   does no work so we measure only the runner's pipeline, not pixel readback. *)
+(* Time a single [Sdf_runner.run]. The grid is evaluated eagerly inside [run]; the
+   callback does no work so we measure only the runner's pipeline, not pixel readback. *)
 let time_run runner ~region ~filename source =
   let (), elapsed =
     measure (fun () ->
@@ -52,8 +52,8 @@ let time_run runner ~region ~filename source =
 ;;
 
 (* Region offsets are drawn from a monotonically increasing counter so that successive
-   warm/cold runs always sample a region the runner has not just cached. The "hot" region is
-   fixed at offset 0 and never reused for warm/cold. *)
+   warm/cold runs always sample a region the runner has not just cached. The "hot" region
+   is fixed at offset 0 and never reused for warm/cold. *)
 let next_offset = ref 0
 
 let fresh_offset () =
@@ -73,9 +73,9 @@ type sample =
    - Prime with the canonical source at offset 0 (untimed) to populate the cache.
    - [hot]: same source, same region -> served from cache.
    - [warm]: same source, fresh region -> grid re-evaluated, compile reused.
-   - [cold]: a uniquely-perturbed source at a fresh region -> full recompile + re-eval. The
-     trailing newlines change the source string (forcing a recompile) without changing the
-     compiled tree, so the perturbation costs nothing beyond the recompile itself. *)
+   - [cold]: a uniquely-perturbed source at a fresh region -> full recompile + re-eval.
+     The trailing newlines change the source string (forcing a recompile) without changing
+     the compiled tree, so the perturbation costs nothing beyond the recompile itself. *)
 let sample_one runner ~filename ~source =
   let hot_region = region_of 0 in
   let (_ : float) = time_run runner ~region:hot_region ~filename source in
@@ -191,7 +191,8 @@ let () =
             List.map estimates ~f:(fun (name, path, source, est, _) ->
               eprintf "  %s: %d iterations... %!" name iterations;
               let samples =
-                List.init iterations ~f:(fun _ -> sample_one runner ~filename:path ~source)
+                List.init iterations ~f:(fun _ ->
+                  sample_one runner ~filename:path ~source)
               in
               eprintf "done\n%!";
               let all = est :: samples in

@@ -38,9 +38,7 @@ let run_sub (module E : Executor.S_batch) tree region ~x0 ~y0 ~samples_x ~sample
 ;;
 
 (* Pull out the value at (col, row) from a full-batch flat array. *)
-let full_value full region ~col ~row =
-  full.((row * region.Sample_region.samples_x) + col)
-;;
+let full_value full region ~col ~row = full.((row * region.Sample_region.samples_x) + col)
 
 (* ===== Functor to instantiate the tests for a given backend ===== *)
 
@@ -68,8 +66,8 @@ module Make_tests (E : Executor.S_batch) = struct
                 ~y0:(y0 : int)
                 ~di:(di : int)
                 ~dj:(dj : int)
-                ~col:((x0 + di) : int)
-                ~row:((y0 + dj) : int)
+                ~col:(x0 + di : int)
+                ~row:(y0 + dj : int)
                 ~sub_value:(sub_v : float)
                 ~full_value:(full_v : float)]
       done
@@ -84,7 +82,8 @@ module Make_tests (E : Executor.S_batch) = struct
     let full = run_full impl tree region in
     let sub = run_sub impl tree region ~x0:0 ~y0:0 ~samples_x:4 ~samples_y:4 in
     let eq =
-      Array.for_all2_exn full sub ~f:(fun a b -> Int32.equal (Int32.bits_of_float a) (Int32.bits_of_float b))
+      Array.for_all2_exn full sub ~f:(fun a b ->
+        Int32.equal (Int32.bits_of_float a) (Int32.bits_of_float b))
     in
     printf "equal: %b\n" eq;
     [%expect {| equal: true |}]
@@ -112,7 +111,9 @@ module Make_tests (E : Executor.S_batch) = struct
   ;;
 
   let%expect_test "sub matches full: circle SDF offset window" =
-    let cx = #32.s and cy = #32.s and r = #20.s in
+    let cx = #32.s
+    and cy = #32.s
+    and r = #20.s in
     let dx = sub coord_x (f cx) in
     let dy = sub coord_y (f cy) in
     let tree = sub (sqrt (add (mul dx dx) (mul dy dy))) (f r) in
@@ -131,9 +132,8 @@ module Make_tests (E : Executor.S_batch) = struct
   ;;
 
   let%expect_test "sub values are correct for x+y (spot check)" =
-    (* region [0,1] 3x3: step = 1/3.
-       x_at(0)=0, x_at(1)=1/3, x_at(2)=2/3.
-       sub at x0=1, y0=1, 2x2 → pixels (1,1),(2,1),(1,2),(2,2). *)
+    (* region [0,1] 3x3: step = 1/3. x_at(0)=0, x_at(1)=1/3, x_at(2)=2/3. sub at x0=1,
+       y0=1, 2x2 → pixels (1,1),(2,1),(1,2),(2,2). *)
     let region = make_region ~samples_x:3 ~samples_y:3 in
     let tree = add coord_x coord_y in
     let sub = run_sub impl tree region ~x0:1 ~y0:1 ~samples_x:2 ~samples_y:2 in
@@ -179,10 +179,7 @@ module Make_tests (E : Executor.S_batch) = struct
     Quickcheck.test
       (Quickcheck.Generator.bind gen_region ~f:(fun region ->
          Quickcheck.Generator.map (gen_sub_rect region) ~f:(fun rect -> region, rect)))
-      ~sexp_of:
-        [%sexp_of:
-          Sample_region.t
-          * (int * int * int * int)]
+      ~sexp_of:[%sexp_of: Sample_region.t * (int * int * int * int)]
       ~trials:300
       ~f:(fun (region, (x0, y0, samples_x, samples_y)) ->
         (* Use a tree that exercises arithmetic and coordinates. *)

@@ -58,7 +58,8 @@ let dense_contour tree region =
   let prepared = E.Batch.Prepared.of_tree tree in
   let batch = E.Batch.Batch.create prepared region in
   let result = E.Batch.Batch.run batch ~oracles:(Map.empty (module Oracle.Key)) in
-  let w = region.Sample_region.samples_x and h = region.Sample_region.samples_y in
+  let w = region.Sample_region.samples_x
+  and h = region.Sample_region.samples_y in
   let grid : float32# array = Array.create ~len:(w * h) #0.0s in
   for i = 0 to (w * h) - 1 do
     grid.(i) <- Value.to_float (E.Batch.Result.get_output result ~px:i)
@@ -69,7 +70,7 @@ let dense_contour tree region =
 ;;
 
 (* ======================================================================= *)
-(* B1: run_contour equals dense march                                       *)
+(* B1: run_contour equals dense march *)
 (* ======================================================================= *)
 
 let%expect_test "run_contour equals dense march (circle)" =
@@ -84,10 +85,12 @@ let%expect_test "run_contour equals dense march (circle)" =
   let tiled = segment_list segments ~length in
   printf "dense segments: %d\n" dense_len;
   printf "run_contour segments: %d\n" length;
-  printf "bitwise equal: %b\n"
+  printf
+    "bitwise equal: %b\n"
     ([%compare.equal: (Int32.t * Int32.t * Int32.t * Int32.t) list] dense tiled);
   print_s [%sexp (stats : Sdf_contour.Stats.t)];
-  [%expect {|
+  [%expect
+    {|
     dense segments: 148
     run_contour segments: 148
     bitwise equal: true
@@ -96,24 +99,30 @@ let%expect_test "run_contour equals dense march (circle)" =
 ;;
 
 (* ======================================================================= *)
-(* B2: run_tiled equivalence + coverage                                     *)
+(* B2: run_tiled equivalence + coverage *)
 (* ======================================================================= *)
 
 let%expect_test "run_tiled: active tiles bitwise equal, culled tiles interval-sound" =
   let region = circle_region in
   let runner = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
   (* Dense reference grid from Sdf_runner.run *)
-  let w = region.Sample_region.samples_x and h = region.Sample_region.samples_y in
+  let w = region.Sample_region.samples_x
+  and h = region.Sample_region.samples_y in
   let dense_grid : float32# array = Array.create ~len:(w * h) #0.0s in
   let dense_grid_p = Stdlib.Obj.magic_portable dense_grid in
-  Sdf_runner.run runner ~region ~filename:"test.neo" circle_source ~f:(fun _par result get ->
-    let dense_grid = Stdlib.Obj.magic_uncontended dense_grid_p in
-    let result = Stdlib.Obj.magic Stdlib.Obj.magic result in
-    for y = 0 to h - 1 do
-      for x = 0 to w - 1 do
-        dense_grid.(y * w + x) <- Value.to_float (get result ~x ~y)
-      done
-    done);
+  Sdf_runner.run
+    runner
+    ~region
+    ~filename:"test.neo"
+    circle_source
+    ~f:(fun _par result get ->
+      let dense_grid = Stdlib.Obj.magic_uncontended dense_grid_p in
+      let result = Stdlib.Obj.magic Stdlib.Obj.magic result in
+      for y = 0 to h - 1 do
+        for x = 0 to w - 1 do
+          dense_grid.((y * w) + x) <- Value.to_float (get result ~x ~y)
+        done
+      done);
   (* Tiled eval *)
   let tiled =
     Sdf_runner.run_tiled
@@ -132,8 +141,9 @@ let%expect_test "run_tiled: active tiles bitwise equal, culled tiles interval-so
     ~fill:(fun ~x0 ~y0 ~samples_x ~samples_y interval ->
       for dy = 0 to samples_y - 1 do
         for dx = 0 to samples_x - 1 do
-          let px = x0 + dx and py = y0 + dy in
-          let idx = py * w + px in
+          let px = x0 + dx
+          and py = y0 + dy in
+          let idx = (py * w) + px in
           coverage.(idx) <- coverage.(idx) + 1;
           let dv = dense_grid.(idx) in
           tiled_grid.(idx) <- dv;
@@ -143,10 +153,11 @@ let%expect_test "run_tiled: active tiles bitwise equal, culled tiles interval-so
     ~draw:(fun ~x0 ~y0 ~samples_x ~samples_y ~get ->
       for dy = 0 to samples_y - 1 do
         for dx = 0 to samples_x - 1 do
-          let px = x0 + dx and py = y0 + dy in
-          let idx = py * w + px in
+          let px = x0 + dx
+          and py = y0 + dy in
+          let idx = (py * w) + px in
           coverage.(idx) <- coverage.(idx) + 1;
-          let tv = Value.to_float (get (dy * samples_x + dx)) in
+          let tv = Value.to_float (get ((dy * samples_x) + dx)) in
           tiled_grid.(idx) <- tv;
           let dv = dense_grid.(idx) in
           if not (Int32_u.equal (Float32_u.to_bits tv) (Float32_u.to_bits dv))
@@ -154,13 +165,12 @@ let%expect_test "run_tiled: active tiles bitwise equal, culled tiles interval-so
         done
       done);
   (* Every pixel must be covered at least once *)
-  let all_covered =
-    Stdlib.Array.for_all (fun c -> c >= 1) coverage
-  in
+  let all_covered = Stdlib.Array.for_all (fun c -> c >= 1) coverage in
   printf "active tiles bitwise equal: %b\n" !all_active_match;
   printf "culled tiles interval sound: %b\n" !all_culled_sound;
   printf "all pixels covered: %b\n" all_covered;
-  [%expect {|
+  [%expect
+    {|
     active tiles bitwise equal: true
     culled tiles interval sound: true
     all pixels covered: true
@@ -168,7 +178,7 @@ let%expect_test "run_tiled: active tiles bitwise equal, culled tiles interval-so
 ;;
 
 (* ======================================================================= *)
-(* B3: Caching                                                              *)
+(* B3: Caching *)
 (* ======================================================================= *)
 
 let%expect_test "caching: same args -> phys_equal, different cull -> not phys_equal" =
@@ -203,7 +213,8 @@ let%expect_test "caching: same args -> phys_equal, different cull -> not phys_eq
       ~cull:(Tile_scheduler.Cull.Constant_outside { below = 0.; above = 1. })
   in
   printf "different cull not phys_equal: %b\n" (not (phys_equal r1 r3));
-  [%expect {|
+  [%expect
+    {|
     same args phys_equal: true
     different cull not phys_equal: true
     |}]
@@ -237,7 +248,8 @@ export sqrt(dx * dx + dy * dy) - 10.0;
   in
   printf "changed source: not phys_equal: %b\n" (not (phys_equal segments segments3));
   printf "different segment counts: %b\n" (len1 <> len3);
-  [%expect {|
+  [%expect
+    {|
     same source: cached phys_equal segments: true
     changed source: not phys_equal: true
     different segment counts: true
@@ -267,16 +279,18 @@ let%expect_test "caching: run_contour then run_tiled then run_contour — cache 
   printf "contour cache survives run_tiled (phys_equal): %b\n" (phys_equal s1 s3);
   let sl1 = segment_list s1 ~length:l1 in
   let sl3 = segment_list s3 ~length:l3 in
-  printf "contour after run_tiled still bitwise equal: %b\n"
+  printf
+    "contour after run_tiled still bitwise equal: %b\n"
     ([%compare.equal: (Int32.t * Int32.t * Int32.t * Int32.t) list] sl1 sl3);
-  [%expect {|
+  [%expect
+    {|
     contour cache survives run_tiled (phys_equal): true
     contour after run_tiled still bitwise equal: true
     |}]
 ;;
 
 (* ======================================================================= *)
-(* B4: Scene with resample oracle through run_contour                       *)
+(* B4: Scene with resample oracle through run_contour *)
 (* ======================================================================= *)
 
 let resample_circle_source =
@@ -304,7 +318,8 @@ let%expect_test "run_contour: scene with resample oracle produces segments" =
   printf "segment count > 0: %b\n" (length > 0);
   printf "segment count: %d\n" length;
   print_s [%sexp (stats : Sdf_contour.Stats.t)];
-  [%expect {|
+  [%expect
+    {|
     segment count > 0: true
     segment count: 148
     ((tiles_total 4) (tiles_culled 0) (samples_evaluated 4225))
@@ -312,15 +327,15 @@ let%expect_test "run_contour: scene with resample oracle produces segments" =
 ;;
 
 (* ======================================================================= *)
-(* B5: Resample oracle with boundary-crossing shape — run_contour bitwise  *)
-(*     equal to dense pipeline                                              *)
+(* B5: Resample oracle with boundary-crossing shape — run_contour bitwise *)
+(* equal to dense pipeline *)
 (* ======================================================================= *)
 
-(* A circle whose contour crosses the sample-region boundary: cx=0, cy=32,
-   r=20.  The contour enters and exits through the left edge of the 64×64
-   region, so marching squares emits open chains with unsafe vertices at the
-   boundary.  The resample oracle must still produce a correct SDF, and
-   run_contour must agree bitwise with a dense evaluation of the same scene. *)
+(* A circle whose contour crosses the sample-region boundary: cx=0, cy=32, r=20. The
+   contour enters and exits through the left edge of the 64×64 region, so marching squares
+   emits open chains with unsafe vertices at the boundary. The resample oracle must still
+   produce a correct SDF, and run_contour must agree bitwise with a dense evaluation of
+   the same scene. *)
 let resample_boundary_source =
   {|
 fn circle(cx, cy, r) {
@@ -341,7 +356,8 @@ let%expect_test "run_contour: boundary-crossing resample oracle equals dense mar
   (* Dense reference: evaluate the scene without tiling and march it. *)
   let runner_dense = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
   Sdf_runner.add_oracle runner_dense ~name:"resample" (module Sdf_resample_oracle);
-  let w = region.Sample_region.samples_x and h = region.Sample_region.samples_y in
+  let w = region.Sample_region.samples_x
+  and h = region.Sample_region.samples_y in
   let dense_grid : float32# array = Array.create ~len:(w * h) #0.0s in
   let dense_grid_p = Stdlib.Obj.magic_portable dense_grid in
   Sdf_runner.run
@@ -354,7 +370,7 @@ let%expect_test "run_contour: boundary-crossing resample oracle equals dense mar
       let result = Stdlib.Obj.magic Stdlib.Obj.magic result in
       for y = 0 to h - 1 do
         for x = 0 to w - 1 do
-          dense_grid.(y * w + x) <- Value.to_float (get result ~x ~y)
+          dense_grid.((y * w) + x) <- Value.to_float (get result ~x ~y)
         done
       done);
   let dense_out : float32# array = Array.create ~len:(w * h * 2 * 4) #0.0s in
@@ -369,10 +385,12 @@ let%expect_test "run_contour: boundary-crossing resample oracle equals dense mar
   let tiled_segs = segment_list segments ~length in
   printf "dense segments: %d\n" dense_len;
   printf "run_contour segments: %d\n" length;
-  printf "bitwise equal: %b\n"
+  printf
+    "bitwise equal: %b\n"
     ([%compare.equal: (Int32.t * Int32.t * Int32.t * Int32.t) list] dense_segs tiled_segs);
   print_s [%sexp (stats : Sdf_contour.Stats.t)];
-  [%expect {|
+  [%expect
+    {|
     dense segments: 74
     run_contour segments: 74
     bitwise equal: true
@@ -381,12 +399,15 @@ let%expect_test "run_contour: boundary-crossing resample oracle equals dense mar
 ;;
 
 (* ======================================================================= *)
-(* B6: Resample oracle with boundary-crossing shape — run_tiled soundness  *)
+(* B6: Resample oracle with boundary-crossing shape — run_tiled soundness *)
 (* ======================================================================= *)
 
-let%expect_test "run_tiled: boundary-crossing resample oracle — active bitwise equal, culled sound" =
+let%expect_test "run_tiled: boundary-crossing resample oracle — active bitwise equal, \
+                 culled sound"
+  =
   let region = circle_region in
-  let w = region.Sample_region.samples_x and h = region.Sample_region.samples_y in
+  let w = region.Sample_region.samples_x
+  and h = region.Sample_region.samples_y in
   (* Dense reference grid *)
   let runner_dense = Sdf_runner.create (module Sdf.Expr_graph_batch_eval) in
   Sdf_runner.add_oracle runner_dense ~name:"resample" (module Sdf_resample_oracle);
@@ -402,7 +423,7 @@ let%expect_test "run_tiled: boundary-crossing resample oracle — active bitwise
       let result = Stdlib.Obj.magic Stdlib.Obj.magic result in
       for y = 0 to h - 1 do
         for x = 0 to w - 1 do
-          dense_grid.(y * w + x) <- Value.to_float (get result ~x ~y)
+          dense_grid.((y * w) + x) <- Value.to_float (get result ~x ~y)
         done
       done);
   (* Tiled eval *)
@@ -424,8 +445,9 @@ let%expect_test "run_tiled: boundary-crossing resample oracle — active bitwise
     ~fill:(fun ~x0 ~y0 ~samples_x ~samples_y interval ->
       for dy = 0 to samples_y - 1 do
         for dx = 0 to samples_x - 1 do
-          let px = x0 + dx and py = y0 + dy in
-          let idx = py * w + px in
+          let px = x0 + dx
+          and py = y0 + dy in
+          let idx = (py * w) + px in
           coverage.(idx) <- coverage.(idx) + 1;
           let dv = dense_grid.(idx) in
           if not (Interval.contains interval dv) then all_culled_sound := false
@@ -434,10 +456,11 @@ let%expect_test "run_tiled: boundary-crossing resample oracle — active bitwise
     ~draw:(fun ~x0 ~y0 ~samples_x ~samples_y ~get ->
       for dy = 0 to samples_y - 1 do
         for dx = 0 to samples_x - 1 do
-          let px = x0 + dx and py = y0 + dy in
-          let idx = py * w + px in
+          let px = x0 + dx
+          and py = y0 + dy in
+          let idx = (py * w) + px in
           coverage.(idx) <- coverage.(idx) + 1;
-          let tv = Value.to_float (get (dy * samples_x + dx)) in
+          let tv = Value.to_float (get ((dy * samples_x) + dx)) in
           let dv = dense_grid.(idx) in
           if not (Int32_u.equal (Float32_u.to_bits tv) (Float32_u.to_bits dv))
           then all_active_match := false
@@ -447,7 +470,8 @@ let%expect_test "run_tiled: boundary-crossing resample oracle — active bitwise
   printf "active tiles bitwise equal: %b\n" !all_active_match;
   printf "culled tiles interval sound: %b\n" !all_culled_sound;
   printf "all pixels covered: %b\n" all_covered;
-  [%expect {|
+  [%expect
+    {|
     active tiles bitwise equal: true
     culled tiles interval sound: true
     all pixels covered: true

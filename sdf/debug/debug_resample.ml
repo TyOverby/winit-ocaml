@@ -1,9 +1,9 @@
 (* Debug harness for the resample-oracle sign bug.
 
-   Replicates the inner pipeline of Sdf_resample_oracle for the boxes.neo scene:
-   sample the union pseudo-SDF on the expanded grid, run marching squares, build
-   the nearest-segment index, then compare the sign of the resampled field
-   against the analytically-known field at every grid point. *)
+   Replicates the inner pipeline of Sdf_resample_oracle for the boxes.neo scene: sample
+   the union pseudo-SDF on the expanded grid, run marching squares, build the
+   nearest-segment index, then compare the sign of the resampled field against the
+   analytically-known field at every grid point. *)
 
 open! Core
 module F = Float32_u
@@ -16,7 +16,8 @@ let rect rx ry w h px py =
   let dx = Float.abs (px -. cx) -. hw
   and dy = Float.abs (py -. cy) -. hh in
   let outside =
-    Float.sqrt ((Float.max dx 0. *. Float.max dx 0.) +. (Float.max dy 0. *. Float.max dy 0.))
+    Float.sqrt
+      ((Float.max dx 0. *. Float.max dx 0.) +. (Float.max dy 0. *. Float.max dy 0.))
   in
   let inside = Float.min (Float.max dx dy) 0. in
   outside +. inside
@@ -46,7 +47,9 @@ let wedge px py =
   Float.max circle (Float.max (half_plane (-0.1) 0.995) (half_plane 0.3 (-0.954)))
 ;;
 
-let fields = [ "union_boxes", union_boxes; "rotated_boxes", rotated_boxes; "wedge", wedge ]
+let fields =
+  [ "union_boxes", union_boxes; "rotated_boxes", rotated_boxes; "wedge", wedge ]
+;;
 
 let run_field name field =
   printf "\n##### field %s\n" name;
@@ -69,8 +72,8 @@ let run_field name field =
   (* Check 1: winding. For each segment, probe the field on both sides; the supposed
      inside (right side of the directed segment) must read lower than the outside.
      Comparing the two sides rather than testing signs keeps sub-pixel contour features
-     (e.g. single-sample diamonds at the tip of a thin sliver, where both probes
-     overshoot into positive territory) from raising false alarms. *)
+     (e.g. single-sample diamonds at the tip of a thin sliver, where both probes overshoot
+     into positive territory) from raising false alarms. *)
   let winding_bad = ref 0 in
   let probe_dist = 0.5 in
   for s = 0 to count - 1 do
@@ -88,12 +91,12 @@ let run_field name field =
       (* inside direction = (-dy, dx) / len, per the cross>0 convention *)
       let f_in =
         field
-          (start_x +. mx +. (probe_dist *. (-.dy) /. len))
+          (start_x +. mx +. (probe_dist *. -.dy /. len))
           (start_y +. my +. (probe_dist *. dx /. len))
       in
       let f_out =
         field
-          (start_x +. mx -. (probe_dist *. (-.dy) /. len))
+          (start_x +. mx -. (probe_dist *. -.dy /. len))
           (start_y +. my -. (probe_dist *. dx /. len))
       in
       if Float.(f_in >= f_out)
@@ -112,8 +115,8 @@ let run_field name field =
             f_out))
   done;
   printf "winding violations: %d / %d\n" !winding_bad count;
-  (* Check 2: sign of the resampled field vs the true field, on the grid lattice.
-     Query in segment (grid-index) space: index = world - start. *)
+  (* Check 2: sign of the resampled field vs the true field, on the grid lattice. Query in
+     segment (grid-index) space: index = world - start. *)
   let t = Nearest_seg.build out ~length:count in
   let dummy = Nearest_seg.Dummy.build out ~length:count in
   let flipped = ref 0 in
@@ -150,14 +153,9 @@ let run_field name field =
   printf "real/dummy sign disagreements: %d\n" !disagree;
   if !flipped > 0
   then
-    printf
-      "flipped bbox (world): x[%.2f, %.2f] y[%.2f, %.2f]\n"
-      !minx
-      !maxx
-      !miny
-      !maxy;
-  (* Check 3: for example flipped points, brute-force the nearest segments in
-     float64 and show the top candidates: distance, parameter t, cross sign. *)
+    printf "flipped bbox (world): x[%.2f, %.2f] y[%.2f, %.2f]\n" !minx !maxx !miny !maxy;
+  (* Check 3: for example flipped points, brute-force the nearest segments in float64 and
+     show the top candidates: distance, parameter t, cross sign. *)
   List.iter (List.rev !examples) ~f:(fun (ix, iy, wx, wy, f, q, qd) ->
     printf
       "\n=== flipped point grid(%d,%d) world(%.2f,%.2f) true=%.4f query=%.4f dummy=%.4f\n"
@@ -193,8 +191,10 @@ let run_field name field =
       cands := (d2, s, x1, y1, x2, y2, tp, cross) :: !cands
     done;
     let sorted =
-      List.sort !cands ~compare:(fun (d1, _, _, _, _, _, _, _) (d2, _, _, _, _, _, _, _) ->
-        Float.compare d1 d2)
+      List.sort
+        !cands
+        ~compare:(fun (d1, _, _, _, _, _, _, _) (d2, _, _, _, _, _, _, _) ->
+          Float.compare d1 d2)
     in
     List.iteri (List.take sorted 6) ~f:(fun i (d2, s, x1, y1, x2, y2, tp, cross) ->
       printf

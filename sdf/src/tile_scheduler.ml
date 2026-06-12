@@ -65,8 +65,13 @@ let tile_y0 t ~ty = ty * t.tile_cells
 (* Sample count including the boundary column shared with the next tile: an interior tile
    covers [tile_cells + 1] samples; the last tile is clipped to the grid (and covers a
    single sample only in the degenerate one-sample-wide grid). *)
-let tile_samples_x t ~tx = Int.min ((tx + 1) * t.tile_cells) (t.samples_x - 1) - tile_x0 t ~tx + 1
-let tile_samples_y t ~ty = Int.min ((ty + 1) * t.tile_cells) (t.samples_y - 1) - tile_y0 t ~ty + 1
+let tile_samples_x t ~tx =
+  Int.min ((tx + 1) * t.tile_cells) (t.samples_x - 1) - tile_x0 t ~tx + 1
+;;
+
+let tile_samples_y t ~ty =
+  Int.min ((ty + 1) * t.tile_cells) (t.samples_y - 1) - tile_y0 t ~ty + 1
+;;
 
 let num_active t =
   let count = ref 0 in
@@ -143,11 +148,15 @@ let schedule range ~vars ~oracles ~region ~tile_cells ~cull =
     in
     let box_x ~tx0 ~tx1 =
       let s0, s1 = sample_extent ~t0:tx0 ~t1:tx1 ~last:last_sample_x in
-      Interval.create ~lo:(Sample_region.x_at region s0) ~hi:(Sample_region.x_at region s1)
+      Interval.create
+        ~lo:(Sample_region.x_at region s0)
+        ~hi:(Sample_region.x_at region s1)
     in
     let box_y ~ty0 ~ty1 =
       let s0, s1 = sample_extent ~t0:ty0 ~t1:ty1 ~last:last_sample_y in
-      Interval.create ~lo:(Sample_region.y_at region s0) ~hi:(Sample_region.y_at region s1)
+      Interval.create
+        ~lo:(Sample_region.y_at region s0)
+        ~hi:(Sample_region.y_at region s1)
     in
     let fill ~tx0 ~tx1 ~ty0 ~ty1 (interval : Interval.t) =
       let #{ Interval.lo = ilo; hi = ihi } = interval in
@@ -185,6 +194,5 @@ let schedule range ~vars ~oracles ~region ~tile_cells ~cull =
           descend ~tx0 ~tx1 ~ty0 ~ty1:mid;
           descend ~tx0 ~tx1 ~ty0:mid ~ty1))
     in
-    if tiles_x > 0 && tiles_y > 0
-    then descend ~tx0:0 ~tx1:tiles_x ~ty0:0 ~ty1:tiles_y)
+    if tiles_x > 0 && tiles_y > 0 then descend ~tx0:0 ~tx1:tiles_x ~ty0:0 ~ty1:tiles_y)
 ;;

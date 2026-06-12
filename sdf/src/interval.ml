@@ -1,9 +1,10 @@
 open! Core
 module F = Float32_u
 
-type t = #{ lo : F.t
-          ; hi : F.t
-          }
+type t =
+  #{ lo : F.t
+   ; hi : F.t
+   }
 
 let zero = #0.s
 let one = #1.s
@@ -54,29 +55,51 @@ let to_string t =
 ;;
 
 module Bool = struct
-  type t = #{ can_be_false : bool
-            ; can_be_true : bool
-            }
+  type t =
+    #{ can_be_false : bool
+     ; can_be_true : bool
+     }
 
   let of_point b = #{ can_be_false = not b; can_be_true = b }
   let maybe = #{ can_be_false = true; can_be_true = true }
-  let definitely_true (#{ can_be_false; can_be_true } : t) = can_be_true && not can_be_false
-  let definitely_false (#{ can_be_false; can_be_true } : t) = can_be_false && not can_be_true
-  let contains (#{ can_be_false; can_be_true } : t) b = if b then can_be_true else can_be_false
 
-  let hull (#{ can_be_false = f1; can_be_true = t1 } : t) (#{ can_be_false = f2; can_be_true = t2 } : t) =
+  let definitely_true (#{ can_be_false; can_be_true } : t) =
+    can_be_true && not can_be_false
+  ;;
+
+  let definitely_false (#{ can_be_false; can_be_true } : t) =
+    can_be_false && not can_be_true
+  ;;
+
+  let contains (#{ can_be_false; can_be_true } : t) b =
+    if b then can_be_true else can_be_false
+  ;;
+
+  let hull
+    (#{ can_be_false = f1; can_be_true = t1 } : t)
+    (#{ can_be_false = f2; can_be_true = t2 } : t)
+    =
     #{ can_be_false = f1 || f2; can_be_true = t1 || t2 }
   ;;
 
-  let and_ (#{ can_be_false = f1; can_be_true = t1 } : t) (#{ can_be_false = f2; can_be_true = t2 } : t) =
+  let and_
+    (#{ can_be_false = f1; can_be_true = t1 } : t)
+    (#{ can_be_false = f2; can_be_true = t2 } : t)
+    =
     #{ can_be_false = f1 || f2; can_be_true = t1 && t2 }
   ;;
 
-  let or_ (#{ can_be_false = f1; can_be_true = t1 } : t) (#{ can_be_false = f2; can_be_true = t2 } : t) =
+  let or_
+    (#{ can_be_false = f1; can_be_true = t1 } : t)
+    (#{ can_be_false = f2; can_be_true = t2 } : t)
+    =
     #{ can_be_false = f1 && f2; can_be_true = t1 || t2 }
   ;;
 
-  let xor (#{ can_be_false = f1; can_be_true = t1 } : t) (#{ can_be_false = f2; can_be_true = t2 } : t) =
+  let xor
+    (#{ can_be_false = f1; can_be_true = t1 } : t)
+    (#{ can_be_false = f2; can_be_true = t2 } : t)
+    =
     #{ can_be_false = (t1 && t2) || (f1 && f2); can_be_true = (t1 && f2) || (f1 && t2) }
   ;;
 
@@ -94,8 +117,7 @@ let[@inline] max4 a b c d = F.max (F.max a b) (F.max c d)
    float32 stays inside the float32 evaluation at the interval corners, because IEEE
    rounding is monotone. Evaluating all four corners (rather than just the two that bound
    the result for finite inputs) makes NaN produced by an achievable corner (e.g.
-   [inf + -inf]) propagate into the endpoints, collapsing the result to [top] via
-   [make]. *)
+   [inf + -inf]) propagate into the endpoints, collapsing the result to [top] via [make]. *)
 
 let add (#{ lo = a; hi = b } : t) (#{ lo = c; hi = d } : t) =
   let open F.O in
@@ -121,9 +143,9 @@ let mul (#{ lo = a; hi = b } as i1 : t) (#{ lo = c; hi = d } as i2 : t) =
   then
     (* An interior point can produce [0 * inf = NaN] even when no corner product does. *)
     top
-  else (
+  else
     let open F.O in
-    make (min4 (a * c) (a * d) (b * c) (b * d)) (max4 (a * c) (a * d) (b * c) (b * d)))
+    make (min4 (a * c) (a * d) (b * c) (b * d)) (max4 (a * c) (a * d) (b * c) (b * d))
 ;;
 
 (* Division is total ([x / 0 = 0], matching the scalar evaluators), so a denominator
@@ -159,9 +181,9 @@ let div (#{ lo = a; hi = b } as i1 : t) (#{ lo = c; hi = d } as i2 : t) =
       if num_pos then add F.infinity;
       if num_neg then add F.neg_infinity);
     make (F.Ref.get mn) (F.Ref.get mx))
-  else (
+  else
     let open F.O in
-    make (min4 (a / c) (a / d) (b / c) (b / d)) (max4 (a / c) (a / d) (b / c) (b / d)))
+    make (min4 (a / c) (a / d) (b / c) (b / d)) (max4 (a / c) (a / d) (b / c) (b / d))
 ;;
 
 (* Sqrt is total ([sqrt x = 0] for [x < 0], matching the scalar evaluators), which makes
@@ -185,19 +207,22 @@ let abs (#{ lo; hi } as t : t) =
 (* Matches the scalar evaluator's [Sign]: 1 for positive, -1 for negative, 0 otherwise
    (zeros of either sign and NaN). It is monotone, so the endpoint signs bound it; [top]
    maps into [-1, 1] rather than [top] because [sign] never returns NaN. *)
-let sign_scalar a = if F.O.(a > zero) then one else if F.O.(a < zero) then neg_one else zero
+let sign_scalar a =
+  if F.O.(a > zero) then one else if F.O.(a < zero) then neg_one else zero
+;;
 
 let sign (#{ lo; hi } as t : t) =
   if is_top t then make neg_one one else make (sign_scalar lo) (sign_scalar hi)
 ;;
 
 let round (#{ lo; hi } as t : t) =
-  if is_top t then top else make (F.round_nearest_half_to_even lo) (F.round_nearest_half_to_even hi)
+  if is_top t
+  then top
+  else make (F.round_nearest_half_to_even lo) (F.round_nearest_half_to_even hi)
 ;;
 
 (* Scalar [Min]/[Max] use [F.min]/[F.max], which return NaN if either argument is NaN, so
-   a [top] on either side must stay [top]. Otherwise both are monotone in each
-   argument. *)
+   a [top] on either side must stay [top]. Otherwise both are monotone in each argument. *)
 let min (#{ lo = a; hi = b } as i1 : t) (#{ lo = c; hi = d } as i2 : t) =
   if is_top i1 || is_top i2 then top else make (F.min a c) (F.min b d)
 ;;
@@ -210,8 +235,8 @@ let two_pi = Float.pi *. 2.0
 
 (* Absolute padding applied to trig endpoints. The float32 [sin]/[cos] are faithful to
    within a couple of ulps (~2.4e-7 at magnitude 1) but not guaranteed monotone between
-   critical points, so a sample inside the interval can land slightly outside the
-   endpoint values. *)
+   critical points, so a sample inside the interval can land slightly outside the endpoint
+   values. *)
 let trig_pad = #2e-5s
 
 (* Is there an integer [k] with [lo <= offset + 2k*pi <= hi]? Computed in float64, where
@@ -226,8 +251,7 @@ let trig (f : F.t -> F.t) (#{ lo; hi } as t : t) ~max_offset ~min_offset =
   if is_top t
   then top
   else if not (F.is_finite lo && F.is_finite hi)
-  then
-    (* sin/cos of an infinity is NaN. *)
+  then (* sin/cos of an infinity is NaN. *)
     top
   else (
     let lo64 = F.to_float lo

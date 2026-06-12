@@ -98,15 +98,21 @@ let%expect_test "sign tie at a shared vertex resolves by the pseudonormal rule" 
   (* Two contour segments meet at the origin. The query point's projection clamps to the
      shared vertex on both, so both report the same distance; only the sign is in
      question. The first segment in scan order is nearly collinear with the direction to
-     the query point and its infinite line puts the point (wrongly) outside; the
-     tie-break must pick the second segment, whose line the point deviates from most,
-     which correctly says inside. Geometry distilled from a marched reflex corner of
+     the query point and its infinite line puts the point (wrongly) outside; the tie-break
+     must pick the second segment, whose line the point deviates from most, which
+     correctly says inside. Geometry distilled from a marched reflex corner of
      sdf/neon/boxes.neo, where the old first-wins rule flipped the sign of a whole wedge
      of interior points. *)
   let coords =
     coords_of_floats
-      [| -1.0; -0.3203125; 0.0; 0.0 (* shallow approach into the vertex *)
-       ; 0.0; 0.0; 0.0546875; -0.5 (* steep exit from the vertex *)
+      [| -1.0
+       ; -0.3203125
+       ; 0.0
+       ; 0.0 (* shallow approach into the vertex *)
+       ; 0.0
+       ; 0.0
+       ; 0.0546875
+       ; -0.5 (* steep exit from the vertex *)
       |]
   in
   let t = Nearest_seg.build coords ~length:2 in
@@ -149,7 +155,7 @@ let%expect_test "query_range: box entirely on positive side" =
   printf "lo=%.4f hi=%.4f\n" (F.to_float lo) (F.to_float hi);
   [%expect {| lo=0.9998 hi=3.0002 |}];
   (* lo > 0 means the range is entirely positive *)
-  assert Float.(F.to_float lo > 0.0)
+  assert (Float.(F.to_float lo > 0.0))
 ;;
 
 (* Sanity check: box entirely to the left → negative distances *)
@@ -159,7 +165,7 @@ let%expect_test "query_range: box entirely on negative side" =
   let #{ Nearest_seg.Interval.lo; hi } = r in
   printf "lo=%.4f hi=%.4f\n" (F.to_float lo) (F.to_float hi);
   [%expect {| lo=-3.0002 hi=-0.9998 |}];
-  assert Float.(F.to_float hi < 0.0)
+  assert (Float.(F.to_float hi < 0.0))
 ;;
 
 (* Sanity check: query box straddling the segment → range contains 0 (lo < 0 < hi) *)
@@ -169,19 +175,20 @@ let%expect_test "query_range: box straddling segment" =
   let #{ Nearest_seg.Interval.lo; hi } = r in
   printf "lo=%.4f hi=%.4f\n" (F.to_float lo) (F.to_float hi);
   [%expect {| lo=-2.0001 hi=2.0001 |}];
-  assert Float.(F.to_float lo < 0.0 && F.to_float hi > 0.0)
+  assert (Float.(F.to_float lo < 0.0 && F.to_float hi > 0.0))
 ;;
 
 (* Degenerate box (single point): range should bracket the scalar query result *)
 let%expect_test "query_range: degenerate point box" =
   let t = one_seg 0.0 (-1.0) 0.0 1.0 in
-  let qx = 2.0 and qy = 0.0 in
+  let qx = 2.0
+  and qy = 0.0 in
   let r = range_of t ~x_lo:qx ~y_lo:qy ~x_hi:qx ~y_hi:qy in
   let #{ Nearest_seg.Interval.lo; hi } = r in
   let scalar = F.to_float (Nearest_seg.query t ~x:(F.of_float qx) ~y:(F.of_float qy)) in
   printf "scalar=%.4f lo=%.4f hi=%.4f\n" scalar (F.to_float lo) (F.to_float hi);
   [%expect {| scalar=2.0000 lo=1.9999 hi=2.0001 |}];
-  assert Float.(F.to_float lo <= scalar && scalar <= F.to_float hi)
+  assert (Float.(F.to_float lo <= scalar && scalar <= F.to_float hi))
 ;;
 
 (* Empty index: query_range should return [+inf, +inf] *)
@@ -193,20 +200,31 @@ let%expect_test "query_range: empty index" =
   [%expect {| lo=inf hi=inf |}]
 ;;
 
-(* Build a clockwise (image-coords, y-down) unit square: inside = negative.
-   In image coordinates, clockwise winding looks like: top-right → bottom-right → bottom-left → top-left
-   We use corners at (±1, ±1). The interior point (0,0) should have negative distance. *)
+(* Build a clockwise (image-coords, y-down) unit square: inside = negative. In image
+   coordinates, clockwise winding looks like: top-right → bottom-right → bottom-left →
+   top-left We use corners at (±1, ±1). The interior point (0,0) should have negative
+   distance. *)
 let square_segs () =
-  (* Clockwise in image coords (y-down): right side up, bottom right, left side down, top left *)
+  (* Clockwise in image coords (y-down): right side up, bottom right, left side down, top
+     left *)
   coords_of_floats
     [| (* right side: (1,-1) → (1,1) *)
-       1.0; -1.0; 1.0; 1.0
-       (* bottom side: (1,1) → (-1,1) *)
-     ; 1.0; 1.0; -1.0; 1.0
-       (* left side: (-1,1) → (-1,-1) *)
-     ; -1.0; 1.0; -1.0; -1.0
-       (* top side: (-1,-1) → (1,-1) *)
-     ; -1.0; -1.0; 1.0; -1.0
+       1.0
+     ; -1.0
+     ; 1.0
+     ; 1.0 (* bottom side: (1,1) → (-1,1) *)
+     ; 1.0
+     ; 1.0
+     ; -1.0
+     ; 1.0 (* left side: (-1,1) → (-1,-1) *)
+     ; -1.0
+     ; 1.0
+     ; -1.0
+     ; -1.0 (* top side: (-1,-1) → (1,-1) *)
+     ; -1.0
+     ; -1.0
+     ; 1.0
+     ; -1.0
     |]
 ;;
 
@@ -219,14 +237,14 @@ let%expect_test "query_range: box inside closed square => all-negative range" =
   printf "lo=%.4f hi=%.4f\n" (F.to_float lo) (F.to_float hi);
   [%expect {| lo=-1.3000 hi=-0.7000 |}];
   (* Range entirely negative: box is well inside the square *)
-  assert Float.(F.to_float hi < 0.0)
+  assert (Float.(F.to_float hi < 0.0))
 ;;
 
 let%expect_test "query_range: box outside closed square => scalar results contained" =
   let coords = square_segs () in
   let t = Nearest_seg.build coords ~length:4 in
-  (* Box far outside the square — sign side is conservative so we can't assert lo>0,
-     but every scalar result must be inside the range. *)
+  (* Box far outside the square — sign side is conservative so we can't assert lo>0, but
+     every scalar result must be inside the range. *)
   let r = range_of t ~x_lo:3.0 ~y_lo:3.0 ~x_hi:5.0 ~y_hi:5.0 in
   let #{ Nearest_seg.Interval.lo; hi } = r in
   printf "lo=%.4f hi=%.4f\n" (F.to_float lo) (F.to_float hi);
@@ -235,7 +253,7 @@ let%expect_test "query_range: box outside closed square => scalar results contai
   let s = F.to_float (Nearest_seg.query t ~x:(F.of_float 4.0) ~y:(F.of_float 4.0)) in
   printf "scalar at (4,4)=%.4f\n" s;
   [%expect {| scalar at (4,4)=4.2426 |}];
-  assert Float.(F.to_float lo <= s && s <= F.to_float hi)
+  assert (Float.(F.to_float lo <= s && s <= F.to_float hi))
 ;;
 
 (* ===== Quickcheck property test for query_range ===== *)
@@ -291,7 +309,9 @@ let%test_unit "query_range: scalar result contained in both indexed and dummy ra
           interp x_lo x_hi tx, interp y_lo y_hi ty)
       in
       List.iter pts ~f:(fun (px, py) ->
-        let scalar = F.to_float (Nearest_seg.query t ~x:(F.of_float px) ~y:(F.of_float py)) in
+        let scalar =
+          F.to_float (Nearest_seg.query t ~x:(F.of_float px) ~y:(F.of_float py))
+        in
         let in_idx = Float.(F.to_float idx_lo <= scalar && scalar <= F.to_float idx_hi) in
         let in_dum = Float.(F.to_float dum_lo <= scalar && scalar <= F.to_float dum_hi) in
         if not (in_idx && in_dum)
@@ -320,12 +340,12 @@ let%test_unit "query_range: scalar result contained in both indexed and dummy ra
 
 (* Build a clockwise-wound, axis-aligned square from (x0,y0) to (x1,y1) with each side
    subdivided into [steps]-many unit segments, with bitwise-identical float32 shared
-   endpoints.  We work in a flat float list to avoid the unboxed layout restriction, then
-   convert at the end.  The key: compute each subdivision point ONCE as float32
+   endpoints. We work in a flat float list to avoid the unboxed layout restriction, then
+   convert at the end. The key: compute each subdivision point ONCE as float32
    (round-tripped through F.of_float then F.to_float) so the same bit-pattern is used for
    both neighbouring segments. *)
-(* NB: the plain-double version (subdivided_square_segs) was removed because it was unused;
-   all callers require the f32-consistent variant below. *)
+(* NB: the plain-double version (subdivided_square_segs) was removed because it was
+   unused; all callers require the f32-consistent variant below. *)
 let subdivided_square_segs_f32 x0 y0 x1 y1 ~steps =
   (* Pre-compute subdivision points for one edge as float32-rounded floats. *)
   let edge_pts ax ay bx by =
@@ -336,10 +356,10 @@ let subdivided_square_segs_f32 x0 y0 x1 y1 ~steps =
       let py = F.to_float (F.of_float (ay +. ((by -. ay) *. t))) in
       px, py)
   in
-  let top   = edge_pts x0 y0 x1 y0 in
+  let top = edge_pts x0 y0 x1 y0 in
   let right = edge_pts x1 y0 x1 y1 in
-  let bot   = edge_pts x1 y1 x0 y1 in
-  let left  = edge_pts x0 y1 x0 y0 in
+  let bot = edge_pts x1 y1 x0 y1 in
+  let left = edge_pts x0 y1 x0 y0 in
   let segs = ref [] in
   let add_edge_pts pts =
     for k = 0 to steps - 1 do
@@ -358,8 +378,8 @@ let subdivided_square_segs_f32 x0 y0 x1 y1 ~steps =
 (* Count segments in a flat float32# coord array. *)
 let seg_count_of_coords coords = Array.length coords / 4
 
-(* Verdict map: for each tile in an NxN grid over [lx,hx]x[ly,hy], emit '+' if lo>0,
-   '-' if hi<=0, 'o' if straddling (both signs possible). *)
+(* Verdict map: for each tile in an NxN grid over [lx,hx]x[ly,hy], emit '+' if lo>0, '-'
+   if hi<=0, 'o' if straddling (both signs possible). *)
 let verdict_map t ~lx ~ly ~hx ~hy ~nx ~ny =
   let buf = Buffer.create ((nx + 2) * (ny + 1)) in
   for j = 0 to ny - 1 do
@@ -386,9 +406,7 @@ let verdict_map t ~lx ~ly ~hx ~hy ~nx ~ny =
 ;;
 
 (* Count straddling ('o') tiles in a verdict map string. *)
-let count_straddles map =
-  String.count map ~f:(Char.equal 'o')
-;;
+let count_straddles map = String.count map ~f:(Char.equal 'o')
 
 (* 1a. Closed square, subdivided into unit-length segments. Verdict maps with and without
    the assume_level_set flag. The with-flag map should resolve (show '+') tiles that are
@@ -399,9 +417,14 @@ let%expect_test "assume_level_set: closed square — verdict maps" =
   let t_no = Nearest_seg.build coords ~length:n in
   let t_yes = Nearest_seg.build coords ~length:n ~assume_level_set:true in
   (* Print verdict over a 12×12 grid spanning [0,60]×[0,60]. *)
-  printf "without flag:\n%s\n" (verdict_map t_no ~lx:0.0 ~ly:0.0 ~hx:60.0 ~hy:60.0 ~nx:12 ~ny:12);
-  printf "with flag:\n%s\n" (verdict_map t_yes ~lx:0.0 ~ly:0.0 ~hx:60.0 ~hy:60.0 ~nx:12 ~ny:12);
-  [%expect {|
+  printf
+    "without flag:\n%s\n"
+    (verdict_map t_no ~lx:0.0 ~ly:0.0 ~hx:60.0 ~hy:60.0 ~nx:12 ~ny:12);
+  printf
+    "with flag:\n%s\n"
+    (verdict_map t_yes ~lx:0.0 ~ly:0.0 ~hx:60.0 ~hy:60.0 ~nx:12 ~ny:12);
+  [%expect
+    {|
     without flag:
     +oooo+++ooo+
     oooooooooooo
@@ -439,8 +462,12 @@ let%expect_test "assume_level_set: closed square — containment" =
   let t_yes = Nearest_seg.build coords ~length:n ~assume_level_set:true in
   (* Sweep a 20×20 grid of scalar queries and verify containment in a 4×4 grid of tiles. *)
   let violations = ref 0 in
-  let nx = 4 and ny = 4 in
-  let lx = 0.0 and ly = 0.0 and hx = 60.0 and hy = 60.0 in
+  let nx = 4
+  and ny = 4 in
+  let lx = 0.0
+  and ly = 0.0
+  and hx = 60.0
+  and hy = 60.0 in
   for ti = 0 to nx - 1 do
     for tj = 0 to ny - 1 do
       let tx0 = lx +. ((hx -. lx) *. float_of_int ti /. float_of_int nx) in
@@ -452,13 +479,11 @@ let%expect_test "assume_level_set: closed square — containment" =
       in
       let rng = Splittable_random.of_int 42 in
       for _ = 1 to 20 do
-        let px =
-          tx0 +. ((tx1 -. tx0) *. Splittable_random.float rng ~lo:0.0 ~hi:1.0)
+        let px = tx0 +. ((tx1 -. tx0) *. Splittable_random.float rng ~lo:0.0 ~hi:1.0) in
+        let py = ty0 +. ((ty1 -. ty0) *. Splittable_random.float rng ~lo:0.0 ~hi:1.0) in
+        let s =
+          F.to_float (Nearest_seg.query t_yes ~x:(F.of_float px) ~y:(F.of_float py))
         in
-        let py =
-          ty0 +. ((ty1 -. ty0) *. Splittable_random.float rng ~lo:0.0 ~hi:1.0)
-        in
-        let s = F.to_float (Nearest_seg.query t_yes ~x:(F.of_float px) ~y:(F.of_float py)) in
         if Float.(s < F.to_float lo || s > F.to_float hi) then incr violations
       done
     done
@@ -467,18 +492,26 @@ let%expect_test "assume_level_set: closed square — containment" =
   [%expect {| containment violations: 0 |}]
 ;;
 
-(* 1b. Open "U" chain: square with the bottom side removed.  Tiles past the open ends
+(* 1b. Open "U" chain: square with the bottom side removed. Tiles past the open ends
    (below y=50, between x=10..50) must stay 'o' (both signs) because the probe is
    correctly suppressed near the open chain endpoints. *)
 let u_chain_segs () =
-  (* Clockwise square minus the bottom edge; open ends are (50,50) and (10,50).
-     top:   (10,10) -> (50,10)
-     right: (50,10) -> (50,50)
-     left:  (10,50) -> (10,10)   [reversed direction from closed square] *)
+  (* Clockwise square minus the bottom edge; open ends are (50,50) and (10,50). top:
+     (10,10) -> (50,10) right: (50,10) -> (50,50) left: (10,50) -> (10,10)
+     [reversed direction from closed square] *)
   coords_of_floats
-    [| 10.0; 10.0; 50.0; 10.0 (* top *)
-     ; 50.0; 10.0; 50.0; 50.0 (* right *)
-     ; 10.0; 50.0; 10.0; 10.0 (* left *)
+    [| 10.0
+     ; 10.0
+     ; 50.0
+     ; 10.0 (* top *)
+     ; 50.0
+     ; 10.0
+     ; 50.0
+     ; 50.0 (* right *)
+     ; 10.0
+     ; 50.0
+     ; 10.0
+     ; 10.0 (* left *)
     |]
 ;;
 
@@ -488,12 +521,17 @@ let%expect_test "assume_level_set: open U chain — probe suppressed past open e
   let t_yes = Nearest_seg.build coords ~length:n ~assume_level_set:true in
   (* The wedge region past the open ends: tiles at the bottom, between the two endpoints.
      Build a 10×10 verdict map over [0,60]×[0,60]. *)
-  printf "U-chain verdict (with flag):\n%s\n"
+  printf
+    "U-chain verdict (with flag):\n%s\n"
     (verdict_map t_yes ~lx:0.0 ~ly:0.0 ~hx:60.0 ~hy:60.0 ~nx:10 ~ny:10);
   (* Also check containment: for all tiles, 20 random scalar queries must be in range. *)
   let violations = ref 0 in
-  let nx = 6 and ny = 6 in
-  let lx = 0.0 and ly = 0.0 and hx = 60.0 and hy = 60.0 in
+  let nx = 6
+  and ny = 6 in
+  let lx = 0.0
+  and ly = 0.0
+  and hx = 60.0
+  and hy = 60.0 in
   for ti = 0 to nx - 1 do
     for tj = 0 to ny - 1 do
       let tx0 = lx +. ((hx -. lx) *. float_of_int ti /. float_of_int nx) in
@@ -505,19 +543,18 @@ let%expect_test "assume_level_set: open U chain — probe suppressed past open e
       in
       let rng = Splittable_random.of_int 17 in
       for _ = 1 to 20 do
-        let px =
-          tx0 +. ((tx1 -. tx0) *. Splittable_random.float rng ~lo:0.0 ~hi:1.0)
+        let px = tx0 +. ((tx1 -. tx0) *. Splittable_random.float rng ~lo:0.0 ~hi:1.0) in
+        let py = ty0 +. ((ty1 -. ty0) *. Splittable_random.float rng ~lo:0.0 ~hi:1.0) in
+        let s =
+          F.to_float (Nearest_seg.query t_yes ~x:(F.of_float px) ~y:(F.of_float py))
         in
-        let py =
-          ty0 +. ((ty1 -. ty0) *. Splittable_random.float rng ~lo:0.0 ~hi:1.0)
-        in
-        let s = F.to_float (Nearest_seg.query t_yes ~x:(F.of_float px) ~y:(F.of_float py)) in
         if Float.(s < F.to_float lo || s > F.to_float hi) then incr violations
       done
     done
   done;
   printf "U-chain containment violations: %d\n" !violations;
-  [%expect {|
+  [%expect
+    {|
     U-chain verdict (with flag):
     ++++++++++
     +oooooooo+
@@ -534,33 +571,31 @@ let%expect_test "assume_level_set: open U chain — probe suppressed past open e
     |}]
 ;;
 
-(* 1c. Unsafe-vertex variants: T-junction, duplicate segment, zero-length segment.
-   In each case build with ~assume_level_set:true; check no containment violations
-   and that the probe was suppressed near the unsafe vertex (tile containing it is 'o'). *)
+(* 1c. Unsafe-vertex variants: T-junction, duplicate segment, zero-length segment. In each
+   case build with ~assume_level_set:true; check no containment violations and that the
+   probe was suppressed near the unsafe vertex (tile containing it is 'o'). *)
 
 (* T-junction: three segments sharing one vertex. *)
 let t_junction_segs () =
-  (* A horizontal segment (−5,0)→(5,0), a vertical segment (0,0)→(0,5), and a
-     second horizontal piece (0,0)→(0,-5): three endpoints share (0.0, 0.0). *)
-  coords_of_floats
-    [| -5.0; 0.0; 0.0; 0.0
-     ; 0.0; 0.0; 5.0; 0.0
-     ; 0.0; 0.0; 0.0; 5.0
-    |]
+  (* A horizontal segment (−5,0)→(5,0), a vertical segment (0,0)→(0,5), and a second
+     horizontal piece (0,0)→(0,-5): three endpoints share (0.0, 0.0). *)
+  coords_of_floats [| -5.0; 0.0; 0.0; 0.0; 0.0; 0.0; 5.0; 0.0; 0.0; 0.0; 0.0; 5.0 |]
 ;;
 
 let%expect_test "assume_level_set: T-junction — probe suppressed near junction" =
   let coords = t_junction_segs () in
   let n = seg_count_of_coords coords in
   let t_yes = Nearest_seg.build coords ~length:n ~assume_level_set:true in
-  printf "T-junction verdict (with flag):\n%s\n"
+  printf
+    "T-junction verdict (with flag):\n%s\n"
     (verdict_map t_yes ~lx:(-8.0) ~ly:(-8.0) ~hx:8.0 ~hy:8.0 ~nx:8 ~ny:8);
   (* The tile containing (0,0) should be 'o' because it is an unsafe vertex. *)
   let #{ Nearest_seg.Interval.lo; hi } =
     range_of t_yes ~x_lo:(-0.5) ~y_lo:(-0.5) ~x_hi:0.5 ~y_hi:0.5
   in
   printf "tile around junction: lo=%.4f hi=%.4f\n" (F.to_float lo) (F.to_float hi);
-  [%expect {|
+  [%expect
+    {|
     T-junction verdict (with flag):
     ooooo+++
     +oooo+++
@@ -577,10 +612,7 @@ let%expect_test "assume_level_set: T-junction — probe suppressed near junction
 
 (* Duplicate segment: the same segment appears twice. *)
 let duplicate_seg_segs () =
-  coords_of_floats
-    [| 0.0; -5.0; 0.0; 5.0
-     ; 0.0; -5.0; 0.0; 5.0
-    |]
+  coords_of_floats [| 0.0; -5.0; 0.0; 5.0; 0.0; -5.0; 0.0; 5.0 |]
 ;;
 
 let%expect_test "assume_level_set: duplicate segment — probe suppressed" =
@@ -598,12 +630,20 @@ let%expect_test "assume_level_set: duplicate segment — probe suppressed" =
     [ -2.0, 0.0; 2.0, 0.0; 0.0, 3.0; 0.0, -3.0 ]
     ~f:(fun (px, py) ->
       let #{ Nearest_seg.Interval.lo; hi } =
-        range_of t_yes ~x_lo:(px -. 1.0) ~y_lo:(py -. 1.0) ~x_hi:(px +. 1.0) ~y_hi:(py +. 1.0)
+        range_of
+          t_yes
+          ~x_lo:(px -. 1.0)
+          ~y_lo:(py -. 1.0)
+          ~x_hi:(px +. 1.0)
+          ~y_hi:(py +. 1.0)
       in
-      let s = F.to_float (Nearest_seg.query t_yes ~x:(F.of_float px) ~y:(F.of_float py)) in
+      let s =
+        F.to_float (Nearest_seg.query t_yes ~x:(F.of_float px) ~y:(F.of_float py))
+      in
       if Float.(s < F.to_float lo || s > F.to_float hi) then incr violations);
   printf "dup-seg containment violations: %d\n" !violations;
-  [%expect {|
+  [%expect
+    {|
     tile straddling dup-seg: lo=-0.1000 hi=0.1000
     dup-seg containment violations: 0
     |}]
@@ -611,23 +651,36 @@ let%expect_test "assume_level_set: duplicate segment — probe suppressed" =
 
 (* Zero-length segment inside a closed square. *)
 let zero_length_in_square_segs () =
-  (* A proper closed square plus a zero-length segment at (30, 30) inside.
-     Build as flat float arrays and convert together to avoid Array.append on float32#. *)
+  (* A proper closed square plus a zero-length segment at (30, 30) inside. Build as flat
+     float arrays and convert together to avoid Array.append on float32#. *)
   coords_of_floats
     [| (* right side: (1,-1) → (1,1) *)
-       1.0; -1.0; 1.0; 1.0
-       (* bottom side: (1,1) → (-1,1) *)
-     ; 1.0; 1.0; -1.0; 1.0
-       (* left side: (-1,1) → (-1,-1) *)
-     ; -1.0; 1.0; -1.0; -1.0
-       (* top side: (-1,-1) → (1,-1) *)
-     ; -1.0; -1.0; 1.0; -1.0
-       (* zero-length segment at (0,0) inside *)
-     ; 0.0; 0.0; 0.0; 0.0
+       1.0
+     ; -1.0
+     ; 1.0
+     ; 1.0 (* bottom side: (1,1) → (-1,1) *)
+     ; 1.0
+     ; 1.0
+     ; -1.0
+     ; 1.0 (* left side: (-1,1) → (-1,-1) *)
+     ; -1.0
+     ; 1.0
+     ; -1.0
+     ; -1.0 (* top side: (-1,-1) → (1,-1) *)
+     ; -1.0
+     ; -1.0
+     ; 1.0
+     ; -1.0 (* zero-length segment at (0,0) inside *)
+     ; 0.0
+     ; 0.0
+     ; 0.0
+     ; 0.0
     |]
 ;;
 
-let%expect_test "assume_level_set: zero-length segment inside square — probe suppressed near it" =
+let%expect_test "assume_level_set: zero-length segment inside square — probe suppressed \
+                 near it"
+  =
   let coords = zero_length_in_square_segs () in
   let n = seg_count_of_coords coords in
   let t_yes = Nearest_seg.build coords ~length:n ~assume_level_set:true in
@@ -641,9 +694,12 @@ let%expect_test "assume_level_set: zero-length segment inside square — probe s
   printf "with flag: lo=%.4f hi=%.4f\n" (F.to_float lo_yes) (F.to_float hi_yes);
   printf "without flag: lo=%.4f hi=%.4f\n" (F.to_float lo_no) (F.to_float hi_no);
   (* Verify a scalar query at (30,30) lies within both ranges *)
-  let s = F.to_float (Nearest_seg.query t_yes ~x:(F.of_float 30.0) ~y:(F.of_float 30.0)) in
+  let s =
+    F.to_float (Nearest_seg.query t_yes ~x:(F.of_float 30.0) ~y:(F.of_float 30.0))
+  in
   printf "scalar at (30,30): %.4f\n" s;
-  [%expect {|
+  [%expect
+    {|
     with flag: lo=40.3029 hi=41.7215
     without flag: lo=40.3029 hi=41.7215
     scalar at (30,30): 41.0122
@@ -682,45 +738,61 @@ let%expect_test "assume_level_set: probe reduces straddle count for closed squar
    segment coords. Each edge is optionally subdivided; shared endpoints are constructed
    once as float32 and reused. *)
 (* Make a closed star-shaped polygon with [k] vertices, each vertex at its given radius.
-   Vertices are in increasing-angle order (clockwise on screen in y-down coords).
-   Each edge is optionally subdivided; shared endpoints are rounded through float32 once
-   and stored as plain float so the same bit-pattern is reused for both neighbours.
-   Returns a flat float32# coord array ready for [Nearest_seg.build]. *)
+   Vertices are in increasing-angle order (clockwise on screen in y-down coords). Each
+   edge is optionally subdivided; shared endpoints are rounded through float32 once and
+   stored as plain float so the same bit-pattern is reused for both neighbours. Returns a
+   flat float32# coord array ready for [Nearest_seg.build]. *)
 let make_star_polygon ~cx ~cy ~k ~radii ~subdivide_seed =
   (* Vertex positions, rounded through float32 to match what build will see. *)
-  let vx = Array.init k ~f:(fun i ->
-    let a = Float.pi *. 2.0 *. float_of_int i /. float_of_int k in
-    F.to_float (F.of_float (cx +. (Array.get radii i *. Float.cos a))))
+  let vx =
+    Array.init k ~f:(fun i ->
+      let a = Float.pi *. 2.0 *. float_of_int i /. float_of_int k in
+      F.to_float (F.of_float (cx +. (Array.get radii i *. Float.cos a))))
   in
-  let vy = Array.init k ~f:(fun i ->
-    let a = Float.pi *. 2.0 *. float_of_int i /. float_of_int k in
-    F.to_float (F.of_float (cy +. (Array.get radii i *. Float.sin a))))
+  let vy =
+    Array.init k ~f:(fun i ->
+      let a = Float.pi *. 2.0 *. float_of_int i /. float_of_int k in
+      F.to_float (F.of_float (cy +. (Array.get radii i *. Float.sin a))))
   in
   (* Collect all segment coords as plain floats; convert to float32# at the end. *)
   let segs = ref [] in
   let rng = Splittable_random.of_int subdivide_seed in
   for i = 0 to k - 1 do
-    let ax = Array.get vx i and ay = Array.get vy i in
-    let bx = Array.get vx ((i + 1) mod k) and by = Array.get vy ((i + 1) mod k) in
+    let ax = Array.get vx i
+    and ay = Array.get vy i in
+    let bx = Array.get vx ((i + 1) mod k)
+    and by = Array.get vy ((i + 1) mod k) in
     let nsub = 1 + Splittable_random.int rng ~lo:0 ~hi:2 in
     (* Pre-compute all subdivision points as float32-rounded floats so adjacent segments
        share bitwise-identical endpoint values. *)
-    let pts_x = Array.init (nsub + 1) ~f:(fun j ->
-      if j = 0 then ax
-      else if j = nsub then bx
-      else F.to_float (F.of_float (ax +. ((bx -. ax) *. float_of_int j /. float_of_int nsub))))
+    let pts_x =
+      Array.init (nsub + 1) ~f:(fun j ->
+        if j = 0
+        then ax
+        else if j = nsub
+        then bx
+        else
+          F.to_float
+            (F.of_float (ax +. ((bx -. ax) *. float_of_int j /. float_of_int nsub))))
     in
-    let pts_y = Array.init (nsub + 1) ~f:(fun j ->
-      if j = 0 then ay
-      else if j = nsub then by
-      else F.to_float (F.of_float (ay +. ((by -. ay) *. float_of_int j /. float_of_int nsub))))
+    let pts_y =
+      Array.init (nsub + 1) ~f:(fun j ->
+        if j = 0
+        then ay
+        else if j = nsub
+        then by
+        else
+          F.to_float
+            (F.of_float (ay +. ((by -. ay) *. float_of_int j /. float_of_int nsub))))
     in
     for j = 0 to nsub - 1 do
-      segs := [ Array.get pts_x j
-              ; Array.get pts_y j
-              ; Array.get pts_x (j + 1)
-              ; Array.get pts_y (j + 1)
-              ] :: !segs
+      segs
+      := [ Array.get pts_x j
+         ; Array.get pts_y j
+         ; Array.get pts_x (j + 1)
+         ; Array.get pts_y (j + 1)
+         ]
+         :: !segs
     done
   done;
   coords_of_floats (Array.of_list (List.concat (List.rev !segs)))
@@ -746,16 +818,7 @@ let%test_unit "assume_level_set: star polygon containment quickcheck" =
   Quickcheck.test
     gen
     ~sexp_of:
-      [%sexp_of:
-        int
-        * float array
-        * float
-        * float
-        * int
-        * float
-        * float
-        * float
-        * float]
+      [%sexp_of: int * float array * float * float * int * float * float * float * float]
     ~trials:2000
     ~f:(fun (k, radii, cx, cy, subdivide_seed, qx1, qx2, qy1, qy2) ->
       let coords = make_star_polygon ~cx ~cy ~k ~radii ~subdivide_seed in
@@ -817,3 +880,4 @@ let%test_unit "assume_level_set: star polygon containment quickcheck" =
                   ~dum_hi:(F.to_float dum_hi : float)
                   ~in_idx:(in_idx : bool)
                   ~in_dum:(in_dum : bool)])))
+;;

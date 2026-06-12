@@ -106,7 +106,8 @@ let%expect_test "tiled extraction is bitwise identical to dense march (circle)" 
       "bitwise equal: %b\n"
       ([%compare.equal: (Int32.t * Int32.t * Int32.t * Int32.t) list] dense tiled);
     print_s [%sexp (stats : Sdf_contour.Stats.t)]);
-  [%expect {|
+  [%expect
+    {|
     dense segments: 148, tiled segments: 148
     bitwise equal: true
     ((tiles_total 16) (tiles_culled 4) (samples_evaluated 3400))
@@ -114,7 +115,7 @@ let%expect_test "tiled extraction is bitwise identical to dense march (circle)" 
 ;;
 
 (* ======================================================================= *)
-(* Test 1: Differential quickcheck — dense vs tiled, random trees/regions  *)
+(* Test 1: Differential quickcheck — dense vs tiled, random trees/regions *)
 (* ======================================================================= *)
 
 (* Generate a random [Sample_region.t] with possibly small or asymmetric extents. *)
@@ -139,13 +140,7 @@ let gen_region =
 
 (* Run one differential trial (dense vs tiled) for a given backend; raises on mismatch.
    [no_oracles] is not captured — a fresh empty map is constructed inside the closure. *)
-let run_differential_trial
-  (module E : Executor.S)
-  scheduler
-  tree
-  ~region
-  ~tile_cells
-  =
+let run_differential_trial (module E : Executor.S) scheduler tree ~region ~tile_cells =
   let dense_out, dense_len = dense_segments (module E) tree ~region in
   let dense = segment_list dense_out ~length:dense_len in
   Parallel_scheduler.parallel scheduler ~f:(fun par ->
@@ -240,8 +235,8 @@ let%test_unit "quickcheck differential: Expr_graph_eval (75 trials)" =
 ;;
 
 (* ======================================================================= *)
-(* Test 1b: Stats sanity checks (woven into the quickcheck above as a      *)
-(* separate unit test using a smaller set to keep runtime bounded)          *)
+(* Test 1b: Stats sanity checks (woven into the quickcheck above as a *)
+(* separate unit test using a smaller set to keep runtime bounded) *)
 (* ======================================================================= *)
 
 let%test_unit "quickcheck stats sanity" =
@@ -281,13 +276,13 @@ let%test_unit "quickcheck stats sanity" =
         in
         assert (stats.tiles_total - stats.tiles_culled >= 0);
         (* samples_evaluated counts samples per active tile including shared boundary
-           samples (tiles overlap by 1 on each edge), so it can exceed total_cells.
-           The invariant is simply that samples_evaluated <= tiles_total * cells. *)
+           samples (tiles overlap by 1 on each edge), so it can exceed total_cells. The
+           invariant is simply that samples_evaluated <= tiles_total * cells. *)
         assert (stats.samples_evaluated >= 0)))
 ;;
 
 (* ======================================================================= *)
-(* Test 2: Seam adversaries — expect tests                                 *)
+(* Test 2: Seam adversaries — expect tests *)
 (* ======================================================================= *)
 
 (* Helper that runs both pipelines and prints summary. *)
@@ -314,8 +309,8 @@ let seam_test (module E : Executor.S) tree ~region ~tile_cells =
 ;;
 
 let%expect_test "seam: contour exactly on a tile seam (x - 16 over 33-wide region)" =
-  (* samples_x=33 with tile_cells=16 → tile boundary exactly at column 16;
-     x=16 is 0.0 in the SDF, so marching squares treats it as "inside edge". *)
+  (* samples_x=33 with tile_cells=16 → tile boundary exactly at column 16; x=16 is 0.0 in
+     the SDF, so marching squares treats it as "inside edge". *)
   let tree = sub coord_x (f #16.s) in
   let region =
     { Sample_region.start_x = #0.s
@@ -327,7 +322,8 @@ let%expect_test "seam: contour exactly on a tile seam (x - 16 over 33-wide regio
     }
   in
   seam_test (module Sdf.Expr_graph_batch_eval) tree ~region ~tile_cells:16;
-  [%expect {|
+  [%expect
+    {|
     dense: 32, tiled: 32
     bitwise equal: true
     ((tiles_total 4) (tiles_culled 2) (samples_evaluated 578))
@@ -346,7 +342,8 @@ let%expect_test "seam: shallow diagonal (x - 0.05*y - 16.01)" =
     }
   in
   seam_test (module Sdf.Expr_graph_batch_eval) tree ~region ~tile_cells:16;
-  [%expect {|
+  [%expect
+    {|
     dense: 35, tiled: 35
     bitwise equal: true
     ((tiles_total 9) (tiles_culled 6) (samples_evaluated 612))
@@ -365,7 +362,8 @@ let%expect_test "seam: circle centered exactly on a tile corner (cx=16,cy=16,r=8
     }
   in
   seam_test (module Sdf.Expr_graph_batch_eval) tree ~region ~tile_cells:16;
-  [%expect {|
+  [%expect
+    {|
     dense: 64, tiled: 64
     bitwise equal: true
     ((tiles_total 4) (tiles_culled 0) (samples_evaluated 1156))
@@ -384,7 +382,8 @@ let%expect_test "seam: tiny circle entirely inside one tile (r=2)" =
     }
   in
   seam_test (module Sdf.Expr_graph_batch_eval) tree ~region ~tile_cells:16;
-  [%expect {|
+  [%expect
+    {|
     dense: 16, tiled: 16
     bitwise equal: true
     ((tiles_total 4) (tiles_culled 3) (samples_evaluated 289))
@@ -404,7 +403,8 @@ let%expect_test "seam: circle smaller than one cell (r=0.3)" =
     }
   in
   seam_test (module Sdf.Expr_graph_batch_eval) tree ~region ~tile_cells:8;
-  [%expect {|
+  [%expect
+    {|
     dense: 4, tiled: 4
     bitwise equal: true
     ((tiles_total 16) (tiles_culled 13) (samples_evaluated 243))
@@ -423,7 +423,8 @@ let%expect_test "seam: everything-positive scene (abs(x) + 5, all tiles culled)"
     }
   in
   seam_test (module Sdf.Expr_graph_batch_eval) tree ~region ~tile_cells:8;
-  [%expect {|
+  [%expect
+    {|
     dense: 0, tiled: 0
     bitwise equal: true
     ((tiles_total 9) (tiles_culled 9) (samples_evaluated 0))
@@ -431,14 +432,16 @@ let%expect_test "seam: everything-positive scene (abs(x) + 5, all tiles culled)"
 ;;
 
 (* ======================================================================= *)
-(* Test 3: Line_join stitching                                              *)
+(* Test 3: Line_join stitching *)
 (* ======================================================================= *)
 
-let%expect_test "line_join: circle crossing many tiles gives same shape count/classification" =
+let%expect_test "line_join: circle crossing many tiles gives same shape \
+                 count/classification"
+  =
   let tree = circle ~cx:#32.s ~cy:#32.s ~r:#20.s in
   let region = square_region ~size:64 in
-  (* Compute dense segments and segment_list BEFORE the parallel closure so only
-     the immutable [dense_seg_list] (an [int32 * ...] list) is captured. *)
+  (* Compute dense segments and segment_list BEFORE the parallel closure so only the
+     immutable [dense_seg_list] (an [int32 * ...] list) is captured. *)
   let dense_out, dense_len =
     dense_segments (module Sdf.Expr_graph_batch_eval) tree ~region
   in
@@ -446,16 +449,17 @@ let%expect_test "line_join: circle crossing many tiles gives same shape count/cl
   let dense_classify_sorted =
     Line_join.f dense_out ~length:dense_len
     |> List.map ~f:(fun shape ->
-         match shape with
-         | Line_join.Connected.Joined _ -> "Joined"
-         | Line_join.Connected.Disjoint _ -> "Disjoint")
+      match shape with
+      | Line_join.Connected.Joined _ -> "Joined"
+      | Line_join.Connected.Disjoint _ -> "Disjoint")
     |> List.sort ~compare:String.compare
   in
-  (* Allocate the result buffer and length holder OUTSIDE the parallel closure;
-     inside the closure we use magic_uncontended to write into them (same
-     pattern as sdf/neon/svg.ml and sdf_contour.ml itself), then call the
-     nonportable Line_join.f only after the closure has returned. *)
-  let samples_x = region.samples_x and samples_y = region.samples_y in
+  (* Allocate the result buffer and length holder OUTSIDE the parallel closure; inside the
+     closure we use magic_uncontended to write into them (same pattern as sdf/neon/svg.ml
+     and sdf_contour.ml itself), then call the nonportable Line_join.f only after the
+     closure has returned. *)
+  let samples_x = region.samples_x
+  and samples_y = region.samples_y in
   let tiled_buf : float32# array =
     Array.create ~len:(samples_x * samples_y * 2 * 4) #0.0s
   in
@@ -486,17 +490,17 @@ let%expect_test "line_join: circle crossing many tiles gives same shape count/cl
       | Line_join.Connected.Disjoint _ -> "Disjoint")
     |> List.sort ~compare:String.compare
   in
-  printf "dense shapes: %d, tiled shapes: %d\n"
+  printf
+    "dense shapes: %d, tiled shapes: %d\n"
     dense_shapes_count
     (List.length tiled_shapes);
-  printf
-    "same count: %b\n"
-    (dense_shapes_count = List.length tiled_shapes);
+  printf "same count: %b\n" (dense_shapes_count = List.length tiled_shapes);
   printf
     "same classification: %b\n"
     ([%compare.equal: string list] dense_classify_sorted tiled_classify_sorted);
   printf "classifications: %s\n" (String.concat ~sep:", " dense_classify_sorted);
-  [%expect {|
+  [%expect
+    {|
     dense shapes: 1, tiled shapes: 1
     same count: true
     same classification: true
@@ -505,13 +509,13 @@ let%expect_test "line_join: circle crossing many tiles gives same shape count/cl
 ;;
 
 (* ======================================================================= *)
-(* Test 4: Bool-typed tree — extract skips interval scheduling             *)
+(* Test 4: Bool-typed tree — extract skips interval scheduling *)
 (* ======================================================================= *)
 
 let%expect_test "bool-typed tree: lt coord_x (f #16.s) matches dense" =
-  (* Bool trees bypass interval scheduling → all tiles active.
-     The dense march reinterprets bool bits as floats, which produces a
-     step-function field. Both pipelines must agree bitwise. *)
+  (* Bool trees bypass interval scheduling → all tiles active. The dense march
+     reinterprets bool bits as floats, which produces a step-function field. Both
+     pipelines must agree bitwise. *)
   let tree = lt coord_x (f #16.s) in
   let region =
     { Sample_region.start_x = #0.s
@@ -545,7 +549,8 @@ let%expect_test "bool-typed tree: lt coord_x (f #16.s) matches dense" =
     (* Bool trees → 0 tiles culled (all active) *)
     printf "tiles_culled: %d\n" stats.tiles_culled;
     print_s [%sexp (stats : Sdf_contour.Stats.t)]);
-  [%expect {|
+  [%expect
+    {|
     dense: 32, tiled: 32
     bitwise equal: true
     tiles_culled: 0
@@ -554,10 +559,12 @@ let%expect_test "bool-typed tree: lt coord_x (f #16.s) matches dense" =
 ;;
 
 (* ======================================================================= *)
-(* Test 5: Oracle scene — passthrough oracle, dense inside closure         *)
+(* Test 5: Oracle scene — passthrough oracle, dense inside closure *)
 (* ======================================================================= *)
 
-let%expect_test "oracle passthrough: extract matches dense (circle inside passthrough oracle)" =
+let%expect_test "oracle passthrough: extract matches dense (circle inside passthrough \
+                 oracle)"
+  =
   let tree = oracle "passthrough" [ circle ~cx:#16.s ~cy:#16.s ~r:#8.s ] in
   let region =
     { Sample_region.start_x = #0.s
@@ -584,7 +591,10 @@ let%expect_test "oracle passthrough: extract matches dense (circle inside passth
              let p =
                M.create (snd oracle_key)
                |> M.prepare
-                    ~exec:(Obj.magic Obj.magic (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
+                    ~exec:
+                      (Obj.magic
+                         Obj.magic
+                         (module Sdf.Expr_graph_batch_eval : Sdf.Executor.S))
                     ~par
                     ~oracles:prepared
                     ~sample_region:region
@@ -593,11 +603,7 @@ let%expect_test "oracle passthrough: extract matches dense (circle inside passth
     in
     (* Dense reference — computed inside the closure so it can use [oracles]. *)
     let dense_out, dense_len =
-      dense_segments_with_oracles
-        (module Sdf.Expr_graph_batch_eval)
-        tree
-        ~region
-        ~oracles
+      dense_segments_with_oracles (module Sdf.Expr_graph_batch_eval) tree ~region ~oracles
     in
     let dense = segment_list dense_out ~length:dense_len in
     let ~segments, ~length, ~stats =
@@ -615,7 +621,8 @@ let%expect_test "oracle passthrough: extract matches dense (circle inside passth
       "bitwise equal: %b\n"
       ([%compare.equal: (Int32.t * Int32.t * Int32.t * Int32.t) list] dense tiled);
     print_s [%sexp (stats : Sdf_contour.Stats.t)]);
-  [%expect {|
+  [%expect
+    {|
     dense: 64, tiled: 64
     bitwise equal: true
     ((tiles_total 4) (tiles_culled 0) (samples_evaluated 1156))

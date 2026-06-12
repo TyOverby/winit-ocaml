@@ -21,10 +21,10 @@ val run
      @ once shareable
   -> unit
 
-(** The zero contour of the scene over [region] as marching-squares line segments
-    (4 floats per segment, cell-index coordinates), extracted sparsely: tiles the
-    interval evaluator proves sign-uniform are never sampled. Bitwise identical to
-    marching a dense evaluation of the grid. Cached across calls like [run]. *)
+(** The zero contour of the scene over [region] as marching-squares line segments (4
+    floats per segment, cell-index coordinates), extracted sparsely: tiles the interval
+    evaluator proves sign-uniform are never sampled. Bitwise identical to marching a dense
+    evaluation of the grid. Cached across calls like [run]. *)
 val run_contour
   :  t
   -> region:Sample_region.t

@@ -11,8 +11,8 @@ let neg_one = F.neg #1.s
 
 (* Relative width of the distance-tie window used when deciding which segment supplies
    the *sign* of the result (see [scan_leaf]). Squared distances within this relative
-   margin of the minimum are treated as ties: float32 evaluation of d2 is only accurate
-   to a few ulps (~1e-7 relative), so candidates whose true distances differ by less than
+   margin of the minimum are treated as ties: float32 evaluation of d2 is only accurate to
+   a few ulps (~1e-7 relative), so candidates whose true distances differ by less than
    that can compare in an arbitrary order. The window is far below any meaningful
    geometric separation (a relative 4e-6 in squared distance), so it only ever groups
    candidates that touch what is effectively the same contour point. *)
@@ -39,8 +39,8 @@ type inner =
   ; nstart : int array
   ; ncount : int array
   ; seg_count : int
-  ; (* Vertices where the sign of the field may be discontinuous at nonzero magnitude
-       (see [unsafe_vertices]); empty unless built with [~assume_level_set:true]. *)
+  ; (* Vertices where the sign of the field may be discontinuous at nonzero magnitude (see
+       [unsafe_vertices]); empty unless built with [~assume_level_set:true]. *)
     ux : float32# array
   ; uy : float32# array
   ; (* Whether [query_range] may use the midpoint probe to resolve an ambiguous sign. *)
@@ -74,15 +74,15 @@ let empty =
   }
 ;;
 
-(* Endpoint [2s] is segment [s]'s tail [(x1,y1)]; endpoint [2s+1] is its head
-   [(x2,y2)]. Vertices are matched by exact bit pattern (marching squares emits shared
-   vertices bitwise-identically — the property [Line_join] also relies on). A vertex is
-   *safe* iff exactly two endpoints coincide there, one head and one tail, from two
-   different segments: an interior vertex of a consistently directed chain, where the
-   sign tie-break gives a continuous field. Everything else — an open end where a
-   contour was clipped at the sample-region boundary, a junction, a duplicated or
-   zero-length segment — is a place where the field's sign can jump at nonzero
-   magnitude, so [query_range]'s midpoint probe must keep clear of it. *)
+(* Endpoint [2s] is segment [s]'s tail [(x1,y1)]; endpoint [2s+1] is its head [(x2,y2)].
+   Vertices are matched by exact bit pattern (marching squares emits shared vertices
+   bitwise-identically — the property [Line_join] also relies on). A vertex is *safe* iff
+   exactly two endpoints coincide there, one head and one tail, from two different
+   segments: an interior vertex of a consistently directed chain, where the sign tie-break
+   gives a continuous field. Everything else — an open end where a contour was clipped at
+   the sample-region boundary, a junction, a duplicated or zero-length segment — is a
+   place where the field's sign can jump at nonzero magnitude, so [query_range]'s midpoint
+   probe must keep clear of it. *)
 let unsafe_vertices (coords : float32# array) ~length =
   let n2 = 2 * length in
   let seg e = e lsr 1 in
@@ -307,9 +307,9 @@ let scan_leaf t s c px py best =
         if F.compare q zero < 0 then zero else if F.compare q one > 0 then one else q)
       else zero
     in
-    (* When the projection clamps, take the endpoint verbatim from the segment data
-       rather than computing [x1 + t * abx]: two segments sharing a vertex then measure
-       the distance to that vertex from bitwise-identical coordinates, so their squared
+    (* When the projection clamps, take the endpoint verbatim from the segment data rather
+       than computing [x1 + t * abx]: two segments sharing a vertex then measure the
+       distance to that vertex from bitwise-identical coordinates, so their squared
        distances tie *exactly* and the tie-break below can see the tie. *)
     let interior = F.compare tparam zero > 0 && F.compare tparam one < 0 in
     let cpx =
@@ -385,8 +385,8 @@ let rec visit t node px py best =
     (* Descend into the nearer child first to tighten [best] before pruning the other.
        Re-read [best] for the second child since the first may have improved it. Pruning
        must keep nodes inside the distance-tie window ([<= best * (1 + eps)], not
-       [< best]): a near-equidistant segment in another node may win the sign tie-break
-       in [scan_leaf]. *)
+       [< best]): a near-equidistant segment in another node may win the sign tie-break in
+       [scan_leaf]. *)
     if F.compare dl dr <= 0
     then (
       if F.compare dl (F.mul (Array.get best 0) one_plus_eps) <= 0
@@ -421,22 +421,23 @@ let query @ portable = Obj.magic_portable query
 (* ---------- Range queries ---------- *)
 
 module Interval = struct
-  type t = #{ lo : float32#
-            ; hi : float32#
-            }
+  type t =
+    #{ lo : float32#
+     ; hi : float32#
+     }
 end
 
 (* Mutable accumulator threaded through a range query.
 
-   [dmin2] is the minimum over segments of the squared distance from the query box to
-   the segment: a lower bound on |query p| anywhere in the box (and exact at the point
-   of the box closest to the contour).
+   [dmin2] is the minimum over segments of the squared distance from the query box to the
+   segment: a lower bound on |query p| anywhere in the box (and exact at the point of the
+   box closest to the contour).
 
    [dub2] is the minimum over segments of (maximum over the box's corners of the squared
-   point-to-segment distance). For any point p, |query p| = min over segments of
-   d(p, s) <= d(p, s') <= corner-max(s') for every segment s', so [dub2] upper-bounds
-   |query|^2 over the whole box (point-to-segment distance is convex, so its max over the
-   box is attained at a corner).
+   point-to-segment distance). For any point p, |query p| = min over segments of d(p, s)
+   <= d(p, s') <= corner-max(s') for every segment s', so [dub2] upper-bounds |query|^2
+   over the whole box (point-to-segment distance is convex, so its max over the box is
+   attained at a corner).
 
    [can_pos] / [can_neg] record which signs the query could return somewhere in the box,
    derived from the cross-product range of every segment close enough to be the nearest
@@ -449,8 +450,8 @@ type range_acc =
   }
 
 (* Slightly wider than [one_plus_eps]: candidates for supplying the sign must cover the
-   scalar query's distance-tie window plus float32 noise from computing box distances by
-   a different formula than [scan_leaf]'s per-point one. *)
+   scalar query's distance-tie window plus float32 noise from computing box distances by a
+   different formula than [scan_leaf]'s per-point one. *)
 let range_sign_window = #1.0003s
 
 (* Relative tolerance on the corner cross-product test, absorbing float32 rounding when a
@@ -458,10 +459,9 @@ let range_sign_window = #1.0003s
 let cross_tol_rel = #1e-4s
 
 (* Outward padding applied to the final distance bounds, relative to the magnitudes
-   involved, so that scalar queries (computed by a different float32 expression) can
-   never land outside the reported range by mere rounding. *)
+   involved, so that scalar queries (computed by a different float32 expression) can never
+   land outside the reported range by mere rounding. *)
 let range_pad_rel = #3e-5s
-
 let[@inline] min4 a b c d = F.min (F.min a b) (F.min c d)
 let[@inline] max4 a b c d = F.max (F.max a b) (F.max c d)
 
@@ -546,12 +546,12 @@ let process_seg_range x1 y1 x2 y2 qx0 qy0 qx1 qy1 acc =
   in
   if F.compare segmin2 acc.dmin2 < 0 then acc.dmin2 <- segmin2;
   if F.compare segmax2 acc.dub2 < 0 then acc.dub2 <- segmax2;
-  (* This segment is the nearest one (within the scalar query's sign tie window) for
-     *some* point of the box only if its min distance is within the running upper bound.
-     [acc.dub2] may shrink later, making this check conservative — that only ever lets
-     extra segments contribute sign possibilities, never excludes a real winner. For each
-     candidate, the cross product is linear in the query point, so its range over the box
-     is spanned by the corners; cross > 0 makes the scalar query report negative. *)
+  (* This segment is the nearest one (within the scalar query's sign tie window)
+     for *some* point of the box only if its min distance is within the running upper
+     bound. [acc.dub2] may shrink later, making this check conservative — that only ever
+     lets extra segments contribute sign possibilities, never excludes a real winner. For
+     each candidate, the cross product is linear in the query point, so its range over the
+     box is spanned by the corners; cross > 0 makes the scalar query report negative. *)
   if F.compare segmin2 (F.mul acc.dub2 range_sign_window) <= 0
   then (
     let abx = F.sub x2 x1 in
@@ -606,9 +606,8 @@ let rec visit_range t node qx0 qy0 qx1 qy1 acc =
     (* A node is interesting only if some segment in it can either improve [dub2] or be a
        sign candidate; both require its gap to the box to be within
        [dub2 * range_sign_window] (the gap lower-bounds every per-segment quantity we
-       track, including [dmin2 <= dub2]). Descend nearer child first so the bounds
-       tighten before the farther child is tested; re-read [acc.dub2] for the second
-       child. *)
+       track, including [dmin2 <= dub2]). Descend nearer child first so the bounds tighten
+       before the farther child is tested; re-read [acc.dub2] for the second child. *)
     if F.compare dl dr <= 0
     then (
       if F.compare dl (F.mul acc.dub2 range_sign_window) <= 0
@@ -642,20 +641,19 @@ let finish_range acc qx0 qy0 qx1 qy1 : Interval.t =
 ;;
 
 (* The midpoint probe, for indexes built with [~assume_level_set:true]: when the
-   cross-product flags leave the sign ambiguous, one scalar query can often resolve it.
-   On a level-set contour the signed field is 1-Lipschitz wherever its sign is
-   continuous, so if the field at the box centre exceeds the box's half-diagonal (plus
-   float32 padding) it cannot reach zero anywhere in the box, and the unresolved sign is
-   impossible.
+   cross-product flags leave the sign ambiguous, one scalar query can often resolve it. On
+   a level-set contour the signed field is 1-Lipschitz wherever its sign is continuous, so
+   if the field at the box centre exceeds the box's half-diagonal (plus float32 padding)
+   it cannot reach zero anywhere in the box, and the unresolved sign is impossible.
 
-   Soundness needs the field to be continuous on the box. Sign jumps at nonzero
-   magnitude happen only where the nearest contour point is an unsafe vertex (see
+   Soundness needs the field to be continuous on the box. Sign jumps at nonzero magnitude
+   happen only where the nearest contour point is an unsafe vertex (see
    [unsafe_vertices]), so the probe requires every unsafe vertex to lie farther from the
    box than [dub * range_sign_window]: every box point has some segment within [dub], so
-   no box point's nearest point (nor any tie-window candidate supplying its sign) can
-   then be an unsafe vertex. Boxes genuinely inside a sign-flip wedge — e.g. past the
-   open end of a contour clipped at the sample-region boundary — sit within [dub] of the
-   clipped endpoint and correctly keep the conservative both-signs answer. *)
+   no box point's nearest point (nor any tie-window candidate supplying its sign) can then
+   be an unsafe vertex. Boxes genuinely inside a sign-flip wedge — e.g. past the open end
+   of a contour clipped at the sample-region boundary — sit within [dub] of the clipped
+   endpoint and correctly keep the conservative both-signs answer. *)
 let box_clear_of_unsafe_vertices ~ux ~uy acc qx0 qy0 qx1 qy1 =
   let threshold = F.mul acc.dub2 (F.mul range_sign_window range_sign_window) in
   let clear = ref true in
@@ -693,7 +691,9 @@ let query_range { portended = t } ~x_lo ~y_lo ~x_hi ~y_hi : Interval.t =
     let qx1 = F.max x_lo x_hi in
     let qy0 = F.min y_lo y_hi in
     let qy1 = F.max y_lo y_hi in
-    let acc = { dmin2 = F.infinity; dub2 = F.infinity; can_pos = false; can_neg = false } in
+    let acc =
+      { dmin2 = F.infinity; dub2 = F.infinity; can_pos = false; can_neg = false }
+    in
     visit_range t 0 qx0 qy0 qx1 qy1 acc;
     if t.probe
        && acc.can_pos

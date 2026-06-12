@@ -41,8 +41,7 @@ let rec run ~variables ~instructions ~registers ~oracles ~x ~y =
       | Sqrt a ->
         let a = Value.Array.get_float registers a in
         (* Sqrt is total: sqrt of a negative is 0. *)
-        Value.of_float
-          (if Float32_u.(a < zero) then Float32_u.zero else Float32_u.sqrt a)
+        Value.of_float (if Float32_u.(a < zero) then Float32_u.zero else Float32_u.sqrt a)
       | Abs a ->
         let a = Value.Array.get_float registers a in
         Value.of_float (Float32_u.abs a)
@@ -72,8 +71,7 @@ let rec run ~variables ~instructions ~registers ~oracles ~x ~y =
         let b = Value.Array.get_float registers b in
         (* On a tie ([a = b] is only true for equal values, including -0 = +0) take the
            sign-OR of the bits so that min(-0, +0) = -0, matching the SIMD backend's
-           hardware min. Equal non-zero values have identical bits, so the OR is a
-           no-op. *)
+           hardware min. Equal non-zero values have identical bits, so the OR is a no-op. *)
         if Float32_u.O.(a = b)
         then
           Value.of_float

@@ -3,10 +3,10 @@
 open! Core
 
 (** Sparse tiled evaluation for rendering consumers: tiles culled by a
-    {!Tile_scheduler.Cull} predicate are never sampled, and only their verdict interval
-    is reported; the remaining (active) tiles are densely evaluated in parallel — at
-    bitwise the same coordinates a dense whole-grid evaluation would use — and their
-    sample values retained. *)
+    {!Tile_scheduler.Cull} predicate are never sampled, and only their verdict interval is
+    reported; the remaining (active) tiles are densely evaluated in parallel — at bitwise
+    the same coordinates a dense whole-grid evaluation would use — and their sample values
+    retained. *)
 
 module Result : sig
   type t : value mod contended portable
@@ -18,8 +18,8 @@ module Result : sig
       tile's sample patch ([px = j * samples_x + i], row-major, [samples_x * samples_y]
       entries). Tile rectangles are in sample-index space; adjacent tiles share their
       boundary sample row/column, so rectangles overlap by one sample (verdicts of
-      overlapping tiles are always mutually consistent, so writing the shared pixels
-      twice is harmless). Together the rectangles cover every sample of the region.
+      overlapping tiles are always mutually consistent, so writing the shared pixels twice
+      is harmless). Together the rectangles cover every sample of the region.
 
       Replay is cheap (no expression evaluation), can be repeated, and the callbacks need
       not be portable. *)
