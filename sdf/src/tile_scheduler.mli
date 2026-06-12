@@ -76,8 +76,12 @@ val tile_samples_x : t -> tx:int -> int
 
 val tile_samples_y : t -> ty:int -> int
 
+(** The subdivision recursion runs its independent sub-rectangles as parallel tasks on
+    [par] (each writes a disjoint range of the verdict grid; verdicts are identical to a
+    sequential run). Pass [Parallel.sequential] to schedule without a scheduler. *)
 val schedule
   :  Expr_graph_range_eval.t
+  -> par:Parallel.t @ local
   -> vars:Value.Boxed.t Map.M(Expr_graph_range_eval.Variable_idx).t
   -> oracles:Prepared_oracle.t Map.M(Oracle_key).t
   -> region:Sample_region.t

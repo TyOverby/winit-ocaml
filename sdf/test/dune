@@ -5,6 +5,7 @@
   sdf_for_testing
   sdf_passthrough_oracle
   base
+  parallel
   quickcheck_trials)
  (inline_tests)
  (preprocess

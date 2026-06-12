@@ -30,6 +30,7 @@ let extract
           let range = Expr_graph_range_eval.of_tree tree in
           Tile_scheduler.schedule
             range
+            ~par
             ~vars:(Map.empty (module Expr_graph_range_eval.Variable_idx))
             ~oracles
             ~region
