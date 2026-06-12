@@ -1,0 +1,12 @@
+(library
+ (name phase_trace_test)
+ (libraries
+  phase_trace
+  phase_trace_perfetto
+  core
+  parallel
+  parallel.scheduler
+  expect_test_helpers_core)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

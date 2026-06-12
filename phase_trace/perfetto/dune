@@ -1,0 +1,10 @@
+(library
+ (name phase_trace_perfetto)
+ (libraries
+  core
+  phase_trace
+  tracing
+  tracing.tracing_zero
+  tracing.tracing_destinations_unix)
+ (preprocess
+  (pps ppx_jane)))
