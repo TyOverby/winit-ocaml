@@ -135,18 +135,38 @@ let lookup_variable { var_mapping; _ } s =
   | None -> raise_s [%message "variable not found" (s : string)]
 ;;
 
-let run_to_registers t ~vars ~oracles ~x ~y =
-  let variables = Value.Array.create ~len:t.num_vars in
-  Map.iteri vars ~f:(fun ~key ~data -> Value.Array.set variables key (Value.unbox data));
-  let oracles = Iarray.map t.oracle_keys ~f:(fun key -> Map.find_exn oracles key) in
-  let lo = Value.Array.create ~len:t.register_count in
-  let hi = Value.Array.create ~len:t.register_count in
-  run ~variables ~instructions:t.instructions ~lo ~hi ~oracles ~x ~y;
-  lo, hi
+module Context = struct
+  type nonrec t =
+    { eval : t
+    ; variables : Value.Array.t
+    ; oracles : Prepared_oracle.t iarray
+    ; lo : Value.Array.t
+    ; hi : Value.Array.t
+    }
+
+  let create eval ~vars ~oracles =
+    let variables = Value.Array.create ~len:eval.num_vars in
+    Map.iteri vars ~f:(fun ~key ~data ->
+      Value.Array.set variables key (Value.unbox data));
+    let oracles = Iarray.map eval.oracle_keys ~f:(fun key -> Map.find_exn oracles key) in
+    let lo = Value.Array.create ~len:eval.register_count in
+    let hi = Value.Array.create ~len:eval.register_count in
+    { eval; variables; oracles; lo; hi }
+  ;;
+end
+
+(* Reusing one context's [lo]/[hi] across calls is sound: the graph comes straight out of
+   [Expr_graph.from_tree] (see [of_tree] above), where every instruction writes its
+   output register before anything reads it — registers are never read-before-write. The
+   one register written twice, an uncertain [Condition]'s output, is joined in [run] from
+   the values its own two branches wrote during this same call. So no instruction can
+   observe bits left over from a previous evaluation. *)
+let run_to_registers ({ eval; variables; oracles; lo; hi } : Context.t) ~x ~y =
+  run ~variables ~instructions:eval.instructions ~lo ~hi ~oracles ~x ~y
 ;;
 
-let run t ~vars ~oracles ~x ~y : Interval.t =
-  match t.type_ with
+let run_with_context (ctx : Context.t) ~x ~y : Interval.t =
+  match ctx.eval.type_ with
   | Bool ->
     let () =
       raise_s
@@ -154,12 +174,12 @@ let run t ~vars ~oracles ~x ~y : Interval.t =
     in
     Interval.top
   | Float ->
-    let lo, hi = run_to_registers t ~vars ~oracles ~x ~y in
-    get_f lo hi t.final_register
+    run_to_registers ctx ~x ~y;
+    get_f ctx.lo ctx.hi ctx.eval.final_register
 ;;
 
-let run_bool t ~vars ~oracles ~x ~y : Interval.Bool.t =
-  match t.type_ with
+let run_bool_with_context (ctx : Context.t) ~x ~y : Interval.Bool.t =
+  match ctx.eval.type_ with
   | Float ->
     let () =
       raise_s
@@ -167,6 +187,14 @@ let run_bool t ~vars ~oracles ~x ~y : Interval.Bool.t =
     in
     Interval.Bool.maybe
   | Bool ->
-    let lo, hi = run_to_registers t ~vars ~oracles ~x ~y in
-    get_b lo hi t.final_register
+    run_to_registers ctx ~x ~y;
+    get_b ctx.lo ctx.hi ctx.eval.final_register
+;;
+
+let run t ~vars ~oracles ~x ~y : Interval.t =
+  run_with_context (Context.create t ~vars ~oracles) ~x ~y
+;;
+
+let run_bool t ~vars ~oracles ~x ~y : Interval.Bool.t =
+  run_bool_with_context (Context.create t ~vars ~oracles) ~x ~y
 ;;

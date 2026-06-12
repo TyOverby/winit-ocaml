@@ -141,6 +141,10 @@ let schedule range ~vars ~oracles ~region ~tile_cells ~cull =
   match (cull : Cull.t) with
   | Nothing -> all_active ~region ~tile_cells
   | No_contour | Constant_outside _ ->
+    (* [vars] and [oracles] are invariant across the whole subdivision recursion — only
+       the coordinate box changes — so resolve them (and allocate the register buffers)
+       once and share the context across every [descend] evaluation. *)
+    let context = Expr_graph_range_eval.Context.create range ~vars ~oracles in
     make_grid ~region ~tile_cells ~f:(fun ~tiles_x ~tiles_y ~lo ~hi ->
       let last_sample_x = region.samples_x - 1
       and last_sample_y = region.samples_y - 1 in
@@ -177,10 +181,8 @@ let schedule range ~vars ~oracles ~region ~tile_cells ~cull =
       in
       let rec descend ~tx0 ~tx1 ~ty0 ~ty1 =
         let bound =
-          Expr_graph_range_eval.run
-            range
-            ~vars
-            ~oracles
+          Expr_graph_range_eval.run_with_context
+            context
             ~x:(box_x ~tx0 ~tx1)
             ~y:(box_y ~ty0 ~ty1)
         in
