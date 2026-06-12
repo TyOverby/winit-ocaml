@@ -82,14 +82,22 @@ let () =
                     printf "      %-44s  (new) -> %8.3fms\n" path (ap.total.mean_s *. 1e3)
                   | None, None -> ())
               in
-              let compare_case label (bc : Bench_types.Case.t) (ac : Bench_types.Case.t) =
-                printf
-                  "  %-20s  %8.3fms -> %8.3fms  %s\n"
-                  label
-                  (bc.time.mean_s *. 1e3)
-                  (ac.time.mean_s *. 1e3)
-                  (describe_change bc.time.mean_s ac.time.mean_s);
-                compare_phases bc.phases ac.phases
+              let compare_case label bc ac =
+                match bc, ac with
+                | ( Some (bc : Bench_types.Case.t)
+                  , Some (ac : Bench_types.Case.t) ) ->
+                  printf
+                    "  %-20s  %8.3fms -> %8.3fms  %s\n"
+                    label
+                    (bc.time.mean_s *. 1e3)
+                    (ac.time.mean_s *. 1e3)
+                    (describe_change bc.time.mean_s ac.time.mean_s);
+                  compare_phases bc.phases ac.phases
+                | Some (bc : Bench_types.Case.t), None ->
+                  printf "  %-20s  %8.3fms -> (not run)\n" label (bc.time.mean_s *. 1e3)
+                | None, Some (ac : Bench_types.Case.t) ->
+                  printf "  %-20s  (not run) -> %8.3fms\n" label (ac.time.mean_s *. 1e3)
+                | None, None -> ()
               in
               compare_case "cold (recompile)" b.cold a.cold;
               compare_case "warm (re-eval)" b.warm a.warm;

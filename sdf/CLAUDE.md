@@ -159,6 +159,14 @@ dune exec sdf/bench/bench.exe --profile=release -- -budget 3
 # Custom examples directory
 dune exec sdf/bench/bench.exe --profile=release -- -dir path/to/neo/files
 
+# Run a single .neo file (a PATH positional that's a file runs just that file; a
+# directory runs every .neo in it, the same as -dir)
+dune exec sdf/bench/bench.exe --profile=release -- sdf/bench/examples/boxes.neo
+
+# Run only some of the three cache states (-cold, -hot, -warm; all three by default).
+# Flags combine, e.g. cold + warm only:
+dune exec sdf/bench/bench.exe --profile=release -- -cold -warm
+
 # Select the evaluation backend: graph (default), batch (SIMD), or tree
 dune exec sdf/bench/bench.exe --profile=release -- -strategy batch
 ```

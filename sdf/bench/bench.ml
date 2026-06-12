@@ -137,33 +137,59 @@ let fresh_offset () =
   !next_offset
 ;;
 
+(* Which cache states to benchmark, selected by the [-cold]/[-hot]/[-warm] flags (all
+   three when none is passed). *)
+module Selection = struct
+  type t =
+    { cold : bool
+    ; hot : bool
+    ; warm : bool
+    }
+end
+
 type sample =
-  { cold : timed
-  ; hot : timed
-  ; warm : timed
+  { cold : timed option
+  ; hot : timed option
+  ; warm : timed option
   }
 
-(* Drive [runner] through the three cache states for [source] and return their timings.
+(* Drive [runner] through the selected cache states for [source] and return their timings.
 
    The runner is stateful, so order matters:
-   - Prime with the canonical source at offset 0 (untimed) to populate the cache.
+   - Prime with the canonical source at offset 0 (untimed) to populate the cache. This runs
+     unconditionally so that [hot]/[warm] see a populated cache regardless of which states
+     are selected.
    - [hot]: same source, same region -> served from cache.
    - [warm]: same source, fresh region -> grid re-evaluated, compile reused.
    - [cold]: a perturbed source at a fresh region -> full recompile + re-eval. The
      trailing newlines change the source string (forcing a recompile, since the runner
      only compares against the immediately preceding source) without changing the compiled
-     tree, so the perturbation costs nothing beyond the recompile itself. *)
-let sample_one runner ~canvas ~filename ~source =
+     tree, so the perturbation costs nothing beyond the recompile itself.
+
+   A deselected state is skipped entirely (and its [fresh_offset] is not consumed), so the
+   region cycle still advances deterministically for whatever states remain selected. *)
+let sample_one runner ~canvas ~filename ~source ~(sel : Selection.t) =
   let hot_region = region_of 0 in
   let (_ : timed) = time_run runner ~canvas ~region:hot_region ~filename source in
-  let hot = time_run runner ~canvas ~region:hot_region ~filename source in
+  let hot =
+    if sel.hot
+    then Some (time_run runner ~canvas ~region:hot_region ~filename source)
+    else None
+  in
   let warm =
-    time_run runner ~canvas ~region:(region_of (fresh_offset ())) ~filename source
+    if sel.warm
+    then
+      Some
+        (time_run runner ~canvas ~region:(region_of (fresh_offset ())) ~filename source)
+    else None
   in
   let cold =
-    let offset = fresh_offset () in
-    let perturbed = source ^ String.make offset '\n' in
-    time_run runner ~canvas ~region:(region_of offset) ~filename perturbed
+    if sel.cold
+    then (
+      let offset = fresh_offset () in
+      let perturbed = source ^ String.make offset '\n' in
+      Some (time_run runner ~canvas ~region:(region_of offset) ~filename perturbed))
+    else None
   in
   { cold; hot; warm }
 ;;
@@ -300,6 +326,14 @@ let discover_neo_files dir =
   |> List.map ~f:(fun f -> Filename.concat dir f)
 ;;
 
+(* Resolve [path] to the list of .neo files to benchmark: a directory expands to all the
+   .neo files it contains, a file is used as-is. *)
+let neo_files_of_path path =
+  match Sys_unix.is_directory path with
+  | `Yes -> discover_neo_files path
+  | `No | `Unknown -> [ path ]
+;;
+
 let make_runner backend =
   let runner = Sdf_runner.create backend in
   List.iter oracle_registry ~f:(fun (name, { portable = oracle }) ->
@@ -311,11 +345,16 @@ let () =
   Command_unix.run
     (Command.basic
        ~summary:"Run SDF benchmarks"
-       (let%map_open.Command dir =
+       (let%map_open.Command path =
+          anon (maybe ("PATH" %: string))
+        and dir =
           flag
             "-dir"
             (optional_with_default "sdf/bench/examples" string)
             ~doc:"DIR directory containing .neo files (default: sdf/bench/examples)"
+        and run_cold = flag "-cold" no_arg ~doc:" only run the cold (recompile) benchmark"
+        and run_hot = flag "-hot" no_arg ~doc:" only run the hot (cached) benchmark"
+        and run_warm = flag "-warm" no_arg ~doc:" only run the warm (re-eval) benchmark"
         and budget =
           flag
             "-budget"
@@ -325,8 +364,8 @@ let () =
         and strategy =
           flag
             "-strategy"
-            (optional_with_default "graph" string)
-            ~doc:"STRATEGY evaluation backend: graph (default), batch, tree"
+            (optional_with_default "batch" string)
+            ~doc:"STRATEGY evaluation backend: batch (default), graph, tree"
         in
         fun () ->
           let backend =
@@ -339,10 +378,16 @@ let () =
                 (String.concat ~sep:", " (List.map backends ~f:fst));
               exit 1
           in
-          let files = discover_neo_files dir in
+          let sel =
+            if run_cold || run_hot || run_warm
+            then { Selection.cold = run_cold; hot = run_hot; warm = run_warm }
+            else { Selection.cold = true; hot = true; warm = true }
+          in
+          let target = Option.value path ~default:dir in
+          let files = neo_files_of_path target in
           if List.is_empty files
           then (
-            eprintf "No .neo files found in %s\n" dir;
+            eprintf "No .neo files found in %s\n" target;
             exit 1);
           let runner = make_runner backend.portable in
           let canvas = Image_buf.create ~width:grid_width ~height:grid_height #0l in
@@ -353,14 +398,17 @@ let () =
           (* Warmup pass: spin up worker domains and populate caches. *)
           eprintf "Warming up %s backend...\n%!" strategy;
           List.iter sources ~f:(fun (_name, path, source) ->
-            let (_ : sample) = sample_one runner ~canvas ~filename:path ~source in
+            let (_ : sample) = sample_one runner ~canvas ~filename:path ~source ~sel in
             ());
           (* Estimation pass: one sample per file to size the iteration count. *)
           eprintf "Running estimation pass...\n%!";
+          let elapsed_of = Option.value_map ~default:0.0 ~f:(fun t -> t.elapsed_s) in
           let estimates =
             List.map sources ~f:(fun (name, path, source) ->
-              let s = sample_one runner ~canvas ~filename:path ~source in
-              let est_total = s.cold.elapsed_s +. s.hot.elapsed_s +. s.warm.elapsed_s in
+              let s = sample_one runner ~canvas ~filename:path ~source ~sel in
+              let est_total =
+                elapsed_of s.cold +. elapsed_of s.hot +. elapsed_of s.warm
+              in
               eprintf "  %s: %.3fms\n%!" name (est_total *. 1e3);
               name, path, source, s, est_total)
           in
@@ -385,16 +433,23 @@ let () =
               eprintf "  %s: %d iterations... %!" name iterations;
               let samples =
                 List.init iterations ~f:(fun _ ->
-                  sample_one runner ~canvas ~filename:path ~source)
+                  sample_one runner ~canvas ~filename:path ~source ~sel)
               in
               eprintf "done\n%!";
               let all = est :: samples in
               let n = List.length all in
+              (* A selected state has [Some] timing in every sample, so [filter_map] yields
+                 one entry per sample; a deselected state yields an empty list and [None]. *)
+              let case get =
+                match List.filter_map all ~f:get with
+                | [] -> None
+                | runs -> Some (compute_case runs)
+              in
               { Bench_types.Benchmark_result.name
               ; iterations = n
-              ; cold = compute_case (List.map all ~f:(fun s -> s.cold))
-              ; hot = compute_case (List.map all ~f:(fun s -> s.hot))
-              ; warm = compute_case (List.map all ~f:(fun s -> s.warm))
+              ; cold = case (fun s -> s.cold)
+              ; hot = case (fun s -> s.hot)
+              ; warm = case (fun s -> s.warm)
               })
           in
           let suite =
@@ -422,8 +477,8 @@ let () =
                   (s.median_s *. 1e3);
                 List.iter (phase_tree_lines c.phases ~indent:6) ~f:print_endline
               in
-              print_case "cold (recompile)" b.cold;
-              print_case "warm (re-eval)" b.warm;
-              print_case "hot (cached)" b.hot;
+              Option.iter b.cold ~f:(print_case "cold (recompile)");
+              Option.iter b.warm ~f:(print_case "warm (re-eval)");
+              Option.iter b.hot ~f:(print_case "hot (cached)");
               printf "\n")))
 ;;

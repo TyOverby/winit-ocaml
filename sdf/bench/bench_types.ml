@@ -44,13 +44,16 @@ module Benchmark_result = struct
      - [hot]: the same source at the same region as the previous run, so the runner serves
        a cached result without re-evaluating.
      - [warm]: the same source at a slightly shifted region, so the parse/compile/prepare
-       results are reused but the grid is re-evaluated. *)
+       results are reused but the grid is re-evaluated.
+
+     A cache state is [None] when it was excluded from this run via the [-cold]/[-hot]/
+     [-warm] flags. *)
   type t =
     { name : string
     ; iterations : int
-    ; cold : Case.t
-    ; hot : Case.t
-    ; warm : Case.t
+    ; cold : Case.t option
+    ; hot : Case.t option
+    ; warm : Case.t option
     }
   [@@deriving sexp]
 end
