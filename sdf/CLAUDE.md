@@ -121,6 +121,27 @@ the expected output is included in the file.  Please continue to write tests of
 this form, and for new tests, just leave the `[%expect {||}]` block empty.
 `dune build @sdf/runtest --auto-promote` will fix it up.
 
+### Quickcheck trial count
+Every `Quickcheck.test` call in the repo takes
+`~trials:Quickcheck_trials.trials` instead of a hard-coded number. The
+constant comes from the tiny `quickcheck_trials` library at the repo root,
+whose single module is generated at build time from the `QUICKCHECK_TRIALS`
+environment variable (default: 100). Dune tracks the variable, so changing it
+rebuilds the library and re-runs every dependent test — no cleaning required:
+
+```bash
+# Quick iteration
+QUICKCHECK_TRIALS=10 dune build @sdf/runtest
+
+# Thorough run (e.g. CI or pre-merge)
+QUICKCHECK_TRIALS=5000 dune build @sdf/runtest
+```
+
+`dune exec quickcheck_trials/bin/print_trials.exe` prints the value currently
+baked in, as a sanity check that the env-var tracking works. New quickcheck
+tests should add `quickcheck_trials` to their library's `(libraries ...)` and
+use the shared constant rather than a per-test count.
+
 ## Benchmarks
 
 Benchmarks live in `bench/` and measure the full pipeline: parsing `.neo` files,
