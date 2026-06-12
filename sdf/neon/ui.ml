@@ -58,18 +58,19 @@ let read_source ~scene_file ~last_mtime ~current_source =
   else mtime, current_source
 ;;
 
-let color_grayscale (dist : float) : Int32_u.t =
-  if Float.(dist <= 0.0)
+let color_grayscale (dist : float#) : Int32_u.t =
+  if Float_u.O.(dist <= #0.0)
   then #0xFF000000l
-  else if Float.(dist <= 1.0)
+  else if Float_u.O.(dist <= #1.0)
   then (
-    let component = dist *. 255.0 |> Float.to_int |> Int32_u.of_int_trunc in
+    let component = Float_u.O.(dist * #255.0) |> Float_u.to_int |> Int32_u.of_int_trunc in
     Int32_u.(
       component lor shift_left component 8 lor shift_left component 16 lor #0xFF000000l))
   else #0xFFFFFFFFl
 ;;
 
-let color_rings (dist : float) : Int32_u.t =
+let color_rings (dist : float#) : Int32_u.t =
+  let dist = Float_u.to_float dist in
   let abs_d = Float.abs dist in
   (* Base colors: orange outside, blue inside *)
   let base_r, base_g, base_b =
@@ -122,18 +123,14 @@ let draw_tiled
       ~fill:(fun ~x0 ~y0 ~samples_x ~samples_y interval ->
         let #{ Sdf.Interval.lo = _; hi } = interval in
         let color = if Float32_u.O.(hi <= #0.s) then #0xFF000000l else #0xFFFFFFFFl in
-        for y = y0 to y0 + samples_y - 1 do
-          for x = x0 to x0 + samples_x - 1 do
-            Image_buf.set canvas ~x ~y color
-          done
-        done)
+        Image_buf.fill_rect canvas ~x:x0 ~y:y0 ~w:samples_x ~h:samples_y color)
       ~draw:(fun ~x0 ~y0 ~samples_x ~samples_y ~get ->
         for j = 0 to samples_y - 1 do
+          let row = j * samples_x
+          and y = y0 + j in
           for i = 0 to samples_x - 1 do
-            let dist =
-              Float32_u.to_float (Sdf.Value.to_float (get ((j * samples_x) + i)))
-            in
-            Image_buf.set canvas ~x:(x0 + i) ~y:(y0 + j) (color_pixel dist)
+            let dist = Float_u.of_float32_u (Sdf.Value.to_float (get (row + i))) in
+            Image_buf.set canvas ~x:(x0 + i) ~y (color_pixel dist)
           done
         done));
   let after = Core.Time_ns.now () in

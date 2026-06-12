@@ -48,6 +48,34 @@ let set t ~x ~y v =
   Bigarray.Array1.set t.buffer ((y * t.width) + x) v
 ;;
 
+let fill_rect t ~x ~y ~w ~h color =
+  let t = Stdlib.Obj.magic_uncontended t.portended in
+  (* Clip to the image's bounds so the unsafe writes below stay in range. *)
+  let x, w = if x < 0 then 0, w + x else x, w in
+  let y, h = if y < 0 then 0, h + y else y, h in
+  let w = if x + w > t.width then t.width - x else w in
+  let h = if y + h > t.height then t.height - y else h in
+  if w <= 0 || h <= 0
+  then ()
+  else (
+    let color @ local = Int32_u.to_int32 color in
+    for row = y to y + h - 1 do
+      let base = (row * t.width) + x in
+      let i = ref 0 in
+      while !i + 4 <= w do
+        Bigarray.Array1.unsafe_set t.buffer (base + !i) color;
+        Bigarray.Array1.unsafe_set t.buffer (base + !i + 1) color;
+        Bigarray.Array1.unsafe_set t.buffer (base + !i + 2) color;
+        Bigarray.Array1.unsafe_set t.buffer (base + !i + 3) color;
+        i := !i + 4
+      done;
+      while !i < w do
+        Bigarray.Array1.unsafe_set t.buffer (base + !i) color;
+        i := !i + 1
+      done
+    done)
+;;
+
 let blit ~from ~(region : Rect.t) ~to_ ~x:dst_x ~y:dst_y =
   (* Fast path: full-buffer blit when source and dest are the same size, region covers the
      entire source, and destination offset is zero. *)

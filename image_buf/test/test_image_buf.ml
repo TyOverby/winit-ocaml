@@ -39,6 +39,45 @@ let%expect_test "set individual pixels" =
     |}]
 ;;
 
+let%expect_test "fill_rect basic" =
+  let img = create ~width:4 ~height:4 black in
+  fill_rect img ~x:1 ~y:1 ~w:2 ~h:2 red;
+  print_endline (For_testing.to_string img);
+  [%expect {|
+    ____
+    _RR_
+    _RR_
+    ____
+    |}]
+;;
+
+let%expect_test "fill_rect clips to the image's bounds" =
+  let img = create ~width:4 ~height:4 black in
+  fill_rect img ~x:(-1) ~y:(-1) ~w:3 ~h:3 red;
+  fill_rect img ~x:2 ~y:2 ~w:3 ~h:3 green;
+  print_endline (For_testing.to_string img);
+  [%expect {|
+    RR__
+    RR__
+    __GG
+    __GG
+    |}]
+;;
+
+let%expect_test "fill_rect completely outside does nothing" =
+  let img = create ~width:4 ~height:4 black in
+  fill_rect img ~x:4 ~y:0 ~w:2 ~h:2 red;
+  fill_rect img ~x:0 ~y:(-2) ~w:2 ~h:2 red;
+  fill_rect img ~x:0 ~y:0 ~w:0 ~h:3 red;
+  print_endline (For_testing.to_string img);
+  [%expect {|
+    ____
+    ____
+    ____
+    ____
+    |}]
+;;
+
 let%expect_test "blit basic" =
   let src = create ~width:2 ~height:2 red in
   let dst = create ~width:4 ~height:4 black in
