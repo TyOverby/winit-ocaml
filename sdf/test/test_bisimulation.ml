@@ -442,6 +442,7 @@ let gen_test_case =
 let%test_unit "bisimulation: tree and graph evaluators produce identical results" =
   Quickcheck.test
     gen_test_case
+    ~trials:Quickcheck_trials.trials
     ~sexp_of:[%sexp_of: Expr_tree.t * float * float]
     ~f:(fun (tree, x, y) -> assert_bisimulation tree ~x ~y)
 ;;

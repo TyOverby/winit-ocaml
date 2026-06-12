@@ -11,6 +11,7 @@
   parallel
   parallel.scheduler
   sdf_passthrough_oracle
+  quickcheck_trials
   unboxed.float32_u)
  (inline_tests)
  (preprocess

@@ -209,7 +209,7 @@ let%test_unit "quickcheck: No_contour culled tiles contain all scalar samples" =
        gen_region
        gen_tile_cells)
     ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
-    ~trials:500
+    ~trials:Quickcheck_trials.trials
     ~f:(fun (tree, region, tile_cells) ->
       let range = Expr_graph_range_eval.of_tree tree in
       let sched =
@@ -299,7 +299,7 @@ let%test_unit "quickcheck: Constant_outside culled tiles satisfy range predicate
        gen_region
        gen_tile_cells)
     ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
-    ~trials:500
+    ~trials:Quickcheck_trials.trials
     ~f:(fun (tree, region, tile_cells) ->
       let range = Expr_graph_range_eval.of_tree tree in
       let sched =

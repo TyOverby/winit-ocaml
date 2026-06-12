@@ -180,7 +180,7 @@ module Make_tests (E : Executor.S_batch) = struct
       (Quickcheck.Generator.bind gen_region ~f:(fun region ->
          Quickcheck.Generator.map (gen_sub_rect region) ~f:(fun rect -> region, rect)))
       ~sexp_of:[%sexp_of: Sample_region.t * (int * int * int * int)]
-      ~trials:300
+      ~trials:Quickcheck_trials.trials
       ~f:(fun (region, (x0, y0, samples_x, samples_y)) ->
         (* Use a tree that exercises arithmetic and coordinates. *)
         let tree = add (mul coord_x coord_x) (neg coord_y) in

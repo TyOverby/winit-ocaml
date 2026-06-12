@@ -659,7 +659,7 @@ let%test_unit "quickcheck: range evaluator contains all scalar float results" =
   Quickcheck.test
     (Quickcheck.Generator.both (Test_bisimulation.gen_float_expr ~depth:4) gen_coord_box)
     ~sexp_of:[%sexp_of: Expr_tree.t * (float * float * float * float)]
-    ~trials:2000
+    ~trials:Quickcheck_trials.trials
     ~f:(fun (tree, (x_lo, x_hi, y_lo, y_hi)) ->
       (* Skip degenerate / non-finite boxes *)
       if Float.is_finite x_lo
@@ -701,7 +701,7 @@ let%test_unit "quickcheck: range evaluator contains all scalar bool results" =
   Quickcheck.test
     (Quickcheck.Generator.both (Test_bisimulation.gen_bool_expr ~depth:4) gen_coord_box)
     ~sexp_of:[%sexp_of: Expr_tree.t * (float * float * float * float)]
-    ~trials:2000
+    ~trials:Quickcheck_trials.trials
     ~f:(fun (tree, (x_lo, x_hi, y_lo, y_hi)) ->
       if Float.is_finite x_lo
          && Float.is_finite x_hi

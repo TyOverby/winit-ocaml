@@ -35,7 +35,7 @@ let%test_unit "spatial index bisimulates brute-force scan" =
   Quickcheck.test
     gen
     ~sexp_of:[%sexp_of: float array * int * float * float]
-    ~trials:5000
+    ~trials:Quickcheck_trials.trials
     ~f:(fun (coords_floats, length, qxf, qyf) ->
       let coords = coords_of_floats coords_floats in
       let t = Nearest_seg.build coords ~length in
@@ -285,7 +285,7 @@ let%test_unit "query_range: scalar result contained in both indexed and dummy ra
   Quickcheck.test
     gen
     ~sexp_of:[%sexp_of: float array * int * float * float * float * float]
-    ~trials:2000
+    ~trials:Quickcheck_trials.trials
     ~f:(fun (coords_floats, length, x_lo, x_hi, y_lo, y_hi) ->
       let coords = coords_of_floats coords_floats in
       let t = Nearest_seg.build coords ~length in
@@ -819,7 +819,7 @@ let%test_unit "assume_level_set: star polygon containment quickcheck" =
     gen
     ~sexp_of:
       [%sexp_of: int * float array * float * float * int * float * float * float * float]
-    ~trials:2000
+    ~trials:Quickcheck_trials.trials
     ~f:(fun (k, radii, cx, cy, subdivide_seed, qx1, qx2, qy1, qy2) ->
       let coords = make_star_polygon ~cx ~cy ~k ~radii ~subdivide_seed in
       let length = Array.length coords / 4 in

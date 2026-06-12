@@ -168,7 +168,7 @@ let run_differential_trial (module E : Executor.S) scheduler tree ~region ~tile_
             ~tiled_count:(length : int)]))
 ;;
 
-let%test_unit "quickcheck differential: Expr_graph_batch_eval (300 trials)" =
+let%test_unit "quickcheck differential: Expr_graph_batch_eval" =
   let open Quickcheck.Generator.Let_syntax in
   let gen =
     let%bind tree = Sdf_test.Test_bisimulation.gen_float_expr ~depth:3 in
@@ -179,7 +179,7 @@ let%test_unit "quickcheck differential: Expr_graph_batch_eval (300 trials)" =
   let scheduler = Parallel_scheduler.create () in
   Quickcheck.test
     gen
-    ~trials:300
+    ~trials:Quickcheck_trials.trials
     ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
     ~f:(fun (tree, region, tile_cells) ->
       run_differential_trial
@@ -190,7 +190,7 @@ let%test_unit "quickcheck differential: Expr_graph_batch_eval (300 trials)" =
         ~tile_cells)
 ;;
 
-let%test_unit "quickcheck differential: Expr_tree_eval (75 trials)" =
+let%test_unit "quickcheck differential: Expr_tree_eval" =
   let open Quickcheck.Generator.Let_syntax in
   let gen =
     let%bind tree = Sdf_test.Test_bisimulation.gen_float_expr ~depth:3 in
@@ -201,7 +201,7 @@ let%test_unit "quickcheck differential: Expr_tree_eval (75 trials)" =
   let scheduler = Parallel_scheduler.create () in
   Quickcheck.test
     gen
-    ~trials:75
+    ~trials:Quickcheck_trials.trials
     ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
     ~f:(fun (tree, region, tile_cells) ->
       run_differential_trial
@@ -212,7 +212,7 @@ let%test_unit "quickcheck differential: Expr_tree_eval (75 trials)" =
         ~tile_cells)
 ;;
 
-let%test_unit "quickcheck differential: Expr_graph_eval (75 trials)" =
+let%test_unit "quickcheck differential: Expr_graph_eval" =
   let open Quickcheck.Generator.Let_syntax in
   let gen =
     let%bind tree = Sdf_test.Test_bisimulation.gen_float_expr ~depth:3 in
@@ -223,7 +223,7 @@ let%test_unit "quickcheck differential: Expr_graph_eval (75 trials)" =
   let scheduler = Parallel_scheduler.create () in
   Quickcheck.test
     gen
-    ~trials:75
+    ~trials:Quickcheck_trials.trials
     ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
     ~f:(fun (tree, region, tile_cells) ->
       run_differential_trial
@@ -260,7 +260,7 @@ let%test_unit "quickcheck stats sanity" =
   let scheduler = Parallel_scheduler.create () in
   Quickcheck.test
     gen
-    ~trials:100
+    ~trials:Quickcheck_trials.trials
     ~sexp_of:[%sexp_of: Expr_tree.t * Sample_region.t * int]
     ~f:(fun (tree, region, tile_cells) ->
       Parallel_scheduler.parallel scheduler ~f:(fun par ->
